@@ -23,7 +23,9 @@ search({ stockPolicy: 'custom', maxDepth: 1, recipeTree: true, budgetMs: 10000 }
 check('recipeJob.status', 'exhausted', 'A one-level tree cannot hide the acid preparation');
 search({ stockPolicy: 'custom', maxDepth: 2, recipeTree: true, budgetMs: 10000 });
 check('recipeJob.status', 'found', 'Recipe mode recursively prepares the unavailable acid');
-check('recipeJob.recipeTrees.length', 2, 'Both complete Fischer and acyl-chloride recipe trees are returned');
+check('recipeJob.recipeTrees.length', 1, 'Equivalent esterification trees share one pathway slot');
+check(`recipeJob.routeRecipes.some(tree=>tree.candidate.transform==='steglich'&&tree.metrics.steps===2&&tree.children.some(child=>child.candidate&&child.candidate.transform==='acid-oxidation'))`,true,'Steglich recipe includes a complete acid-preparation branch');
+check('recipeJob.recipeTrees.every(tree => tree.metrics.longest <= 2)', true, 'No shared intermediate bypasses the selected recipe depth');
 check('recipeJob.options.recipeTree', true, 'The opt-in mode is recorded in job options');
 check('recipeJob.recipeTrees[0].metrics.steps', 2, 'The tree contains acid preparation and esterification');
 check('pathFinderKey(recipeJob.recipeTrees[0].target) === pathFinderKey("CCOC(C)=O")', true, 'The tree root is the requested target');
@@ -42,8 +44,16 @@ check(`(()=>{
   walk(recipeJob.recipeTrees[0]);return names.includes('fischer')&&names.some(id=>id.includes('oxidation'));
 })()`, true, 'The recipe uses an oxidation branch followed by Fischer esterification');
 check(`(()=>{
+  const tree=recipeJob.routeRecipes.find(node=>node.candidate&&node.candidate.transform==='mitsunobu');if(!tree)return false;
   const names=[];const walk=node=>{if(node.candidate)names.push(node.candidate.transform);(node.children||[]).forEach(walk);};
-  walk(recipeJob.recipeTrees[1]);return names.join(',')==='ester-acyl-chloride,acid-chloride,acid-oxidation'&&recipeJob.recipeTrees[1].metrics.steps===3;
+  walk(tree);return names.join(',')==='mitsunobu,acid-oxidation'&&tree.metrics.steps===2;
+})()`, true, 'The Mitsunobu alternative recursively prepares acetic acid before esterification');
+search({ stockPolicy: 'custom', maxDepth: 3, forbiddenRules: ['fischer', 'mitsunobu', 'steglich', 'transesterification'], recipeTree: true, budgetMs: 10000 });
+check('recipeJob.status', 'found', 'The deeper budget permits an acyl-chloride preparation');
+check(`(()=>{
+  const tree=recipeJob.recipeTrees.find(node=>node.candidate&&node.candidate.transform==='ester-acyl-chloride');if(!tree)return false;
+  const names=[];const walk=node=>{if(node.candidate)names.push(node.candidate.transform);(node.children||[]).forEach(walk);};
+  walk(tree);return names.join(',')==='ester-acyl-chloride,acid-chloride,acid-oxidation'&&tree.metrics.steps===3;
 })()`, true, 'The alternative tree prepares acetyl chloride before esterification');
 
 search({ stockPolicy: 'custom', availableMaterials: ['acetic acid'], maxDepth: 1, recipeTree: true, budgetMs: 10000 });
@@ -63,6 +73,7 @@ class Element {
   set id(value) { this._id = value; nodes[value] = this; }
   get id() { return this._id; }
   addEventListener(type, fn) { this.events[type] = fn; }
+  setAttribute(key,value) { (this.attributes ||= {})[key]=value; }
   append(...children) { this.children.push(...children); }
   replaceChildren(...children) { this.children = children; }
   focus() { this.focused = true; }
@@ -85,8 +96,9 @@ nodes['path-run'].click();
 while (timers.length) timers.shift()();
 assert.match(nodes['path-status'].textContent, /rule-verified recipe tree found/); checks++;
 assert.match(nodes['path-status'].textContent, /Every leaf is available/); checks++;
-assert.equal(nodes['path-results'].children.length, 1); checks++;
-assert.equal(nodes['path-results'].children[0].children[0].textContent.includes('2 reaction steps'), true); checks++;
+const recipes=nodes['path-results'].children.filter(n=>(n.className||'').split(' ').includes('path-recipe'));
+assert.equal(recipes.length, 1); checks++;
+assert.equal(recipes[0].children[0].textContent.includes('2 reaction steps'), true); checks++;
 const serialized = (function text(node) { return node.textContent + ' ' + node.children.map(text).join(' '); })(nodes['path-results']);
 assert.match(serialized, /Prepare intermediate/); checks++;
 assert.match(serialized, /Starting material/); checks++;

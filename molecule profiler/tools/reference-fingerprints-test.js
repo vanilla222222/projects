@@ -14,5 +14,13 @@ class Worker{constructor(){spawned++;this.thread=new Thread(source,{eval:true,wo
  const stale={get:async()=>({version:'old',total:4,rows:[],failures:4}),put:async()=>{}};assert.equal((await create({cache:stale}).get(rows,'ecfp4')).length,3);
  const mutable=[{name:'Changing',smiles:'CCO'}],memory=create(),initial=await memory.get(mutable,'ecfp4');mutable[0]={name:'Changing',smiles:'CCC'};const changed=await memory.get(mutable,'ecfp4');assert.notDeepEqual(initial[0].fp,changed[0].fp,'Changed graphs invalidate memory and persisted keys');
  let progress=0;const full=await create({cache:{get:async()=>null,put:async()=>{}}}).get(context.library,'ecfp4',{progress:()=>progress++});assert.equal(full.length,context.library.length);assert.ok(progress>100);for(const i of [0,100,5000,21063])assert.deepEqual(full[i].fp,engine.fingerprint(engine.parse(full[i].entry.smiles),'ecfp4'));
- console.log('Fingerprint cache: actual worker imports, five-method parity, Map/Set persistence, stale-version rejection, blocked-worker cooperative fallback and full composed-library scan passed');
+ global.DEPENDENCE=[{name:'Labelled drug',liability:'high'}];
+ global.TARGETS=[{name:'Reward target',gene:'REWARD',ligands:['Reward ligand']}];
+ global.REWARD_TARGETS=['REWARD'];
+ global.SIMILARITY_REFERENCE_POOL=[{name:'Labelled drug',smiles:'CCO'},{name:'Reward ligand',smiles:'CCN'},{name:'Unused reference',smiles:'CCC'}];
+ global.libraryFingerprints=()=>Promise.reject(Error('Dependence profiling must not wait for the full-library fingerprint cache'));
+ const dependenceInput='CC(C)CCC[C@@H](C)[C@H]1CC[C@H]2[C@@H]3CC=C4C[C@H](CC[C@]4(C)[C@H]3CC[C@]12C)O';
+ const dependence=require('../js/tox.js').dependenceProfile({mol:engine.parse(dependenceInput)},'ecfp4',tanimoto);
+ assert.equal(dependence.neighbours.length,1);assert.equal(dependence.rewards.length,1);assert.ok(Number.isFinite(dependence.top));
+ console.log('Fingerprint cache and dependence profiling: actual worker imports, five-method parity, persistence, fallback, full-library scan and supplied-SMILES regression passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});

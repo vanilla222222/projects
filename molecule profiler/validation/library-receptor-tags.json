@@ -2,21 +2,28 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
+    "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
-    "tools/build-receptor-tags.py": "158e00b34c85db738c51f2b6e911cbe35e92466927a408051bcbd6c647b55535",
-    "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4"
+    "tools/build-receptor-tags.py": "a6f8d5c109ff2b8c9d73cf49a76f85225e42d364f07b4227b6469a001bf86a12",
+    "validation/sources/receptor-actions-iuphar.json": "ae233a073c2159c5c62b3e8a77c26a8f28f5ba94d9127b456112270f368f31f4",
+    "validation/chembl-receptor-binding-batch-2.json": "ba6e2aa3aa3b99d294ea211a2443e2514746cbfc07ccaf9372fe75653d1c8475",
+    "validation/chembl-receptor-binding-batch-3.json": "f0342758fa351087cf6191bb46d3b69c9cd866bafcea4021bd8c0556a6f2a930",
+    "validation/chembl-receptor-binding-batch-4.json": "a5c467086e5d027f298878a7c959a74f05d5b34a534a85b7089ba2ca5beed9a9",
+    "validation/chembl-receptor-binding-batch-5.json": "5f1a5647a5098321a2c3527dee7e0fe55850255e7f91ba9a92af0e717490f0bd",
+    "validation/chembl-receptor-binding-batch-6.json": "52c8ba6042c9684d4ff866235b01f9b24cbd4a2425f0700a2f7712a807e5ac22",
+    "validation/chembl-receptor-binding-batch.json": "c80b978380f368acd93df7a4641e94197c861628f0555c0b8fe5b3821c9dff68"
   },
   "sourceVersion": "\"# GtoPdb Version: 2026.3.1 - published: 2026-10-12\"",
   "receptors": 146,
   "annotatedEntries": 1787,
   "evidenceRecords": {
     "iuphar": 2029,
-    "chembl": 1881
+    "chembl": 1881,
+    "chemblActionClassifications": 31
   },
-  "definitions": 2350,
+  "definitions": 2355,
   "coverage": [
     {
       "receptorId": "HTR1A",
@@ -102,7 +109,7 @@
       "receptorId": "HTR1F",
       "binding": 26,
       "actions": {
-        "agonist": 24,
+        "agonist": 25,
         "full_agonist": 21,
         "partial_agonist": 3,
         "antagonist": 5,
@@ -585,7 +592,7 @@
         "agonist": 8,
         "full_agonist": 2,
         "partial_agonist": 3,
-        "antagonist": 13,
+        "antagonist": 20,
         "inverse_agonist": 0,
         "modulator": 3,
         "pam": 2,
@@ -662,7 +669,7 @@
       "receptorId": "HRH2",
       "binding": 50,
       "actions": {
-        "agonist": 0,
+        "agonist": 19,
         "full_agonist": 0,
         "partial_agonist": 0,
         "antagonist": 3,
@@ -925,7 +932,7 @@
         "agonist": 4,
         "full_agonist": 1,
         "partial_agonist": 3,
-        "antagonist": 1,
+        "antagonist": 2,
         "inverse_agonist": 0,
         "modulator": 0,
         "pam": 0,
@@ -2422,7 +2429,7 @@
       "receptorId": "RARA",
       "binding": 29,
       "actions": {
-        "agonist": 4,
+        "agonist": 6,
         "full_agonist": 0,
         "partial_agonist": 0,
         "antagonist": 2,
@@ -2939,5 +2946,5 @@
       }
     }
   ],
-  "dataSha256": "45bd4290deb0cc48e63908d0a63e2ed562e2233f997c8c8a97049e38130cfa66"
+  "dataSha256": "8fb8dcdb2bf286d7c5c28d8316e8da89afd0c05b788e0083c39a439227bdde15"
 }

@@ -37,6 +37,12 @@ def canonical(mol):
     return Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True)
 
 
+def canonical_connectivity(mol):
+    copy = Chem.Mol(mol)
+    Chem.RemoveStereochemistry(copy)
+    return canonical(copy)
+
+
 def parse_smiles(text):
     mol = Chem.MolFromSmiles(text, sanitize=True)
     if mol is None:
@@ -69,6 +75,8 @@ def main():
     options = args.parse_args()
     fixture_bytes = (HERE / "rdkit-fixtures.json").read_bytes()
     fixtures = json.loads(fixture_bytes)
+    legacy_fixture_bytes = (HERE / "chemistry-fixtures.json").read_bytes()
+    legacy_fixtures = json.loads(legacy_fixture_bytes)
     bridge = subprocess.run(["node", str(HERE / "export-rdkit-cases.js")], capture_output=True, text=True, check=True)
     exported = json.loads(bridge.stdout)
     records = []
@@ -122,9 +130,14 @@ def main():
             if row.get("error"):
                 raise ValueError(row["error"])
             check("reaction_rule_found", row["label"], row["found"], True)
-            actual = sorted(canonical(parse_smiles(s)) for s in row["actual"])
-            expected = sorted(canonical(parse_smiles(s)) for s in row["products"])
+            key = canonical_connectivity if row.get("comparison") == "connectivity" else canonical
+            actual = sorted(key(parse_smiles(s)) for s in row["actual"])
+            expected = sorted(key(parse_smiles(s)) for s in row.get("countedProducts", row["products"]))
             check("reaction_products_vs_RDKit", row["label"], actual, expected)
+            if "positionalProducts" in row:
+                actual_positions = sorted(set(canonical_connectivity(parse_smiles(s)) for s in row["actualPositional"]))
+                expected_positions = sorted(set(canonical_connectivity(parse_smiles(s)) for s in row["positionalProducts"]))
+                check("positional_products_vs_RDKit", row["label"], actual_positions, expected_positions)
         except Exception as error:
             check("reaction_error", row["label"], str(error), "No product parse or sanitization error")
 
@@ -157,9 +170,11 @@ def main():
         "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "rdkitVersion": rdBase.rdkitVersion,
         "fixtureSha256": hashlib.sha256(fixture_bytes).hexdigest(),
+        "fixtureFilesSha256": {"rdkit-fixtures.json": hashlib.sha256(fixture_bytes).hexdigest(),
+                               "chemistry-fixtures.json": hashlib.sha256(legacy_fixture_bytes).hexdigest()},
         "exportSha256": hashlib.sha256(bridge.stdout.encode()).hexdigest(),
         "appScriptSha256": exported["scriptSha256"],
-        "sources": fixtures["sources"],
+        "sources": {**legacy_fixtures["sources"], **fixtures["sources"]},
         "massConvention": "RDKit CalcExactMolWt, including electron-mass correction for net charge; tolerance 0.00002 Da.",
         "scope": "Finite structure-export, descriptor, reaction-product and encoded route-continuity regression against an independently implemented toolkit; not experimental reaction/route validation, nomenclature validation or a chemical-space accuracy estimate.",
         "structures": len(exported["structures"]), "identityPairs": len(exported["pairs"]), "reactions": len(exported["reactions"]),

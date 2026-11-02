@@ -31,6 +31,7 @@ function protectionProgramTargetOrder(from, targets) {
 }
 
 function protectionProgramBlocked(candidate, options) {
+  if(options.research&&typeof planningPolicyCreate==='function'){const reasons=planningPolicyCreate(options.research,options.researchContext||{}).check(candidate);if(reasons.length)return reasons.map(r=>r.message).join(' ');}
   const split = value => (Array.isArray(value)?value:String(value||'').split(/[\n,]+/)).map(s=>String(s).trim().toLowerCase()).filter(Boolean);
   const ruleText = [candidate.rule,candidate.outcomeRule,candidate.outcomeId,candidate.name,candidate.transform].filter(Boolean).join(' ').toLowerCase();
   if (split(options.forbiddenRules).some(s=>ruleText.includes(s))) return 'A planned protection operation is excluded by the reaction filters.';
@@ -57,7 +58,7 @@ function protectionProgramInstall(from, choice, options) {
   const candidate={transform:'managed-install-'+pg.id,name:'Install '+pg.label,outcomeName:'Install '+pg.label,group:'Protecting groups',
     rule:verified.outcome.rule,outcomeRule:verified.outcome.rule,outcomeId:verified.outcome.id,
     compounds:verified.compounds,conditions:verified.conditions,outcome:verified.outcome,product:verified.product,minor:false,
-    precursors:[retroPrecursorInfo({smiles:from,role:'reactant'})],reagents:pg.protect,
+    precursors:(verified.precursors||[{smiles:from,role:'reactant'}]).map(retroPrecursorInfo),reagents:verified.reagents||pg.protect,
     labels:reactionConditionLabels(verified.conditions,verified.compounds),
     planning:{kind:'protect',group:pg.label,groupId:pg.id,reason:'Explicitly requested '+pg.label+' mask; installation, main-step survival and final removal are checked separately. Necessity is not inferred.'}};
   const blocked=protectionProgramBlocked(candidate,options);if(blocked)throw new Error(blocked);
@@ -66,6 +67,7 @@ function protectionProgramInstall(from, choice, options) {
 
 function protectionProgramCreate(startSmiles,targetSmiles,options) {
   const opts=Object.assign({},PATH_FINDER_LIMITS,options||{});
+  if(opts.research&&typeof planningSettingsNormalize==='function'){opts.research=planningSettingsNormalize(opts.research);opts.researchContext={start:startSmiles,target:targetSmiles};['budgetMs','maxNodes','maxBranch'].forEach(k=>{if(opts.research[k]!==null)opts[k]=opts.research[k];});}
   opts.maxDepth=Math.max(1,Math.min(10,Math.floor(Number(opts.maxDepth)||5)));
   const requested=(Array.isArray(opts.managedProtectingGroups)?opts.managedProtectingGroups:String(opts.managedProtectingGroups||'').split(/[\s,]+/)).map(s=>String(s).trim().toLowerCase()).filter(Boolean);
   const choices=requested.map(protectionProgramChoice);
@@ -77,8 +79,8 @@ function protectionProgramCreate(startSmiles,targetSmiles,options) {
   const job={start:start.smiles,target:target.smiles,options:opts,status:'running',route:[],routes:[],expanded:0,elapsedMs:0,truncated:false,diagnostics,termination:''};
   const orders=choices.length===2?[choices,choices.slice().reverse()]:[choices];
   let active=null,orderIndex=0,pending=[];
-  const budget=Math.max(1,Math.min(30000,Number(options&&options.budgetMs)||(opts.maxDepth>5?30000:12000)));
-  const nodeLimit=Math.max(1,Math.min(200,Number(options&&options.maxNodes)||(opts.maxDepth>5?200:60)));
+  const budget=Math.max(1,Math.min(30000,Number(opts.budgetMs)||(opts.maxDepth>5?30000:12000)));
+  const nodeLimit=Math.max(1,Math.min(200,Number(opts.maxNodes)||(opts.maxDepth>5?200:60)));
   const fail=message=>{diagnostics.protection++;if(diagnostics.protectionMessages.length<8&&!diagnostics.protectionMessages.includes(message))diagnostics.protectionMessages.push(message);};
   job.cancel=()=>{if(active)active.search.cancel();job.status='cancelled';job.termination='cancelled';return job;};
   job.step=sliceMs=>{
@@ -112,6 +114,7 @@ function protectionProgramCreate(startSmiles,targetSmiles,options) {
           const protectedMain=main.map(link=>({...link,candidate:{...link.candidate,planning:{kind:'reaction',group:requested.join(' + '),groupId:requested.join(','),reason:'The explicitly requested masks must remain installed throughout this main-route step.'}}}));
           const route=active.installs.concat(protectedMain,removal.steps);
           if(route.length>opts.maxDepth || route.some(l=>protectionProgramBlocked(l.candidate,opts)||!retroForwardCheck(l.candidate,l.to)))continue;
+          if(opts.research&&typeof planningPolicyCreate==='function'){const reasons=planningPolicyCreate(opts.research,{start:start.smiles,target:target.smiles}).routeCheck(route);if(reasons.length){fail(reasons.map(r=>r.message).join(' '));continue;}}
           const ledger=protectionRouteAudit(route,requested);if(ledger.conflicts.length){fail(ledger.conflicts.join(' '));continue;}
           job.routes.push(route);job.route=job.routes[0];
           if(job.routes.length>=Math.min(5,Number(opts.maxRoutes)||3)){job.status='found';job.termination='route-limit';return job;}

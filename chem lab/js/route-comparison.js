@@ -67,11 +67,13 @@ function routeComparisonSummaries(job) {
       });
       const stepReagents = new Map();
       const addReagent = (item, role) => { const entry = material(item, role); stepReagents.set(entry.key, entry); reagents.set(entry.key, entry); };
-      (candidate.compounds || []).filter((p) => p.role !== 'reactant').forEach((p) => addReagent(p, p.role || 'reagent'));
-      (candidate.reagents || []).forEach((p) => addReagent(p, p.role || 'reagent'));
-      const conditions = candidate.conditions || {};
-      (conditions.additives || []).forEach((id) => addReagent(typeof reactionAdditive === 'function' && reactionAdditive(id) || { id }, 'additive'));
-      (conditions.solvents || []).forEach((id) => addReagent(typeof reactionSolvent === 'function' && reactionSolvent(id) || { id }, 'solvent'));
+      routePlanningOperations(candidate).forEach(operation=>{
+        (operation.compounds||[]).filter(p=>p.role!=='reactant').forEach(p=>addReagent(p,p.role||'reagent'));
+        (operation.reagents||[]).forEach(p=>addReagent(p,p.role||'reagent'));
+        const conditions=operation.conditions||{};
+        (conditions.additives||[]).forEach(id=>addReagent(typeof reactionAdditive==='function'&&reactionAdditive(id)||{id},'additive'));
+        (conditions.solvents||[]).filter(id=>id!=='none').forEach(id=>addReagent(typeof reactionSolvent==='function'&&reactionSolvent(id)||{id},'solvent'));
+      });
       const warnings = [...new Set([...(candidate.outcome && candidate.outcome.warnings || []), ...(candidate.warnings || [])].map(String))];
       const stereoKind = candidate.product && candidate.product.stereo && candidate.product.stereo.kind;
       const stereoConcern = ['racemic', 'mismatch'].includes(candidate.stereo) || ['racemic', 'diastereomers'].includes(stereoKind);
@@ -79,7 +81,9 @@ function routeComparisonSummaries(job) {
       (evidence && evidence.assumptions || []).forEach((text) => assumptions.add(String(text)));
       (evidence && evidence.limitations || []).forEach((text) => limitations.add(String(text)));
       const references = evidence && Array.isArray(evidence.references) ? evidence.references.filter((r) => r && /^https:\/\//.test(r.url || '')) : [];
+      const planningFacts={gaps:routePlanningOperations(candidate).flatMap((operation,i)=>routePlanningStepFacts(operation).gaps.map(g=>({...g,operation:i+1})))};
       return {
+        planningFacts,
         number: index + 1, link, candidate, name: candidate.outcomeName || candidate.name || 'Reaction step',
         from: link.from, to: link.to, extraBlocks, reagents: [...stepReagents.values()],
         inventoryRecorded: carried >= 0 && precursors.length > 0, evidence, references,
@@ -90,6 +94,10 @@ function routeComparisonSummaries(job) {
     });
     return {
       number: routeIndex + 1, route, steps, stepCount: steps.length,
+      handoffs:typeof routeHandoffAssess==='function'?route.slice(1).map((link,i)=>routeHandoffAssess(route[i],link)):[],
+      workups:typeof routeWorkupAssess==='function'?route.flatMap((link,i)=>{const ops=routePlanningOperations(link.candidate);return ops.map((op,j)=>({...routeWorkupAssess(ops.length===1?link:op),step:i+1,operation:j+1}));}):[],
+      ranking:pathFinderRouteMetrics(route),
+      scopeGaps:steps.flatMap(s=>s.planningFacts.gaps.map(g=>({step:s.number,...g}))),
       buildingBlocks: [...blocks.values()], reagents: [...reagents.values()],
       sourcedSteps: steps.filter((s) => s.references.length > 0).length,
       minorSteps: steps.filter((s) => s.minor).length,
@@ -100,14 +108,72 @@ function routeComparisonSummaries(job) {
   });
 }
 
+// Structural comparison against the first displayed pathway, not a feasibility score.
+function routeComparisonDiversity(job) {
+  const records = (job.routes || []).map(route => {
+    const intermediates = new Map(), feedstocks = new Map(), families = new Set();
+    let missingFamilies = false;
+    const add = (map, smiles) => { const key=routeComparisonKey(smiles); if(!map.has(key))map.set(key,{key,smiles,name:routeComparisonName(smiles)}); };
+    const family = candidate => {
+      if(candidate.group)families.add(String(candidate.group)); else missingFamilies=true;
+    };
+    let strategy;
+    if (Array.isArray(route)) {
+      route.forEach((link,i) => { if(i<route.length-1)add(intermediates,link.to); family(link.candidate||{}); });
+      strategy=pathFinderRouteStrategyKey(route);
+    } else {
+      const walk=(node,root)=>{
+        if(node.candidate){family(node.candidate);if(!root)add(intermediates,node.target);}
+        else add(feedstocks,node.target);
+        (node.children||[]).forEach(child=>walk(child,false));
+      };
+      walk(route,true); strategy=pathFinderRecipeStrategyKey(route);
+    }
+    return {strategy,intermediates:[...intermediates.values()],feedstocks:[...feedstocks.values()],families:[...families].sort(),missingFamilies};
+  });
+  const reference=records[0];
+  return records.map((record,i)=>{
+    const delta=(field,key)=>record[field].filter(item=>!reference[field].some(other=>key(item)===key(other)));
+    const omitted=(field,key)=>reference[field].filter(item=>!record[field].some(other=>key(item)===key(other)));
+    const key=item=>item.key, identity=item=>item;
+    return {...record,reference:i===0,samePath:record.strategy===reference.strategy,
+      addedIntermediates:delta('intermediates',key),omittedIntermediates:omitted('intermediates',key),
+      addedFeedstocks:delta('feedstocks',key),omittedFeedstocks:omitted('feedstocks',key),
+      addedFamilies:delta('families',identity),omittedFamilies:omitted('families',identity),
+      missingFamilies:record.missingFamilies||reference.missingFamilies};
+  });
+}
+
+function routeComparisonDiversityElement(record, kind) {
+  const make=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=String(text);return el;};
+  const detail=make('details');
+  detail.append(make('summary',record.reference?'Pathway reference': 'How this pathway differs from '+kind+' 1'));
+  const list=(label,items)=>{detail.append(make('h5',label));if(!items.length){detail.append(make('p','None.'));return;}const ul=make('ul');items.forEach(item=>ul.append(make('li',typeof item==='string'?item:item.name+' ('+item.smiles+')')));detail.append(ul);};
+  if(record.reference){list('Intermediates',record.intermediates);list('Reaction families',record.families);if(record.feedstocks.length)list('Feedstocks',record.feedstocks);}
+  else {
+    detail.append(make('p',record.samePath?'Same structural pathway; the recipe may differ.':'Different intermediate sequence or preparation tree.'));
+    list('Intermediates used here but absent from '+kind+' 1',record.addedIntermediates);
+    list('Intermediates from '+kind+' 1 omitted here',record.omittedIntermediates);
+    list('Reaction families added',record.addedFamilies);list('Reaction families omitted',record.omittedFamilies);
+    if(record.addedFeedstocks.length||record.omittedFeedstocks.length){list('Feedstocks added',record.addedFeedstocks);list('Feedstocks omitted',record.omittedFeedstocks);}
+  }
+  if(record.missingFamilies)detail.append(make('p','Some reaction-family labels are missing; family differences are incomplete.'));
+  return detail;
+}
+
 function routeComparisonRender(container, job, deps) {
   const make = (tag, text, cls) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = String(text); if (cls) el.className = cls; return el; };
   const summaries = routeComparisonSummaries(job);
+  const diversity = routeComparisonDiversity(job);
   container.replaceChildren();
   const root = make('section', undefined, 'route-comparison');
   root.setAttribute('aria-label', 'Candidate route comparison');
   root.append(make('h3', 'Compare candidate routes'));
-  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned.', 'route-comparison-note'));
+  if(job.options?.research&&typeof planningResearchSummary==='function')root.append(make('p',planningResearchSummary(job.options.research),'research-search-snapshot'));
+  if(job.options?.research){const protocol=make('details');protocol.append(make('summary','Inspect recorded search protocol'),make('pre',JSON.stringify(job.options.research,null,2)));root.append(protocol);}
+  const find=make('input');find.type='search';find.placeholder='Find an intermediate, reagent or reaction in results';find.setAttribute('aria-label','Filter displayed routes');find.addEventListener('input',()=>{const query=find.value.toLowerCase().trim();Array.from(root.querySelectorAll('.route-comparison-card')).forEach(card=>card.hidden=!!query&&!card.textContent.toLowerCase().includes(query));});root.append(find);
+  root.append(reactionPurificationControl(()=>routeComparisonRender(container,job,deps)));if(typeof physicalPropertiesAutoControl==='function')root.append(physicalPropertiesAutoControl(()=>routeComparisonRender(container,job,deps)));
+  root.append(make('p', 'Counts below are calculated from these route records; materials are counted once per role. Sources document reaction classes; they do not establish that a route works experimentally. No yield, feasibility or safety score is assigned. The default ranking orders routes by operations, protection operations, recorded scope gaps, stereo concerns, minor-product steps, extra building blocks, stock tiers, process-material entries and building-block size. Missing metadata counts as a gap; documentation length does not. These are planning criteria, not cost or experimental success predictions.', 'route-comparison-note'));
   const grid = make('div', undefined, 'route-comparison-grid');
   const addList = (parent, label, entries) => {
     parent.append(make('h5', label));
@@ -117,16 +183,20 @@ function routeComparisonRender(container, job, deps) {
   summaries.forEach((summary) => {
     const card = make('article', undefined, 'route-comparison-card');
     card.append(make('h4', 'Route ' + summary.number));
+    card.append(routeComparisonDiversityElement(diversity[summary.number-1],'Route'));
     const metrics = make('table', undefined, 'route-comparison-metrics');
     const body = make('tbody');
-    [['Steps', summary.stepCount], ['Distinct extra building blocks', summary.buildingBlocks.length], ['Distinct reagents / catalysts / solvents / additives', summary.reagents.length], ['Steps with reaction-class sources', summary.sourcedSteps + ' / ' + summary.stepCount], ['Minor-product steps', summary.minorSteps], ['Steps with stereo concerns reported', summary.stereoConcernSteps]].forEach(([label, value]) => {
+    [['Operations counted for ranking', summary.ranking.steps], ['Protection operations', summary.ranking.protection], ['Recorded scope gaps', summary.ranking.scopeGaps], ['Steps', summary.stepCount], ['Distinct extra building blocks', summary.buildingBlocks.length], ['Distinct reagents / catalysts / solvents / additives', summary.reagents.length], ['Steps with reaction-class sources', summary.sourcedSteps + ' / ' + summary.stepCount], ['Minor-product steps', summary.minorSteps], ['Recorded stereo concerns used for ranking', summary.ranking.stereoConcerns]].forEach(([label, value]) => {
       const row = make('tr'), header = make('th', label); header.setAttribute('scope', 'row'); row.append(header, make('td', value)); body.append(row);
     });
     metrics.append(body); card.append(metrics);
     card.append(make('p', summary.inventoryComplete ? 'Additional building blocks match the search inventory policy.' : 'Additional building-block availability needs review.', 'route-comparison-inventory'));
+    addList(card,'Endpoint work-up assumptions',summary.workups.filter(w=>w.required).map(w=>'Step '+w.step+(w.operation>1?', operation '+w.operation:'')+': '+w.record.status+'. '+w.message));
+    addList(card,'Step boundaries (planning assumptions)',summary.handoffs.map((h,i)=>'Before step '+(i+2)+': '+h.message+' '+h.potentials.map(p=>'If carried over: '+p.message).join(' ')));
     addList(card, 'Additional building blocks', summary.buildingBlocks.map((p) => p.name + ' — ' + p.availability));
     addList(card, 'Other required materials', summary.reagents.map((p) => p.name + ' (' + p.role + ')'));
     if (typeof protectionRouteAudit === 'function' && typeof protectionRouteElement === 'function') card.append(protectionRouteElement(protectionRouteAudit(summary.route)));
+    addList(card, 'Recorded ranking gaps', summary.scopeGaps.map(g=>'Step '+g.step+(g.operation>1?', operation '+g.operation:'')+': '+g.message));
     const assumptions = make('details', undefined, 'route-comparison-assumptions');
     assumptions.append(make('summary', 'Assumptions and limitations requiring review'));
     addList(assumptions, 'Assumptions', summary.assumptions);
@@ -135,9 +205,11 @@ function routeComparisonRender(container, job, deps) {
     card.append(assumptions);
     if (deps.saveRoute) {
       const save = make('button', 'Save route ' + summary.number + ' to workspace', 'text-button'); save.type = 'button';
-      save.addEventListener('click', () => deps.saveRoute({ version: 1, start: job.start, target: job.target, steps: summary.route, options: job.options, createdAt: new Date().toISOString() })); card.append(save);
+      save.addEventListener('click', () => deps.saveRoute({ version: 1, start: job.start, target: job.target, steps: summary.route.map(reactionPlanningRouteLink), options: job.options, createdAt: new Date().toISOString() })); card.append(save);
     }
     summary.steps.forEach((step) => {
+      const states=make('section',undefined,'route-comparison-state-row');
+      states.append(make('h4','Step '+step.number+' · material states'),reactionPlanningMaterialElement(step.from,'Starting material state',false,step.candidate.conditions),reactionPlanningMaterialElement(step.to,'Product output state',true,step.candidate.conditions));card.append(states);
       const detail = make('details', undefined, 'route-comparison-step');
       detail.append(make('summary', step.number + '. ' + step.name + (step.minor ? ' · minor predicted product' : '')));
       detail.append(make('p', routeComparisonName(step.from) + ' → ' + routeComparisonName(step.to)));
@@ -175,7 +247,7 @@ function routeComparisonRender(container, job, deps) {
       else detail.append(make('p', 'Evidence details are unavailable for this step.'));
       if (deps.openInLab) {
         const open = make('button', 'Open step ' + step.number + ' in Reactions', 'text-button'); open.type = 'button';
-        open.addEventListener('click', () => deps.openInLab(step.candidate.compounds || [], step.candidate.conditions || {})); detail.append(open);
+        open.addEventListener('click', () => deps.openInLab(reactionPlanningCompounds(step.candidate.compounds,step.candidate.conditions), step.candidate.conditions || {},{smiles:step.candidate.product?.isomericSmiles||step.to,materialState:reactionPlanningMaterialState(step.to,undefined,step.candidate.conditions)})); detail.append(open);
       }
       card.append(detail);
     });

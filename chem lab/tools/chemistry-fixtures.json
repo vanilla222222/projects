@@ -7,7 +7,30 @@
     "carbonylReduction": "https://openstax.org/books/organic-chemistry/pages/19-7-nucleophilic-addition-of-hydride-and-grignard-reagents-alcohol-formation",
     "alkeneReactions": "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
     "hydrogenation": "https://openstax.org/books/organic-chemistry/pages/8-6-reduction-of-alkenes-hydrogenation",
-    "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids"
+    "esterification": "https://openstax.org/books/organic-chemistry/pages/21-3-reactions-of-carboxylic-acids",
+    "esterReduction": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "chaikinBrownBorohydride": "https://doi.org/10.1021/ja01169a033",
+    "coldPermanganate": "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
+    "permanganateCleavage": "https://openstax.org/books/organic-chemistry/pages/8-8-oxidation-of-alkenes-cleavage-to-carbonyl-compounds",
+    "benzylicOxidation": "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds",
+    "grignardCompatibility": "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
+    "grignardNitrile": "https://openstax.org/books/organic-chemistry/pages/20-7-chemistry-of-nitriles",
+    "grignardFormation": "https://openstax.org/books/organic-chemistry/pages/10-6-reactions-of-alkyl-halides-grignard-reagents",
+    "esterGrignardLoading": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "grignardAcidicHydrogens": "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
+    "regioAddition": "https://openstax.org/books/organic-chemistry/pages/7-8-orientation-of-electrophilic-additions-markovnikovs-rule",
+    "williamsonEther": "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers",
+    "productHX": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "dibalNitrile": "https://www.chem.ucla.edu/~harding/IGOC/D/dibal.html",
+    "dibalEster": "https://openstax.org/books/organic-chemistry/pages/21-6-chemistry-of-esters",
+    "alcoholHalide": "https://openstax.org/books/organic-chemistry/pages/10-5-preparing-alkyl-halides-from-alcohols",
+    "alkyneHalogenation": "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "passerini": "https://doi.org/10.1021/acs.joc.5c00236",
+    "alkyneReduction": "https://openstax.org/books/organic-chemistry/pages/9-5-reduction-of-alkynes",
+    "complexEsterCoupling": "https://doi.org/10.1002/anie.197805221",
+    "alkoxyamineAcylation": "https://doi.org/10.3762/bjoc.10.35",
+    "methoxyamineAcylation": "https://doi.org/10.1021/acs.jmedchem.3c00415",
+    "exhaustiveAcetylation": "https://www.ncbi.nlm.nih.gov/books/NBK593851/"
   },
   "naming": [
     {
@@ -326,7 +349,8 @@
         "CCBr"
       ],
       "source": "alkeneReactions",
-      "conditions": {}
+      "conditions": {},
+      "regioStatus": "equivalent"
     },
     {
       "label": "Acid hydration",
@@ -394,6 +418,1735 @@
       ],
       "source": "esterification",
       "conditions": {}
+    },
+    {
+      "label": "Mild hydride retains tert-butyl ester",
+      "compounds": [
+        {
+          "smiles": "O=CCCC(=O)OC(C)(C)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OCCCC(=O)OC(C)(C)C"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Strong hydride reduces aldehyde and tert-butyl ester",
+      "compounds": [
+        {
+          "smiles": "O=CCCC(=O)OC(C)(C)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Li+].[AlH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-lialh4",
+      "products": [
+        "OCCCCO",
+        "CC(C)(C)O"
+      ],
+      "source": "esterReduction",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "PCC retains tertiary alcohol during primary oxidation",
+      "compounds": [
+        {
+          "smiles": "OCCC(C)(C)O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1",
+          "role": "reagent"
+        }
+      ],
+      "rule": "oxidation-pcc",
+      "products": [
+        "O=CCC(C)(C)O"
+      ],
+      "source": "alcoholOxidation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      }
+    },
+    {
+      "label": "Carbonyl reduction retains labelled oxygen",
+      "compounds": [
+        {
+          "smiles": "CC=[18O]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC[18OH]"
+      ],
+      "source": "carbonylReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Literature selectivity pattern: meta-nitrobenzaldehyde reduction",
+      "compounds": [
+        {
+          "smiles": "O=Cc1cccc([N+](=O)[O-])c1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OCc1cccc([N+](=O)[O-])c1"
+      ],
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "methanol"
+        ]
+      }
+    },
+    {
+      "label": "Literature selectivity pattern: alpha-bromoacetophenone reduction",
+      "compounds": [
+        {
+          "smiles": "O=C(CBr)c1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "OC(CBr)c1ccccc1"
+      ],
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "methanol"
+        ]
+      }
+    },
+    {
+      "label": "Cold alkaline permanganate hydroxylation",
+      "compounds": [
+        {
+          "smiles": "C=C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dihydroxylation",
+      "products": [
+        "OCCO"
+      ],
+      "source": "coldPermanganate",
+      "conditions": {
+        "temperature": 0,
+        "solvents": [
+          "water"
+        ],
+        "additives": [
+          "naoh"
+        ]
+      }
+    },
+    {
+      "label": "Heated permanganate cleavage endpoints",
+      "compounds": [
+        {
+          "smiles": "CCC=CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "permanganate-cleavage",
+      "products": [
+        "CCC(=O)O",
+        "CC(=O)O"
+      ],
+      "source": "permanganateCleavage",
+      "conditions": {
+        "temperature": 80,
+        "solvents": [
+          "water"
+        ],
+        "additives": []
+      }
+    },
+    {
+      "label": "Heated benzylic oxidation endpoint",
+      "compounds": [
+        {
+          "smiles": "CCc1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[O-][Mn](=O)(=O)=O.[K+]",
+          "role": "reagent"
+        }
+      ],
+      "rule": "side-chain-oxidation",
+      "products": [
+        "O=C(O)c1ccccc1"
+      ],
+      "source": "benzylicOxidation",
+      "conditions": {
+        "temperature": 80,
+        "solvents": [
+          "water"
+        ],
+        "additives": []
+      }
+    },
+    {
+      "label": "Formaldehyde Grignard addition in ether",
+      "compounds": [
+        {
+          "smiles": "C=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CCCO"
+      ],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Nitrile as explicit Grignard substrate in ether",
+      "compounds": [
+        {
+          "smiles": "N#Cc1ccccc1",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "CCC(=O)c1ccccc1"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard formation in THF",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [
+        "CC[Mg]Br"
+      ],
+      "source": "grignardFormation",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "additives": [
+          "mg"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Ester as explicit Grignard substrate in ether",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "2"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Ester Grignard net endpoint at half stoichiometric ceiling",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "1"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "esterGrignardLoading",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Ester Grignard net endpoint with sufficient recorded loading",
+      "compounds": [
+        {
+          "smiles": "CCOC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent",
+          "equiv": "2"
+        }
+      ],
+      "rule": "grignard",
+      "products": [
+        "CC(C)(C)O",
+        "CCO"
+      ],
+      "loadingCeiling": 1,
+      "source": "esterGrignardLoading",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Hydride net endpoint at half ideal stoichiometric ceiling",
+      "compounds": [
+        {
+          "smiles": "CC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent",
+          "equiv": "0.125"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC(O)C"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "Hydride net endpoint with sufficient ideal recorded loading",
+      "compounds": [
+        {
+          "smiles": "CC(C)=O",
+          "role": "reactant",
+          "equiv": "1"
+        },
+        {
+          "smiles": "[Na+].[BH4-]",
+          "role": "reagent",
+          "equiv": "0.25"
+        }
+      ],
+      "rule": "reduction-nabh4",
+      "products": [
+        "CC(O)C"
+      ],
+      "loadingCeiling": 1,
+      "source": "chaikinBrownBorohydride",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ]
+      }
+    },
+    {
+      "label": "2-Pentene HBr gives two represented positional alternatives without an assigned ratio",
+      "compounds": [
+        {
+          "smiles": "CC=CCC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)CCC"
+      ],
+      "positionalProducts": [
+        "CC(Br)CCC",
+        "CCC(Br)CC"
+      ],
+      "regioStatus": "unresolved",
+      "comparison": "connectivity",
+      "source": "regioAddition",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Symmetric 2-butene HBr orientations are constitutionally equivalent",
+      "compounds": [
+        {
+          "smiles": "CC=CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)CC"
+      ],
+      "positionalProducts": [
+        "CC(Br)CC"
+      ],
+      "regioStatus": "equivalent",
+      "comparison": "connectivity",
+      "source": "regioAddition",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Exhaustive ethylene glycol O-methylation is one net operation",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCCOC"
+      ],
+      "loadingCeiling": 1,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Exhaustive catechol O-methylation is one net operation",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COc1ccccc1OC"
+      ],
+      "loadingCeiling": 1,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "One methyl equivalent bounds the exhaustive endpoint at 50 percent; no partial-isomer distribution inferred",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCCOC"
+      ],
+      "loadingCeiling": 0.5,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Three-site exhaustive glycerol methylation",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 3
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCC(OC)COC"
+      ],
+      "loadingCeiling": 1.0,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Four-site exhaustive polyphenol methylation",
+      "compounds": [
+        {
+          "smiles": "Oc1c(O)c(O)c(O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 4
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 4
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COc1c(OC)c(OC)c(OC)cc1"
+      ],
+      "loadingCeiling": 1.0,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Three-site endpoint with two methyl equivalents has a two-thirds upper bound",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[Na+].[H-]",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-methylation",
+      "products": [
+        "COCC(OC)COC"
+      ],
+      "loadingCeiling": 0.6666666666666666,
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Vinyl endpoint product-survival assessment with 1 HX equivalents",
+      "compounds": [
+        {
+          "smiles": "CC#C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)=C"
+      ],
+      "productSurvivalStatus": "review",
+      "source": "productHX",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Vinyl endpoint product-survival assessment with 2 HX equivalents",
+      "compounds": [
+        {
+          "smiles": "CC#C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "Br",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "hydrohalogenation",
+      "products": [
+        "CC(Br)=C"
+      ],
+      "productSurvivalStatus": "conflict",
+      "source": "productHX",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Cold DIBAL nitrile hydrolysis endpoint",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "CC=O"
+      ],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Nitrogen-15 is removed rather than transmuted into oxygen; carbon-13 stays",
+      "compounds": [
+        {
+          "smiles": "C[13C]#[15N]",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "C[13CH]=O"
+      ],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Ester carbonyl oxygen-18 is preserved in the graph endpoint; exchange unmodeled",
+      "compounds": [
+        {
+          "smiles": "CC(=[18O])OC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "dibal",
+      "products": [
+        "CC=[18O]",
+        "CO"
+      ],
+      "source": "dibalEster",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78,
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity C[13C]#[15N] / C[Mg]Br",
+      "compounds": [
+        {
+          "smiles": "C[13C]#[15N]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "C[13C](=O)C"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity CC#N / [13CH3][Mg]Br",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[13CH3][Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "CC(=O)[13CH3]"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Grignard nitrile hydrolysis atom identity COCC#[15N] / C[Mg]Br",
+      "compounds": [
+        {
+          "smiles": "COCC#[15N]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [
+        "COCC(=O)C"
+      ],
+      "source": "grignardNitrile",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ]
+      }
+    },
+    {
+      "label": "Hydroxyl substitution atom identity C[13CH2][18OH]",
+      "compounds": [
+        {
+          "smiles": "C[13CH2][18OH]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "P(Br)(Br)Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "alcohol-halide",
+      "products": [
+        "C[13CH2]Br"
+      ],
+      "source": "alcoholHalide"
+    },
+    {
+      "label": "Hydroxyl substitution atom identity C[C@H]([18OH])CC",
+      "compounds": [
+        {
+          "smiles": "C[C@H]([18OH])CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "P(Br)(Br)Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "alcohol-halide",
+      "products": [
+        "C[C@@H](Br)CC"
+      ],
+      "source": "alcoholHalide"
+    },
+    {
+      "label": "Hydroxyl substitution atom identity CC(=[18O])[17OH]",
+      "compounds": [
+        {
+          "smiles": "CC(=[18O])[17OH]",
+          "role": "reactant"
+        },
+        {
+          "smiles": "O=S(Cl)Cl",
+          "role": "reagent"
+        }
+      ],
+      "rule": "acid-chloride",
+      "products": [
+        "CC(=[18O])Cl"
+      ],
+      "source": "esterification"
+    },
+    {
+      "label": "BrBr partial alkyne addition with 1 equivalent(s): review",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Br)=C(Br)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "review"
+    },
+    {
+      "label": "BrBr partial alkyne addition with 2 equivalent(s): conflict",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "BrBr",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Br)=C(Br)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "conflict"
+    },
+    {
+      "label": "ClCl partial alkyne addition with 1 equivalent(s): review",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "ClCl",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Cl)=C(Cl)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "review"
+    },
+    {
+      "label": "ClCl partial alkyne addition with 2 equivalent(s): conflict",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "ClCl",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "halogenation-alkyne",
+      "products": [
+        "C/C(Cl)=C(Cl)/C"
+      ],
+      "source": "alkyneHalogenation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ]
+      },
+      "productSurvivalStatus": "conflict"
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1ccccc1O",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1ccccc1OCC"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1cc(O)cc(O)c1",
+      "compounds": [
+        {
+          "smiles": "Oc1cc(O)cc(O)c1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 3
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 3
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1cc(OCC)cc(OCC)c1"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation Oc1c(O)c(O)c(O)cc1",
+      "compounds": [
+        {
+          "smiles": "Oc1c(O)c(O)c(O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 4
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 4
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "CCOc1c(OCC)c(OCC)c(OCC)cc1"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "One-operation phenolic ethylation C[C@H](OC)c1cc(O)ccc1O",
+      "compounds": [
+        {
+          "smiles": "C[C@H](OC)c1cc(O)ccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [
+        "C[C@H](OC)c1cc(OCC)ccc1OCC"
+      ],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CC=O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(OC(C)=O)C(=O)NC"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CC=O / [C-]#[N+]C(C)(C)C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C(C)(C)C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(OC(C)=O)C(=O)NC(C)(C)C"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint O=Cc1ccccc1 / [C-]#[N+]C1CCCCC1",
+      "compounds": [
+        {
+          "smiles": "O=Cc1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C1CCCCC1",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CCC(=O)OC(c1ccccc1)C(=O)NC1CCCCC1"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint CCC=O / [C-]#[N+]CC",
+      "compounds": [
+        {
+          "smiles": "CCC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "O=C(O)c1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]CC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CCC(OC(=O)c1ccccc1)C(=O)NCC"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Passerini three-component endpoint O=CCc1ccccc1 / [C-]#[N+]C(C)(C)C",
+      "compounds": [
+        {
+          "smiles": "O=CCc1ccccc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C(C)(C)C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [
+        "CC(=O)OC(Cc1ccccc1)C(=O)NC(C)(C)C"
+      ],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Lindlar geometric endpoint CC#CC",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "lindlar",
+      "products": [
+        "C/C=C\\C"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ],
+        "additives": [
+          "lindlar"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dissolving-metal geometric endpoint CC#CC",
+      "compounds": [
+        {
+          "smiles": "CC#CC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "dissolving-metal",
+      "products": [
+        "C/C=C/C"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "none"
+        ],
+        "additives": [
+          "nanh3"
+        ],
+        "temperature": -33
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Lindlar geometric endpoint CCC#CCC",
+      "compounds": [
+        {
+          "smiles": "CCC#CCC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[H][H]",
+          "role": "reagent",
+          "equiv": 1
+        }
+      ],
+      "rule": "lindlar",
+      "products": [
+        "CC/C=C\\CC"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "ethanol"
+        ],
+        "additives": [
+          "lindlar"
+        ]
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dissolving-metal geometric endpoint CCC#CCC",
+      "compounds": [
+        {
+          "smiles": "CCC#CCC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "dissolving-metal",
+      "products": [
+        "CC/C=C/CC"
+      ],
+      "source": "alkyneReduction",
+      "conditions": {
+        "solvents": [
+          "none"
+        ],
+        "additives": [
+          "nanh3"
+        ],
+        "temperature": -33
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Methoxyethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "COCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCOC)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Dimethylaminoethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CN(C)CCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCN(C)C)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Boc aminoethyl anisate",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)(C)OC(=O)NCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [
+        "COc1ccc(C(=O)OCCNC(=O)OC(C)(C)C)cc1"
+      ],
+      "source": "complexEsterCoupling",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Methoxyamine N acylation",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CON",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "CONC(=O)c1ccc(OC)cc1"
+      ],
+      "source": "methoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Weinreb amide coupling",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Weinreb amide from acid chloride",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)Cl)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "acyl-substitution",
+      "products": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Isotope labelled Weinreb coupling",
+      "compounds": [
+        {
+          "smiles": "COc1ccc(C(=O)O)cc1",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[13CH3]O[15NH]C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [
+        "[13CH3]O[15N](C)C(=O)c1ccc(OC)cc1"
+      ],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      },
+      "loadingCeiling": 1
+    },
+    {
+      "label": "Exhaustive acetylation OCCO",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 3.0
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [
+        "CC(=O)OCCOC(C)=O",
+        "CC(=O)O"
+      ],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation",
+      "loadingCeiling": 1,
+      "countedProducts": [
+        "CC(=O)OCCOC(C)=O",
+        "CC(=O)O",
+        "CC(=O)O"
+      ]
+    },
+    {
+      "label": "Exhaustive acetylation OCC(O)CO",
+      "compounds": [
+        {
+          "smiles": "OCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 4.5
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [
+        "CC(=O)OCC(OC(C)=O)COC(C)=O",
+        "CC(=O)O"
+      ],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation",
+      "loadingCeiling": 1,
+      "countedProducts": [
+        "CC(=O)OCC(OC(C)=O)COC(C)=O",
+        "CC(=O)O",
+        "CC(=O)O",
+        "CC(=O)O"
+      ]
     }
   ],
   "negativeReactions": [
@@ -532,6 +2285,611 @@
       "products": [],
       "source": "alkeneReactions",
       "conditions": {}
+    },
+    {
+      "label": "No clean intended addition assigned with competing acetone solvent",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "acetone"
+        ]
+      }
+    },
+    {
+      "label": "No isolated Grignard assigned with competing nitrile solvent",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "mecn"
+        ],
+        "additives": [
+          "mg"
+        ],
+        "atmosphere": "n2"
+      }
+    },
+    {
+      "label": "No clean carbonyl addition assigned with a separate thiol donor",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CS",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "No clean nitrile addition assigned with a free terminal alkyne",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "C#CC",
+          "role": "reactant"
+        }
+      ],
+      "rule": "grignard-nitrile",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "Catalyst ketone is not inert during Grignard carboxylation",
+      "compounds": [
+        {
+          "smiles": "O=C=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C[Mg]Br",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CC(=O)C",
+          "role": "catalyst"
+        }
+      ],
+      "rule": "grignard-carboxylation",
+      "products": [],
+      "source": "grignardCompatibility",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": []
+      }
+    },
+    {
+      "label": "No isolated Grignard assigned with a terminal alkyne donor",
+      "compounds": [
+        {
+          "smiles": "CCBr",
+          "role": "reactant"
+        },
+        {
+          "smiles": "C#CC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "grignard-formation",
+      "products": [],
+      "source": "grignardAcidicHydrogens",
+      "conditions": {
+        "solvents": [
+          "ether"
+        ],
+        "atmosphere": "n2",
+        "additives": [
+          "mg"
+        ]
+      }
+    },
+    {
+      "label": "No clean DIBAL reduction in reaction-stage water",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "water"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "No solvent-independent DIBAL endpoint in acetone",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "acetone"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "Warm DIBAL nitrile endpoint remains outside modeled scope",
+      "compounds": [
+        {
+          "smiles": "CC#N",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No clean aldehyde-only reduction claimed with an unmodeled amide site",
+      "compounds": [
+        {
+          "smiles": "CN(C)C(=O)CCC=O",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "No clean ester-only reduction claimed while retaining an acyl chloride",
+      "compounds": [
+        {
+          "smiles": "COC(=O)CCC(=O)Cl",
+          "role": "reactant"
+        },
+        {
+          "smiles": "CC(C)C[AlH]CC(C)C",
+          "role": "reagent"
+        }
+      ],
+      "rule": "dibal",
+      "products": [],
+      "source": "dibalNitrile",
+      "conditions": {
+        "solvents": [
+          "toluene"
+        ],
+        "temperature": -78
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation OCCO / CCBr",
+      "compounds": [
+        {
+          "smiles": "OCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation Oc1ccccc1O / CC(C)Br",
+      "compounds": [
+        {
+          "smiles": "Oc1ccccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(C)Br",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      }
+    },
+    {
+      "label": "Outside bounded exhaustive ethylation Nc1cc(O)ccc1O / CCBr",
+      "compounds": [
+        {
+          "smiles": "Nc1cc(O)ccc1O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CCBr",
+          "role": "reactant",
+          "equiv": 2
+        },
+        {
+          "smiles": "[K+].[K+].[O-]C([O-])=O",
+          "role": "reagent",
+          "equiv": 2
+        }
+      ],
+      "rule": "exhaustive-o-ethylation",
+      "products": [],
+      "source": "williamsonEther",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ]
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC(=O)C / CC(=O)O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC(=O)C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=O)O / CC#N",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC#N",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini NCCC=O / CC(=O)O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "NCCC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=[18O])O / [C-]#[N+]C",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=[18O])O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Outside bounded Passerini CC=O / CC(=O)O / [C-]#[N+]C / CN",
+      "compounds": [
+        {
+          "smiles": "CC=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "[C-]#[N+]C",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CN",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "passerini",
+      "products": [],
+      "source": "passerini",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No ester branch through alkoxyamino alcohol",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONCCO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "C1CCC(CC1)N=C=NC1CCCCC1",
+          "role": "reagent",
+          "equiv": 1.1
+        }
+      ],
+      "rule": "steglich",
+      "products": [],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "No unactivated Weinreb coupling",
+      "compounds": [
+        {
+          "smiles": "CC(=O)O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CONC",
+          "role": "reactant",
+          "equiv": 1
+        }
+      ],
+      "rule": "amide-coupling",
+      "products": [],
+      "source": "alkoxyamineAcylation",
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "dmap"
+        ],
+        "temperature": 25
+      }
+    },
+    {
+      "label": "Excluded exhaustive acetylation NCC(O)CO",
+      "compounds": [
+        {
+          "smiles": "NCC(O)CO",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 6
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation"
+    },
+    {
+      "label": "Excluded exhaustive acetylation OCC(O)C=O",
+      "compounds": [
+        {
+          "smiles": "OCC(O)C=O",
+          "role": "reactant",
+          "equiv": 1
+        },
+        {
+          "smiles": "CC(=O)OC(C)=O",
+          "role": "reagent",
+          "equiv": 6
+        }
+      ],
+      "rule": "exhaustive-o-acetylation",
+      "products": [],
+      "conditions": {
+        "solvents": [
+          "dcm"
+        ],
+        "additives": [
+          "pyr"
+        ],
+        "temperature": 25
+      },
+      "source": "exhaustiveAcetylation"
     }
   ],
   "roundTrips": [

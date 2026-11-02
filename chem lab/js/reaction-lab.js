@@ -35,7 +35,7 @@ function createReactionLab(host) {
   const rxnButton = document.getElementById('rx-download-rxn');
 
   const saved = restoreReactionState(host.storageGet('reaction') || '');
-  const state = { compounds: saved.compounds, conditions: saved.conditions, route: saved.route, prediction: null, branches: null, selected: '' };
+  const state = { compounds: saved.compounds, conditions: saved.conditions, route: saved.route, prediction: null, branches: null, selected: '', productStates:reactionProductStatesNormalize(saved.productStates) };
 
   let scale = Number(host.storageGet('reactionScale')) || 1;
   scaleInput.value = String(scale);
@@ -178,6 +178,7 @@ function createReactionLab(host) {
     }
     const info = reactionDescribeFragment(parsed.fragment);
     const compound = {
+      materialState:reactionMaterialStateResolve(parsed.materialState,parsed.smiles,state.conditions),
       input: parsed.input,
       smiles: parsed.smiles,
       fragment: parsed.fragment,
@@ -333,6 +334,7 @@ function createReactionLab(host) {
     cards.innerHTML = '';
     emptyHint.hidden = state.compounds.length > 0;
     state.compounds.forEach((compound, index) => {
+      compound.materialState=reactionMaterialStateResolve(compound.materialState,compound.smiles,state.conditions);
       const card = document.createElement('div');
       card.className = 'rx-card role-' + compound.role;
       card.dataset.index = String(index);
@@ -393,7 +395,8 @@ function createReactionLab(host) {
         renderSummary();
       });
       controls.append(role, equiv, equivLabel);
-      body.append(title, meta, controls);
+      const phaseControls=reactionMaterialStateControl(compound.materialState,value=>{compound.materialState=reactionMaterialStateResolve(value,compound.smiles,state.conditions);save();});
+      body.append(title,meta,controls,phaseControls);if(typeof physicalPropertiesElement==='function')body.append(physicalPropertiesElement(compound.smiles,()=>{compound.materialState=reactionMaterialStateResolve(compound.materialState,compound.smiles,state.conditions);phaseControls.updateMaterialState(compound.materialState);save();}));
       card.append(thumb, body, remove);
       cards.appendChild(card);
       drawFragment(thumb, compound.fragment, 10, 0.5);
@@ -418,6 +421,7 @@ function createReactionLab(host) {
     state.conditions = normalizeReactionConditions(state.conditions);
     save();
     renderConditions();
+    renderCards();
     renderSummary();
   }
 
@@ -618,9 +622,10 @@ function createReactionLab(host) {
 
   function currentScheme() {
     const outcome = chosenOutcome();
+    if(outcome&&outcome.regioselectivity&&outcome.regioselectivity.alternativesRole)return buildReactionScheme(state.compounds,state.conditions,outcome.products.concat(outcome.minor||[]).map(reactionProductFragment),outcome.products.concat(outcome.minor||[]).map(()=> 'Unranked positional alternative'));
     if (outcome && outcome.ratio && outcome.products.length === 1 && (outcome.minor || []).length === 1) {
       return buildReactionScheme(state.compounds, state.conditions, outcome.products.concat(outcome.minor).map(reactionProductFragment),
-        ['~' + outcome.ratio[0] + '% (major)', '~' + outcome.ratio[1] + '% (minor)']);
+        [(outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[0] + '% (major)', (outcome.regioselectivity?'Heuristic ~':'~') + outcome.ratio[1] + '% (minor)']);
     }
     return buildReactionScheme(state.compounds, state.conditions, outcome ? outcome.products.map(reactionProductFragment) : []);
   }
@@ -660,20 +665,22 @@ function createReactionLab(host) {
     table.appendChild(head);
     stoich.rows.forEach((r) => {
       const row = element('tr');
-      const status = r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
+      const status = r.status === 'unknown' ? 'unresolved' : r.status === 'limiting' ? 'limiting' : r.status === 'excess' ? 'excess (+' + (Math.round(r.leftover * 100) / 100) + ')' : 'exact';
       row.append(element('td', '', r.label), element('td', '', (Math.round(r.need * 100) / 100) + ' equiv'),
-        element('td', '', r.have + ' equiv'), element('td', 'rx-stoich-status ' + r.status, status));
+        element('td', '', Number.isFinite(r.have)?r.have+' equiv':'Unknown'), element('td', 'rx-stoich-status ' + r.status, status));
       table.appendChild(row);
     });
     box.appendChild(table);
-    box.appendChild(element('div', 'rx-stoich-yield' + (stoich.conversion < 0.999 ? ' short' : ''),
-      'Max. conversion of ' + stoich.rows[0].label + ': ' + Math.round(stoich.conversion * 100) + '%' +
-      (stoich.limiting && stoich.limiting !== stoich.rows[0] ? ' (limited by ' + stoich.limiting.label + ')' : '')));
+    const knownCeiling=Number.isFinite(stoich.conversion);
+    box.appendChild(element('div', 'rx-stoich-yield' + (!knownCeiling || stoich.conversion < 1-1e-9 ? ' short' : ''),
+      'Stoichiometric ceiling for ' + stoich.rows[0].label + ': ' + (knownCeiling?rxFormatEquiv(stoich.conversion*100)+'%':'unresolved') +
+      '. This is an amount-based upper bound, not a predicted conversion or isolated yield.'));
     return box;
   }
 
   function renderPrediction() {
     predictionBox.innerHTML = '';
+    predictionBox.appendChild(reactionPurificationControl(renderPrediction));if(typeof physicalPropertiesAutoControl==='function')predictionBox.appendChild(physicalPropertiesAutoControl(renderPrediction));
     const p = state.prediction;
     const outcome = chosenOutcome();
     if (!outcome) {
@@ -694,23 +701,30 @@ function createReactionLab(host) {
     const addCard = (product, minor, index) => {
       const fragment = reactionProductFragment(product);
       const info = reactionDescribeFragment(fragment);
-      const card = element('div', 'rx-product' + (minor ? ' minor' : ''));
+      const card = element('div', 'rx-product' + (minor&&!(outcome.regioselectivity&&outcome.regioselectivity.alternativesRole) ? ' minor' : ''));
       const canvas = element('canvas', 'rx-product-thumb');
       const shown = productDisplayName(product);
       const label = element('div', 'rx-product-name', (product.count > 1 ? product.count + ' × ' : '') + (shown || info.formula));
       const formulaLine = element('div', 'rx-product-formula', '');
-      formulaLine.innerHTML = '<span>' + (minor ? 'minor · ' : '') + (ratio && index === 0 ? '~' + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
-      card.append(canvas, label, formulaLine);
+      formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
+      const stateKey=product.isomericSmiles||product.smiles;
+      product.materialState=reactionMaterialStateResolve(state.productStates[stateKey],stateKey,state.conditions);
+      let use=null;
+      const purification=element('div');
+      const refreshPurification=()=>{purification.replaceChildren();if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(product);purification.append(reactionPurificationElement(plan));if(use){use.disabled=plan.status!=='modeled';use.textContent='Use purified product →';}}else if(use){use.disabled=false;use.textContent='Use as reactant →';}};
+      const phaseControls=reactionMaterialStateControl(product.materialState,value=>{product.materialState=reactionMaterialStateResolve(value,stateKey,state.conditions);state.productStates[stateKey]=value;save();refreshPurification();});
+      card.append(canvas,label,formulaLine,phaseControls,purification);if(typeof physicalPropertiesElement==='function')card.append(physicalPropertiesElement(stateKey,()=>{product.materialState=reactionMaterialStateResolve(state.productStates[stateKey],stateKey,state.conditions);phaseControls.updateMaterialState(product.materialState);refreshPurification();}));
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
       }
       if (product.smiles && product.smiles.indexOf('.') < 0) {
-        const use = element('button', 'text-button rx-use-product', 'Use as reactant \u2192');
+        use = element('button', 'text-button rx-use-product', 'Use as reactant \u2192');
         use.type = 'button';
         use.title = 'Add this step to the route and start the next step from this product';
         use.addEventListener('click', () => useAsReactant(outcome, product, minor));
         card.appendChild(use);
       }
+      refreshPurification();
       products.appendChild(card);
       thumbs.push([canvas, fragment]);
       if (!minor) {
@@ -786,6 +800,11 @@ function createReactionLab(host) {
       });
       predictionBox.appendChild(inspect);
     }
+    if(outcome.productSurvival){
+      const audit=outcome.productSurvival,box=element('details','rx-evidence');box.append(element('summary','','Product survival · '+rxProductSurvivalLabel(audit.status)),element('p','',audit.message),element('p','',audit.coverage));
+      const availability={'recorded-excess-upper-bound':'recorded amounts leave a theoretical excess','modeled-exhaustion':'no excess in net stoichiometry; actual residue unknown','not-quantified':'remaining amount is not quantified'};
+      const list=element('ul');audit.issues.forEach(i=>list.append(element('li','',(i.productRole==='alternative'?'Alternative':'Product')+' '+i.product+': '+(RX_CHEMO_GROUP_LABELS[i.group]||i.group)+' may react with '+i.label+'; '+availability[i.availability]+'.')));box.append(list);predictionBox.append(box);
+    }
     const chemo = outcome.chemoselectivity;
     const warnings = chemo ? outcome.warnings.filter((w) => w.indexOf('Chemoselectivity: ') !== 0) : outcome.warnings;
     if (warnings.length) {
@@ -803,7 +822,7 @@ function createReactionLab(host) {
       }
       if (chemo.competing.length) {
         const list = element('ul', 'rx-chemo-sites');
-        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + ' still present')));
+        chemo.competing.forEach((c) => list.appendChild(element('li', '', label(c.group) + (c.count > 1 ? ' ×' + c.count : '') + (c.source === 'unconsumed-input' ? ' in additional input · ' + c.substrateSmiles : ' still present'))));
         box.appendChild(list);
       }
       if (chemo.suggestion) {
@@ -850,6 +869,8 @@ function createReactionLab(host) {
       setMessage('A route can have at most ' + REACTION_ROUTE_LIMITS.maxSteps + ' steps', 'error');
       return;
     }
+    const purification=reactionPurificationEnabled()?reactionPurificationPlan(product):null;
+    if(purification&&purification.status!=='modeled'){setMessage('Assign the purified output state and solvent before carrying it forward.','error');return;}
     const last = state.route[state.route.length - 1];
     const step = reactionRouteStep(state.compounds, state.conditions, outcome, product, minor, last ? last.to.smiles : null);
     if (!step) {
@@ -859,11 +880,12 @@ function createReactionLab(host) {
     if (last && last.to.smiles !== step.from.smiles) {
       state.route = [];
     }
+    if(purification)step.purification=purification;
     state.route.push(step);
     state.compounds = [];
     state.conditions = defaultReactionConditions();
     state.selected = '';
-    addCompound({ input: step.to.smiles, smiles: step.to.smiles, fragment: step.to.fragment, source: 'route' }, 'reactant');
+    addCompound({ input: step.to.smiles, smiles: step.to.smiles, fragment: step.to.fragment, materialState:step.to.materialState, source: 'route' }, 'reactant');
     save();
     renderAll();
     setMessage('Step ' + state.route.length + ' added to the route \u2014 choose reagents and conditions for the next step', 'ok');
@@ -958,11 +980,13 @@ function createReactionLab(host) {
       const metrics = reactionRouteMetrics(state.route);
       total.textContent = state.route.length + ' step' + (state.route.length === 1 ? '' : 's') + ' \u00b7 overall ' + reactionRouteYield(state.route) + '%' +
         (metrics && metrics.pmi !== null ? ' \u00b7 PMI ' + metrics.pmi.toFixed(1) : '');
+      if(reactionPurificationEnabled()){const count=state.route.filter(step=>step.purification).length;if(count)total.textContent+=' + '+count+' purification(s), recovery unmodeled';}
       drawFragment(canvas, buildRouteScheme(state.route), 14);
     };
     state.route.forEach((step) => {
       const li = element('li', 'rx-route-step');
-      const text = element('span', 'rx-route-text', step.from.name + ' \u2192 ' + step.to.name);
+      if(reactionPurificationEnabled()&&step.purification)li.appendChild(reactionPurificationElement(step.purification));
+      const text = element('span', 'rx-route-text', step.from.name + ' ['+reactionMaterialStateLabel(step.from.materialState)+'] \u2192 ' + step.to.name+' ['+reactionMaterialStateLabel(step.to.materialState)+']');
       text.title = [step.reaction, step.above, step.below].filter(Boolean).join(' \u00b7 ');
       const yieldInput = element('input', 'rx-route-yield');
       yieldInput.type = 'number';
@@ -994,7 +1018,7 @@ function createReactionLab(host) {
       state.compounds = [];
       state.conditions = defaultReactionConditions();
       state.selected = '';
-      addCompound({ input: step.from.smiles, smiles: step.from.smiles, fragment: step.from.fragment || smilesToFragment(step.from.smiles), source: 'route' }, 'reactant');
+      addCompound({ input: step.from.smiles, smiles: step.from.smiles, fragment: step.from.fragment || smilesToFragment(step.from.smiles), materialState:step.from.materialState, source: 'route' }, 'reactant');
       save();
       renderAll();
       setMessage('Removed the last step', '');
@@ -1029,7 +1053,7 @@ function createReactionLab(host) {
       ['Over the arrow', labels.above || '—'],
       ['Under the arrow', labels.below || '—'],
       ['Products', outcome ? outcome.products.map((pr) => (pr.count > 1 ? pr.count + ' × ' : '') + (productDisplayName(pr) || pr.smiles)).join(' + ') +
-        (outcome.minor.length ? ' (minor' + (outcomeRatio(outcome) ? ' ~' + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
+        (outcome.minor.length ? (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?' (unranked positional alternatives':' (minor') + (outcomeRatio(outcome) ? (outcome.regioselectivity?' heuristic ~':' ~') + outcome.ratio[1] + '%' : '') + ': ' + outcome.minor.map((pr) => productDisplayName(pr) || pr.smiles).join(', ') + ')' : '') : '—'],
     ];
     if (state.conditions.notes.trim()) {
       lines.push(['Notes', state.conditions.notes.trim()]);
@@ -1208,9 +1232,10 @@ function createReactionLab(host) {
         renderSummary();
       }
     },
-    addSmiles(smiles, role) {
-      return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), source: 'api' }, role);
+    addSmiles(smiles, role, materialState) {
+      return addCompound({ input: smiles, smiles, fragment: smilesToFragment(smiles), materialState, source: 'api' }, role);
     },
+    setProductState(smiles,value){state.productStates[smiles]=reactionMaterialStateNormalize(value);save();},
     importReaction,
   };
 }

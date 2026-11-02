@@ -15,7 +15,7 @@ python -B tools/repin.py --report validation/reference-update-validation.json
 ```
 
 This rebuilds the fingerprint version, descriptive tags and family coverage,
-curated overlay, receptor tags, structural motifs, matched pairs, release
+curated overlay, receptor tags, local reference-graph descriptors, structural motifs, matched pairs, release
 snapshots, receptor diversity and coverage, shared counts and retrieval benchmark
 in dependency order. It then checks the current source pins and runs **every
 script registered in `tools/run-validation.js`**. The report records individual

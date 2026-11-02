@@ -51,7 +51,37 @@ function rx6HydroxyPartners(ctx, source) {
   ctx.solventNucleophiles.filter(n=>n.alcohol).forEach(n=>ps.push({graph:n.graph,atom:n.atom}));
   return ps;
 }
+// Exhaustive O-acetylation is a single net operation, not selective first-site
+// acylation. Protocol: https://www.ncbi.nlm.nih.gov/books/NBK593851/
+function rx6PolyolAcetylSites(s) {
+  const g=s.graph,sites=[...s.info.alcohols.map(a=>a.o),...rxxPhenols(s).map(a=>a.o)];
+  if(sites.length<2||sites.length>4||g.connectedComponents().length!==1||!rx6Neutral(g,['C','O','H','D'])||
+    s.info.carbonyls.length||s.info.alkenes.length||s.info.alkynes.length||s.info.epoxides.length||s.info.alcohols.some(a=>a.degree>2)||
+    new Set(sites.map(o=>rxCarbonNeighbors(g,o)[0]?.atom.id)).size!==sites.length||
+    sites.some(o=>rxNeighbors(g,o).some(n=>['H','D'].includes(n.atom.element))||rxCarbonNeighbors(g,o).some(n=>rxNeighbors(g,n.atom.id).filter(x=>x.atom.element==='O').length>1))||
+    g.atoms.filter(a=>a.element==='O'&&!sites.includes(a.id)).some(o=>{const ns=rxNeighbors(g,o.id);return ns.length!==2||ns.some(n=>n.atom.element!=='C'||n.bond.order!==1);}))return [];
+  return sites;
+}
+function rx6RuleExhaustiveOAcetylation(ctx) {
+  if(ctx.inputs.length!==2||ctx.substrates.length!==2||ctx.organicCatalysts.length||ctx.protic||ctx.light||ctx.temperature<0||ctx.temperature>40||
+    !ctx.conditions.solvents.length||ctx.conditions.solvents.some(id=>!['dcm','none'].includes(id))||
+    !ctx.conditions.additives.includes('pyr')||ctx.conditions.additives.some(id=>!['pyr','dmap'].includes(id))||
+    [...ctx.species.keys()].some(tag=>!['amineBase','dmap'].includes(tag)))return [];
+  const donor=ctx.substrates.find(s=>{const a=rx6Anhydride(s);return a&&!s.graph.atoms.some(x=>x.isotope)&&[a.left,a.right].every(c=>{const ns=rxCarbonNeighbors(s.graph,c.c);return ns.length===1&&rxHydrogens(s.graph,ns[0].atom.id)===3;});});
+  if(!donor)return [];
+  const s=ctx.substrates.find(s=>s!==donor),sites=rx6PolyolAcetylSites(s);
+  if(!sites.length||[s,donor].some(x=>!['reactant','reagent'].includes(x.compound.role)||reactionFragmentGraph(x.compound.fragment).connectedComponents().length!==1))return [];
+  const a=rx6Anhydride(donor),g=rxCloneGraph(s.graph);
+  sites.forEach(o=>{const m=rxMerge(g,donor.graph,donor.graph.atoms.map(x=>x.id));rxSetOrder(g,m.get(a.left.c),m.get(a.bridge),0);g.addBond(o,m.get(a.left.c));});
+  const out=rx6Out('exhaustive-o-acetylation','Exhaustive O-acetylation ('+sites.length+' sites)',g,s,{score:16,consumes:[rxUse(s,1),rxUse(donor,sites.length)],warnings:[
+    'All two to four eligible OH sites are acetylated in one modeled operation. Selective partial acetylation, kinetics and complete experimental conversion are not established.',
+    'One acetic anhydride molecule per OH is the net consumption model. Practical protocols use excess reagent; the planner supplies 1.5 equivalents per OH. Pyridine is a recorded medium/additive, not a quantified base balance.'
+  ]});
+  out.stoichiometryBasis=s.compound;out.bulkTransformation={kind:'exhaustive-o-acetylation',sites:sites.length,operations:1,scope:'Neutral C/O polyol with two to four primary/secondary alcohol or phenol OH groups; ethers allowed; no selective partial product.'};return [out];
+}
+
 function rx6RuleAnhydrideAlcoholysis(ctx) {
+  const exhaustive=rx6RuleExhaustiveOAcetylation(ctx);if(exhaustive.length)return exhaustive;
   if(ctx.has('H2O')||ctx.has('alanate')||ctx.has('hydroxide')||ctx.has('ammonia'))return [];
   return ctx.substrates.flatMap(s=>{
     const a=rx6Anhydride(s); if(!a||!rx6AnhydrideSymmetric(s,a))return [];
@@ -94,7 +124,7 @@ function rx6RulePeracidAldehyde(ctx) {
 }
 const RX6_DEFINITIONS = [
  ['anhydride-hydrolysis','Acid anhydride hydrolysis',rx6RuleAnhydrideHydrolysis,'Hydrolysis','One neutral anhydride, acyclic or cyclic, water present; no additional oxygen groups.',RX6_SOURCES.anhydride],
- ['anhydride-alcoholysis','Anhydride alcohol/phenol acylation',rx6RuleAnhydrideAlcoholysis,'Acyl substitution','Symmetric acyclic anhydride and one alcohol/phenol partner with no other oxygen group except one carboxylic acid; acid or amine-base activation; no water/base hydrolysis.',RX6_SOURCES.anhydride],
+ ['anhydride-alcoholysis','Anhydride alcohol/phenol acylation',rx6RuleAnhydrideAlcoholysis,'Acyl substitution','Symmetric acyclic anhydride with one OH partner under the original scope; additionally acetic anhydride with a neutral two-to-four-OH C/O polyol in pyridine, dry DCM/neat, 0–40 C gives an exhaustive endpoint. The added polyol scope allows ethers but excludes carbonyls, epoxides, nonaromatic unsaturation, tertiary/geminal OH, extra inputs and explicit O-H/D atoms.',RX6_SOURCES.anhydride],
  ['anhydride-aminolysis','Anhydride amide formation',rx6RuleAnhydrideAminolysis,'Acyl substitution','Symmetric acyclic anhydride plus one neutral primary/secondary monoamine or ammonia; no strong acid/water.',RX6_SOURCES.anhydride],
  ['anhydride-reduction','LiAlH₄ anhydride reduction',rx6RuleAnhydrideReduction,'Reduction','One anhydride in dry ether/THF, no C=C/C≡C, LiAlH₄ present.',RX6_SOURCES.anhydride],
  ['anhydride-formation','Acyl chloride/carboxylate anhydride formation',rx6RuleAnhydrideFormation,'Acyl substitution','One simple acyl chloride and a monocarboxylate, no protic medium or added strong acid/hydroxide/hydride.',RX6_SOURCES.anhydride],
@@ -116,3 +146,5 @@ if(rx6BaeyerVilligerRule){
   return rx6BaeyerVilligerRun(selective);
  };
 }
+
+RX_RULES.find(r=>r.id==='anhydride-alcoholysis').catalog.references.push({title:'GlycoPODv2: O-acetylation using acetic anhydride in pyridine',url:'https://www.ncbi.nlm.nih.gov/books/NBK593851/',kind:'primary'});

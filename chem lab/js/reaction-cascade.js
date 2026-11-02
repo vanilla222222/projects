@@ -4,7 +4,7 @@ const REACTION_CASCADE_SCOPE = 'Up to six explicit stages using existing forward
 
 function reactionCascadeRun(startSmiles, stages, options) {
   const opts=options||{},maxStages=Math.max(1,Math.min(6,Math.floor(Number(opts.maxStages)||6)));
-  const report={status:'invalid',start:'',current:'',target:'',stages:[],route:[],issues:[],scope:REACTION_CASCADE_SCOPE};
+  const report={status:'invalid',start:'',current:'',target:'',stages:[],route:[],handoffs:[],issues:[],scope:REACTION_CASCADE_SCOPE};
   const identity=text=>pathFinderStructure(text);
   const fail=(status,message)=>{report.status=status;report.issues.push(message);return report;};
   if(!Array.isArray(stages)||!stages.length||stages.length>maxStages)return fail('invalid','Supply 1–'+maxStages+' explicit stages.');
@@ -13,7 +13,7 @@ function reactionCascadeRun(startSmiles, stages, options) {
     for(let index=0;index<stages.length;index++){
       const stage=stages[index];
       if(!stage||typeof stage!=='object'||Array.isArray(stage))return fail('invalid','Stage '+(index+1)+' must be an object.');
-      if(index>0&&stage.freshMixture!==true)return fail('blocked','Stage '+(index+1)+' requires freshMixture: true. Carry-over reagents and one-pot compatibility are not modelled.');
+
       const rawReagents=stage.reagents||[];
       if(!Array.isArray(rawReagents)||rawReagents.length>=REACTION_LIMITS.maxCompounds)return fail('invalid','Too many reagents in stage '+(index+1)+'.');
       const from=identity(report.current),compounds=[{smiles:from.smiles,fragment:smilesToFragment(from.smiles),role:'reactant',equiv:1}];
@@ -23,14 +23,25 @@ function reactionCascadeRun(startSmiles, stages, options) {
         if(!['reactant','reagent','catalyst','solvent'].includes(role))return fail('invalid','Unknown reagent role in stage '+(index+1)+'.');
         const fragment=smilesToFragment(input.smiles);
         if(reactionFragmentGraph(fragment).atoms.length>120)return fail('invalid','Each stage reagent is limited to 120 atoms.');
-        compounds.push({smiles:input.smiles,fragment,role,label:String(input.label||'').slice(0,120),equiv:1});
+        const equiv=input.equiv===undefined?'1':String(input.equiv);
+        const amount=reactionParseAmount(equiv);
+        if(!amount)return fail('invalid','Stage '+(index+1)+' has an invalid reagent amount.');
+        if(amount.kind!=='equiv')return fail('invalid','Stage '+(index+1)+' requires reagent equivalents because no carried-material scale is recorded.');
+        compounds.push({smiles:input.smiles,fragment,role,label:String(input.label||'').slice(0,120),equiv});
       }
-      const conditions=normalizeReactionConditions(stage.conditions||{}),prediction=predictReaction(compounds,conditions);
+      const conditions=normalizeReactionConditions(stage.conditions||{});
+      const handoff=index?routeHandoffNormalize(stage.handoff,{freshMixture:stage.freshMixture,onePot:stage.onePot||(!stage.handoff&&stage.freshMixture!==true)}):null;
+      const workup=routeWorkupNormalize(stage.workup);
+      if(index){
+        const boundary=routeHandoffAssess(report.route.at(-1),{compounds,conditions,handoff});report.handoffs.push(boundary);
+        if(boundary.blockers.length)return fail('blocked','Stage '+(index+1)+': '+boundary.blockers.map(b=>b.message).join(' ')+' '+boundary.potentials.map(p=>p.message).join(' '));
+      }
+      const prediction=predictReaction(compounds,conditions);
       const outcomes=[prediction.best,...(prediction.alternatives||[])].filter(Boolean);
       if(outcomes.length>64)return fail('blocked','The stage produced too many alternative branches for this bounded inspector.');
       const branches=outcomes.map((o,i)=>({outcomeId:o.id,name:o.name,rule:o.rule,alternative:i>0,partialConversion:!!o.partialConversion,
         products:(o.products||[]).map(p=>p.isomericSmiles||p.smiles),minor:(o.minor||[]).map(p=>p.isomericSmiles||p.smiles),byproducts:(o.byproducts||[]).map(String),warnings:(o.warnings||[]).map(String)}));
-      const entry={number:index+1,from:from.smiles,freshMixture:index===0||stage.freshMixture===true,compounds,conditions,branches,selected:null};
+      const entry={number:index+1,from:from.smiles,freshMixture:index===0||handoff.mode==='isolated',compounds,conditions,branches,selected:null};
       report.stages.push(entry);
       if(!outcomes.length)return fail('unsupported','No forward rule matched stage '+(index+1)+'. '+(prediction.hints||[]).join(' '));
       let target=null;
@@ -52,7 +63,9 @@ function reactionCascadeRun(startSmiles, stages, options) {
       const selected=[...unique.values()][0],o=selected.outcome;
       const candidate={transform:'staged-'+o.rule,rule:o.rule,outcomeRule:o.rule,outcomeId:o.id,outcomeName:o.name,name:o.name,group:o.type||'Staged reaction',
         precursors:compounds.filter(c=>c.role==='reactant').map(retroPrecursorInfo),reagents:compounds.filter(c=>c.role!=='reactant'),
-        compounds,conditions,outcome:o,product:selected.product,minor:selected.minor,labels:reactionConditionLabels(conditions,compounds)};
+        compounds,conditions,handoff,workup,outcome:o,product:selected.product,minor:selected.minor,labels:reactionConditionLabels(conditions,compounds)};
+      entry.handoff=handoff;entry.workup=routeWorkupAssess(candidate);
+      if(entry.workup.blockers.length)return fail('blocked','Stage '+(index+1)+': '+entry.workup.blockers.map(b=>b.message).join(' '));
       entry.selected={outcomeId:o.id,name:o.name,to:selected.identity.smiles,minor:selected.minor,byproducts:(o.byproducts||[]).map(String)};
       if(o.partialConversion)return fail('blocked','Stage '+(index+1)+' is only an unestablished partial-conversion alternative.');
       if(typeof routeStepAssessment==='function'){
@@ -62,7 +75,7 @@ function reactionCascadeRun(startSmiles, stages, options) {
       if(typeof retroForwardCheck==='function'&&!retroForwardCheck(candidate,selected.identity.smiles))return fail('blocked','Stage '+(index+1)+' did not pass an independent forward replay.');
       const precursor=candidate.precursors.findIndex(p=>identity(p.isomericSmiles||p.smiles).key===from.key);
       if(precursor<0)return fail('invalid','The carried intermediate is missing from this stage’s reactants.');
-      report.route.push({from:from.smiles,to:selected.identity.smiles,fromKey:from.key,toKey:selected.identity.key,precursor,candidate});
+      report.route.push({from:from.smiles,to:selected.identity.smiles,fromKey:from.key,toKey:selected.identity.key,precursor,candidate,handoff,workup});
       report.current=selected.identity.smiles;
     }
     report.target=report.current;report.status='complete';return report;
@@ -74,8 +87,10 @@ function reactionCascadeElement(report) {
   const root=make('section',undefined,'reaction-cascade-report');
   root.append(make('p','Staged prediction: '+report.status),make('p',report.scope));
   (report.issues||[]).forEach(t=>root.append(make('p',t)));
+  (report.handoffs||[]).forEach((h,i)=>root.append(make('p','Before stage '+(i+2)+': '+h.message+' '+h.potentials.map(p=>'If carried over: '+p.message).join(' '))));
   report.stages.forEach(stage=>{
     const card=make('article',undefined,'path-step');card.append(make('h4','Stage '+stage.number),make('p','Carried input: '+stage.from));
+    if(stage.workup)card.append(make('p','Endpoint work-up: '+stage.workup.record.status+'. '+stage.workup.message));
     if(stage.selected)card.append(make('p','Selected: '+stage.selected.name+' → '+stage.selected.to+(stage.selected.minor?' · minor/alternative prediction':'')));
     const details=make('details');details.append(make('summary','Recorded products and branches · '+stage.branches.length));
     stage.branches.forEach(b=>{const branch=make('div');branch.append(make('strong',b.name+' ['+b.outcomeId+']'),make('p','Products: '+(b.products.join(' + ')||'none recorded')),make('p','Minor products: '+(b.minor.join(' + ')||'none recorded')),make('p','Named byproducts (not a balanced equation): '+(b.byproducts.join('; ')||'none recorded')));b.warnings.forEach(w=>branch.append(make('p',w)));details.append(branch);});

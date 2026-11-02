@@ -2,20 +2,20 @@
   "schemaVersion": 1,
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
-    "data/library.js": "ae52a616ccb4972f5a5ea25065738716d88d647e23bc88e786454fac581a146e",
+    "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
     "data/library-names.js": "9a396783fbac65c9b265adb7c7be4710ccd12002b494e4c8dd1cae11abb0194e",
     "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",
     "tools/build-library-tags.py": "4942f6ce2cf182f50606611014375edae102f2a50623a1b3e62be9e7857e4534",
-    "tools/library-taxonomy.py": "a577bed4d107158eb152cd0b7a3d05d0df53584f370ad07be393147a477ab8b7",
+    "tools/library-taxonomy.py": "eaa5f41a25bb459f0483354a5be9c0c8bdc15f447be431cd556cd6b3754f4c63",
     "tools/library-expansion-50.py": "1c7e05d9267af49bcf25ff3fc90f114b394a295ab3dee561954252e26bc0d60a",
     "validation/library-50-import.json": "89abe62271fff06dd9c8591ea3823ae56cd62a7396eb1412bd93834a2c1b10e0"
   },
-  "entries": 21683,
+  "entries": 22025,
   "minTags": 10,
   "maxTags": 37,
   "method": "Explicit graph families and functional groups, source collections, property bins and qualified binding labels. Ring synonyms and duplicate source labels are consolidated. Family definitions are serialized with SMARTS. Stored graph charges and calculated bins are not physiological protonation or clinical claims. Original class labels remain explicitly labelled, not experimentally validated.",
-  "dataSha256": "780de29c45a6a1ae27077e70db0d8d95c802b25c5afd0680c1dec976ae936a6e"
+  "dataSha256": "dc4f314741b9f45a06f5f9651345e6a9a4d273118d5166d5683eabd526010224"
 }

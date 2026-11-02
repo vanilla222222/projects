@@ -1,0 +1,68 @@
+{
+  "annotationCount": 1881,
+  "chemblEntryCount": 1355,
+  "dataSha256": "bd40be79d2caf4a61682d910fb0db352a28a5b19b85756cc9b0f2e5aa5e3bdb1",
+  "entryCount": 22052,
+  "generator": "tools/build-chembl-properties.py",
+  "kind": "locally_calculated_descriptors",
+  "label": "Calculated locally with RDKit; not ChEMBL-reported or experimentally measured properties.",
+  "limitations": [
+    "cLogP is a model estimate, not measured logP or pH-dependent logD.",
+    "Descriptors describe the complete stored graph; salt or multicomponent descriptors may have limited physical interpretation.",
+    "No pKa, solubility, receptor action, selectivity or clinical inference is made."
+  ],
+  "methods": {
+    "cLogP": {
+      "method": "rdkit.Chem.Crippen.MolLogP (Wildman-Crippen)",
+      "unit": "dimensionless"
+    },
+    "exactMass": {
+      "method": "rdkit.Chem.Descriptors.ExactMolWt",
+      "unit": "Da"
+    },
+    "formalCharge": {
+      "method": "rdkit.Chem.GetFormalCharge",
+      "unit": "elementary charge"
+    },
+    "hba": {
+      "method": "rdkit.Chem.Lipinski.NumHAcceptors",
+      "unit": "count"
+    },
+    "hbd": {
+      "method": "rdkit.Chem.Lipinski.NumHDonors",
+      "unit": "count"
+    },
+    "heavyAtoms": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcNumHeavyAtoms",
+      "unit": "count"
+    },
+    "molecularWeight": {
+      "method": "rdkit.Chem.Descriptors.MolWt",
+      "unit": "g/mol"
+    },
+    "rotatableBonds": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcNumRotatableBonds (Strict)",
+      "unit": "count"
+    },
+    "tpsa": {
+      "method": "rdkit.Chem.rdMolDescriptors.CalcTPSA (includeSandP=False)",
+      "unit": "angstrom^2"
+    }
+  },
+  "rdkitVersion": "2026.09.1",
+  "schemaVersion": 1,
+  "scope": "Exact stored library graph, including disconnected fragments and formal charge; no parent selection, neutralization, salt stripping or tautomer standardization.",
+  "sourceHashes": {
+    "data/curated-references.js": "6ff485c2f080e83194206ba8b70971af0391a26be67142ca692a3a359dfda279",
+    "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
+    "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e"
+  },
+  "sourceSha256": {
+    "data/curated-references.js": "6ff485c2f080e83194206ba8b70971af0391a26be67142ca692a3a359dfda279",
+    "data/library.js": "004a76ebea5634e946dd3860a966f362949e467fbe792ba58561d28a099873e6",
+    "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
+    "js/curated-references.js": "240d0bd4f4cf076c70a1891578a48f3fb19e421bb685a5c6c2bd3af011c9c24e"
+  },
+  "toolSha256": "a916073ffcb49c6f8dcdc7ffb6433db4e0e994f15572c770f1ff9ea31c174a80"
+}

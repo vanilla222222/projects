@@ -8,8 +8,8 @@ Object.assign(RX_FORMULA_TAGS, {
 Object.assign(RX_FORMULA_GUARDS, {
   C6H10N2O4: (g) => g.bonds.some((b) => b.order === 2 && g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
   C8H14N2O4: (g) => g.bonds.some((b) => b.order === 2 && g.getAtom(b.atomA).element === 'N' && g.getAtom(b.atomB).element === 'N'),
-  C7H7ClO2S: (g, ids) => ids.some((id) => g.getAtom(id).element === 'S' && rxNeighbors(g, id).some((n) => n.atom.element === 'Cl')),
-  CH3ClO2S: (g, ids) => ids.some((id) => g.getAtom(id).element === 'S' && rxNeighbors(g, id).some((n) => n.atom.element === 'Cl')),
+  C7H7ClO2S: (g, ids) => !!rxySulfonylChlorideSite(g, ids),
+  CH3ClO2S: (g, ids) => !!rxySulfonylChlorideSite(g, ids),
 });
 
 Object.assign(RX_ADDITIVE_TAGS, {
@@ -227,10 +227,13 @@ function rxyRuleHaloform(ctx) {
   const x = tag ? tag.slice(0, -1) : 'Cl';
   return ctx.substrates.flatMap((s) => rxyMethylKetones(s).slice(0, 1).map((k) => {
     const g = rxCloneGraph(s.graph);
-    g.removeAtom(k.me);
+    // The ketone's methyl carbon becomes haloform; retain the actual atom
+    // and its isotope label when separating it from the acyl fragment.
+    rxSetOrder(g, k.c, k.me, 0);
     rxAttach(g, 'O', k.c, 1, -1);
     rxxAddCation(ctx, g);
-    const cx = g.addAtom('C', g.getAtom(k.c).x + 120, g.getAtom(k.c).y);
+    const cx = g.getAtom(k.me);
+    cx.x = g.getAtom(k.c).x + 120;
     [0, 1, 2].forEach(() => rxAttach(g, x, cx.id));
     const out = rxOutcome('haloform', x === 'I' ? 'Haloform reaction (iodoform)' : 'Haloform reaction', 'α-Halogenation / C–C cleavage', g,
       'Base forms the enolate of the methyl group, which is halogenated; each halogen makes the remaining H more acidic, so the CH₃ becomes CX₃. Hydroxide then adds to the C=O and expels ⁻CX₃ (a good leaving group), giving the carboxylate and CH' + x + '₃.',
@@ -534,8 +537,11 @@ function rxyRuleGrignardFormation(ctx) {
       return [];
     }
     if (rxGrignardProticConflict(ctx)) {
-      return [rxHint('An O–H/N–H donor, acid or protic solvent prevents the supported Grignard formation. A compatible protection plan is required; no generic protecting group is assumed.')];
+      return [rxHint('An O–H/N–H/S–H or terminal-alkyne H/D donor, acid or protic solvent prevents the supported Grignard formation. A compatible protection plan is required; no generic protecting group is assumed.')];
     }
+    const solventConflicts=rxGrignardReactiveSolvents(ctx);
+    if(solventConflicts.length)return [rxGrignardSolventHint(solventConflicts)];
+    if(rxGrignardInputSites(ctx).some(partner=>partner.electrophiles.length))return [rxHint('A carbonyl/nitrile electrophile is present on the halide precursor or another listed input. Isolated Grignard formation is not established; self-reaction, trapping and one-pot product distributions are not modeled.')];
     const g = rxCloneGraph(s.graph);
     rxSetOrder(g, pick.c, pick.x, 0);
     const mg = g.addAtom('Mg', g.getAtom(pick.c).x + 30, g.getAtom(pick.c).y);
@@ -598,18 +604,29 @@ function rxyRuleMitsunobu(ctx) {
     { score: 16, byproducts: ['Ph₃P=O', 'the hydrazine dicarboxylate'], consumes: [rxUse(alc.s, 1), rxUse(nuc.s, 1.2), rxUse(ctx.get('triphenylphosphine'), 1.2), rxUse(ctx.get('azodicarboxylate'), 1.2)] })];
 }
 
+function rxySulfonylChlorideSite(g, ids) {
+  return ids.filter((id) => g.getAtom(id).element === 'S' && !g.getAtom(id).charge).map((s) => {
+    const ns = rxNeighbors(g, s);
+    if (ns.length !== 4 || ns.filter((n) => n.atom.element === 'O' && !n.atom.charge && n.bond.order === 2).length !== 2 ||
+        ns.filter((n) => n.atom.element === 'C' && n.bond.order === 1).length !== 1) return null;
+    const chloride = ns.find((n) => n.atom.element === 'Cl' && !n.atom.charge && n.bond.order === 1);
+    return chloride ? {s, cl: chloride.atom.id} : null;
+  }).find(Boolean) || null;
+}
+
 function rxyRuleSulfonylation(ctx) {
   const reagent = ctx.get('sulfonylChloride');
   if (!reagent) {
     return [];
   }
-  const s0 = reagent.ids.find((id) => reagent.graph.getAtom(id).element === 'S');
-  const cl = reagent.ids.find((id) => reagent.graph.getAtom(id).element === 'Cl');
+  const site = rxySulfonylChlorideSite(reagent.graph, reagent.ids);
+  if (!site) return [];
+  const {s: s0, cl} = site;
   const tosyl = reagent.ids.some((id) => reagent.graph.getAtom(id).element === 'C' && rxNeighbors(reagent.graph, id).some((n) => n.bond.order === 2 && n.atom.element === 'C'));
   const label = tosyl ? 'Ts' : 'Ms';
   return ctx.substrates.flatMap((s) => {
     const alc = s.info.alcohols.slice().sort((p, q) => p.degree - q.degree)[0];
-    const amine = s.info.amines[0];
+    const amine = s.info.amines.find((a) => a.h > 0 && !s.graph.getAtom(a.n).charge);
     const site = alc ? alc.o : amine ? amine.n : null;
     if (!site) {
       return [];
@@ -774,7 +791,11 @@ function rxyRulePaalKnorr(ctx) {
     const g = joined.g;
     const { p, q, ca, cb } = found;
     if (amine || ammonia) {
-      const n = amine ? joined.map.get(amine.a.n) : g.addAtom('N', (g.getAtom(p.c).x + g.getAtom(q.c).x) / 2, g.getAtom(p.c).y - 40).id;
+      // Ammonia supplies the ring nitrogen just as a primary amine does.
+      // Copy its actual atom so a labelled donor does not become unlabelled.
+      const ammoniaN = !amine && ammonia.ids.find((id) => ammonia.graph.getAtom(id).element === 'N');
+      const ammoniaMap = !amine && rxMerge(g, ammonia.graph, [ammoniaN]);
+      const n = amine ? joined.map.get(amine.a.n) : ammoniaMap.get(ammoniaN);
       g.removeAtom(p.o);
       g.removeAtom(q.o);
       g.addBond(p.c, n);
@@ -818,9 +839,11 @@ function rxyRuleHalolactonization(ctx) {
     const xa = rxAttach(g, x, o.b);
     rxsFaceAdd(g, [[o.a, acid.hetero, 1], [o.b, xa.id, -1]]);
     rxyCleanAlkenes(g);
-    return [rxOutcome(x === 'I' ? 'iodolactonization' : 'bromolactonization', x === 'I' ? 'Iodolactonisation' : 'Bromolactonisation', 'Electrophilic cyclisation', g,
+    const out=rxOutcome(x === 'I' ? 'iodolactonization' : 'bromolactonization', x === 'I' ? 'Iodolactonisation' : 'Bromolactonisation', 'Electrophilic cyclisation', g,
       'The base makes the carboxylate. ' + tag + ' forms a halonium ion on the alkene, and the carboxylate opens it intramolecularly from the opposite face (' + o.size + '-exo, anti addition), giving a ' + (o.size === 5 ? 'γ' : 'δ') + '-lactone with ' + x + ' on the exocyclic carbon.',
-      { score: 15, byproducts: ['H' + x + ' (as salt)'], consumes: [rxUse(s, 1), rxUse(ctx.get(tag), 1)] })];
+      { score: 15, byproducts: ['H' + x + ' (as salt)'], consumes: [rxUse(s, 1), rxUse(ctx.get(tag), 1)] });
+    rxCyclizationRecord(out,s,acid.hetero,o.a,{allowedSizes:[5,6],eligibleClosures:options.length,externalPartners:ctx.substrates.filter(other=>other!==s&&(other.info.alkenes.length||other.info.carbonyls.some(c=>c.kind==='acid'))).length});
+    return [out];
   }));
 }
 

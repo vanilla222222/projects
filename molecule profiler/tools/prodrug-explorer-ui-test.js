@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
 const {JSDOM}=require(process.env.PROFILER_JSDOM_PATH||'jsdom'),root=path.join(__dirname,'..');
 const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8'),{runScripts:'outside-only',url:'https://example.test/'}),ctx=dom.getInternalVMContext(),w=dom.window;
-for(const name of ['smiles','mol','smarts','stereo','transform','descriptors','pharmacology','prodrug-candidates','cleavable-groups','prodrug-explorer','depict'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
+for(const name of ['smiles','mol','smarts','stereo','transform','descriptors','rules','pharmacology','prodrug-candidates','cleavable-groups','candidate-info','prodrug-explorer','depict'])vm.runInContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'),ctx);
 vm.runInContext(fs.readFileSync(path.join(root,'data/pharmacology-evidence.js'),'utf8'),ctx);
 let snapshot,downloaded,filename;w.PharmacologyUI={render(record){snapshot={inputSmiles:record.smiles};},getSnapshot(){return snapshot;}};
 w.Blob=class{constructor(parts){this.text=parts.join('');}};w.URL.createObjectURL=b=>{downloaded=b;return 'blob:test';};w.URL.revokeObjectURL=()=>{};w.HTMLAnchorElement.prototype.click=function(){filename=this.download;};
@@ -55,4 +55,12 @@ ok(snapshot.prodrugReleasePathway.targetPresent&&$('prodrug-explorer-route-statu
 $('prodrug-explorer-route-undo').click();ok(snapshot.prodrugReleasePathway.targetRole&&!snapshot.prodrugReleasePathway.targetPresent,'Undo preserves redesigned target scope');
 change('prodrug-site-action-mode','design');ok(!snapshot.prodrugSiteRedesign&&$('prodrug-design-build').disabled&&!snapshot.prodrugReleasePathway,'Parent-recovery filter excludes ether redesign and clears stale snapshot');
 change('prodrug-site-action-mode','redesign');render('CCCC');ok($('prodrug-design-build').disabled&&!snapshot.prodrugSiteRedesign,'Unsupported input clears ether preview');
+render('CC(C)CCC[C@@H](C)[C@H]1CC[C@H]2[C@@H]3CC=C4C[C@H](CC[C@]4(C)[C@H]3CC[C@]12C)O');
+$('prodrug-bbb-build').click();
+ok(snapshot.prodrugBBBReview.rows.length===8&&snapshot.prodrugSiteComparison.rows.length===9,'Cholesterol BBB action reviews eight designs and adds them to the comparison shortlist');
+ok($('prodrug-bbb-results').querySelectorAll('tbody tr').length===8&&$('prodrug-bbb-results').textContent.includes('Redox carrier / lock-in hypothesis'),'BBB interface renders every strategy including the redox-carrier hypothesis');
+ok($('prodrug-bbb-results').textContent.includes('passive screen')&&$('prodrug-bbb-results').textContent.includes('Activation requirements')&&$('prodrug-bbb-results').textContent.includes('already has estimated WLOGP')&&$('prodrug-bbb-results').textContent.includes('synthesized locally'),'Passive labels, activation requirements and cholesterol-specific physiology cautions are visible');
+ok(!$('prodrug-bbb-results').textContent.includes('proven BBB')&&$('prodrug-bbb-results').textContent.includes('No candidate is asserted to cross the BBB'),'Interface does not convert structural designs into proven delivery claims');
+$('prodrug-bbb-export').click();const bbbDownload=JSON.parse(downloaded.text);ok(filename==='bbb-oriented-design-review.json'&&bbbDownload.rows.length===8&&bbbDownload.noCombinedScore&&bbbDownload.rows.every(r=>r.brainDeliveryEstablished===false),'BBB JSON export preserves all designs and scientific scope');
+render('CCO');ok(!snapshot.prodrugBBBReview&&!$('prodrug-bbb-results').textContent&&$('prodrug-bbb-export').disabled,'New input clears stale BBB structures, review and export');
 console.log('Molecule-site explorer UI: '+checks+' checks passed.');dom.window.close();
