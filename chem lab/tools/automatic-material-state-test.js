@@ -29,4 +29,7 @@ check(`reactionPlanningMaterialState('OCCCCCCCCCO',undefined,{solvents:['dcm']})
 run(`var link={from:'CCO',to:'OCCCCCCCCCCO',candidate:{conditions:normalizeReactionConditions({solvents:['dcm']}),compounds:[retroCompound({smiles:'CCO',role:'reactant'})]}};var annotated=reactionPlanningRouteLink(link);`);
 check('annotated.toState.phase','Aq','Saved route receives inferred phase');check('annotated.toState.automatic',true,'Automatic provenance retained');
 check(`reactionMaterialStateNormalize(annotated.toState).basis`,'assumed-medium','Provenance survives persistence normalization');
+check(`reactionMaterialStateResolve({phase:'Aq',solvent:''},'CCO').phase`,'unknown','Incomplete manual solution cannot silently fall back to neat liquid');
+run(`reactionPlanningMaterialState('CCO',{phase:'Aq',solvent:''});`);check(`reactionPlanningMaterialState('CCO').needsSolvent`,true,'Incomplete manual solution remains explicit in planning controls');
+check(`reactionMaterialStateResolve({phase:'unknown'},'CCO').phase`,'L','Explicit Automatic still restores catalog inference');
 console.log('Automatic material states: '+checks+' checks passed.');

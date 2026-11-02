@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-02T03:20:08.274678+00:00",
+  "generatedAt": "2026-11-02T03:28:46.985906+00:00",
   "rdkitVersion": "2026.09.1",
   "fixtureSha256": "ff7273b9ad04d95d1c2da9c46fbded261e81508826dcecc607cf0e0b08eb8285",
   "fixtureFilesSha256": {
     "rdkit-fixtures.json": "ff7273b9ad04d95d1c2da9c46fbded261e81508826dcecc607cf0e0b08eb8285",
     "chemistry-fixtures.json": "b6b0c164e9d2fc528c93d4b85e0ee120cdd4874428e0d4cbc173c863ded76937"
   },
-  "exportSha256": "2d3f57a384b8f6308e4ed96ef2af3776261b897ff2374e28c31736562a19d7c5",
+  "exportSha256": "0f96ec75e7151191ac2f24e292d63e695cbf50dc2b79cff0e51a5aae7d52e399",
   "appScriptSha256": {
     "js/elements.js": "aaecea7433871b650c7601ffb5bef597e38361934cb7c4cc7406edbdc897a7ca",
     "js/graph.js": "c8a8a2cca6b2f3d758e3f83b7901f78f9966c3a27b0189fa846ba28ce55be88f",
@@ -47,7 +47,7 @@
     "js/stamps.js": "a1679a68e151b373bd6b9cb258388a9d176d4c5626867a25cc729b80694052af",
     "js/abbreviations.js": "d388b5c96e92daa0b1c3c40f0597ed8c7004c8e023a6188f9c32e9ef14355644",
     "js/recent.js": "8a4a83b97898c785e598f511199e3366cd6d184b372b2f2429c831b3519294ff",
-    "js/reactions.js": "b408c53b8435f05bb957ac44c8b14155bb4c235badd9b00b7677083b916a1230",
+    "js/reactions.js": "3e2eb91c903889fd76e9562f07d596374c440aa4397dfcb739997c03d72e5dbf",
     "js/molecular-identity.js": "11511a3fb50a1d580cf270143cb0de511457f004382bdf6c7836fedecf02de83",
     "js/reagent-library.js": "34a915083813565851911519bd097a686ef67181b35efdf19a9925d398d934eb",
     "js/reaction-io.js": "9ff1dd5e5887dbb6bd7aafb7cc471e8c85fa09be7bc6ae98efd75e4d7ee91273",
