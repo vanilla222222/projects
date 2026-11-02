@@ -193,6 +193,8 @@ for combo in itertools.product(*[sorted(table[s]) for s in sites]):
             v.replace('*', '[*:%d]' % labels[s], 1)))
     mol = Chem.molzip(z)
     Chem.SanitizeMol(mol)
+    Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+    Chem.FindPotentialStereoBonds(mol)
     smi = Chem.MolToSmiles(mol)
     arms = dict(zip(sites, combo))
     name = "4-[3-(%s)-5-(%s)pyrazol-1-yl]benzenesulfonamide" % (
@@ -207,9 +209,11 @@ for combo in itertools.product(*[sorted(table[s]) for s in sites]):
         why = 'name collision'
     elif smi in batch:
         why = 'intra-batch duplicate'
-    elif Chem.FindMolChiralCenters(mol, includeUnassigned=True,
-                                   useLegacyImplementation=False):
+    elif any(label == '?' for _, label in Chem.FindMolChiralCenters(
+            mol, includeUnassigned=True, useLegacyImplementation=False)):
         why = 'unassigned stereocentre'
+    elif any(bond.GetStereo() == Chem.BondStereo.STEREOANY for bond in mol.GetBonds()):
+        why = 'undefined double-bond geometry'
     if why:
         print("gate refused %s: %s" % (name, why), file=sys.stderr)
         continue
