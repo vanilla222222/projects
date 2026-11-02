@@ -178,7 +178,7 @@ function createReactionLab(host) {
     }
     const info = reactionDescribeFragment(parsed.fragment);
     const compound = {
-      materialState:reactionMaterialStateNormalize(parsed.materialState),
+      materialState:reactionMaterialStateResolve(parsed.materialState,parsed.smiles,state.conditions),
       input: parsed.input,
       smiles: parsed.smiles,
       fragment: parsed.fragment,
@@ -334,6 +334,7 @@ function createReactionLab(host) {
     cards.innerHTML = '';
     emptyHint.hidden = state.compounds.length > 0;
     state.compounds.forEach((compound, index) => {
+      compound.materialState=reactionMaterialStateResolve(compound.materialState,compound.smiles,state.conditions);
       const card = document.createElement('div');
       card.className = 'rx-card role-' + compound.role;
       card.dataset.index = String(index);
@@ -394,7 +395,8 @@ function createReactionLab(host) {
         renderSummary();
       });
       controls.append(role, equiv, equivLabel);
-      body.append(title, meta, controls, reactionMaterialStateControl(compound.materialState,value=>{compound.materialState=value;save();}));
+      const phaseControls=reactionMaterialStateControl(compound.materialState,value=>{compound.materialState=reactionMaterialStateResolve(value,compound.smiles,state.conditions);save();});
+      body.append(title,meta,controls,phaseControls);if(typeof physicalPropertiesElement==='function')body.append(physicalPropertiesElement(compound.smiles,()=>{compound.materialState=reactionMaterialStateResolve(compound.materialState,compound.smiles,state.conditions);phaseControls.updateMaterialState(compound.materialState);save();}));
       card.append(thumb, body, remove);
       cards.appendChild(card);
       drawFragment(thumb, compound.fragment, 10, 0.5);
@@ -419,6 +421,7 @@ function createReactionLab(host) {
     state.conditions = normalizeReactionConditions(state.conditions);
     save();
     renderConditions();
+    renderCards();
     renderSummary();
   }
 
@@ -677,7 +680,7 @@ function createReactionLab(host) {
 
   function renderPrediction() {
     predictionBox.innerHTML = '';
-    predictionBox.appendChild(reactionPurificationControl(renderPrediction));
+    predictionBox.appendChild(reactionPurificationControl(renderPrediction));if(typeof physicalPropertiesAutoControl==='function')predictionBox.appendChild(physicalPropertiesAutoControl(renderPrediction));
     const p = state.prediction;
     const outcome = chosenOutcome();
     if (!outcome) {
@@ -705,11 +708,12 @@ function createReactionLab(host) {
       const formulaLine = element('div', 'rx-product-formula', '');
       formulaLine.innerHTML = '<span>' + (outcome.regioselectivity&&outcome.regioselectivity.alternativesRole?'unranked positional alternative · ':(minor ? 'minor · ' : '')) + (ratio && index === 0 ? (outcome.regioselectivity?'heuristic ~':'~') + ratio[minor ? 1 : 0] + '% · ' : '') + formulaHtml(info.formula) + ' · ' + info.mass.toFixed(2) + ' g/mol</span>';
       const stateKey=product.isomericSmiles||product.smiles;
-      product.materialState=reactionMaterialStateNormalize(state.productStates[stateKey]);
+      product.materialState=reactionMaterialStateResolve(state.productStates[stateKey],stateKey,state.conditions);
       let use=null;
       const purification=element('div');
       const refreshPurification=()=>{purification.replaceChildren();if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(product);purification.append(reactionPurificationElement(plan));if(use){use.disabled=plan.status!=='modeled';use.textContent='Use purified product →';}}else if(use){use.disabled=false;use.textContent='Use as reactant →';}};
-      card.append(canvas, label, formulaLine, reactionMaterialStateControl(product.materialState,value=>{product.materialState=value;state.productStates[stateKey]=value;save();refreshPurification();}),purification);
+      const phaseControls=reactionMaterialStateControl(product.materialState,value=>{product.materialState=reactionMaterialStateResolve(value,stateKey,state.conditions);state.productStates[stateKey]=value;save();refreshPurification();});
+      card.append(canvas,label,formulaLine,phaseControls,purification);if(typeof physicalPropertiesElement==='function')card.append(physicalPropertiesElement(stateKey,()=>{product.materialState=reactionMaterialStateResolve(state.productStates[stateKey],stateKey,state.conditions);phaseControls.updateMaterialState(product.materialState);refreshPurification();}));
       if (product.stereo) {
         card.appendChild(element('div', 'rx-product-stereo ' + product.stereo.kind, product.stereo.text));
       }

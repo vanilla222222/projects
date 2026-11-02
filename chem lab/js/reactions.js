@@ -1107,8 +1107,31 @@ function reactionMaterialStateNormalize(raw) {
   const r=raw&&typeof raw==='object'?raw:{};
   const phase=['S','L','G','Aq'].includes(r.phase)?r.phase:'unknown';
   const solvent=typeof r.solvent==='string'?r.solvent.replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,80):'';
-  return {phase:phase==='Aq'&&!solvent?'unknown':phase,solvent:phase==='Aq'?solvent:''};
+  return {phase:phase==='Aq'&&!solvent?'unknown':phase,solvent:phase==='Aq'?solvent:'',...(r.automatic===true?{automatic:true,basis:['catalog-form','catalog-solution','assumed-medium','pubchem','unavailable'].includes(r.basis)?r.basis:'unavailable'}:{})};
 }
+// Automatic labels use existing local supply-form data, not a melting-point
+// predictor. A medium fallback is an explicit planning assumption, not proof
+// of dissolution, precipitation behavior or the operating-temperature phase.
+function reactionMaterialStateAuto(smiles,context) {
+  const fetched=typeof physicalPropertiesCachedPhase==='function'?physicalPropertiesCachedPhase(smiles):null;if(fetched)return fetched;
+  let entry=null;try{entry=typeof rglLookup==='function'?rglLookup(smiles):null;}catch(error){}
+  const form={solid:'S',liquid:'L',gas:'G'}[entry?.form];
+  if(form&&(typeof physicalPropertiesCatalogAllows!=='function'||physicalPropertiesCatalogAllows(smiles,form)))return {phase:form,solvent:'',automatic:true,basis:'catalog-form'};
+  const carrier=entry?.form==='solution'&&entry.name.match(/\bin\s+([^()]+)/i);
+  if(carrier)return {phase:'Aq',solvent:carrier[1].trim().slice(0,80),automatic:true,basis:'catalog-solution'};
+  const conditions=context?.conditions||context||{},solvents=(Array.isArray(conditions.solvents)?conditions.solvents:[]).filter(id=>id!=='none').map(id=>REACTION_SOLVENTS.find(s=>s.id===id)).filter(Boolean);
+  if(solvents.length)return {phase:'Aq',solvent:solvents.map(s=>s.name).join(' / ').slice(0,80),automatic:true,basis:'assumed-medium'};
+  return {phase:'unknown',solvent:'',automatic:true,basis:typeof physicalPropertiesDefaultClient==='function'&&physicalPropertiesDefaultClient().get(smiles)?.status==='ready'?'pubchem':'unavailable'};
+}
+function reactionMaterialStateResolve(raw,smiles,context) {
+  const recorded=reactionMaterialStateNormalize(raw);
+  return recorded.phase!=='unknown'&&!recorded.automatic?recorded:reactionMaterialStateAuto(smiles,context);
+}
+function reactionMaterialStateDescription(raw) {
+  const state=reactionMaterialStateNormalize(raw),prefix='Automatic'+(state.phase!=='unknown'?' · '+reactionMaterialStateLabel(state):'')+' · ';
+  return !state.automatic&&state.phase!=='unknown'?'Manual override':state.basis==='pubchem'?prefix+(state.phase==='unknown'?'PubChem data do not establish one phase at 25 °C':'PubChem MP/BP interval at 25 °C / near 1 atm'):state.basis==='catalog-form'?prefix+'local catalog form (ambient; not a phase-equilibrium prediction)':state.basis==='catalog-solution'?prefix+'catalog-specified carrier solvent':state.basis==='assumed-medium'?prefix+'assumed solution in the recorded medium; solubility not verified':prefix+'no physical-form data or recorded solvent available';
+}
+
 function reactionMaterialStateLabel(raw) {
   const s=reactionMaterialStateNormalize(raw);
   return s.phase==='Aq'?'Aq('+s.solvent+')':s.phase==='unknown'?'State unassigned':s.phase;
@@ -1120,10 +1143,11 @@ function reactionProductStatesNormalize(raw) {
 function reactionMaterialStateControl(raw,onChange) {
   const state=reactionMaterialStateNormalize(raw),box=document.createElement('div'),select=document.createElement('select'),solvent=document.createElement('input');
   box.className='rx-material-state';select.setAttribute('aria-label','Physical state');
-  [['unknown','State unassigned'],['S','S — solid'],['L','L — liquid'],['G','G — gas'],['Aq','Aq(solvent) — solution']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);});
-  select.value=state.phase;solvent.value=state.solvent;solvent.maxLength=80;solvent.placeholder='Solvent, e.g. water or ethanol';solvent.setAttribute('aria-label','State solvent');solvent.hidden=state.phase!=='Aq';
-  const change=()=>{solvent.hidden=select.value!=='Aq';onChange(reactionMaterialStateNormalize({phase:select.value,solvent:solvent.value}));};
-  select.addEventListener('change',change);solvent.addEventListener('input',change);box.append(select,solvent);return box;
+  [['unknown','Automatic'],['S','S — solid'],['L','L — liquid'],['G','G — gas'],['Aq','Aq(solvent) — solution']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);});
+  select.value=state.automatic?'unknown':state.phase;solvent.value=state.automatic?'':state.solvent;solvent.maxLength=80;solvent.placeholder='Solvent, e.g. water or ethanol';solvent.setAttribute('aria-label','State solvent');solvent.hidden=state.automatic||state.phase!=='Aq';
+  const note=document.createElement('span');note.className='rx-state-basis';note.textContent=reactionMaterialStateDescription(state);
+  const change=()=>{solvent.hidden=select.value!=='Aq';note.textContent=select.value==='unknown'?'Automatic · uses catalog form or the recorded reaction medium':'Manual override';onChange(reactionMaterialStateNormalize({phase:select.value,solvent:solvent.value}));};
+  select.addEventListener('change',change);solvent.addEventListener('input',change);box.updateMaterialState=value=>{if(select.value==='unknown')note.textContent=reactionMaterialStateDescription(value);};box.append(select,solvent,note);return box;
 }
 
 // Optional idealized separation display. It never edits a predicted reaction,
@@ -1163,22 +1187,22 @@ function reactionPurificationElement(plan) {
 
 // Shared planning-view phase records. Keep these outside search candidates:
 // changing a display state must not mutate chemistry caches or route ranking.
-function reactionPlanningMaterialState(smiles,value) {
+function reactionPlanningMaterialState(smiles,value,context) {
   const key=reactionIsomericSmiles(smilesToFragment(smiles),smiles);
   if(!reactionPlanningMaterialState.states){try{reactionPlanningMaterialState.states=reactionProductStatesNormalize(JSON.parse(localStorage.getItem('chem-lab-planning-states')||'{}'));}catch(error){reactionPlanningMaterialState.states={};}}
   if(value!==undefined){delete reactionPlanningMaterialState.states[key];reactionPlanningMaterialState.states[key]=reactionMaterialStateNormalize(value);reactionPlanningMaterialState.states=reactionProductStatesNormalize(Object.fromEntries(Object.entries(reactionPlanningMaterialState.states).slice(-48)));try{localStorage.setItem('chem-lab-planning-states',JSON.stringify(reactionPlanningMaterialState.states));}catch(error){}}
-  return reactionMaterialStateNormalize(reactionPlanningMaterialState.states[key]);
+  return reactionMaterialStateResolve(reactionPlanningMaterialState.states[key],smiles,context);
 }
-function reactionPlanningMaterialElement(smiles,label,product) {
+function reactionPlanningMaterialElement(smiles,label,product,context) {
   const box=document.createElement('section'),heading=document.createElement('strong'),badge=document.createElement('span'),isolation=document.createElement('div');box.className='rx-planning-material';heading.textContent=label;badge.className='rx-planning-state';
-  const refresh=()=>{const state=reactionPlanningMaterialState(smiles);badge.textContent=reactionMaterialStateLabel(state);isolation.replaceChildren();if(product&&reactionPurificationEnabled())isolation.append(reactionPurificationElement(reactionPurificationPlan({smiles},state)));};
-  const controls=reactionMaterialStateControl(reactionPlanningMaterialState(smiles),value=>{reactionPlanningMaterialState(smiles,value);refresh();});
-  box.append(heading,badge,controls,isolation);box.addEventListener('click',event=>event.stopPropagation());box.addEventListener('keydown',event=>event.stopPropagation());refresh();return box;
+  const refresh=()=>{const state=reactionPlanningMaterialState(smiles,undefined,context);if(controls.updateMaterialState)controls.updateMaterialState(state);badge.textContent=state.phase==='unknown'?'Auto · phase unavailable':reactionMaterialStateLabel(state)+(state.automatic?' · auto':'');isolation.replaceChildren();if(product&&reactionPurificationEnabled())isolation.append(reactionPurificationElement(reactionPurificationPlan({smiles},state)));};
+  const controls=reactionMaterialStateControl(reactionPlanningMaterialState(smiles,undefined,context),value=>{reactionPlanningMaterialState(smiles,value);refresh();});
+  box.append(heading,badge,controls,isolation);if(typeof physicalPropertiesElement==='function')box.append(physicalPropertiesElement(smiles,refresh));box.addEventListener('click',event=>event.stopPropagation());box.addEventListener('keydown',event=>event.stopPropagation());refresh();return box;
 }
-function reactionPlanningCompounds(compounds) {
-  return (compounds||[]).map(c=>{const state=reactionPlanningMaterialState(c.isomericSmiles||c.smiles);return {...c,materialState:state.phase==='unknown'?reactionMaterialStateNormalize(c.materialState):state};});
+function reactionPlanningCompounds(compounds,context) {
+  return (compounds||[]).map(c=>{const state=reactionPlanningMaterialState(c.isomericSmiles||c.smiles,undefined,context);return {...c,materialState:state.phase==='unknown'?reactionMaterialStateNormalize(c.materialState):state};});
 }
 function reactionPlanningRouteLink(link) {
   const candidate=link.candidate||{};
-  return {...link,fromState:reactionPlanningMaterialState(link.from),toState:reactionPlanningMaterialState(link.to),candidate:{...candidate,compounds:reactionPlanningCompounds(candidate.compounds)}};
+  return {...link,fromState:reactionPlanningMaterialState(link.from,undefined,candidate.conditions),toState:reactionPlanningMaterialState(link.to,undefined,candidate.conditions),candidate:{...candidate,compounds:reactionPlanningCompounds(candidate.compounds,candidate.conditions)}};
 }

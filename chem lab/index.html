@@ -396,7 +396,7 @@
     </div>
     <div class="rx-column rx-compounds">
       <h2>Compounds</h2>
-      <p class="rx-hint">Track recorded states: S solid, L liquid, G gas, or Aq(solvent) solution. States are assigned explicitly; phase and solubility are not predicted.</p>
+      <p class="rx-hint">Track recorded states: S solid, L liquid, G gas, or Aq(solvent) solution. States fill automatically from the local catalog or labeled reaction-medium assumptions. Override them when needed; solubility and phase equilibrium are not predicted.</p>
       <div class="rx-input-row">
         <input type="text" id="rx-input" placeholder="SMILES or name, e.g. CC=C or ethanol" spellcheck="false" autocomplete="off" aria-label="Compound SMILES or name">
         <button type="button" class="text-button primary" id="rx-add">Add</button>
@@ -879,6 +879,7 @@
 <script src="js/reaction-lab.js"></script>
 <script src="js/spectra-view.js"></script>
 <script src="js/viewer3d.js"></script>
+<script src="js/physical-properties.js"></script>
 <script src="js/planning-settings.js"></script>
 <script src="js/retro-view.js"></script>
 <script src="js/route-comparison.js"></script>

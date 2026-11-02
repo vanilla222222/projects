@@ -453,7 +453,7 @@ function createRouteWorkspace(deps) {
     content.replaceChildren();
     const route = current();
     if (!route) { content.append(element('p', 'No route selected. Path Finder has a Save route button for each candidate route.')); return; }
-    content.append(reactionPurificationControl(redraw));
+    content.append(reactionPurificationControl(redraw));if(typeof physicalPropertiesAutoControl==='function')content.append(physicalPropertiesAutoControl(redraw));
     const report = routeWorkspaceValidate(route);
     const meta = element('div', undefined, 'workspace-meta');
     const name = labelInput('Route name', route.name);
@@ -568,11 +568,13 @@ function createRouteWorkspace(deps) {
         card.append(inspect);
       }
       const structures = element('div', undefined, 'workspace-structures');
+      step.fromState=reactionMaterialStateResolve(step.fromState,step.from,step.conditions);step.toState=reactionMaterialStateResolve(step.toState,step.to,step.conditions);
       [step.from, step.to].forEach((smiles, i) => {
         if (i) structures.append(element('span', '→'));
         const block = element('div');
         if (deps.thumbnail) { try { block.append(deps.thumbnail(retroFromSmiles(smiles))); } catch (error) { block.append(element('span', 'Structure preview unavailable')); } }
-        block.append(element('p', simpleName(smiles)), element('code', smiles),reactionMaterialStateControl(i?step.toState:step.fromState,value=>{if(i)step.toState=value;else{step.fromState=value;step.compounds.filter(c=>routeWorkspaceKey(c.smiles)===routeWorkspaceKey(step.from)).forEach(c=>c.materialState=value);}persist();refreshPurification();})); structures.append(block);
+        const phaseControls=reactionMaterialStateControl(i?step.toState:step.fromState,value=>{if(i)step.toState=reactionMaterialStateResolve(value,step.to,step.conditions);else{step.fromState=reactionMaterialStateResolve(value,step.from,step.conditions);step.compounds.filter(c=>routeWorkspaceKey(c.smiles)===routeWorkspaceKey(step.from)).forEach(c=>c.materialState=value);}persist();refreshPurification();});
+        block.append(element('p',simpleName(smiles)),element('code',smiles),phaseControls);if(typeof physicalPropertiesElement==='function')block.append(physicalPropertiesElement(smiles,()=>{const key=i?'toState':'fromState';step[key]=reactionMaterialStateResolve(step[key],smiles,step.conditions);phaseControls.updateMaterialState(step[key]);persist();refreshPurification();}));structures.append(block);
       });
       card.append(structures);
       const purificationBox=element('div');

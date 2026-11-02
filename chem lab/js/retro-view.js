@@ -110,7 +110,7 @@ function createRetroView(deps) {
     const figure = retroViewElement('div', 'retro-precursor');
     figure.appendChild(thumbnail(precursor.smiles));
     figure.appendChild(retroViewElement('div', 'retro-caption', precursor.label || nameFor(precursor.smiles)));
-    figure.appendChild(reactionPlanningMaterialElement(precursor.isomericSmiles||precursor.smiles,'Precursor state',false));
+    figure.appendChild(reactionPlanningMaterialElement(precursor.isomericSmiles||precursor.smiles,'Precursor state',false,candidate.conditions));
     if (precursor.stock) {
       figure.appendChild(retroViewElement('span', 'retro-badge common', 'stock · tier ' + precursor.stock.tier));
     } else if (precursor.common) {
@@ -157,7 +157,7 @@ function createRetroView(deps) {
     const select = () => {
       state.selected = state.selected === index ? null : index;
       Array.from(list.querySelectorAll('.retro-card')).forEach((el) => el.classList.toggle('selected', Number(el.dataset.index) === state.selected));
-      renderButtons();
+      renderButtons();if(state.refreshTargetState)state.refreshTargetState();
     };
     card.addEventListener('click', select);
     card.addEventListener('keydown', (event) => {
@@ -209,8 +209,8 @@ function createRetroView(deps) {
     target.appendChild(text);
     summary.innerHTML = '';
     summary.appendChild(target);
-    summary.appendChild(reactionPurificationControl(render));
-    summary.appendChild(reactionPlanningMaterialElement(node.smiles,'Target output state',true));
+    summary.appendChild(reactionPurificationControl(render));if(typeof physicalPropertiesAutoControl==='function')summary.appendChild(physicalPropertiesAutoControl(render));
+    const form=retroViewElement('div');state.refreshTargetState=()=>{const selected=labCandidate();form.replaceChildren(reactionPlanningMaterialElement(node.smiles,'Target output state',true,selected?.conditions));};state.refreshTargetState();summary.appendChild(form);
     if (!result || !count) {
       list.appendChild(retroViewElement('p','retro-empty',excluded.length?'No disconnections meet this research protocol. Inspect the exclusions below or relax a constraint.':result?emptyMessage(result):'Maximum depth reached.'));
     } else {
@@ -297,7 +297,7 @@ function createRetroView(deps) {
       deps.toast('Could not build this route', { kind: 'warn' });
       return;
     }
-    steps.forEach(step=>{step.from.materialState=reactionPlanningMaterialState(step.from.isomericSmiles||step.from.smiles);step.to.materialState=reactionPlanningMaterialState(step.to.isomericSmiles||step.to.smiles);if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(step.to);if(plan.status==='modeled')step.purification=plan;}});
+    steps.forEach(step=>{step.from.materialState=reactionPlanningMaterialState(step.from.isomericSmiles||step.from.smiles,undefined,step.conditions);step.to.materialState=reactionPlanningMaterialState(step.to.isomericSmiles||step.to.smiles,undefined,step.conditions);if(reactionPurificationEnabled()){const plan=reactionPurificationPlan(step.to);if(plan.status==='modeled')step.purification=plan;}});
     close();
     deps.sendScheme(buildRouteScheme(steps), steps.length);
   });
@@ -307,7 +307,7 @@ function createRetroView(deps) {
       return;
     }
     close();
-    deps.openInLab(reactionPlanningCompounds(candidate.compounds), candidate.conditions,{smiles:candidate.product.isomericSmiles||candidate.product.smiles,materialState:reactionPlanningMaterialState(currentNode().smiles)});
+    deps.openInLab(reactionPlanningCompounds(candidate.compounds,candidate.conditions), candidate.conditions,{smiles:candidate.product.isomericSmiles||candidate.product.smiles,materialState:reactionPlanningMaterialState(currentNode().smiles,undefined,candidate.conditions)});
   });
 
   return {

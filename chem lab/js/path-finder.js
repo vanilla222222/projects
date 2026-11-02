@@ -651,17 +651,17 @@ function pathFinderRecipeRender(container, job, deps) {
   const make = (tag, text, cls) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = String(text); if (cls) el.className = cls; return el; };
   const name = (smiles) => { try { return retroViewName(smiles); } catch (error) { return smiles; } };
   const startKey = pathFinderKey(job.start);
-  const renderNode = (node, isRoot) => {
+  const renderNode = (node, isRoot,context) => {
     const item = make('li', undefined, isRoot ? 'path-recipe-target' : 'path-recipe-node');
     if (!node.candidate) {
       let starting = false;
       try { starting = pathFinderKey(node.target) === startKey; } catch (error) { /* Keep the generic available label. */ }
       item.append(make('span', (starting ? 'Starting material: ' : 'Available building block: ') + name(node.target), 'path-recipe-leaf'));
-      item.append(make('code', node.target, 'path-smiles'),reactionPlanningMaterialElement(node.target,'Feedstock state',false));
+      item.append(make('code', node.target, 'path-smiles'),reactionPlanningMaterialElement(node.target,'Feedstock state',false,context));
       return item;
     }
     const c = node.candidate;
-    item.append(reactionPlanningMaterialElement(node.target,'Prepared product state',true));
+    item.append(reactionPlanningMaterialElement(node.target,'Prepared product state',true,c.conditions));
     item.append(make('h4', (isRoot ? 'Target: ' : 'Prepare intermediate: ') + name(node.target)));
     item.append(make('p', c.outcomeName || c.name, 'path-recipe-reaction'));
     item.append(make('code', node.target, 'path-smiles'));
@@ -674,18 +674,18 @@ function pathFinderRecipeRender(container, job, deps) {
     if (c.minor) item.append(make('p', 'The selected node is a minor predicted product.'));
     if (deps.openInLab) {
       const open = make('button', 'Open this reaction in Reactions', 'text-button'); open.type = 'button';
-      open.addEventListener('click', () => deps.openInLab(reactionPlanningCompounds(c.compounds), c.conditions || {},{smiles:c.product?.isomericSmiles||node.target,materialState:reactionPlanningMaterialState(node.target)})); item.append(open);
+      open.addEventListener('click', () => deps.openInLab(reactionPlanningCompounds(c.compounds,c.conditions), c.conditions || {},{smiles:c.product?.isomericSmiles||node.target,materialState:reactionPlanningMaterialState(node.target,undefined,c.conditions)})); item.append(open);
     }
     if (node.children.length) {
       item.append(make('p', 'Required precursors — each is either available or prepared by its own verified branch:'));
       const children = make('ol', undefined, 'path-recipe-children');
-      node.children.forEach(child => children.append(renderNode(child, false)));
+      node.children.forEach(child => children.append(renderNode(child, false,c.conditions)));
       item.append(children);
     }
     return item;
   };
   container.replaceChildren();
-  container.append(reactionPurificationControl(()=>pathFinderRecipeRender(container,job,deps)));
+  container.append(reactionPurificationControl(()=>pathFinderRecipeRender(container,job,deps)));if(typeof physicalPropertiesAutoControl==='function')container.append(physicalPropertiesAutoControl(()=>pathFinderRecipeRender(container,job,deps)));
   if(job.options?.research&&typeof planningResearchSummary==='function')container.append(make('p',planningResearchSummary(job.options.research),'research-search-snapshot'));
   const diversity = typeof routeComparisonDiversity === 'function' ? routeComparisonDiversity(job) : [];
   job.recipeTrees.forEach((tree, index) => {
