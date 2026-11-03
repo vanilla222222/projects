@@ -146,10 +146,12 @@ name is worse than silent: it would not have parsed at all.
 - `derive-imidazopyridine-references.py` asserts `"'" not in name and "'" not in smiles` just
   before its emitter. It is loud about apostrophes and silent about the backslashes that actually
   corrupt a row.
-- 37 generators parse `data/library.js` with the `ENTRY` regex and never un-escape what they
-  read, so a `\\` in the source stays doubled in their census keys. Their duplicate detection is
-  therefore comparing a string no molecule has, for every marker-bearing row. These patches
-  neither fix nor worsen it.
+- The regex readers keep a doubled backslash in the SMILES they capture — 123 of the rows they
+  can see. That one is **not** a defect: RDKit accepts `C/C=C\\C` and canonicalises it to exactly
+  the same string as `C/C=C\C`, verified both ways, so a census key built by parsing and
+  canonicalising is correct either way. It was worth checking rather than assuming, and it is
+  recorded here so nobody fixes a non-problem. The regex readers have a far worse defect, which
+  has nothing to do with escaping: see `GENERATOR-CORPUS.md`.
 
 A note for anyone adding rows from a generator: a generator's stdout is correct SMILES only if it
 was written to be correct JavaScript. Verifying a batch against the generator's text is not the
