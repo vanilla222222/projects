@@ -90,6 +90,10 @@ def err(text):
     print(text, file=sys.stderr)
 
 
+def jsq(text):
+    return "'" + text.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
 def cache_dir():
     d = os.environ.get("MP_DERIVE_CACHE")
     if not d:
@@ -579,9 +583,9 @@ def main():
 
     for row in rows:
         sys.stdout.write(
-            "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-            % (row["name"], TARGET_CLS, row["formula"],
-               Chem.MolToSmiles(row["mol"])))
+            "  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+            % (jsq(row["name"]), jsq(TARGET_CLS), jsq(row["formula"]),
+               jsq(Chem.MolToSmiles(row["mol"]))))
 
     tet = sum(r["tet"] for r in rows)
     geom = sum(r["geom"] for r in rows)

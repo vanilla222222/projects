@@ -137,14 +137,35 @@ Standing refusals that are decisions rather than measurements:
     (it has 51 anchors); it belongs to the flavonol core.
 """
 
-import json, sys, itertools, collections, re
+import json, sys, itertools, collections, re, os, subprocess, tempfile
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors as rdm
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 
-HERE = "/tmp/claude-0/-home-user-projects/a6d12805-aecf-5923-b265-93c142f30be4/scratchpad/flav/"
-LIBJSON = HERE + "library.json"
+def cache_dir():
+    d = os.environ.get("MP_DERIVE_CACHE")
+    if not d:
+        d = tempfile.mkdtemp(prefix="mp-derive-flav-")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    return d
+
+
+def load_library():
+    path = os.path.join(cache_dir(), "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.getcwd(), stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
+
 TARGET_TOTAL = 50
 
 # --------------------------------------------------------------------------
@@ -394,7 +415,7 @@ def build_name(core, slots):
     return pre + stem
 
 # ===========================  PHASE 1: census + proof  =====================
-LIB = json.load(open(LIBJSON))
+LIB = load_library()
 libmols, libcanon, libstrip, libnames = [], set(), set(), set()
 for r in LIB:
     m = Chem.MolFromSmiles(r['smiles'])
@@ -699,10 +720,8 @@ log("    %-16s %d  (%d pre-existing + %d generated)" %
 def jsq(s):
     return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
 
-out = sys.argv[1] if len(sys.argv) > 1 else HERE + "rows.js"
-with open(out, 'w') as fh:
-    for r in emitted:
-        fh.write("  { name: %s, cls: 'Flavonoid', formula: %s, smiles: %s },\n"
-                 % (jsq(r['name']), jsq(r['formula']), jsq(r['smiles'])))
+for r in emitted:
+    sys.stdout.write("  { name: %s, cls: 'Flavonoid', formula: %s, smiles: %s },\n"
+                     % (jsq(r['name']), jsq(r['formula']), jsq(r['smiles'])))
 log("")
-log("wrote %d rows -> %s" % (len(emitted), out))
+log("emitted %d rows" % len(emitted))

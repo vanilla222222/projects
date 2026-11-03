@@ -80,6 +80,19 @@ by name and by count, so a row that joins them fails the suite and names itself.
 3,703 correctly escaped markers, the 21 escaped apostrophes, the 988 rows that carry a marker
 through module loading, and that 78 of the 112 derived cephalosporin rows are among them.
 
-A note for anyone adding rows from a generator: the generator's stdout is correct SMILES, not
-correct JavaScript. Doubling the backslashes is part of the splice, and verifying a batch against
-the generator's text is not the same as verifying it against the loaded module. Check the module.
+## The generator now emits JavaScript, not SMILES
+
+The deeper fault was in `tools/derive-cephalosporin-references.py`: its row writer interpolated
+the name, formula and SMILES into the row template raw, so a re-run would reintroduce the bug
+however carefully the splice was done. It now quotes each field through the `jsq` idiom that
+`derive-benzofuran-references.py` and `derive-flavonoid-references.py` already used — doubling
+backslashes and escaping apostrophes — so its stdout is valid JavaScript rather than valid SMILES.
+
+That is verified end to end rather than by inspection. Run against a library dump with the 112
+derived rows removed, the generator re-emits all 112, 78 of them carrying doubled backslashes, and
+**every one of the 112 lines appears verbatim in the committed `data/library.js`**. The generator,
+the splice and the module now agree.
+
+A note for anyone adding rows from a generator: a generator's stdout is correct SMILES only if it
+was written to be correct JavaScript. Verifying a batch against the generator's text is not the
+same as verifying it against the loaded module. Check the module.

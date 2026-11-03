@@ -1,13 +1,34 @@
 """derive-benzofuran-references.py -- template-anchored derivation of cls 'Benzofuran' reference rows."""
 
-import json, sys, re, itertools, collections
+import json, sys, re, itertools, collections, os, subprocess, tempfile
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors as rdm
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 
-HERE = "/tmp/claude-0/-home-user-projects/a6d12805-aecf-5923-b265-93c142f30be4/scratchpad/bfuran/"
-LIBJSON = HERE + "library.json"
+def cache_dir():
+    d = os.environ.get("MP_DERIVE_CACHE")
+    if not d:
+        d = tempfile.mkdtemp(prefix="mp-derive-bfuran-")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    return d
+
+
+def load_library():
+    path = os.path.join(cache_dir(), "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.getcwd(), stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
+
 CLS = 'Benzofuran'
 TARGET_TOTAL = 50
 
@@ -208,7 +229,7 @@ def fragcomp(val):
         FRAGCOMP[val] = d
     return FRAGCOMP[val]
 
-LIB = json.load(open(LIBJSON))
+LIB = load_library()
 libmols, libnames, libstrip = [], set(), set()
 libstripname = {}
 for r in LIB:

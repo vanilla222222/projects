@@ -176,7 +176,10 @@ sites; neither was done.
 
 import itertools
 import json
+import os
+import subprocess
 import sys
+import tempfile
 import re
 from collections import Counter, defaultdict
 
@@ -186,8 +189,33 @@ from rdkit import RDLogger
 
 RDLogger.DisableLog('rdApp.*')
 
-HERE = '/tmp/claude-0/-home-user-projects/a6d12805-aecf-5923-b265-93c142f30be4/scratchpad/bcarb'
-LIB_DUMP = HERE + '/library-dump.json'
+def log(*a):
+    print(*a, file=sys.stderr)
+
+
+def cache_dir():
+    d = os.environ.get("MP_DERIVE_CACHE")
+    if not d:
+        d = tempfile.mkdtemp(prefix="mp-derive-bcarb-")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    return d
+
+
+def load_library():
+    path = os.path.join(cache_dir(), "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.getcwd(), stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
+
 
 # ------------------------------------------------------------------ templates
 SLOTS = ['S1', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8']
@@ -310,18 +338,19 @@ def prove_anchors(lib_by_name):
     {(state, locant, frag): [anchor names]} for proven pairs."""
     site_anchors = defaultdict(set)
     proven = defaultdict(list)
-    print('--- 5. ANCHOR PROOFS (stereo-inclusive canonical SMILES identity) ---')
+    log('--- 5. ANCHOR PROOFS (stereo-inclusive canonical SMILES identity) ---')
     for name, prov, state, fills, stereo, locs in ANCHORS:
         row = lib_by_name.get(name)
         if row is None:
-            print('  MISSING-ROW   %-20s' % name)
+            log('  MISSING-ROW   %-20s' % name)
             continue
-        if row['provider'] != prov:
-            print('  NOT-SOURCED   %-20s provider=%r' % (name, row['provider']))
+        provider = (row.get('source') or {}).get('provider')
+        if provider != prov:
+            log('  NOT-SOURCED   %-20s provider=%r' % (name, provider))
             continue
         target = canon(row['smiles'])
         if stereo == 'SKIP':
-            print('  SCOPE-SKIP    %-20s %-12s (fragment out of transcription '
+            log('  SCOPE-SKIP    %-20s %-12s (fragment out of transcription '
                   'scope; site anchor only, no slot value)' % (name, state))
             for l in locs:
                 site_anchors[(state, l)].add(name)
@@ -346,18 +375,18 @@ def prove_anchors(lib_by_name):
                 hit = (smi, cmb)
                 break
         if hit is None:
-            print('  PROOF-FAIL    %-20s %-12s' % (name, state))
-            print('                built  %s' % canon(build(state, fills,
+            log('  PROOF-FAIL    %-20s %-12s' % (name, state))
+            log('                built  %s' % canon(build(state, fills,
                                                             combos[0])))
-            print('                stored %s' % target)
+            log('                stored %s' % target)
             continue
         smi, cmb = hit
         tag = '' if not cmb else ' core-stereo=%s' % {k: v or '-' for k, v
                                                       in cmb.items()}
-        print('  PROVEN  %-20s %-12s locants=%-12s%s' %
+        log('  PROVEN  %-20s %-12s locants=%-12s%s' %
               (name, state, ','.join(locs), tag))
-        print('          %s' % smi)
-        print('          == %s' % target)
+        log('          %s' % smi)
+        log('          == %s' % target)
         for l in locs:
             site_anchors[(state, l)].add(name)
             if l in fills and '{s}' not in fills[l]:
@@ -412,8 +441,8 @@ def assemble_name(state, fills_named):
     return '-'.join(parts) + '-' + STEM[state] if parts else STEM[state]
 
 
-def main(out_path):
-    lib = json.load(open(LIB_DUMP))
+def main():
+    lib = load_library()
     lib_by_name = {r['name']: r for r in lib}
     lib_names = set(r['name'] for r in lib)
     lib_flat = {}
@@ -425,47 +454,47 @@ def main(out_path):
             lib_flat.setdefault(f, r['name'])
 
     in_class = [r for r in lib if r['cls'] == 'beta-Carboline']
-    print('=== library rows: %d ; already cls=beta-Carboline: %d (%s) ==='
+    log('=== library rows: %d ; already cls=beta-Carboline: %d (%s) ==='
           % (len(lib), len(in_class), ', '.join(r['name'] for r in in_class)))
-    print()
+    log()
 
     site_anchors, proven = prove_anchors(lib_by_name)
-    print()
-    print('--- 2b. TWO-ANCHOR GATE (live) ---')
+    log()
+    log('--- 2b. TWO-ANCHOR GATE (live) ---')
     admitted = set()
     for (state, loc), names in sorted(site_anchors.items()):
         verdict = 'ADMITTED' if len(names) >= 2 else 'REFUSED '
         if len(names) >= 2:
             admitted.add((state, loc))
-        print('  %-12s C%-3s %s %d anchor(s): %s'
+        log('  %-12s C%-3s %s %d anchor(s): %s'
               % (state, loc, verdict, len(names), ', '.join(sorted(names))))
     for state in TEMPLATES:
         for loc in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
             if (state, loc) not in site_anchors:
-                print('  %-12s C%-3s REFUSED  0 anchor(s)' % (state, loc))
-    print()
+                log('  %-12s C%-3s REFUSED  0 anchor(s)' % (state, loc))
+    log()
 
     # enforce rule (b) and rule (d) on the slot tables themselves
-    print('--- 4b. SLOT TABLE VALIDATION (rules b and d, live) ---')
+    log('--- 4b. SLOT TABLE VALIDATION (rules b and d, live) ---')
     tables = {}
     for (state, loc), vals in sorted(SLOT_TABLES.items()):
         if (state, loc) not in admitted:
-            print('  DROP SITE  %-12s C%-3s not admitted by two-anchor gate'
+            log('  DROP SITE  %-12s C%-3s not admitted by two-anchor gate'
                   % (state, loc))
             continue
         keep = []
         for pre, frag in vals:
             key = (state, loc, frag)
             if key not in proven:
-                print('  DROP VALUE %-12s C%-3s %-20s NOT proven at this site'
+                log('  DROP VALUE %-12s C%-3s %-20s NOT proven at this site'
                       % (state, loc, pre))
                 continue
             keep.append((pre, frag))
-            print('  KEEP       %-12s C%-3s %-46s <- %s'
+            log('  KEEP       %-12s C%-3s %-46s <- %s'
                   % (state, loc, pre, ', '.join(proven[key])))
         if keep:
             tables[(state, loc)] = keep
-    print()
+    log()
 
     # ---------------------------------------------------------- enumerate
     skips = Counter()
@@ -496,7 +525,7 @@ def main(out_path):
                 m = Chem.MolFromSmiles(smi)
                 if m is None:
                     skips['parse'] += 1
-                    print('  SKIP parse            %s' % name)
+                    log('  SKIP parse            %s' % name)
                     return
                 cs = Chem.MolToSmiles(m)
                 if not cs:
@@ -515,26 +544,26 @@ def main(out_path):
                 got, got_f = formula_counts(cs)
                 if dict(exp) != got:
                     skips['formula'] += 1
-                    print('  SKIP formula          %s  expected %s got %s'
+                    log('  SKIP formula          %s  expected %s got %s'
                           % (name, formula_string(exp), got_f))
                     return
                 if name in lib_names:
                     skips['dup-name-lib'] += 1
-                    print('  SKIP dup-name-lib     %s' % name)
+                    log('  SKIP dup-name-lib     %s' % name)
                     return
                 if name in seen_names:
                     skips['dup-name-self'] += 1
-                    print('  SKIP dup-name-self    %s' % name)
+                    log('  SKIP dup-name-self    %s' % name)
                     return
                 fl = flat(cs)
                 if fl in lib_flat:
                     skips['dup-struct-lib'] += 1
-                    print('  SKIP dup-struct-lib   %-60s == library %r'
+                    log('  SKIP dup-struct-lib   %-60s == library %r'
                           % (name, lib_flat[fl]))
                     return
                 if fl in seen_flat:
                     skips['dup-struct-self'] += 1
-                    print('  SKIP dup-struct-self  %-60s == %r'
+                    log('  SKIP dup-struct-self  %-60s == %r'
                           % (name, seen_flat[fl]))
                     return
                 seen_names.add(name)
@@ -551,29 +580,27 @@ def main(out_path):
                     rec(i + 1, chosen)
                     del chosen[loc]
 
-        print('--- enumerating %s over sites %s ---' % (state, sites))
+        log('--- enumerating %s over sites %s ---' % (state, sites))
         rec(0, {})
 
-    print()
-    print('--- 5b. GATE ACCOUNTING (live) ---')
-    print('  candidates enumerated : %d  %s' % (enumerated, dict(per_state)))
+    log()
+    log('--- 5b. GATE ACCOUNTING (live) ---')
+    log('  candidates enumerated : %d  %s' % (enumerated, dict(per_state)))
     for k in ['parse', 'null', 'formula', 'dup-name-lib', 'dup-name-self',
               'dup-struct-lib', 'dup-struct-self']:
-        print('  skipped %-16s: %d' % (k, skips[k]))
-    print('  emitted               : %d' % len(rows))
-    print('  in-class total         : %d (%d existing + %d new)'
+        log('  skipped %-16s: %d' % (k, skips[k]))
+    log('  emitted               : %d' % len(rows))
+    log('  in-class total         : %d (%d existing + %d new)'
           % (len(in_class) + len(rows), len(in_class), len(rows)))
-    print('  TARGET 50 -> %s' % ('MET' if len(in_class) + len(rows) >= 50
+    log('  TARGET 50 -> %s' % ('MET' if len(in_class) + len(rows) >= 50
                                  else 'NOT MET; measured ceiling = %d'
                                  % (len(in_class) + len(rows))))
 
-    with open(out_path, 'w') as fh:
-        for r in rows:
-            fh.write("  { name: %s, cls: 'beta-Carboline', formula: %s, "
-                     "smiles: %s },\n"
-                     % (js(r['name']), js(r['formula']), js(r['smiles'])))
-    print('  rows written to %s' % out_path)
-    json.dump(rows, open(HERE + '/rows.json', 'w'), indent=1)
+    for r in rows:
+        sys.stdout.write("  { name: %s, cls: 'beta-Carboline', formula: %s, "
+                         "smiles: %s },\n"
+                         % (js(r['name']), js(r['formula']), js(r['smiles'])))
+    log('  emitted %d rows' % len(rows))
 
 
 def js(s):
@@ -581,4 +608,4 @@ def js(s):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main()

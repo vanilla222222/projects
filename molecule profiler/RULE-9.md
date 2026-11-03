@@ -129,9 +129,14 @@ class was first considered, so the generator was never run and its patch has no 
 before-and-after. A patch verified only by inspection is not applied here.
 
 Three further generators could not be measured at all: `derive-benzofuran`, `derive-flavonoid` and
-`derive-beta-carboline` hard-code their input and output paths to scratch directories that are not
-in the project, and `beta-carboline` additionally requires a positional argument. They are tracked
-scripts that cannot run as committed. None is in the patched set.
+`derive-beta-carboline` hard-coded their input and output paths to scratch directories that are not
+in the project, and `beta-carboline` additionally required a positional argument. They are now
+portable and runnable, and each reproduces its recorded figure: `benzofuran` and `flavonoid` report
+their classes already at the 50-row target and emit nothing, and `beta-carboline` reproduces the
+measured ceiling of 33 that `CLASS-FIFTY-LIMITS.md` records. None of the three has a rule-9 check,
+and none is in the patched set: their emit sites share none of the five anchor idioms, and since
+all three currently emit zero rows a patch to them could not be verified by a before-and-after.
+They are the remaining rule-9 work, alongside `derive-opioid-references.py`.
 
 ## Already in the library
 
@@ -163,6 +168,8 @@ already do for `fails[:40]`.
 - Several generators write into the project while running: `derive-fenamate` drops
   `tools/library.json` and `tools/rows.js`, `derive-aniline-analgesic` drops
   `tools/library-dump.json`, `derive-penicillin` drops `Penicillin-rows.js` and `rows.json` into
-  the working directory, `derive-beta-blocker` drops `tools/Beta-blocker-rows.js`. The portable
-  convention the cephalosporin generator follows — rows to stdout, diagnostics to stderr, no file
-  writes outside a cache directory — is the fix.
+  the working directory, `derive-beta-blocker` drops `tools/Beta-blocker-rows.js` and
+  `tools/accepted.json`, `derive-arb` drops `tools/rows.js`. The portable convention the
+  cephalosporin generator follows — rows to stdout, diagnostics to stderr, no file writes outside
+  a cache directory — is the fix, and is what the three generators above were converted to. These
+  five are not yet converted.
