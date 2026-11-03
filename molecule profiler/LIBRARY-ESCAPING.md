@@ -93,6 +93,64 @@ derived rows removed, the generator re-emits all 112, 78 of them carrying double
 **every one of the 112 lines appears verbatim in the committed `data/library.js`**. The generator,
 the splice and the module now agree.
 
+## It was never a cephalosporin bug
+
+Auditing every generator's emitter rather than assuming the fault was local: **63 of the 72
+`tools/derive-*.py` interpolated their fields into a raw single-quoted template.** Only nine
+escaped properly — `benzofuran`, `beta-blocker`, `beta-carboline` (under the name `js`),
+`carbonic-anhydrase`, `cephalosporin`, `flavonoid`, `nucleobase`, `nucleoside` and `parp`.
+`derive-cox2-references.py` escaped the name alone and interpolated the formula and SMILES raw,
+which is the kind of half-fix that reads as protection.
+
+All 63 now route every emitted field through `jsq`.
+
+### Exposure, ranked
+
+| exposure | generators | meaning |
+|---|---|---|
+| live | **0** | 9 of the 63 emit rows today, 390 in all, and none holds a `\` in its SMILES or a `'` in its name |
+| latent, affected constant already in the file | **2** | `methylenedioxy`, `fenamate` |
+| latent, a real marker passes through memory | 24 | 15 un-escape library SMILES on read, 11 take the library through a `node` dump |
+| latent, template only | 37 | nothing in the file carries a marker yet |
+
+The two urgent cases are urgent only by accident of today's library: `methylenedioxy` holds six
+geometry-bearing slot and anchor SMILES and the anchor name `egonol-2'''-methyl butanoate`, and
+`fenamate` holds `4'-hydroxydiclofenac`. Their products all collide with stored rows at present,
+so nothing reaches the library — a property of the current corpus, not of the generators.
+
+One bound worth recording: no generator ever *creates* geometry. 34 of them call
+`FindPotentialStereoBonds` or read `BondStereo`, and in every case it is a refusal gate, never an
+enumeration. So `MolToSmiles` emits a backslash only when a constant or a library-derived parent
+already carried one.
+
+### Verified, including the path the runs could not reach
+
+All 63 byte-compile, and all 390 rows emitted today are **byte-identical** to the unpatched
+output, because there is nothing affected to escape. That leaves the backslash-doubling path
+untested by comparison, so it was exercised directly: the generators' own affected constants, and
+the library's own damaged rows, emitted both ways and read back by `node`.
+
+| input | raw emitter returns | `jsq` returns |
+|---|---|---|
+| `CCCOC(=O)CCCCCCC/C=C\CCCCCCCC` | `.../C=CCCCCCCCC` | the input |
+| `CO/N=C(\C(=O)NC1...)c1ccco1` (Cefuroxime) | `CO/N=C(C(=O)NC1...)c1ccco1` | the input |
+| `CCCCC/C=C\C/C=C\C/C=C\C/C=C\CCCC(=O)O` | `CCCCC/C=CC/C=CC/C=CC/C=CCCCC(=O)O` | the input |
+| `egonol-2'''-methyl butanoate` | **`SyntaxError`** | the input |
+
+The raw column reproduces the damaged strings this document records, from the same inputs — which
+is the strongest available evidence that the emitters are how those rows were spoiled. A primed
+name is worse than silent: it would not have parsed at all.
+
+### Two defects this does not fix
+
+- `derive-imidazopyridine-references.py` asserts `"'" not in name and "'" not in smiles` just
+  before its emitter. It is loud about apostrophes and silent about the backslashes that actually
+  corrupt a row.
+- 37 generators parse `data/library.js` with the `ENTRY` regex and never un-escape what they
+  read, so a `\\` in the source stays doubled in their census keys. Their duplicate detection is
+  therefore comparing a string no molecule has, for every marker-bearing row. These patches
+  neither fix nor worsen it.
+
 A note for anyone adding rows from a generator: a generator's stdout is correct SMILES only if it
 was written to be correct JavaScript. Verifying a batch against the generator's text is not the
 same as verifying it against the loaded module. Check the module.

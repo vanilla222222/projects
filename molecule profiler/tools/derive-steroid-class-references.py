@@ -228,6 +228,10 @@ A5 = {
 CORES = [("androst-4-en-3-one", A4), ("estra-1,3,5(10)-trien-3-ol", E3), ("5alpha-androstane", A5)]
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     tally = {}
     for sym, num in ATOM.findall(text):
@@ -455,7 +459,7 @@ def main():
                 break
 
     for name, formula, smiles in rows:
-        sys.stdout.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n" % (name, CLS, formula, smiles))
+        sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n" % (jsq(name), jsq(CLS), jsq(formula), jsq(smiles)))
     for k in sorted(counts):
         print("%-14s %d" % (k, counts[k]), file=log)
     print("emitted %d, class total %d of %d" % (len(rows), stored + len(rows), TARGET), file=log)

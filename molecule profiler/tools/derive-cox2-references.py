@@ -32,6 +32,10 @@ CORE = "[nX3;$(n-!@[c])]1[n][c][cH][c;$(c-!@[c])]1"
 SITES = {0: 'N1', 2: 'C3', 4: 'C5'}
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def canon(m):
     return Chem.MolToSmiles(m, isomericSmiles=True)
 
@@ -222,6 +226,6 @@ for combo in itertools.product(*[sorted(table[s]) for s in sites]):
 
 print("derived rows: %d" % len(emitted), file=sys.stderr)
 for name, formula, smi in emitted:
-    print("  { name: '%s', cls: 'COX-2 inhibitor', formula: '%s', smiles: '%s' },"
-          % (name.replace("'", "\\'"), formula, smi))
+    print("  { name: %s, cls: 'COX-2 inhibitor', formula: %s, smiles: %s },"
+          % (jsq(name), jsq(formula), jsq(smi)))
 sys.exit(0)

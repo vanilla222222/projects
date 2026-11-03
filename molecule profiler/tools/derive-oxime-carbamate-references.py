@@ -87,6 +87,10 @@ TARGET = 14
 ATOM = re.compile(r"([A-Z][a-z]?)(\d*)")
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -212,8 +216,8 @@ def main():
             continue
         seen[key] = "new"
         name = "%s O-(%s)oxime" % (ketone, GROUPS[vals["NSUB"]][1])
-        out.append("  { name: '%s', cls: 'Cholinesterase inhibitor', "
-                   "formula: '%s', smiles: '%s' },\n" % (name, stated, smiles))
+        out.append("  { name: %s, cls: 'Cholinesterase inhibitor', "
+                   "formula: %s, smiles: %s },\n" % (jsq(name), jsq(stated), jsq(smiles)))
         made += 1
 
     if made < TARGET:

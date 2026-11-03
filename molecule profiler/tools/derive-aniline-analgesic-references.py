@@ -18,6 +18,10 @@ DUMP = os.path.join(HERE, 'library-dump.json')
 CLS = 'Aniline analgesic'
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def log(msg):
     sys.stderr.write(msg + '\n')
 
@@ -380,8 +384,8 @@ def main():
         % (len(in_cls) + len(emitted), len(in_cls), len(emitted)))
 
     for row in emitted:
-        sys.stdout.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                         % (row['name'], row['cls'], row['formula'], row['smiles']))
+        sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                         % (jsq(row['name']), jsq(row['cls']), jsq(row['formula']), jsq(row['smiles'])))
 
 
 if __name__ == '__main__':

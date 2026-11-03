@@ -114,6 +114,10 @@ GROUPS = {
 ATOM = re.compile(r"([A-Z][a-z]?)(\d*)")
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     if not text:
@@ -473,7 +477,7 @@ def main():
         raise SystemExit(1)
 
     out = "".join(
-        "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n" % r for r in rows
+        "  { name: %s, cls: %s, formula: %s, smiles: %s },\n" % tuple(jsq(v) for v in r) for r in rows
     )
     if args.out:
         open(args.out, "w", encoding="utf-8").write(out)

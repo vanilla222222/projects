@@ -155,6 +155,10 @@ ENTRY = re.compile(
 )
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def flat(smiles):
     # Stored entries vary in whether they assign stereochemistry, and the templates write
     # constitution only, so anchors are compared with stereochemistry removed.
@@ -227,8 +231,8 @@ def main():
         raise SystemExit(1)
 
     text = "".join(
-        "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-        % (row["name"], row["cls"], row["formula"], row["smiles"]) for row in rows)
+        "  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+        % (jsq(row["name"]), jsq(row["cls"]), jsq(row["formula"]), jsq(row["smiles"])) for row in rows)
     if args.output == "-":
         sys.stdout.write(text)
     else:

@@ -21,6 +21,10 @@ CLS = "Statin"
 TARGET = 50
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def err(*a):
     print(*a, file=sys.stderr)
 
@@ -351,7 +355,7 @@ def main():
     err("  measured ceiling for cls=%s: %d of target %d" % (CLS, sum(1 for r in lib if r[2] == CLS) + len(named), TARGET))
 
     for a, b, c, smi, form in named:
-        print("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' }," % (a, CLS, form, smi))
+        print("  { name: %s, cls: %s, formula: %s, smiles: %s }," % (jsq(a), jsq(CLS), jsq(form), jsq(smi)))
 
 
 if __name__ == "__main__":

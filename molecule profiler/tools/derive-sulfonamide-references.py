@@ -152,6 +152,10 @@ RING_A = {"a2": "2", "a3": "3", "a4": "4", "a5": "5", "a6": "6"}
 RING_B = {"a2": "6", "a3": "5", "a4": "4", "a5": "3", "a6": "2"}
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -413,8 +417,8 @@ def main():
                 continue
             seen[key] = "new"
             stored_names.add(row)
-            out.append("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                       % (row, fam["cls"], stated, smiles))
+            out.append("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                       % (jsq(row), jsq(fam["cls"]), jsq(stated), jsq(smiles)))
             made += 1
         counts.append("%s %d" % (fam["key"], made))
         if made < fam["target"]:

@@ -155,6 +155,10 @@ STEREOISOMER_RECORD_PAIRS = [("(R)-nicardipine", "(S)-nicardipine"),
                              ("(R)-toloxatone", "(S)-toloxatone")]
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def err(*a):
     print(*a, file=sys.stderr)
 
@@ -507,7 +511,7 @@ def main():
     total = sum(1 for r in lib if r[2] == CLS) + len(g7)
     err("  measured capacity for cls='%s': %d of target %d, %d short" % (CLS, total, TARGET, max(0, TARGET - total)))
     for tag, a, b, nm, smi, form in g7:
-        print("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' }," % (nm, CLS, form, smi))
+        print("  { name: %s, cls: %s, formula: %s, smiles: %s }," % (jsq(nm), jsq(CLS), jsq(form), jsq(smi)))
 
 
 if __name__ == "__main__":

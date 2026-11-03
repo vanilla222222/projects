@@ -19,6 +19,10 @@ RDLogger.DisableLog("rdApp.*")
 CLS = "Retinoid"
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def err(*a):
     print(*a, file=sys.stderr)
 
@@ -301,7 +305,7 @@ def main():
         chk = CalcMolFormula(Chem.MolFromSmiles(smi))
         if chk != formula:
             raise SystemExit("formula cross-check failed: %s %s != %s" % (name, formula, chk))
-        print("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' }," % (name, CLS, formula, smi))
+        print("  { name: %s, cls: %s, formula: %s, smiles: %s }," % (jsq(name), jsq(CLS), jsq(formula), jsq(smi)))
     err("\nderived rows: %d   class total: %d" % (len(emitted), len(in_class) + len(emitted)))
 
 

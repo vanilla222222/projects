@@ -35,6 +35,10 @@ ANCHOR_NAMES = ['benzylpenicillin', 'phenoxymethylpenicillin', 'penamecillin']
 
 # ---------------------------------------------------------------- helpers
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def formula_dict(f):
     d = collections.Counter()
     for el, n in re.findall(r'([A-Z][a-z]?)(\d*)', f):
@@ -256,8 +260,8 @@ for r in rows:
 with open('Penicillin-rows.js', 'w') as fh:
     fh.write('[\n')
     for i, r in enumerate(rows):
-        fh.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' }%s\n"
-                 % (r['name'], r['cls'], r['formula'], r['smiles'],
+        fh.write("  { name: %s, cls: %s, formula: %s, smiles: %s }%s\n"
+                 % (jsq(r['name']), jsq(r['cls']), jsq(r['formula']), jsq(r['smiles']),
                     '' if i == len(rows) - 1 else ','))
     fh.write(']\n')
 

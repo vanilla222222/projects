@@ -109,6 +109,10 @@ MULT = {2: "di", 3: "tri"}
 ATOM = re.compile(r"([A-Z][a-z]?)(\d*)")
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -348,8 +352,8 @@ def main():
                 skipped += 1
                 continue
             seen[key] = "new"
-            out.append("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                       % (fam["name"](vals), fam["cls"], stated, smiles))
+            out.append("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                       % (jsq(fam["name"](vals)), jsq(fam["cls"]), jsq(stated), jsq(smiles)))
             made += 1
         counts.append("%s %d" % (fam["cls"], made))
         if made < fam["target"]:

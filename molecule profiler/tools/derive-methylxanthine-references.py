@@ -131,6 +131,10 @@ ANCHORS = [
 ]
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text):
@@ -309,8 +313,8 @@ def main():
         raise SystemExit("FAIL only %d rows available" % len(out))
 
     for name, form, smiles in out:
-        sys.stdout.write("  { name: '%s', cls: '%s', formula: '%s', "
-                         "smiles: '%s' },\n" % (name, CLS, form, smiles))
+        sys.stdout.write("  { name: %s, cls: %s, formula: %s, "
+                         "smiles: %s },\n" % (jsq(name), jsq(CLS), jsq(form), jsq(smiles)))
     sys.stderr.write("%d new rows, %d proven sourced anchors, "
                      "%d collisions skipped\n"
                      % (len(out), len(proven), skipped))

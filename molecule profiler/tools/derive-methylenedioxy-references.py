@@ -121,6 +121,10 @@ SURVEY_CORES = {
 }
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def flat(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
@@ -399,8 +403,8 @@ def main():
     log("measured derivation ceiling for '%s': %d rows" % (CLS, in_class + len(emitted)))
 
     for name, formula, smiles in emitted:
-        sys.stdout.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                         % (name, CLS, formula, smiles))
+        sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                         % (jsq(name), jsq(CLS), jsq(formula), jsq(smiles)))
     return 0
 
 

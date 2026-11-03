@@ -75,6 +75,10 @@ NEGATIVES = [
 TZ = Chem.MolFromSmarts('[#6]1[#7][#7][#7][#7]1')
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def fail(msg):
     print('\nABORT: ' + msg)
     sys.exit(1)
@@ -389,8 +393,8 @@ emit = surv[:need]
 with open(os.path.join(HERE, 'rows.js'), 'w') as fh:
     for k, combo, smi in emit:
         m = Chem.MolFromSmiles(smi)
-        fh.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                 % (ARM_NAMES[combo[0]], CLS, CalcMolFormula(m), smi))
+        fh.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                 % (jsq(ARM_NAMES[combo[0]]), jsq(CLS), jsq(CalcMolFormula(m)), jsq(smi)))
 print('   rows emitted to rows.js  : %d' % len(emit))
 print('   class total reached      : %d' % (len(inclass) + len(emit)))
 if len(emit) < need:

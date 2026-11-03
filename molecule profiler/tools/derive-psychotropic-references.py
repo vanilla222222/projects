@@ -261,6 +261,10 @@ BENZAMIDES = [
 ]
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def flat(smiles):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
@@ -358,7 +362,7 @@ def main():
         raise SystemExit(1)
 
     text = "".join(
-        "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n" % row for row in emitted
+        "  { name: %s, cls: %s, formula: %s, smiles: %s },\n" % tuple(jsq(v) for v in row) for row in emitted
     )
     if args.output == "-":
         sys.stdout.write(text)

@@ -79,6 +79,10 @@ LETTERS = re.compile(r"[^a-z]")
 MULT = {2: "di", 3: "tri", 4: "tetra", 5: "penta", 6: "hexa"}
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -371,8 +375,8 @@ def main():
     for name, formula, smiles in rows:
         assert "'" not in name and "'" not in smiles
         sys.stdout.write(
-            "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-            % (name, fam["cls"], formula, smiles))
+            "  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+            % (jsq(name), jsq(fam["cls"]), jsq(formula), jsq(smiles)))
 
     print("imidazo[1,2-a]pyridine rows %d / target %d  enumerated %d  skipped %s"
           % (len(rows), fam["target"], enumerated, skipped), file=sys.stderr)

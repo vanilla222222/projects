@@ -142,6 +142,10 @@ ANCHOR_NAMES = {
 NAME_WITNESS = {"tolbutamide": {"RING": "ccc(C)cc", "R": "CCCC"}}
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -322,8 +326,8 @@ def main():
 
     for name, formula, smiles in rows:
         sys.stdout.write(
-            "  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-            % (name, CLS, formula, smiles)
+            "  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+            % (jsq(name), jsq(CLS), jsq(formula), jsq(smiles))
         )
 
     tally["accepted"] = len(rows)

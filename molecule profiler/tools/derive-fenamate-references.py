@@ -20,6 +20,10 @@ CLS = "Fenamate"
 TARGET = 50
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def load_library():
     script = ("const {LIBRARY}=require('./data/library.js');"
               "process.stdout.write(JSON.stringify(LIBRARY.map("
@@ -406,8 +410,8 @@ def main():
     out = os.path.join(HERE, "rows.js")
     with open(out, "w") as fh:
         for name, formula, smiles in emitted:
-            fh.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                     % (name, CLS, formula, smiles))
+            fh.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                     % (jsq(name), jsq(CLS), jsq(formula), jsq(smiles)))
     have = sum(1 for r in rows if r[2] == CLS)
     print("\nrows emitted: %d -> %s" % (len(emitted), out))
     print("class total: %d of %d target (shortfall %d)"

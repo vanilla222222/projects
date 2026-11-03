@@ -147,6 +147,10 @@ NAME_WITNESS = {
 MARKS = [("(", ")"), ("[", "]"), ("{", "}")]
 
 
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
 def parse_formula(text):
     out = {}
     for sym, num in ATOM.findall(text or ""):
@@ -382,8 +386,8 @@ def main():
         rows.append((name, stated, Chem.MolToSmiles(mol)))
 
     for name, formula, smiles in rows:
-        sys.stdout.write("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                         % (name, CLS, formula, smiles))
+        sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                         % (jsq(name), jsq(CLS), jsq(formula), jsq(smiles)))
 
     tally["accepted"] = len(rows)
     print("beta agonist rows %d + stored %d / target %d  %s"
