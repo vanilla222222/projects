@@ -22,6 +22,37 @@ from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 
 RDLogger.DisableLog("rdApp.*")
 
+
+def load_library():
+    """Every row of data/library.js, through node's own module loader.
+
+    The single-line `ENTRY` regex this generator used to parse the file with
+    matches 7,049 of the 22,137 rows and none of the 15,067 that carry a
+    `source` block, because a sourced row is not written on one line. Reading
+    the module instead makes the whole corpus visible, with `source` left
+    nested on the row exactly as the module returns it.
+    """
+    import json
+    import os
+    import subprocess
+    import tempfile
+    cache = os.environ.get("MP_DERIVE_CACHE")
+    if not cache:
+        cache = tempfile.mkdtemp(prefix="mp-derive-")
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
+    path = os.path.join(cache, "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=ROOT, stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ENTRY = re.compile(
@@ -408,13 +439,13 @@ def main():
     ap.add_argument("--out")
     args = ap.parse_args()
 
-    source = open(os.path.join(ROOT, "data", "library.js"), encoding="utf-8").read()
+    source = load_library()
     seen = {}
     failures = []
-    for m in ENTRY.finditer(source):
-        key = flat(m.group(4).replace("\\\\", "\\"))
+    for _row in source:
+        key = flat(_row["smiles"])
         if key is not None and key not in seen:
-            seen[key] = m.group(1)
+            seen[key] = _row["name"]
 
     rows = []
     stats = []

@@ -50,6 +50,38 @@ from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 
 RDLogger.DisableLog("rdApp.*")
 
+
+def load_library():
+    """Every row of data/library.js, through node's own module loader.
+
+    The single-line `ENTRY` regex this generator used to parse the file with
+    matches 7,049 of the 22,137 rows and none of the 15,067 that carry a
+    `source` block, because a sourced row is not written on one line. Reading
+    the module instead makes the whole corpus visible, with `source` left
+    nested on the row exactly as the module returns it.
+    """
+    import json
+    import os
+    import subprocess
+    import tempfile
+    cache = os.environ.get("MP_DERIVE_CACHE")
+    if not cache:
+        cache = tempfile.mkdtemp(prefix="mp-derive-")
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
+    path = os.path.join(cache, "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.path.dirname(os.path.dirname(LIBRARY)),
+            stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
 LIBRARY = "/home/user/projects/molecule profiler/data/library.js"
 
 ENTRY = re.compile(
@@ -313,17 +345,17 @@ def combos(slots):
 def main():
     argparse.ArgumentParser().parse_args()
 
-    lib = open(LIBRARY, encoding="utf-8").read()
+    lib = load_library()
     stored = {}
     stored_names = set()
     sourced = set()
     seen = {}
-    for pattern in (ENTRY, SOURCED):
-        for m in pattern.finditer(lib):
-            name, cls, formula, smiles = m.groups()
+    for _row in lib:
+            name, cls, formula, smiles = (_row["name"], _row["cls"],
+                                          _row["formula"], _row["smiles"])
             stored[name] = smiles
             stored_names.add(name)
-            if pattern is SOURCED:
+            if _row.get("source"):
                 sourced.add(name)
             key = flat(smiles)
             if key:

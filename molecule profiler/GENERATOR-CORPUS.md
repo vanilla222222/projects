@@ -1,7 +1,9 @@
 # What the generators can actually see
 
-51 of the 72 `tools/derive-*.py` read `data/library.js` with a regex. The canonical form is
-`derive-ace-inhibitor-references.py:26`:
+51 of the 72 `tools/derive-*.py` read `data/library.js` as text. Hand-written rows are written
+on one line in the single-quoted house style; externally sourced rows are written as compact JSON
+objects carrying a nested `"source"` block. Two different formats, and most generators parse only
+the first:
 
 ```python
 ENTRY = re.compile(
@@ -9,21 +11,21 @@ ENTRY = re.compile(
 )
 ```
 
-Hand-written rows are written on one line. Externally sourced rows are not: they carry a nested
-`source: { provider, id, url, snapshot, ... }` block and span several lines. A single-line regex
-cannot match them.
-
 Measured against the current 22,137-row library:
 
-| what the regex readers see | rows |
-|---|---|
-| matched by `ENTRY` | 7,049 |
-| not matched | 15,088 |
-| matched rows carrying a `source` block | **0** |
-| rows the node loader sees | 22,137, of which 15,067 sourced |
+| reader | rows seen | sourced rows seen |
+|---|---|---|
+| single-quoted pattern only — **43 generators** | **7,049** | **0** |
+| both patterns — 8 generators | 22,116 | 15,067 |
+| the node module loader — 19 generators | 22,137 | 15,067 |
 
 The zero is not an estimate. Every one of the 7,049 matches was checked for whether the row it
-sits in also carries `source:`; none does.
+sits in also carries a source block; none does. Nor is the 43: an earlier draft of this document
+said 51, which was wrong. Eight generators already carry a second regex for the JSON rows, and
+they are **exactly** the eight that have externally sourced anchors — `methylxanthine` 16 of 16,
+`imidazopyridine` 7 of 7, `sulfonylurea` 7 of 7, `benzamide` 6 of 6, `sulfonamide` 6 of 6,
+`benzazepine` 5 of 6, `ergoline` 2 of 3, `arylpiperazine` 1 of 8. For those eight the conversion
+is a tidy-up worth 21 rows of corpus. The blind population is 43.
 
 ## Why this matters more than it looks
 
@@ -41,20 +43,72 @@ rule at all. Whatever it is doing instead, it is not the two-sourced-anchor rule
 
 ## This already happened
 
-It is the exact defect that invalidated the 34 original `cls: 'Cephalosporin'` rows, recorded in
+It is the defect that invalidated the 34 original `cls: 'Cephalosporin'` rows, recorded in
 `CEPHALOSPORIN-REDERIVATION.md`: all 21 of that generator's anchors resolved to hand-written rows
 with no `source` block, C7 was unattested in all 34 rows, and not one of the 34 was re-provable.
 
-The repair is also informative about the direction of the effect. Converting that one generator to
-read the whole corpus did not simply delete rows — it took the class from **34 unprovable rows to
-112 provable ones**, because the sourced population it had been blind to is where the attesting
-anchors actually live. A correct corpus means more collisions *and* more attested slot values. Which
-of the two dominates is a per-generator question, and is being measured.
+**The cephalosporin precedent does not generalise, and it is worth being clear about why.** That
+class gained rows — 34 unprovable became 112 provable — because its generator derives its slot
+tables *from* the corpus, so a larger corpus gave it more attested values. None of these 43 does
+that. Every one carries hand-written slot literals and uses the library only to prove a template
+and to reject collisions. For them a larger corpus can only ever subtract. Measured across all 50
+generators converted: **0 rows gained, 0 rows lost.**
+
+Conversion is therefore necessary but not sufficient for the 43. Their anchors have to be
+re-chosen from the sourced population before their shipped rows become re-provable. Anchor lookup
+is by exact name, sourced rows are stored lower-case, and no anchor name in any of the 51 matches
+a sourced row under any casing — measured as 0 across all of them — so conversion alone moves no
+generator's anchors from unsourced to sourced.
+
+## What the blindness was about to cost
+
+The unchanged row counts hide the result. Three generators emit the same *count* and a different
+*set*, because they fill to a target: the collision gate removes a candidate and the loop
+backfills. Each dropped candidate is a compound the library already holds, under its real name,
+imported from a source the generator could not see:
+
+| generator | candidate it would have emitted | already in the library as |
+|---|---|---|
+| `antihistamine` | `10-[2-pyrrolidin-1-ylethyl]-10H-phenothiazine` | `parathiazine`, DrugCentral 2327 |
+| `arylacetic-nsaid` | `N-hydroxy-2-[1-(4-chlorobenzoyl)-5-methoxy-2-methyl-1H-indol-3-yl]acetamide` | `oxametacin`, DrugCentral 2008 |
+| `carbamate` | `(4-dimethylamino-3-methylphenyl) N-methylcarbamate` | `aminocarb`, ChEBI 2653 |
+
+Had those three been re-run and their output appended, the library would have gained three rows
+naming compounds it already contains.
+
+Across all 50, **31 candidates are newly refused as duplicates** — `phytoestrogen` 21,
+`steroid-ester` 3, `fluoroquinolone` 2, and one each for `antihistamine`, `antimetabolite`,
+`arylacetic-nsaid`, `benzomorphan` and `carbamate`. All 31 were checked against the 15,067 sourced
+rows by stereo-stripped canonical SMILES: 31 of 31 collide, no false positives. `phytoestrogen` is
+the plainest case — it enumerates a flavanone grid the library already holds from ChEBI, and 21 of
+its candidates have ChEBI identifiers.
+
+Library-wide, **245 hand-written rows across 79 classes are stereo-stripped duplicates of an
+externally sourced row**, 116 of them in the 87 classes these generators emit into. The library is
+append-only, so that is a measurement rather than a fix list.
+
+## A row channel with diagnostics in it
+
+Found while checking the conversion rather than by looking for it: 11 generators carry
+`print("FAIL " + line)` with no `file=sys.stderr`, and `derive-dopaminergic-references.py`
+**reaches that path today**. Its stdout — the channel its rows go to — held nine lines reading
+`FAIL <name>: template disagrees with the stored structure` and no rows at all. Splicing that
+output into `data/library.js` would have pasted nine `FAIL` lines into a JavaScript array literal.
+All 11 are fixed; dopaminergic's stdout is now empty and the nine lines are on stderr.
+
+Those nine failures are a real pre-existing defect in their own right, now visible where it
+belongs: nine alpha-pyrrolidinophenone cathinone anchors (`Alpha-PPP`, `Alpha-PBP`, `Alpha-PVP`,
+`Alpha-PHP`, `4-Methyl-alpha-PPP`, `Pyrovalerone`, `MDPV`, `MDPPP`, `Naphyrone`) do not match the
+template the generator proves them against, before conversion and after. Not fixed here.
 
 ## The loader to converge on
 
-19 generators already read the library properly, and `derive-cephalosporin-references.py` is the
-reference: a cache directory from `MP_DERIVE_CACHE` or `tempfile.mkdtemp`, the library dumped once
+50 of the 51 are now converted. `derive-opioid-references.py` is **held back**: two of its six
+families enumerate novel 4-anilidopiperidines and `main` iterates every family with no option to
+select, so it cannot be run, and its conversion is unverified. It is the one generator still
+reading 7,049 rows, and the one still without a rule-9 gate.
+
+`derive-cephalosporin-references.py` is the reference loader: a cache directory from `MP_DERIVE_CACHE` or `tempfile.mkdtemp`, the library dumped once
 through `node -e "const{LIBRARY}=require('./data/library.js');console.log(JSON.stringify(LIBRARY))"`,
 and rows read as objects with `source` left nested. `derive-benzofuran`, `derive-flavonoid` and
 `derive-beta-carboline` were converted to it in `f8b810c`.
