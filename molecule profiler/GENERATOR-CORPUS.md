@@ -96,10 +96,33 @@ Found while checking the conversion rather than by looking for it: 11 generators
 output into `data/library.js` would have pasted nine `FAIL` lines into a JavaScript array literal.
 All 11 are fixed; dopaminergic's stdout is now empty and the nine lines are on stderr.
 
-Those nine failures are a real pre-existing defect in their own right, now visible where it
-belongs: nine alpha-pyrrolidinophenone cathinone anchors (`Alpha-PPP`, `Alpha-PBP`, `Alpha-PVP`,
-`Alpha-PHP`, `4-Methyl-alpha-PPP`, `Pyrovalerone`, `MDPV`, `MDPPP`, `Naphyrone`) do not match the
-template the generator proves them against, before conversion and after. Not fixed here.
+Those nine failures were a real defect in their own right, and moving them to stderr is what made
+it findable. Nine alpha-pyrrolidinophenone cathinone anchors — `Alpha-PPP`, `Alpha-PBP`,
+`Alpha-PVP`, `Alpha-PHP`, `4-Methyl-alpha-PPP`, `Pyrovalerone`, `MDPV`, `MDPPP`, `Naphyrone` — did
+not match the template they were proven against. The cause is one constant:
+
+```python
+CATHINONE = "{AMINE}C({ALPHA})C(=O){ARYL}"
+PYRROLIDINE = "N1CCCC1"
+```
+
+The comment above the template says `{AMINE}` is "written so its last atom carries the bond to the
+alpha carbon". `CN` and `CN(C)` satisfy that. `N1CCCC1` does not: its last atom is a ring carbon,
+so the alpha carbon bonded to **carbon** and the template built a 2-substituted pyrrolidine with a
+free N-H. For alpha-PVP it produced `CCCC(C(=O)c1ccccc1)C1CCCN1` where the stored row holds
+`CCCC(C(=O)c1ccccc1)N1CCCC1` — a constitutional isomer, with the nitrogen at degree 2 and one
+hydrogen instead of degree 3 and none.
+
+The stored rows were right the whole time. Writing the ring as a branch off the nitrogen,
+`N1(CCCC1)`, reproduces every one of the nine exactly.
+
+Two things about this are worth keeping. **The formula gate cannot see it**: both structures are
+`C15H21NO`, so the generator's stated-versus-computed formula check passed and only the
+stereo-stripped structure comparison against the stored row caught it. And **the generator was
+inert, not merely degraded**: it aborts on any anchor failure, so those nine failures meant it
+could never emit a row at all. Before the fix it exits 1 with nine failures and no
+constructive-proof report; after it reproduces all **90** of its stored entries, 0 failures,
+exit 0. No emitted row changes, because the class is saturated.
 
 ## The loader to converge on
 

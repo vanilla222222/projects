@@ -140,7 +140,7 @@ TROPANES = [
 # {ALPHA} the alpha-alkyl chain, {ARYL} the aroyl ring.
 CATHINONE = "{AMINE}C({ALPHA})C(=O){ARYL}"
 
-PYRROLIDINE = "N1CCCC1"
+PYRROLIDINE = "N1(CCCC1)"
 PHENYL = "c1ccccc1"
 METHYLENEDIOXYPHENYL = "c1ccc2OCOc2c1"
 TOLYL = "c1ccc(C)cc1"
