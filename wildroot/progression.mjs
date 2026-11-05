@@ -1,11 +1,11 @@
-import * as S from './services.mjs?v=16';
-import * as B from './workshop.mjs?v=16';
-import * as H from './alchemy.mjs?v=16';
-import * as C from './chronicle.mjs?v=16';
-import * as A from './adventure.mjs?v=16';
-import * as L from './legacy.mjs?v=16';
-import * as I from './inventory.mjs?v=16';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=16';
+import * as S from './services.mjs?v=17';
+import * as B from './workshop.mjs?v=17';
+import * as H from './alchemy.mjs?v=17';
+import * as C from './chronicle.mjs?v=17';
+import * as A from './adventure.mjs?v=17';
+import * as L from './legacy.mjs?v=17';
+import * as I from './inventory.mjs?v=17';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=17';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));

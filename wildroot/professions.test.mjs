@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=16';
-import * as D from './content.mjs?v=16';
-import * as Panels from './profession-panels.mjs?v=16';
-import * as UI from './ui-panels.mjs?v=16';
-import {roomLayout,pointFor} from './layouts.mjs?v=16';
+import * as E from './engine.mjs?v=17';
+import * as D from './content.mjs?v=17';
+import * as Panels from './profession-panels.mjs?v=17';
+import * as UI from './ui-panels.mjs?v=17';
+import {roomLayout,pointFor} from './layouts.mjs?v=17';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 function visit(s,c,id){const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,secret:null,activity:'rest',position:id==='stars'?{x:d.x,y:d.y}:pointFor(roomLayout(d.area,d.zone),d.point)});E.discoverService(s,c,id);}
 const restore=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
@@ -78,4 +78,11 @@ test('All new profession panes render both fresh and advanced content and locked
 test('Every combat route scales increasingly faster and rewards cannot replace equipment upgrades',()=>{
  for(const [area,curve]of Object.entries(D.ENEMY_CURVES)){for(let i=1;i<curve.hp.length;i++){const before=D.ENEMIES[area+'-'+(i-1)],after=D.ENEMIES[area+'-'+i];assert.ok(after.hp>=before.hp*1.45);assert.ok(after.attack>before.attack);assert.ok(after.xp>before.xp);}}
  const{s,c}=setup();c.area='jungle';c.zone=3;c.level=10;const basic=E.fightStats(s,c);assert.ok(basic.incoming>E.maxHp(c));E.createEquipment(s,'iron-sword',c);E.createEquipment(s,'iron-mail',c);E.createEquipment(s,'iron-helm',c);c.talents.power=15;c.talents.vitality=10;const geared=E.fightStats(s,c);assert.ok(geared.duration<basic.duration);assert.ok(geared.incoming<basic.incoming);assert.equal(D.ENEMIES['forest-0'].hp,16);assert.equal(D.ENEMIES['forest-0'].xp,5);
+});
+
+test('Recipe page browsing keeps a local station focused and shows only its selected page',()=>{
+ const{s,c}=setup();visit(s,c,'anvil');const page1=Panels.anvil(s,c,{recipePage:1}),page2=Panels.anvil(s,c,{recipePage:2});assert.match(page1,/PAGE 1/);assert.match(page1,/data-select-recipe="anvil-expansion-2"/);assert.doesNotMatch(page1,/data-select-recipe="iron-blade"/);assert.match(page2,/data-select-recipe="iron-blade"/);assert.doesNotMatch(page2,/data-select-recipe="blade"/);assert.doesNotMatch(page1,/data-recipe-filter="alchemy"/);
+});
+test('Both town shops require their own physical position for viewing',()=>{
+ const{s,c}=setup();assert.equal(E.serviceAccess(s,c,'shop'),false);visit(s,c,'shop');assert.ok(E.serviceAccess(s,c,'shop'));c.area='jungle-town';c.position={x:1200,y:644};assert.ok(E.serviceAccess(s,c,'shop'));c.position.x=1700;assert.equal(E.serviceAccess(s,c,'shop'),false);
 });
