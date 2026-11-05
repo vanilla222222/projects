@@ -1,9 +1,9 @@
-import * as U from './panels.mjs?v=5';
-import {GameAudio} from './audio.mjs?v=5';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=5';
-import * as E from './engine.mjs?v=5';
-import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=5';
-import {drawWorld,viewFor} from './scene.mjs?v=5';
+import * as U from './panels.mjs?v=6';
+import {GameAudio} from './audio.mjs?v=6';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=6';
+import * as E from './engine.mjs?v=6';
+import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=6';
+import {drawWorld,viewFor} from './scene.mjs?v=6';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
