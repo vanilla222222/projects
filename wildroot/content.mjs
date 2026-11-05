@@ -1,3 +1,4 @@
+import {roomLayout} from './layouts.mjs?v=14';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -258,3 +259,81 @@ for(const id of ['copper','iron','gold','oak','birch','jungle-wood'])CARDS[id]={
 export const MERITS={pockets:{name:'Card Pockets',max:2,cost:3,text:'+1 card slot'},forge:{name:'Extra Furnaces',max:2,cost:3,text:'+1 continuous furnace'},stores:{name:'Anvil Stores',max:3,cost:2,text:'+20 passive product storage'},afk:{name:'Patient Adventuring',max:5,cost:3,text:'+5% AFK combat and gathering progress'},capacity:{name:'Pack Discipline',max:3,cost:2,text:'+5% carry capacity'}};
 export const WORLD_TASKS=[{id:'kills',name:'First Clearing',type:'kills',goal:25,reward:2},{id:'oak',name:'A Stack of Timber',type:'gather',key:'oak',goal:100,reward:2},{id:'copper',name:'Copper Country',type:'gather',key:'copper',goal:100,reward:2},{id:'cards',name:'Card Collector',type:'cards',goal:5,reward:3},{id:'stamps',name:'A Growing Stamp Book',type:'stamps',goal:3,reward:2},{id:'anvil',name:'Made While Adventuring',type:'anvil',goal:50,reward:2},{id:'forge',name:'The Forge Never Sleeps',type:'forge',goal:25,reward:3},{id:'classes',name:'Five Callings',type:'classes',goal:5,reward:3},{id:'rooms',name:'Greenreach Explorer',type:'rooms',goal:18,reward:3},{id:'boss',name:'Rootwarden Vanquisher',type:'boss',goal:1,reward:4},{id:'completion',name:'A World Remembered',type:'completion',goal:1,reward:5}];
 export const DAILY_TASKS=[{id:'hunt',name:'Daily Hunt',type:'kills',goal:20,reward:1},{id:'harvest',name:'Daily Harvest',type:'harvest',goal:50,reward:1},{id:'production',name:'Daily Production',type:'anvil',goal:10,reward:1}];
+
+// Single-player World One Codex content.
+export const STAR_SIGNS={
+ sprout:{name:'The Sprout',icon:'leaf',cost:1,requires:[],effect:'health',amount:.05,text:'+5% maximum health'},
+ ram:{name:'The Root Ram',icon:'sword',cost:2,requires:['sprout'],effect:'attack',amount:.04,text:'+4% damage'},
+ lens:{name:'The Watchful Eye',icon:'eye',cost:1,requires:['sprout'],effect:'accuracy',amount:.08,text:'+8% accuracy'},
+ anvil:{name:'The Iron Anchor',icon:'shield',cost:2,requires:['ram'],effect:'defense',amount:1,text:'+1 defense'},
+ pick:{name:'The Prospector',icon:'pick',cost:2,requires:['lens'],effect:'mining',amount:.08,text:'+8% mining efficiency and speed'},
+ bough:{name:'The Elder Bough',icon:'axe',cost:2,requires:['lens'],effect:'logging',amount:.08,text:'+8% logging efficiency and speed'},
+ scholar:{name:'The Owl',icon:'book',cost:1,requires:['sprout'],effect:'skillXP',amount:.06,text:'+6% profession XP'},
+ hare:{name:'The Hare',icon:'boot',cost:1,requires:['scholar'],effect:'speed',amount:.05,text:'+5% movement speed'},
+ lantern:{name:'The Lantern',icon:'star',cost:2,requires:['hare'],effect:'crit',amount:.01,text:'+1% critical chance'},
+ wanderer:{name:'The Wanderer',icon:'hourglass',cost:2,requires:['anvil','scholar'],effect:'afk',amount:.04,text:'+4% AFK combat and gathering progress'}
+};
+export const CONSTELLATIONS=[
+ {id:'first-light',name:'First Light',area:'forest',zone:0,x:1040,y:342,type:'level',goal:3,text:'Reach character level 3.'},
+ {id:'copper-sky',name:'Copper Sky',area:'caves',zone:0,x:1170,y:350,type:'copper',goal:50,text:'Gather 50 copper across the roster.'},
+ {id:'silver-bough',name:'Silver Bough',area:'forest',zone:2,x:1820,y:305,type:'logging',goal:3,text:'Reach logging level 3 on this character.'},
+ {id:'wayfarer',name:'Wayfarer',area:'town',zone:3,x:2110,y:470,type:'rooms',goal:10,text:'Discover 10 World One rooms.'},
+ {id:'five-lights',name:'Five Lights',area:'jungle-town',zone:0,x:2040,y:425,type:'classes',goal:3,text:'Discover three different classes.'},
+ {id:'gilded-night',name:'Gilded Night',area:'deep',zone:2,x:1890,y:350,type:'mining',goal:5,text:'Reach mining level 5 on this character.'},
+ {id:'sunkeeper',name:'Sunkeeper',area:'forest',zone:3,secret:'sunwell',x:1230,y:320,type:'keeper',goal:1,text:'Defeat the Sunwell Keeper.'},
+ {id:'root-crown',name:'The Root Crown',area:'jungle-town',zone:2,x:2060,y:400,type:'boss',goal:1,text:'Defeat the Rootwarden.'}
+];
+export const VAULT_UPGRADES={
+ edge:{name:'Honed Edges',effect:'attack',amount:.015,max:20,base:15,text:'+1.5% damage per level'},
+ ward:{name:'Stone Wards',effect:'defense',amount:.25,max:20,base:20,text:'+0.25 defense per level'},
+ heart:{name:'Rootbound Vigor',effect:'health',amount:.02,max:20,base:15,text:'+2% maximum health per level'},
+ ore:{name:'Copper Lore',effect:'mining',amount:.02,max:20,base:20,text:'+2% mining speed and efficiency per level'},
+ wood:{name:'Timber Lore',effect:'logging',amount:.02,max:20,base:20,text:'+2% logging speed and efficiency per level'},
+ patience:{name:'Patient Hands',effect:'afk',amount:.01,max:15,base:30,text:'+1% AFK progress per level'},
+ packs:{name:'Careful Packing',effect:'carry',amount:.01,max:20,base:25,text:'+1% items per stack per level'},
+ mint:{name:'Village Trade',effect:'coins',amount:.02,max:20,base:25,text:'+2% monster coins per level'}
+};
+export const ACHIEVEMENTS=[
+ {id:'first',name:'First Footsteps',type:'kills',goal:1,gems:2,text:'Defeat your first enemy.'},
+ {id:'century',name:'Clearing the Greenreach',type:'kills',goal:100,gems:3,text:'Defeat 100 enemies.'},
+ {id:'timber',name:'Timber!',type:'gather',goal:100,gems:2,text:'Gather 100 resources.'},
+ {id:'class',name:'A Calling of Your Own',type:'classes',goal:1,gems:2,text:'Choose your first class.'},
+ {id:'roster',name:'Five Different Answers',type:'classes',goal:5,gems:5,text:'Discover all five classes.'},
+ {id:'level',name:'Getting Somewhere',type:'level',goal:10,gems:3,text:'Reach character level 10.'},
+ {id:'cards',name:'Pocket Collection',type:'cards',goal:5,gems:3,text:'Collect five different cards.'},
+ {id:'food',name:'Packed Lunch',type:'food',goal:1,gems:2,text:'Eat equipped food during combat.'},
+ {id:'forge',name:'Keep the Fires Burning',type:'forge',goal:50,gems:3,text:'Produce 50 bars in continuous furnaces.'},
+ {id:'anvil',name:'Anvil Apprentice',type:'anvil',goal:50,gems:3,text:'Claim 50 passive anvil products.'},
+ {id:'explorer',name:'Beyond the Beaten Track',type:'rooms',goal:20,gems:3,text:'Discover 20 rooms.'},
+ {id:'stars',name:'Written in the Stars',type:'stars',goal:4,gems:3,text:'Complete four constellations.'},
+ {id:'trial',name:'A Bronze Beginning',type:'trial',goal:100,gems:3,text:'Score 100 in a solo trial.'},
+ {id:'boss',name:'Root of the Problem',type:'boss',goal:1,gems:5,text:'Defeat the Rootwarden.'},
+ {id:'world',name:'One World, Well Travelled',type:'completion',goal:1,gems:8,text:'Forge the World One completion token.'}
+];
+export const CARD_COLLECTIONS={
+ forest:{name:'Forest Friends',ids:['forest-0','forest-1','forest-2','forest-3','forest-4'],effect:'attack',amount:.015},
+ caves:{name:'Cave Dwellers',ids:['caves-0','caves-1','caves-2'],effect:'accuracy',amount:.03},
+ jungle:{name:'Canopy Creatures',ids:['jungle-0','jungle-1','jungle-2','jungle-3'],effect:'health',amount:.02},
+ deep:{name:'Depths Below',ids:['deep-0','deep-1','deep-2','deep-3'],effect:'crit',amount:.003},
+ resources:{name:'Working Hands',ids:['copper','iron','gold','oak','birch','jungle-wood'],effect:'skillXP',amount:.02},
+ bosses:{name:'Ancient Guardians',ids:['boss','sunwell-keeper','vault-warden'].filter(id=>CARDS[id]),effect:'skill',amount:.02}
+};
+// These slots have craftable World One equipment; no empty future-world slots.
+Object.assign(GEAR_SLOTS,{legs:'Legs',ring:'Ring',ring2:'Second Ring',cape:'Cape',trophy:'Trophy'});
+for(const[id,name,slot,stats,cost,unlock,requiresCompletion]of [
+ ['copper-greaves','Copper Greaves','legs',{defense:2,health:6},{'copper-bar':3,'boar-hide':4},null,false],
+ ['iron-greaves','Iron Greaves','legs',{defense:3,health:12},{'iron-bar':5,'crawler-shell':6},'ironworking',false],
+ ['grove-ring','Grove Ring','ring',{crit:.005,health:4},{'grove-seed':8,'copper-bar':2,plank:3},null,false],
+ ['canopy-cape','Canopy Cape','cape',{speed:.03,defense:1},{birch:12,'vine-fiber':8,'boar-hide':6},'brewing',false],
+ ['greenreach-trophy','Greenreach Trophy','trophy',{attack:3,health:12},{'boss-heart':1,'gold-bar':5,'grove-seed':15},'heartwood',true]
+]){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,station:'anvil',skill:'smithing',equipment:id,cost,unlock,requiresCompletion});}
+STONES.guard.slots.push('legs','ring','ring2','cape','trophy');
+export const TRIAL_WAVES=['forest-0','forest-1','caves-0','forest-2','caves-1','jungle-0','deep-0','jungle-3'];
+AREAS.push({id:'tree',name:'The Elder Tree',label:'Elder Tree',theme:'forest',icon:'♧',zones:['Rootspire Ascent','Heartwood Stair','Crown Observatory'],resources:[['oak'],['birch'],['jungle-wood']],text:'Three towering climbs through the oldest living tree. The telescope waits above the crown.'});
+export const TELESCOPE={area:'tree',zone:2,x:1450,y:644-14*180};
+for(const[i,name,shape,drop]of [[0,'Branch Mite','crab','bark-shard'],[1,'Sapwing','moth','moth-wing'],[2,'Crown Guardian','stump','grove-seed']]){const id='tree-'+i;ENEMIES[id]={...ENEMIES['forest-'+(i+2)],id,name,shape,area:'tree',index:i,hp:65+i*25,attack:4+i,xp:16+i*4,coins:5+i*2,loot:[{id:drop,chance:.9},{id:drop+'-rare',chance:.05},{id:drop+'-legend',chance:.0001}],behavior:i===1?'bolt':i===2?'guard':'hop',windup:1.1};CARDS[id]={name:name+' Card',effect:i===1?'accuracy':'logging',amount:.025,kind:'monster'};}
+CARD_COLLECTIONS.bosses.ids=['boss','sunwell','vault'];
+CARD_COLLECTIONS.tree={name:'Life Above',ids:['tree-0','tree-1','tree-2'],effect:'logging',amount:.02};
+
+// Use the authored room names consistently in portals, maps, quests and the HUD.
+for(const a of AREAS)a.zones=a.zones.map((_,i)=>roomLayout(a.id,i).title);
