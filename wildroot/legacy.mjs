@@ -1,12 +1,13 @@
-import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=10';
-import * as I from './inventory.mjs?v=10';
+import {roomLayout,pointFor} from './layouts.mjs?v=12';
+import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=12';
+import * as I from './inventory.mjs?v=12';
 export const DAY=86400000;
 export function initializeTown(s){s.stampRewardClaims??=[];s.npcTokens??=[];s.worldCompletionCrafted??=false;s.stamps??={};s.gems??=0;s.gemClaims??=[];s.cosmetics??=[];s.teleports??={count:8,at:s.savedAt||Date.now()};s.shopStock??={};for(const c of s.characters){c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;}for(const q of STORY)if(s.story[q.id]?.done&&!s.stampRewardClaims.includes(q.id)&&Object.keys(q.reward.items||{}).some(id=>id.startsWith('stamp-'))){for(const[id,n]of Object.entries(q.reward.items||{}))if(id.startsWith('stamp-')&&!s.stamps[id.slice(6)]&&!(s.inventory[id]>0)&&!s.characters.some(c=>(c.bag[id]||0)+(c.overflow[id]||0)>0||(c.groundLoot||[]).some(d=>d.itemId===id)))I.give(s.characters.find(c=>c.id===s.active)||s.characters[0],id,n);s.stampRewardClaims.push(q.id);}s.visited['forest-0']=true;s.visited['town-0']=true;return s;}
 export function money(value){let n=Math.max(0,Math.floor(value));const out=[];for(const[unit,size]of [['p',1000000],['g',10000],['s',100],['c',1]]){const q=Math.floor(n/size);if(q){out.push(q+unit);n%=size;}}return out.join(' ')||'0c';}
 export function refreshTeleports(s,now=Date.now()){const t=s.teleports;if(now<t.at)return t.count;const days=Math.floor((now-t.at)/DAY);if(days){t.count=Math.min(30,t.count+days*3);t.at+=days*DAY;}return t.count;}
 export const teleportWait=(s,now=Date.now())=>Math.max(0,s.teleports.at+DAY-now);
 export function discovered(s,area,zone){return!!s.visited[`${area}-${zone}`];}
-export function nearFacility(c,id){const x=id==='shop'?(c.area==='town'?680:565):id==='stamps'?350:id==='townworks'?850:650;return(id==='shop'?!!TOWN_SHOPS[c.area]&&c.zone===0:c.area==='town'&&c.zone===3)&&!c.secret&&Math.abs((c.position?.x??190)-x)<110&&Math.abs((c.position?.y??644)-644)<60;}
+export function nearFacility(c,id){const town=id==='shop'?!!TOWN_SHOPS[c.area]&&c.zone===0:c.area==='town'&&c.zone===3;if(!town||c.secret)return false;const point=pointFor(roomLayout(c.area,c.zone),id);return Math.abs((c.position?.x??190)-point.x)<110&&Math.abs((c.position?.y??644)-point.y)<60;}
 export function stampCost(s,id){const d=s.stamps[id];if(!STAMPS[id]||!d)return null;return{coins:Math.ceil(10*1.35**(d.level-1)),material:STAMPS[id].material,quantity:Math.ceil(20*1.7**(d.cap/5-1))};}
 export function registerStamp(s,c,id){if(!nearFacility(c,'stamps')||!STAMPS[id]||s.stamps[id]||!c.bag['stamp-'+id])return false;c.bag['stamp-'+id]--;s.stamps[id]={level:1,cap:5};return true;}
 export function upgradeStamp(s,c,id){const d=s.stamps[id],cost=stampCost(s,id);if(!nearFacility(c,'stamps')||!cost||d.level>=d.cap||s.coins<cost.coins)return false;s.coins-=cost.coins;d.level++;return true;}

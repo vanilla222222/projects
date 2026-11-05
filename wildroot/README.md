@@ -110,3 +110,16 @@ Mentors appear once each: Willow in Mossy Clearing, Brann in Lantern Mouth, Flin
 Validation includes 86 engine/world/inventory/town regressions, the complete existing World One story run, every paired portal, quest acceptance visibility, token conservation, exact mentor locations, shop transactions/restocks, safe selling, stamp/cap consumption and migration, statue ownership/locked slots, talent budgets/hotbar cooldowns/presets, limited teleports and one-time gem claims. Physical mobile-device playtesting remains outstanding.
 
 Research references: DigitalTQ’s original guides for [stamps](https://www.digitaltq.com/wiki/idleon/stamps), [statues](https://www.digitaltq.com/wiki/idleon/statues), [talents and teleportation](https://www.digitaltq.com/wiki/idleon/beginner-guide), and [World One shops](https://www.digitaltq.com/wiki/idleon/world-1-guide-blunder-hills). All Wildroot art, quest text, item names and economy values are original.
+
+
+## World One adventure expansion (v12)
+
+- Combat now has accuracy against enemy requirements, a displayed damage range, regenerating mana (4/8/12 MP abilities), and two personal auto-food slots. Both shops sell food; the alchemy station makes it. Food stacks use food-pouch capacity and respect inventory locks when equipped.
+- Inventory links to the shared card collection and the AFK & gathering panel. Each character has separate combat/skilling card loadouts, initially four slots. Monster cards drop at 2.5%; gathering cards at 1.5% per resource gained; duplicate thresholds are 1/10/30/100/300.
+- Gathering exposes efficiency thresholds, success rates, multiyield and a five-round timing minigame. Approach a node and start gathering, open AFK & gathering, and play. Three attempts per skill per UTC day, per character; closing forfeits the attempt. Successful games award 2–17 resources and 10–70 skill XP.
+- Professions links to passive anvil products, persistent continuous furnaces and three permanent stone slots per equipment item, independent of runes. Passive products have finite storage; furnaces reserve their inputs and stop at their output limit. The original queued recipe foundry remains available separately.
+- The task board in Legacy Square unlocks world/daily tasks and five merit upgrade tracks. Daily progress is measured from reset; daily claims and minigame attempts cannot be reset by rewinding the clock.
+- All 26 rooms have authored layouts, widths of 2100–3800 world units, different platforms, direct-ground ladders, individual landmarks and relocated inhabitants. The scrolling camera and tappable room overview share simulation coordinates. Named reciprocal doorways still control arrival positions. Town chests remain at the western approach of every town room.
+- Existing saves initialize all new systems. Old positions and floor loot are placed on reachable floors in the new geometry. There is still no active World Two or real-money shop.
+
+Validation: `node --test wildroot/*.test.mjs` (110 tests), `node wildroot/world1-sim.mjs` (complete World One story). Layout tests traverse every shelf and portal, check entity support and migration, and verify camera limits. AFK values are estimates; active play varies with movement and skills, and mixed rare loot can fill bags sooner than the common-loot estimate.

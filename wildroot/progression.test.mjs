@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=10';
-import * as D from './content.mjs?v=10';
-import {World,createMap,GROUND,abilitySet} from './world.mjs?v=10';
+import * as E from './engine.mjs?v=12';
+import * as D from './content.mjs?v=12';
+import {World,createMap,GROUND,abilitySet} from './world.mjs?v=12';
 function rich(s){s.coins=10000;for(const id of Object.keys(D.ITEMS))s.inventory[id]=1000;for(const id of ['ironworking','gilding','brewing','verdant-steel','sunwell','heartwood'])E.unlock(s,id);}
 function tick(w,n,input={}){for(let i=0;i<n*50;i++)w.step(.02,typeof input==='function'?input(i):input);}
 test('Every town zone has an actual universal storage chest',()=>{for(const a of D.AREAS.filter(a=>['town','jungle-town'].includes(a.id)))for(let i=0;i<a.zones.length;i++){const map=createMap(a.id,i);assert.equal(map.storage.length,1);assert.equal(map.storage[0].kind,'storage');assert.ok(map.entities.includes(map.storage[0]));}});
@@ -49,7 +49,7 @@ test('Story quests enforce prerequisite chains, consume deliveries once and cann
  const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.acceptQuest(s,'seal'),false);assert.equal(s.storyFlags.bossPermit,false);assert.ok(E.acceptQuest(s,'first-roots'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);s.kills['forest-0']=8;assert.ok(E.claimQuest(s,c,'first-roots','steward'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);assert.ok(c.bag['woven-pouch']);assert.ok(E.acceptQuest(s,'tools'));const bars=s.inventory['copper-bar'];assert.equal(E.claimQuest(s,c,'tools','mage'),false);assert.equal(s.inventory['copper-bar'],bars);assert.ok(E.claimQuest(s,c,'tools','blacksmith'));assert.equal(s.inventory['copper-bar'],bars-4);
 });
 test('Secret passages and boss entrance obey their quest gates',()=>{
- const s=E.freshSave(),w=new World(s,{rng:()=>.5});s.kills['jungle-3']=12;w.travel('jungle-town',2);w.player.x=1180;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,false);s.storyFlags.bossPermit=true;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,true);assert.equal(E.secretOpen(s,'sunwell'),false);s.secretUnlocks.push('sunwell');assert.ok(E.secretOpen(s,'sunwell'));
+ const s=E.freshSave(),w=new World(s,{rng:()=>.5});s.kills['jungle-3']=12;w.travel('jungle-town',2);w.player.x=w.map.portals.find(p=>p.id==='portal-right').x-20;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,false);s.storyFlags.bossPermit=true;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,true);assert.equal(E.secretOpen(s,'sunwell'),false);s.secretUnlocks.push('sunwell');assert.ok(E.secretOpen(s,'sunwell'));
 });
 test('Secondary and utility abilities have level gates, independent cooldowns and safe saved buffs',()=>{
  const s=E.freshSave(),c=E.selected(s);c.class='warrior';const w=new World(s,{rng:()=>.5});w.player.x=650;assert.equal(w.useSkill(1),false);c.level=10;E.train(c,'secondary','class');E.train(c,'utility','class');c.hp=10;assert.ok(w.useSkill(1));assert.ok(w.player.cooldowns[1]>0);assert.ok(w.useSkill(2));assert.ok(c.hp>10);assert.equal(w.useSkill(2),false);assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));assert.equal(abilitySet(c).length,3);
