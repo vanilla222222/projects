@@ -1,9 +1,9 @@
-import * as U from './panels.mjs?v=7';
-import {GameAudio} from './audio.mjs?v=7';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=7';
-import * as E from './engine.mjs?v=7';
-import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=7';
-import {drawWorld,viewFor} from './scene.mjs?v=7';
+import * as U from './panels.mjs?v=8';
+import {GameAudio} from './audio.mjs?v=8';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=8';
+import * as E from './engine.mjs?v=8';
+import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=8';
+import {drawWorld,viewFor} from './scene.mjs?v=8';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -68,7 +68,7 @@ window.addEventListener('pointercancel',()=>{panelInteraction=false;});
 window.addEventListener('keyup',()=>{panelInteraction=false;});
 function buildTargets(){
  const key=world.key+':'+world.map.boss+':'+world.map.monsters.map(e=>e.id).join(',')+':'+world.groundLoot.map(d=>d.id).join(',');if(key===targetKey)return;targetKey=key;
- html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:e.direction<0?'Enter previous map':'Enter next map';return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));
+ html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));
 }
 function projectTargets(){const v=viewFor($('scene'),world.player);for(const button of $('world-objects').children){const e=[...world.map.entities,...world.groundLoot].find(e=>e.id===button.dataset.target);if(!e)continue;button.hidden=e.kind==='enemy'&&e.dead>0;const w=e.kind==='drop'?44:e.kind==='node'?110:90,h=e.kind==='drop'?44:e.kind==='node'?160:e.kind==='portal'?135:120;button.style.left=`${(e.x-w/2-v.x)/v.width*100}%`;button.style.top=`${(e.y-h)/v.height*100}%`;button.style.width=`${w/v.width*100}%`;button.style.height=`${h/v.height*100}%`;}}
 function refresh(){

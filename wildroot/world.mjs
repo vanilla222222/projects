@@ -1,5 +1,5 @@
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=7';
-import * as E from './engine.mjs?v=7';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=8';
+import * as E from './engine.mjs?v=8';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -26,7 +26,7 @@ export function createMap(area,index,boss=false,secret=null){
  if(area==='town'&&index===0)npcs.push({id:'npc-steward',kind:'npc',classId:null,role:'steward',name:'Hesta',x:1060,y:GROUND});
  const station=area==='town'?(index===1?'anvil':index===2?'foundry':null):area==='jungle-town'?(index===0?'enchanting':index===1?'alchemy':null):null;
  const stations=station?[{id:'station',kind:'station',station,x:815,y:GROUND,name:station[0].toUpperCase()+station.slice(1)}]:[];
- const portals=[{id:'portal-left',kind:'portal',x:65,y:GROUND,direction:-1,name:'Previous map'},{id:'portal-right',kind:'portal',x:1210,y:GROUND,direction:1,name:area==='jungle-town'&&index===2?'The Rootwarden':'Next map'}];
+ const portals=roomPortals(area,index,boss,secret);
  const storage=town&&!secret?[{id:'storage',kind:'storage',name:'Storage Chest',x:160,y:GROUND}]:[];
  const discoveries=!secret&&!boss?Object.entries(SECRETS).filter(([id,d])=>d.area===area&&d.zone===index).map(([id,d])=>({id:'secret-'+id,kind:'discovery',secret:id,name:d.name,x:655,y:GROUND})):[];
  return{area,index,boss,secret,town,monsters,resources:secret?[]:resources,npcs:secret?[]:npcs,stations:secret?[]:stations,portals,discoveries,storage,entities:[...storage,...monsters,...(secret?[]:resources),...(secret?[]:npcs),...(secret?[]:stations),...portals,...discoveries]};
@@ -38,20 +38,49 @@ export function nextRoute(area,index,direction){
  if(area==='jungle-town')return{boss:true};
  const dest={town:['caves',0],forest:['jungle',0],caves:['deep',0],jungle:['jungle-town',0],deep:['caves',2]}[area];return{area:dest[0],zone:dest[1]};
 }
-export function makePlayer(c){const saved=c.position;return{x:Math.max(100,Math.min(1180,Number.isFinite(saved?.x)?saved.x:190)),y:GROUND,vx:0,vy:0,grounded:true,facing:1,climbing:false,climbTo:null,attack:0,skill:0,cooldowns:[0,0,0],flash:0,walk:0,respawn:0};}
+// Every doorway names both its destination room and the entrance in that room.
+export function entrancePoint(id='portal-left'){
+ if(id==='portal-right')return{x:1140,y:GROUND,facing:-1};
+ if(id==='portal-deep-return')return{x:1040,y:342,facing:-1};
+ if(id.startsWith('secret-'))return{x:725,y:GROUND,facing:1};
+ return{x:135,y:GROUND,facing:1};
+}
+export function roomPortals(area,index,boss=false,secret=null){
+ const make=(id,direction,to)=>{const point=id==='portal-deep-return'?{x:1110,y:342}:{x:direction<0?65:1210,y:GROUND};return{id,kind:'portal',...point,direction,destination:to,name:to.boss?'The Rootwarden':to.secret?SECRETS[to.secret].name:areaById(to.area).zones[to.zone]};};
+ if(secret)return[make('portal-left',-1,{area,zone:index,entrance:'secret-'+secret})];
+ if(boss)return[make('portal-left',-1,{area,zone:index,entrance:'portal-right'})];
+ const portals=[-1,1].map(direction=>{const route=nextRoute(area,index,direction),to=route.boss?{area,zone:index,boss:true,entrance:'portal-left'}:{...route};
+  if(!to.entrance){if(area==='deep'&&index===3&&direction===1)to.entrance='portal-deep-return';else to.entrance=[-1,1].find(d=>{const back=nextRoute(to.area,to.zone,d);return !back.boss&&back.area===area&&back.zone===index;})===1?'portal-right':'portal-left';}
+  return make(direction<0?'portal-left':'portal-right',direction,to);
+ });
+ // The deep-cavern loop has its own elevated doorway in the Echo Chamber.
+ if(area==='caves'&&index===2)portals.push(make('portal-deep-return',0,{area:'deep',zone:3,entrance:'portal-right'}));
+ return portals;
+}
+export function makePlayer(c){const saved=c.position,x=Math.max(25,Math.min(1255,Number.isFinite(saved?.x)?saved.x:190)),y=PLATFORMS.some(p=>p.y===saved?.y&&x>=p.x&&x<=p.x+p.w)?saved.y:GROUND;return{x,y,vx:0,vy:0,grounded:true,facing:saved?.facing===-1?-1:1,climbing:false,climbTo:null,attack:0,skill:0,cooldowns:[0,0,0],flash:0,walk:0,respawn:0};}
 export class World {
  constructor(state,{onIntent=()=>{},onEvent=()=>{},rng=Math.random}={}){this.state=state;this.onIntent=onIntent;this.onEvent=onEvent;this.rng=rng;this.particles=[];this.drops=[];this.time=0;this.auto=false;this.enter();}
  get c(){return E.selected(this.state);}
  enter(boss=this.c.activity==='boss'){this.map=createMap(this.c.area,this.c.zone,boss,this.c.secret||null);this.player=makePlayer(this.c);this.target=null;this.destination=null;this.pendingSkill=false;this.particles=[];this.drops=[];this.hazards=[];this.projectiles=[];this.groundLoot=(Array.isArray(this.c.groundLoot)?this.c.groundLoot:[]).filter(d=>d&&typeof d.id==='string'&&Number.isFinite(d.x)&&Number.isFinite(d.y)&&Number.isFinite(d.count)&&d.count>0&&(d.itemId==='coins'||ITEMS[d.itemId]));for(const d of this.groundLoot)d.collectAfter=0;this.c.groundLoot=this.groundLoot;this.auto=['fight','boss'].includes(this.c.activity);if(this.c.activity==='gather'){this.target=this.map.resources.find(e=>e.resource===this.c.resource)||null;}this.c.progress=0;this.key=`${this.c.id}:${this.c.area}:${this.c.zone}:${this.c.secret||''}`;}
  switchCheck(){if(this.key!==`${this.c.id}:${this.c.area}:${this.c.zone}:${this.c.secret||''}`)this.enter();}
- travel(area,index){if(!E.zoneUnlocked(this.state,area,index))return false;this.collectAll();if(!E.travel(this.state,this.c,area,index))return false;this.c.position=null;this.enter();this.onEvent({type:'portal'});return true;}
+ travel(area,index,destination=null){
+ if(!E.zoneUnlocked(this.state,area,index))return false;
+ const from=this.map,back=roomPortals(area,index).find(p=>p.destination.area===from.area&&p.destination.zone===from.index&&!p.destination.boss&&!from.boss&&!from.secret),entrance=destination?.entrance||back?.id;
+ if(destination?.boss&&!this.state.storyFlags.bossPermit)return false;
+ if(destination?.secret&&!E.secretOpen(this.state,destination.secret))return false;
+ this.collectAll();if(!E.travel(this.state,this.c,area,index))return false;
+ this.c.secret=destination?.secret||null;this.c.activity=destination?.boss?'boss':'rest';
+ this.c.entryPoint=entrance?entrancePoint(entrance):{x:190,y:GROUND,facing:1};this.c.position={...this.c.entryPoint};
+ this.enter(!!destination?.boss);if(destination?.boss)this.findTarget();this.onEvent({type:'portal'});return true;
+ }
+ usePortal(portal){if(!this.map.portals.includes(portal))return false;const to=portal.destination;if(this.travel(to.area,to.zone,to))return true;this.onEvent({type:'notice',text:to.boss?'Complete An Unquiet Seal with Mira to open the boss gate.':E.lockReason(this.state,to.area,to.zone)||'That route is not open yet.'});return false;}
  select(id){const entity=this.map.entities.find(e=>e.id===id);if(!entity||entity.kind==='enemy'&&entity.dead>0)return false;if(entity.kind==='node'&&E.gatherRequirement(this.c,entity.resource)){this.onEvent({type:'notice',text:E.gatherRequirement(this.c,entity.resource)});return false;}this.target=entity;this.destination=null;this.pendingSkill=false;if(entity.kind==='enemy'){this.c.activity=this.map.boss?'boss':'fight';this.c.resource=null;}else if(entity.kind==='node'){this.c.activity='gather';this.c.resource=entity.resource;}else{this.c.activity='rest';this.auto=false;}this.c.progress=0;return true;}
  walkTo(x,y=GROUND){let floor=PLATFORMS.filter(p=>x>=p.x&&x<=p.x+p.w).sort((a,b)=>Math.abs(a.y-y)-Math.abs(b.y-y))[0]||PLATFORMS[0];this.destination={x:Math.max(25,Math.min(WIDTH-25,x)),y:floor.y};this.target=null;this.c.activity='rest';this.c.progress=0;this.auto=false;}
  stop(){this.target=null;this.destination=null;this.auto=false;this.c.activity='rest';this.c.progress=0;}
  toggleAuto(){if(!this.map.monsters.length){this.onEvent({type:'notice',text:'There are no enemies on this map.'});return false;}this.auto=!this.auto;if(this.auto){this.c.activity=this.map.boss?'boss':'fight';this.findTarget();}else this.stop();return this.auto;}
  findTarget(){const p=this.player,nearest=this.map.monsters.filter(e=>e.dead<=0).sort((a,b)=>Math.abs(a.x-p.x)+Math.abs(a.y-p.y)*2-Math.abs(b.x-p.x)-Math.abs(b.y-p.y)*2)[0];if(nearest)this.target=nearest;}
  particle(x,y,text,color='#fff2a8'){this.particles.push({x,y,text,color,life:1.2});}
- hit(e,mult=1){if(!e||e.dead>0)return;const critical=this.rng()<E.critChance(this.c),guard=e.guarding?.65:1,damage=Math.max(1,Math.round(E.power(this.state,this.c)*mult*(critical?2:1)*guard));e.hp-=damage;e.flash=.15;this.particle(e.x,e.y-62,critical?damage+'!':damage,critical?'#ffbd6a':'#fff2a8');this.onEvent({type:'hit'});if(e.hp<=0){e.hp=0;e.dead=this.map.boss?Infinity:this.map.secret?9:5;const coins=this.state.coins,loot=E.grantKills(this.state,this.c,e.enemy,1,this.rng,{collect:false});this.particle(e.x,e.y-100,`+${e.enemy.xp} XP`,'#b8f3ff');const money=this.state.coins-coins;this.state.coins-=money;this.spawnLoot('coins',money,e.x,e.y);for(const drop of loot)this.spawnLoot(drop.id,drop.count,e.x+(this.groundLoot.length%3)*22,e.y);if(this.map.boss){this.hazards=[];for(const other of this.map.monsters)if(other!==e)other.dead=Infinity;this.collectAll();this.auto=false;this.c.activity='rest';this.onIntent({type:'victory'});}if(this.target===e)this.target=null;}}
+ hit(e,mult=1){if(!e||e.dead>0)return;const critical=this.rng()<E.critChance(this.c),guard=e.guarding?.65:1,damage=Math.max(1,Math.round(E.power(this.state,this.c)*mult*(critical?2:1)*guard));e.hp-=damage;e.flash=.15;this.particle(e.x,e.y-62,critical?damage+'!':damage,critical?'#ffbd6a':'#fff2a8');this.onEvent({type:'hit'});if(e.hp<=0){e.hp=0;e.dead=this.map.boss?Infinity:this.map.secret?9:5;const coins=this.state.coins,loot=E.grantKills(this.state,this.c,e.enemy,1,this.rng,{collect:false});this.particle(e.x,e.y-100,`+${e.enemy.xp} XP`,'#b8f3ff');const money=this.state.coins-coins;this.state.coins-=money;this.spawnLoot('coins',money,e.x,e.y);for(const drop of loot)this.spawnLoot(drop.id,drop.count,e.x+(this.groundLoot.length%3)*22,e.y);if(this.map.boss&&e.enemy.id==='boss'){this.hazards=[];for(const other of this.map.monsters)if(other!==e)other.dead=Infinity;this.collectAll();this.auto=false;this.c.activity='rest';this.onIntent({type:'victory'});}if(this.target===e)this.target=null;}}
  dropInventory(index,n=Infinity){const taken=E.takeSlot(this.c,index,n);if(!taken)return false;this.groundLoot.push({id:`loot-drop-${Date.now()}-${this.groundLoot.length}`,kind:'drop',...taken,x:Math.max(25,Math.min(WIDTH-25,this.player.x+this.player.facing*145)),y:this.player.y,collectAfter:this.time+2});this.c.groundLoot=this.groundLoot;return true;}
  spawnLoot(itemId,count,x,y){if(count<=0)return;const pile=this.groundLoot.find(d=>!d.gear&&d.itemId===itemId&&Math.abs(d.y-y)<30&&Math.abs(d.x-x)<90);if(pile){pile.count+=count;return;}this.groundLoot.push({id:`loot-${Date.now()}-${Math.floor(this.rng()*1000000)}-${this.groundLoot.length}`,kind:'drop',itemId,count,x,y});this.c.groundLoot=this.groundLoot;}
  collect(drop){if(!this.groundLoot.includes(drop))return false;let moved=drop.count;if(drop.itemId==='coins')this.state.coins+=moved;else{moved=drop.gear?(E.bagUsed(this.c)<E.bagCapacity(this.c)?(this.c.packGear.push(drop.gear),1):0):E.carry(this.c,drop.itemId,drop.count);if(!moved){if(this.auto){this.auto=false;this.target=null;this.c.activity='rest';}if(!this.lastFullNotice||this.time-this.lastFullNotice>5){this.lastFullNotice=this.time;this.onEvent({type:'notice',text:'Your backpack is full. Deposit items at a town chest.'});}return false;}this.onEvent({type:'loot',id:drop.itemId,count:moved});}this.drops.push({x:drop.x,y:drop.y-20,life:1.8,text:`+${moved} ${drop.itemId==='coins'?'◈':ITEMS[drop.itemId].name}`});drop.count-=moved;if(!drop.count)this.groundLoot.splice(this.groundLoot.indexOf(drop),1);this.c.groundLoot=this.groundLoot;return true;}
@@ -67,8 +96,8 @@ export class World {
    if(t.kind==='enemy'){this.basicAttack();if(this.auto&&p.skill<=0)this.useSkill(0,true);if(this.auto&&this.c.level>=6&&p.cooldowns[1]<=0)this.useSkill(1,true);if(this.auto&&this.c.level>=10&&this.c.hp<E.maxHp(this.c)*.6)this.useSkill(2,true);}
    else if(t.kind==='node'){if(E.carryRoom(this.c,t.resource)<1){this.stop();this.onEvent({type:'notice',text:'Backpack full. Deposit items at a town chest.'});return 0;}const requirement=E.gatherRequirement(this.c,t.resource);if(requirement){this.stop();this.onEvent({type:'notice',text:requirement});return 0;}this.c.activity='gather';this.c.resource=t.resource;this.c.progress+=dt;const interval=E.gatherInterval(this.c,t.resource);if(this.c.progress>=interval){this.c.progress-=interval;const yielded=E.gatherYield(this.c,1,this.rng);E.give(this.c,t.resource,yielded);E.skillXp(this.c,E.gatherSkill(t.resource),2);E.gainXp(this.c,.4);p.flash=.25;this.particle(t.x,t.y-100,'+1','#c1ef8f');this.onEvent({type:'loot',id:t.resource,count:yielded});this.onEvent({type:'gather',resource:t.resource});}}
    else if(t.kind==='drop'){this.collect(t);this.target=null;}
-   else if(t.kind==='discovery'){this.target=null;if(E.secretOpen(this.state,t.secret)){this.collectAll();this.c.secret=t.secret;this.c.activity='rest';this.enter(false);this.onEvent({type:'portal'});}else this.onEvent({type:'notice',text:t.secret==='sunwell'?'Complete Letters from the Canopy with Willow.':'Complete Outpost Supplies and train all five class professions to level 2.'});}
-   else if(t.kind==='portal'){this.target=null;if(this.map.secret){this.collectAll();this.c.secret=null;this.c.activity='rest';this.enter(false);return 0;}const route=nextRoute(this.c.area,this.c.zone,t.direction);if(route.boss){if(!this.state.storyFlags.bossPermit){this.onEvent({type:'notice',text:'Complete An Unquiet Seal with Mira to open the boss gate.'});return 0;}this.enter(true);this.c.activity='boss';this.auto=true;this.findTarget();}else if(!this.travel(route.area,route.zone)){this.onEvent({type:'notice',text:E.lockReason(this.state,route.area,route.zone)});}}
+   else if(t.kind==='discovery'){this.target=null;if(!this.travel(this.c.area,this.c.zone,{secret:t.secret,entrance:'portal-left'}))this.onEvent({type:'notice',text:t.secret==='sunwell'?'Complete Letters from the Canopy with Willow.':'Complete Outpost Supplies and train all five class professions to level 2.'});}
+   else if(t.kind==='portal'){this.target=null;this.usePortal(t);}
    else if(t.kind){this.target=null;this.onIntent({type:t.kind,entity:t});}
    else this.destination=null;
    return 0;
@@ -87,12 +116,13 @@ export class World {
   p.attack=Math.max(0,p.attack-dt);p.skill=Math.max(0,p.skill-dt);p.cooldowns=p.cooldowns.map(n=>Math.max(0,n-dt));E.advanceBuffs(c,dt);p.flash=Math.max(0,p.flash-dt);
   for(const e of this.map.monsters){e.flash=Math.max(0,(e.flash||0)-dt);if(e.dead>0){e.dead-=dt;if(e.dead<=0){e.dead=0;e.hp=e.enemy.hp;e.attack=1.5;e.telegraph=null;}}}
   for(const particle of this.particles){particle.life-=dt;particle.y-=dt*35;}this.particles=this.particles.filter(p=>p.life>0);for(const d of this.drops)d.life-=dt;this.drops=this.drops.filter(d=>d.life>0);
-  if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0){p.x=190;p.y=GROUND;p.vy=0;p.grounded=true;c.hp=E.maxHp(c);this.stop();}return;}
+  if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0){const spawn=this.c.entryPoint?makePlayer({position:this.c.entryPoint}):{x:190,y:GROUND};p.x=spawn.x;p.y=spawn.y;p.facing=spawn.facing||1;p.vy=0;p.grounded=true;c.hp=E.maxHp(c);this.stop();}return;}
   if(input.horizontal||input.vertical||input.jump){this.target=null;this.destination=null;this.auto=false;c.activity='rest';c.progress=0;}
   if(this.target?.kind==='enemy'&&this.target.dead>0)this.target=null;
   if(this.auto&&!this.target)this.findTarget();
   let direction=input.horizontal||0;
   if(!direction&&!input.vertical)direction=this.follow(dt);
+  if(p!==this.player)return; // A doorway replaced the room; do not save source-room coordinates.
   if(p.climbing){
    if(p.climbTo!==null){const sign=Math.sign(p.climbTo-p.y);p.y+=sign*220*dt;if(Math.abs(p.climbTo-p.y)<8){p.y=p.climbTo;p.climbing=false;p.climbTo=null;p.grounded=true;}}
    else{p.y-=input.vertical*220*dt;if(p.y<=p.ladder.top){p.y=p.ladder.top;p.climbing=false;p.grounded=true;}if(p.y>=p.ladder.bottom){p.y=p.ladder.bottom;p.climbing=false;p.grounded=true;}}
@@ -124,6 +154,6 @@ export class World {
   this.hazards=this.hazards.filter(h=>h.life>0&&h.x>-60&&h.x<WIDTH+60);
   if(c.hp<=0){p.respawn=3;this.target=null;this.auto=false;this.particle(p.x,p.y-120,'Recovering…','#ffcf8a');this.onEvent({type:'notice',text:'You were knocked out. Recovering at the entrance.'});}
   else if(!fighting)c.hp=Math.min(E.maxHp(c),c.hp+dt*(c.activity==='gather'?1:3));
-  c.position={x:p.x,y:p.y};
+  c.position={x:p.x,y:p.y,facing:p.facing};
  }
 }
