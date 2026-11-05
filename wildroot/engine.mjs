@@ -1,14 +1,14 @@
-import * as A from './adventure.mjs?v=12';
-export * from './adventure.mjs?v=12';
-import * as L from './legacy.mjs?v=12';
-export * from './legacy.mjs?v=12';
-import * as I from './inventory.mjs?v=12';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=12';
-import * as P from './progression.mjs?v=12';
-export * from './progression.mjs?v=12';
-export {initialize,validate} from './progression.mjs?v=12';
-export * from './inventory.mjs?v=12';
-export {canPay,pay} from './inventory.mjs?v=12';
+import * as A from './adventure.mjs?v=13';
+export * from './adventure.mjs?v=13';
+import * as L from './legacy.mjs?v=13';
+export * from './legacy.mjs?v=13';
+import * as I from './inventory.mjs?v=13';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=13';
+import * as P from './progression.mjs?v=13';
+export * from './progression.mjs?v=13';
+export {initialize,validate} from './progression.mjs?v=13';
+export * from './inventory.mjs?v=13';
+export {canPay,pay} from './inventory.mjs?v=13';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -73,8 +73,8 @@ export function claimOffline(s,now=Date.now(),rng=Math.random){const elapsed=Mat
 export const talentPoints=P.combatPoints;
 export function trainTalent(c,id,count=1){const ok=P.train(c,id,'combat',count);if(ok&&id==='vitality')c.hp=Math.min(maxHp(c),c.hp+10);return ok;}
 export function advanceBackground(s,seconds,activeId=s.active,rng=Math.random){const workers=s.characters.filter(c=>c.id!==activeId);if(!workers.length)return;const proxy={...s,characters:workers};advance(proxy,seconds,rng,{production:false});s.coins=proxy.coins;s.bossDefeated=proxy.bossDefeated;s.log=proxy.log;A.syncCards(s);}
-export function rates(s,c){const bonus=1+(s.merits.afk||0)*.05;if(c.activity==='boss')return{items:0,xp:0,coins:0,label:'Active boss encounter · no idle rewards'};if(c.activity==='gather'){const reason=gatherRequirement(c,c.resource),o=gatherOdds(c,c.resource),attempts=reason?0:3600/gatherInterval(c,c.resource)*bonus;return{items:attempts*o.chance*o.multi*(1+(c.profTalents.prosperity||0)*.02),xp:attempts*2,coins:0,label:reason||ITEMS[c.resource].name};}const f=fightStats(s,c),e=enemyFor(c);if(c.activity==='rest'||!f||!e)return{items:0,xp:0,coins:0,label:'Resting'};const foodPerSecond=c.foodSlots.reduce((n,t)=>n+(t?.count?Math.min(t.count*FOODS[t.id].heal/3600,FOODS[t.id].heal/FOODS[t.id].cooldown):0),0),recovery=f.incoming>=maxHp(c)&&!A.foodSupply(c)?Infinity:Math.max(0,f.incoming-foodPerSecond*f.duration)/4,perHour=3600/(f.duration+recovery)*bonus;return{items:perHour*.8,kills:perHour,xp:perHour*e.xp,coins:perHour*e.coins,label:recovery===Infinity?'Improve equipment before fighting':e.name};}
-export function afkInfo(s,c){const r=rates(s,c),e=enemyFor(c),f=fightStats(s,c),foodHealing=A.foodSupply(c),incoming=f?f.incoming/f.duration:0,ids=c.activity==='gather'?[c.resource]:(e?.loot.filter(d=>d.chance>=.5).map(d=>d.id)||[]),room=ids.length?Math.min(...ids.map(id=>I.carryRoom(structuredClone(c),id))):0;return{...r,accuracy:accuracy(c),hitChance:e?hitChance(c,e):1,damage:damageRange(s,c),mana:A.maxMana(c),regen:A.manaRegen(c),foodHealing,foodHours:incoming?foodHealing/incoming/3600:Infinity,bagSeconds:r.items?room/r.items*3600:Infinity,survival:!f?'Safe':f.incoming>=maxHp(c)&&!foodHealing?'Unsafe':foodHealing?'Food assisted':'Recovery breaks',gather:c.activity==='gather'?gatherOdds(c,c.resource):null};}
+export function rates(s,c){const bonus=1+(s.merits.afk||0)*.05;if(c.activity==='boss')return{items:0,xp:0,coins:0,label:'Active boss encounter · no idle rewards'};if(c.activity==='gather'){const reason=gatherRequirement(c,c.resource),o=gatherOdds(c,c.resource),attempts=reason?0:3600/gatherInterval(c,c.resource)*bonus;return{items:attempts*o.chance*o.multi*(1+(c.profTalents.prosperity||0)*.02),xp:attempts*2*(1+(c.profTalents.mastery||0)*.05+(c.accountBonuses?.skillXP||0)+(!['warrior','mage'].includes(c.class)?(c.classTalents?.specialist||0)*.03:0)),characterXp:attempts*.4,coins:0,label:reason||ITEMS[c.resource].name};}const f=fightStats(s,c),e=enemyFor(c);if(c.activity==='rest'||!f||!e)return{items:0,xp:0,coins:0,label:'Resting'};const foodPerSecond=c.foodSlots.reduce((n,t)=>n+(t?.count?Math.min(t.count*FOODS[t.id].heal/3600,FOODS[t.id].heal/FOODS[t.id].cooldown):0),0),recovery=f.incoming>=maxHp(c)&&!A.foodSupply(c)?Infinity:Math.max(0,f.incoming-foodPerSecond*f.duration)/4,perHour=3600/(f.duration+recovery)*bonus;return{items:perHour*.8,kills:perHour,xp:perHour*e.xp,coins:perHour*e.coins,label:recovery===Infinity?'Improve equipment before fighting':e.name};}
+export function afkInfo(s,c){const r=rates(s,c),e=['fight','boss'].includes(c.activity)?enemyFor(c):null,f=e?fightStats(s,c):null,foodHealing=A.foodSupply(c),incoming=f?f.incoming/f.duration:0,ids=c.activity==='gather'?[c.resource]:(e?.loot.filter(d=>d.chance>=.5).map(d=>d.id)||[]),room=ids.length?Math.min(...ids.map(id=>I.carryRoom(structuredClone(c),id))):0;return{...r,accuracy:accuracy(c),hitChance:e?hitChance(c,e):1,damage:damageRange(s,c),mana:A.maxMana(c),regen:A.manaRegen(c),foodHealing,foodHours:incoming?foodHealing/incoming/3600:Infinity,bagSeconds:r.items?room/r.items*3600:Infinity,survival:!f?'Safe':f.incoming>=maxHp(c)&&!foodHealing?'Unsafe':foodHealing?'Food assisted':'Recovery breaks',gather:c.activity==='gather'?gatherOdds(c,c.resource):null};}
 
 export function totalMaterials(s){return Object.values(s.inventory).reduce((a,b)=>a+b,0)+s.characters.reduce((n,c)=>n+Object.values(c.bag).reduce((a,b)=>a+b,0)+Object.values(c.overflow).reduce((a,b)=>a+b,0),0);}
 

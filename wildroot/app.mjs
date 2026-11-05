@@ -1,11 +1,11 @@
-import * as AUI from './adventure-panels.mjs?v=12';
-import * as T from './town-panels.mjs?v=12';
-import * as U from './panels.mjs?v=12';
-import {GameAudio} from './audio.mjs?v=12';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=12';
-import * as E from './engine.mjs?v=12';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=12';
-import {drawWorld,viewFor} from './scene.mjs?v=12';
+import * as AUI from './adventure-panels.mjs?v=13';
+import * as T from './town-panels.mjs?v=13';
+import * as U from './panels.mjs?v=13';
+import {GameAudio} from './audio.mjs?v=13';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=13';
+import * as E from './engine.mjs?v=13';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=13';
+import {drawWorld,viewFor} from './scene.mjs?v=13';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -131,7 +131,7 @@ document.addEventListener('click',event=>{
  if(!ok)toast('Could not complete that action. Check materials, bag space and station access.');save();renderPanel();refresh();return;
  }
  if(d.minigame){const node=world.map.resources.find(n=>n.resource===d.minigame&&Math.abs(n.x-world.player.x)<100&&Math.abs(n.y-world.player.y)<60);if(!node||E.gatherRequirement(c,d.minigame)){toast('Approach this resource and begin gathering first.');return;}if(!E.beginMinigame(c,d.minigame)){toast('Three games per skill per day. Come back tomorrow.');return;}world.stop();openPanel('minigame');save();return;}
- if(d.minigameHit!==undefined){const result=E.hitMinigame(c);if(result?.done){E.give(c,result.resource,result.count);E.skillXp(c,result.skill,result.xp);E.recordGather(state,c,result.resource,result.count);toast(`Score ${result.score}/15 · +${result.count} resources · +${result.xp} skill XP`);openPanel('afk');}else renderPanel();save();return;}
+ if(d.minigameHit!==undefined){const result=E.hitMinigame(c);if(result?.done){E.give(c,result.resource,result.count);E.skillXp(c,result.skill,result.xp);E.recordGather(state,c,result.resource,result.count);const node=world.map.resources.find(n=>n.resource===result.resource);if(node)world.select(node.id);toast(`Score ${result.score}/15 · +${result.count} resources · +${result.xp} skill XP`);openPanel('afk');}else renderPanel();save();return;}
  if(d.reload!==undefined){location.reload();return;}
  if(paused)return;
  if(d.close!==undefined){closePanel();return;}
