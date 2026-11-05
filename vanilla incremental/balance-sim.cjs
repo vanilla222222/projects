@@ -5,7 +5,7 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
   const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
   const {api:a}=harness(undefined,random);const s=a.state;configure(a);
   const events=[];
-  let autoFraction=0;
+  let autoFraction=0, lastExpansion='';
   function buyBasics() {
     for(const o of a.ORES) {
       const st=s.ores[o.id];if(!st.found)continue;
@@ -25,9 +25,9 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
   }
   function industry() {
     if(!s.ores.iron.unique)return;
-    const recipes=a.RECIPES.filter(r=>a.recOpen(r.id));
+    const recipes=a.RECIPES.filter(r=>a.recOpen(r.id)&&(s.expansion.active!=='mill'||r.id!=='steel'));
     const offset=Math.floor(time/60)%recipes.length;
-    for(let i=0;i<a.slotCount();i++)a.setRecipe(i,recipes[(offset+i)%recipes.length].id);
+    for(let i=0;i<a.slotCount();i++)a.setRecipe(i,s.expansion.active==='smelt'&&i<Math.min(2,a.slotCount())?'electrum':recipes[(offset+i)%recipes.length].id);
     a.smeltStep(1);
     if(time%5!==0)return;
     for(const r of a.RECIPES.filter(r=>a.recOpen(r.id)))for(const u of r.ups){
@@ -45,6 +45,7 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
   }
   function forestry() {
     if(!a.forestOn())return;
+    if(a.millOn()&&a.expansionLevel('forest')===5&&s.forest.wood.icewood.found&&a.availableWoods().some(w=>w.id==='icewood'))s.expansion.plant='icewood';
     a.forestStep(1);
     let hits=clicks;
     const open=s.forest.slots.slice(0,a.treeSlots());
@@ -66,8 +67,13 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
     }
     if(a.millOn()){
       const woods=a.WOODS.filter(w=>s.forest.wood[w.id].found);
-      for(let i=0;i<4;i++)a.setSaw(i,woods[(Math.floor(time/60)+i)%woods.length].id);
+      for(let i=0;i<4;i++){
+        if(s.mill.slots[i].busy)continue;
+        const supplied=[...woods].sort((x,y)=>s.forest.wood[y.id].amt-s.forest.wood[x.id].amt);
+        a.setSaw(i,supplied[0]?.id||'');
+      }
       a.millStep(1);
+      a.beamStep(1);
       if(time%5===0)for(const w of a.PLANKS)for(const u of w.ups){const p=a.plankPlan(w.id,u);if(p.can&&p.total<=s.mill.planks[w.id]*.15)a.buyPlank(w.id,u);}
     }
   }
@@ -85,13 +91,20 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
       const expected=rate*(chance+(special?.01*a.workshopSpecial()*10:0));
       const gain=expected*a.oreGain(o.id)*(special?1.075:1);
       const st=s.ores[o.id];st.amt+=gain;st.total+=gain;st.run+=gain;st.found+=visits;
+      a.recordBlueprintOre(o.id,gain);
     }
     autoFraction+=rate;s.stats.tiles+=Math.floor(autoFraction);autoFraction%=1;
+    a.recordBlueprint('tiles',rate);
+    if(a.BP.open(s.expansion,'mines')){const geodes=rate*Math.min(.2,.025*a.workshopSpecial());s.expansion.geodes+=geodes;s.expansion.geodesTotal+=geodes;a.recordBlueprint('geodes',geodes);}
     s.stats.layers=Math.floor(s.stats.tiles/100);s.layer=1+s.stats.layers;s.stats.time++;
     if(time%5===0)buyBasics();
     if(rebirth&&s.ores.copper.unique&&!s.rb.count){a.doRebirth();events.push([time,'rebirth',s.rb.points]);let points=s.rb.points;for(const o of a.ORES){s.rb.alloc[o.id]=Math.floor(points/9);if(points%9> a.ORES.indexOf(o))s.rb.alloc[o.id]++;}a.syncFlags();}
     const forestBefore=a.forestOn(),millBefore=a.millOn();
     industry();forestry();
+    a.sampleBlueprintRates(1);
+    a.ensureBlueprintChain();
+    if(time%5===0)while(a.BP.status(s.expansion).ready)a.claimBlueprint();
+    if(lastExpansion!==s.expansion.active){if(lastExpansion)events.push([time,'expansionComplete',lastExpansion]);if(s.expansion.active)events.push([time,'expansionStart',s.expansion.active]);lastExpansion=s.expansion.active;}
     if(!forestBefore&&a.forestOn())events.push([time,'tab','forest']);
     if(!millBefore&&a.millOn())events.push([time,'tab','mill']);
     if(time%600===0&&log)console.log(JSON.stringify({minutes:time/60,copper:Math.round(s.ores.copper.amt),iron:Math.round(s.ores.iron.amt),bars:Object.fromEntries(Object.entries(s.smelt.ingots).map(([k,v])=>[k,Math.round(v)])),spruce:Math.round(s.forest.wood.spruce.amt),workshop:s.workshopBuilt}));
@@ -100,3 +113,4 @@ function simulate({seconds=3600, clicks=2, log=false, configure=()=>{}, seed=42,
 }
 if(require.main===module){const result=simulate({seconds:7*3600,log:true});console.log(JSON.stringify(result.events));}
 module.exports={simulate};
+

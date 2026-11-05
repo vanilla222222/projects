@@ -1,14 +1,15 @@
-# Hour-scale progression and Workshop update
+# Mandatory Blueprint expansions
 
-- Main path: Mines → Mastery → Rebirth → Smeltery → Workshop → Forest → Sawmill. Costs and prerequisites target about one hour per major stage, with no elapsed-playtime gates. Achievements and Stats are utility tabs.
-- Automation (1,000 Stone), Pickaxe (1,500 Silver), Achievements (250 Diamond) and Offline Mining (5,000 Gold) arrive inside the Mines stage. Major gates are Mastery (1.5B Dirt), Rebirth (900B Copper), Smeltery (500B Iron after one rebirth), Workshop (5,000 Copper Ingots), Forest (250K Silicon after Workshop), and Sawmill (50K Spruce logs).
-- Smelters start at 3 base output; the second Gold smelting expansion costs 1,000 Gold Ingots. Existing upgrades still add output and speed.
-- Workshop: six permanent research lines with 42 total levels. Ingots and planks improve ore yields, autominer speed, ingot output, special-tile frequency, and chopping. Research buys one level per click independently of the Buy selector.
-- Steel unlocks with Forest, consuming 1,000 Iron and 5 Charcoal per batch. Permanent Steel upgrades include a forged axe head, steel saw teeth, and mine supports. In-progress batches refund both ingredients when switching recipes.
-- Tougher tree species enter new spawn rolls as chopping damage increases; the next threshold is shown. Existing saved trees retain their species and HP.
-- New milestone guidance and Workshop achievements. Mobile tabs and wallet scroll horizontally; purchases and allocation buttons have larger targets. Opt-in drag mining preserves normal scrolling when off. Reduced-motion preference is respected.
-- Cleared saved layers now advance after reload; reset cancels pending transitions and clears old generation flags.
+- Workshop automatically starts a required Mining → Mastery → Rebirth → Smeltery → Forest → Sawmill → Workshop chain. Five fresh-production milestones per addition target roughly 20 minutes. Finishing one addition unlocks and opens the next; no project can be skipped. There are no Stats or Achievements expansions.
+- Smeltery expansion opens Forest; Nursery completion builds Sawmill. These rewards replace their old standalone Silicon and Spruce-log unlock fees. Existing purchased base tabs remain open in legacy saves.
+- Mining: Geode-bearing tiles, ore caches and permanent ore bonuses.
+- Mastery: selectable ore focus, focused yield and Mastery discounts.
+- Rebirth: selectable permanent ore, automation or Mastery talent.
+- Smeltery: Electrum from Gold and Silver, with new automation, ore and research upgrades.
+- Forest: targeted Nursery planting, a configurable automated Charcoal reserve, and log bonuses. Processed trees include both harvests and burns for expansion progress.
+- Sawmill: each completed cut supplies an offcut; three offcuts produce a Beam. Joinery jigs and milestones improve plank output. No extra plank stockpile is required to start this addition.
+- Workshop: choose one research line to specialize in, improving its existing bonus.
+- Separate fresh-production ledgers preserve progress through resource spending, rebirth, offline production and reload, including when lifetime balances are very large. Current targets stay fixed. Future expansions cannot receive progress early.
+- Mobile-friendly expansion panels, 44px controls and native selectors use the existing navigation and theme. Core, game and style assets are cache-bumped together.
 
-Existing `vanilla-incremental-save-v1` saves are retained. Previously purchased unlocks stay purchased even if their new price/prerequisite is higher; no refunds or automatic purchases are applied. Research and Steel default to zero in older saves. Existing Forest/Sawmill saves inherit Workshop access. Rebirth retains research, Steel upgrades, ingots, planks and unlocks; full reset erases all progress.
-
-Validation: `node --test "vanilla incremental/game.test.cjs"`. See `BALANCE.md` for estimated timings, reference-player assumptions and limits.
+The prior hour-scale path and prices up to Workshop remain intact. The required chapter replaces the old downstream unlock sequence. All pre-existing saves remain under `vanilla-incremental-save-v1`; older saves start the chain when Workshop is available. Full reset still erases all progress. See BALANCE.md and expansion-results.json for calibration assumptions and limitations.

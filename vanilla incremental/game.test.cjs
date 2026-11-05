@@ -129,11 +129,13 @@ test('new tree rolls follow chopping capability while already saved tough trees 
   const {api:loaded}=harness(api.state);assert.equal(loaded.state.forest.slots[0].w,'icewood');assert.equal(loaded.state.forest.slots[0].hp,90000);
 });
 
-test('reference progression reaches each main tab in roughly an hour without clock gates',()=>{
+test('initial hour-scale stages remain intact before the mandatory expansion chain',()=>{
   const {simulate}=require('./balance-sim.cjs');
-  const result=simulate({seconds:6*3600,clicks:2,seed:42});
+  const result=simulate({seconds:4*3600,clicks:2,seed:42});
   const stages=result.events.filter(e=>(e[1]==='unlock'&&['dirt','copper','iron'].includes(e[2]))||e[1]==='tab');
-  assert.deepEqual(stages.map(e=>e[2]),['dirt','copper','iron','workshop','forest','mill']);
+  assert.deepEqual(stages.map(e=>e[2]),['dirt','copper','iron','workshop']);
   let previous=0;
   for(const [at,,id] of stages){const minutes=(at-previous)/60;assert.ok(minutes>=45&&minutes<=80,`${id}: ${minutes.toFixed(1)} minutes`);previous=at;}
+  assert.equal(result.state.expansion.active,'mines');assert.equal(result.api.forestOn(),false);
 });
+

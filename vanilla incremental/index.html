@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 <header class="top">
@@ -134,8 +134,12 @@
     </div>
   </section>
   <section class="tab" data-tab="workshop" hidden>
-    <div class="workshop-intro masterybox"><h2>Workshop</h2><p class="hint">Turn ingots and planks into permanent research. All 42 levels survive rebirth. Research buys one level at a time, regardless of the Buy setting.</p><p class="research-summary" id="workshopSummary"></p></div>
+    <div class="workshop-intro masterybox"><h2>Workshop</h2><p class="hint">Turn ingots and planks into permanent research. All 42 levels survive rebirth. Research buys one level at a time, regardless of the Buy setting.</p><p class="research-summary" id="workshopSummary"></p><button type="button" class="upg" id="blueprintOfficeBtn"><span>Open required expansion chain</span><small>Seven expansions · ~20m each</small></button></div>
     <div class="research-list" id="workshopList"></div>
+  </section>
+  <section class="tab" data-tab="blueprints" hidden>
+    <div class="masterybox blueprint-intro"><h2>Required expansion chain</h2><p class="hint">Workshop automatically begins Mining → Mastery → Rebirth → Smeltery → Forest → Sawmill → Workshop. Finish each expansion to unlock the next. Smeltery expansion opens Forest; Forest expansion builds Sawmill. There is no additional unlock purchase between expansions.</p><p class="hint">Each expansion has five production milestones targeting about 20 minutes of development, budgeted for current production and upgrade growth. Only fresh production counts; stronger production can finish sooner. All progress and features survive rebirth. Targets stay fixed, including the starting ore for Mastery. No clock locks.</p><p id="blueprintSummary" class="research-summary"></p></div>
+    <div class="research-list" id="blueprintList"></div>
   </section>
 </main>
 <div class="toast" id="toast" hidden></div>
@@ -147,7 +151,9 @@
     <button type="button" class="rbbtn" id="offOk"><b>Collect</b></button>
   </div>
 </div>
-<script src="game.js?v=21"></script>
+<script src="blueprint-core.js?v=22"></script>
+<script src="game.js?v=22"></script>
 </body>
 </html>
+
 

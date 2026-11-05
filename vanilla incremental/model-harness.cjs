@@ -18,6 +18,7 @@ function harness(saved, random = () => 0.5) {
     setTimeout: fn => {const id=nextTimer++;timers.set(id,fn);return id;}, clearTimeout: id => timers.delete(id),
     document: {getElementById(id) {if(!nodes.has(id))nodes.set(id,element());return nodes.get(id);}, createElement: element},
   });
+  vm.runInContext(fs.readFileSync(__dirname + '/blueprint-core.js','utf8'), context);
   // Run the actual game model without its browser startup. Keep original functions
   // under test; suppress unrelated rendering in purchase/rebirth actions.
   const end = source.indexOf("  $('saveBtn').addEventListener");
@@ -28,6 +29,7 @@ function harness(saved, random = () => 0.5) {
     globalThis.api = {get state() {return S;}, fresh, load, save, WORKSHOP, UPGRADES, UNIQUES,
       buyResearch, researchCost, researchOpen, oreGain, autoInterval, smeltYield, chopDmg,
       workshopSpecial, newGrid, doRebirth, buy, hasAuto, originalRenderGrid, renderGoal,
+      BP, ensureBlueprintChain, startBlueprint, claimBlueprint, blueprintRate, recordBlueprint, recordBlueprintOre, sampleBlueprintRates, observedBlueprintRate, beamStep, beamTime, setJoiner, buyJoineryJig, crackGeodes, give, expansionLevel, engineering,
       WORKSHOP_BUILD, constructWorkshop, checkAch, cost, plan, upgPlan, mastPlan, autoPlan, pickPlan, ingotPlan, fupPlan, woodPlan, plankPlan,
       oreWeight, totalWeight, runPoints, rebirthGain, pickTier, PICKS, inPick, ORES, RECIPES, SMELT_UPS, FUPS, WOODS, PLANKS, SIZE, SPECIALS,
       buyMastery, buyAuto, buyPick, buyIngot, buyExtra, buyFup, buyWood, buyPlank, autoBuy,
@@ -48,3 +50,4 @@ function harness(saved, random = () => 0.5) {
 }
 
 module.exports = {harness};
+
