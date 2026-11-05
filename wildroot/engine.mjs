@@ -1,11 +1,11 @@
-import * as L from './legacy.mjs?v=9';
-export * from './legacy.mjs?v=9';
-import * as I from './inventory.mjs?v=9';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=9';
-import * as P from './progression.mjs?v=9';
-export * from './progression.mjs?v=9';
-export * from './inventory.mjs?v=9';
-export {canPay,pay} from './inventory.mjs?v=9';
+import * as L from './legacy.mjs?v=10';
+export * from './legacy.mjs?v=10';
+import * as I from './inventory.mjs?v=10';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=10';
+import * as P from './progression.mjs?v=10';
+export * from './progression.mjs?v=10';
+export * from './inventory.mjs?v=10';
+export {canPay,pay} from './inventory.mjs?v=10';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}

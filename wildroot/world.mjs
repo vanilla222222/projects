@@ -1,5 +1,5 @@
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=9';
-import * as E from './engine.mjs?v=9';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=10';
+import * as E from './engine.mjs?v=10';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -78,7 +78,7 @@ export class World {
  this.enter(!!destination?.boss);if(destination?.boss)this.findTarget();this.onEvent({type:'portal'});return true;
  }
  usePortal(portal){if(!this.map.portals.includes(portal))return false;const to=portal.destination;if(this.travel(to.area,to.zone,to))return true;this.onEvent({type:'notice',text:to.boss?'Complete An Unquiet Seal with Mira to open the boss gate.':E.lockReason(this.state,to.area,to.zone)||'That route is not open yet.'});return false;}
- teleport(area,index,now=Date.now()){if(!E.teleportAllowed(this.state,this.c,area,index,now))return false;if(this.c.area===area&&this.c.zone===index&&!this.map.boss&&!this.map.secret)return true;if(!this.travel(area,index))return false;this.state.teleports.count--;return true;}
+ teleport(area,index,now=Date.now()){if(!E.teleportAllowed(this.state,this.c,area,index,now))return false;if(this.c.area===area&&this.c.zone===index&&!this.map.boss&&!this.map.secret)return true;if(this.state.teleports.count<=0)return false;if(!this.travel(area,index))return false;this.state.teleports.count--;return true;}
  townReturn(area='town'){if(!['town','jungle-town'].includes(area)||!E.discovered(this.state,area,0)||!this.c.bag['town-teleport'])return false;if(this.c.area===area&&this.c.zone===0&&!this.map.boss&&!this.map.secret)return false;if(!this.travel(area,0))return false;this.c.bag['town-teleport']--;return true;}
  select(id){const entity=this.map.entities.find(e=>e.id===id);if(!entity||entity.kind==='enemy'&&entity.dead>0)return false;if(entity.kind==='node'&&E.gatherRequirement(this.c,entity.resource)){this.onEvent({type:'notice',text:E.gatherRequirement(this.c,entity.resource)});return false;}this.target=entity;this.destination=null;this.pendingSkill=false;if(entity.kind==='enemy'){this.c.activity=this.map.boss?'boss':'fight';this.c.resource=null;}else if(entity.kind==='node'){this.c.activity='gather';this.c.resource=entity.resource;}else{this.c.activity='rest';this.auto=false;}this.c.progress=0;return true;}
  walkTo(x,y=GROUND){let floor=PLATFORMS.filter(p=>x>=p.x&&x<=p.x+p.w).sort((a,b)=>Math.abs(a.y-y)-Math.abs(b.y-y))[0]||PLATFORMS[0];this.destination={x:Math.max(25,Math.min(WIDTH-25,x)),y:floor.y};this.target=null;this.c.activity='rest';this.c.progress=0;this.auto=false;}

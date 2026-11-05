@@ -66,7 +66,6 @@ export function purposes(id){
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
  for(const r of Object.values(RUNES))if(r.cost[id])uses.push(r.name+' enchantment');
  for(const r of Object.values(ALCHEMY))if(r.cost[id])uses.push(r.name+' research');
- for(const r of Object.values(GUILD))if(r.cost[id])uses.push(r.name+' guild upgrade');
  for(const q of STORY)if(q.deliver?.[id])uses.push(q.name+' quest');
  if(EXPANSIONS[id])uses.push('Consume once '+(EXPANSIONS[id].target==='bag'?'per character':'per account')+': +'+EXPANSIONS[id].slots+' slots');
  if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
