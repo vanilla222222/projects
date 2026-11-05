@@ -1,4 +1,4 @@
-import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=14';
+import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=15';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}

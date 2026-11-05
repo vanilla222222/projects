@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=14';import * as D from './content.mjs?v=14';
-import * as UI from './ui-panels.mjs?v=14';
-import {World,createMap,GROUND} from './world.mjs?v=14';import {viewFor} from './scene.mjs?v=14';
+import * as E from './engine.mjs?v=15';import * as D from './content.mjs?v=15';
+import * as UI from './ui-panels.mjs?v=15';
+import {World,createMap,GROUND} from './world.mjs?v=15';import {viewFor} from './scene.mjs?v=15';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const restored=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 const fullChart=s=>{s.stars={unlocked:true,seen:D.CONSTELLATIONS.map(d=>d.id),claimed:D.CONSTELLATIONS.map(d=>d.id),signs:[]};};
@@ -24,3 +24,6 @@ test('Trial tickets restock once per UTC day, stop at six and resist backward cl
 test('Recipe favorites toggle without duplicates and survive save migration',()=>{const{s}=setup();assert.equal(E.favoriteRecipe(s,'fake'),false);assert.ok(E.favoriteRecipe(s,'blade'));assert.deepEqual(s.recipeFavorites,['blade']);assert.deepEqual(restored(s).recipeFavorites,['blade']);E.favoriteRecipe(s,'blade');assert.deepEqual(s.recipeFavorites,[]);});
 test('Malformed Codex data fails before it can damage a saved roster',()=>{const{s}=setup();for(const mutate of [s=>s.stars.claimed=['fake'],s=>s.stars.signs=['ram'],s=>s.characters[0].starSigns=['sprout'],s=>s.vault.edge=-1,s=>s.vault.edge=21,s=>s.achievementClaims=['first','first'],s=>s.recipeFavorites=['fake'],s=>s.trials.tickets=7,s=>s.options.autoPickup='yes']){const raw=JSON.parse(JSON.stringify(s));mutate(raw);assert.throws(()=>E.restoreSave(raw));}});
 test('Polished menus render complete fresh and developed rosters without empty future-world or multiplayer panes',()=>{const{s,c}=setup();for(const fn of [UI.inventory,UI.talents,UI.quickRef,UI.journal,UI.cards,UI.bestiary,UI.itemIndex,UI.stars,UI.vault,UI.achievements,UI.trials,UI.map,UI.roster,UI.stamps,UI.statues,UI.industry,UI.menu])assert.doesNotThrow(()=>fn(s,c));assert.doesNotThrow(()=>UI.crafting(s,c,false));assert.doesNotThrow(()=>UI.options(s,{volume:.2,enabled:false}));fullChart(s);E.unlockSign(s,'sprout');assert.match(UI.stars(s,c),/The Sprout/);assert.match(UI.stars(s,c,{starTab:'constellations'}),/SHOW ON MAP/);for(const tab of ['produce','furnaces','stones'])assert.doesNotThrow(()=>UI.industry(s,c,false,{industryTab:tab}));assert.doesNotMatch(UI.journal(s,c),/A Foot in the Greenreach/);E.acceptQuest(s,'first-roots');assert.match(UI.journal(s,c),/A Foot in the Greenreach/);});
+
+test('Storage view keeps the shared chest beside the bag and quick reference opens the selected production tab',()=>{const{s,c}=setup();E.travel(s,c,'town',0);c.position={x:160,y:644};const html=UI.inventory(s,c);assert.match(html,/storage-side/);assert.equal((html.match(/class="ledger-title">Universal Storage/g)||[]).length,1);assert.doesNotMatch(UI.inventory(s,c,{storage:false}),/storage-side/);assert.match(UI.quickRef(s,c),/data-open-industry="furnaces"/);});
+test('Rare drop sources retain nonzero probabilities in the item reference',()=>{const{s,c}=setup();const html=UI.itemIndex(s,c,{item:'moss-slime-legend'});assert.doesNotMatch(html,/Moss Slime · 0%/);assert.match(html,/Moss Slime · 0.1%/);});

@@ -1,7 +1,7 @@
-import {ITEMS,EQUIPMENT,CLASSES} from './content.mjs?v=14';
+import {ITEMS,EQUIPMENT,CLASSES} from './content.mjs?v=15';
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n||0).toLocaleString();
-export const percent=n=>Number((n*100).toFixed(1))+'%';
+export const percent=n=>(n!==0&&Math.abs(n)<.001?Number((n*100).toPrecision(2)):Number((n*100).toFixed(1)))+'%';
 const shapes={
  sword:'<path d="m7 22 3 3 16-17-1-4-5 1-15 17 3 3m-2-7 9 9M5 27l4-4"/>',
  shield:'<path d="M6 5h20v13L16 28 6 18ZM16 7v17M8 15h16"/>',

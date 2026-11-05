@@ -1,13 +1,13 @@
-import * as UI from './ui-panels.mjs?v=14';
-import {icon,portrait} from './ui-art.mjs?v=14';
-import * as AUI from './adventure-panels.mjs?v=14';
-import * as T from './town-panels.mjs?v=14';
-import * as U from './panels.mjs?v=14';
-import {GameAudio} from './audio.mjs?v=14';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=14';
-import * as E from './engine.mjs?v=14';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=14';
-import {drawWorld,viewFor} from './scene.mjs?v=14';
+import * as UI from './ui-panels.mjs?v=15';
+import {icon,portrait} from './ui-art.mjs?v=15';
+import * as AUI from './adventure-panels.mjs?v=15';
+import * as T from './town-panels.mjs?v=15';
+import * as U from './panels.mjs?v=15';
+import {GameAudio} from './audio.mjs?v=15';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=15';
+import * as E from './engine.mjs?v=15';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=15';
+import {drawWorld,viewFor} from './scene.mjs?v=15';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -31,7 +31,7 @@ function handleIntent(event){
  if(event.type==='station')openPanel('craft');
  if(['shop','stamps','statues'].includes(event.type)){shopView={};openPanel(event.type);}
  if(event.type==='worldgate'){openPanel('world-gate');}
- if(event.type==='storage')openPanel('inventory');
+ if(event.type==='storage'){inventoryView.storage=true;openPanel('inventory');}
  if(event.type==='victory'){save();openPanel('victory');}
 }
 let rendered=new Map();
@@ -102,8 +102,8 @@ function buildTargets(){
  html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:['shop','stamps','statues','worldgate','tasks','telescope','constellation','arena'].includes(e.kind)?`Visit ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));projectTargets();
 }
 function projectTargets(){renderMinimap();const v=viewFor($('scene'),world.player);for(const button of $('world-objects').children){const e=[...world.map.entities,...world.groundLoot].find(e=>e.id===button.dataset.target);if(!e)continue;button.hidden=e.kind==='enemy'&&e.dead>0||e.x<v.x-80||e.x>v.x+v.width+80||e.y<v.y-160||e.y>v.y+v.height+160;const w=e.kind==='drop'?44:e.kind==='node'?110:90,h=e.kind==='drop'?44:e.kind==='node'?160:e.kind==='portal'?135:120;button.style.left=`${(e.x-w/2-v.x)/v.width*100}%`;button.style.top=`${(e.y-h-v.y)/v.height*100}%`;button.style.width=`${w/v.width*100}%`;button.style.height=`${h/v.height*100}%`;}}
-function renderMinimap(){const map=world.map,v=viewFor($('scene'),world.player),svg=$('room-minimap'),x=n=>n/map.width*260,y=n=>(n-map.minY)/map.height*75;svg.innerHTML=`<svg viewBox="0 0 260 75" preserveAspectRatio="none" aria-hidden="true">${map.platforms.map(p=>`<path d="M${x(p.x)} ${y(p.y)}h${x(p.w)}" stroke="#8bba82" stroke-width="2"/>`).join('')}${map.ladders.map(l=>`<path d="M${x(l.x)} ${y(l.top)}V${y(l.bottom)}" stroke="#a38b65"/>`).join('')}${map.entities.filter(e=>e.kind!=='enemy').map(e=>`<circle cx="${x(e.x)}" cy="${y(e.y)-3}" r="2" fill="${e.kind==='portal'?'#72dfff':'#e9c06d'}"/>`).join('')}<rect x="${x(v.x)}" y="${y(v.y)}" width="${x(v.width)}" height="${v.height/map.height*75}" fill="#ffffff0c" stroke="#d3e8ef44"/><circle cx="${x(world.player.x)}" cy="${y(world.player.y)-3}" r="3" fill="#fff4be"/></svg>`;}
-$('room-minimap').addEventListener('click',event=>{const rect=$('room-minimap').getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*world.map.width,y=world.map.minY+(event.clientY-rect.top)/rect.height*world.map.height;const e=world.map.entities.filter(e=>e.kind!=='enemy').sort((a,b)=>Math.abs(a.x-x)+Math.abs(a.y-y)-Math.abs(b.x-x)-Math.abs(b.y-y))[0];if(e&&Math.abs(e.x-x)<world.map.width*.035&&Math.abs(e.y-y)<100)world.select(e.id);else world.walkTo(x,y);});
+function renderMinimap(){const map=world.map,v=viewFor($('scene'),world.player),svg=$('room-minimap'),x=n=>n/map.width*260,y=n=>(n-map.minY)/map.height*75;svg.dataset.vertical=String(map.minY<0);svg.innerHTML=`<svg viewBox="0 0 260 75" preserveAspectRatio="none" aria-hidden="true">${map.platforms.map(p=>`<path d="M${x(p.x)} ${y(p.y)}h${x(p.w)}" stroke="#8bba82" stroke-width="2"/>`).join('')}${map.ladders.map(l=>`<path d="M${x(l.x)} ${y(l.top)}V${y(l.bottom)}" stroke="#a38b65"/>`).join('')}${map.entities.filter(e=>e.kind!=='enemy').map(e=>`<circle cx="${x(e.x)}" cy="${y(e.y)-3}" r="2" fill="${e.kind==='portal'?'#72dfff':'#e9c06d'}"/>`).join('')}<rect x="${x(v.x)}" y="${y(v.y)}" width="${x(v.width)}" height="${v.height/map.height*75}" fill="#ffffff0c" stroke="#d3e8ef44"/><circle cx="${x(world.player.x)}" cy="${y(world.player.y)-3}" r="3" fill="#fff4be"/></svg>`;}
+$('room-minimap').addEventListener('click',event=>{const rect=$('room-minimap').getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*world.map.width,y=world.map.minY+(event.clientY-rect.top)/rect.height*world.map.height;const e=world.map.entities.filter(e=>e.kind!=='enemy').sort((a,b)=>Math.abs(a.x-x)+Math.abs(a.y-y)-Math.abs(b.x-x)-Math.abs(b.y-y))[0];if(e&&Math.abs(e.x-x)<world.map.width*.035&&Math.abs(e.y-y)<Math.max(100,world.map.height*4/75))world.select(e.id);else world.walkTo(x,y);});
 function refresh(){
  const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
  html('roster',state.characters.map(ch=>`<button data-character="${ch.id}" class="${ch.id===c.id?'active':''}" aria-pressed="${ch.id===c.id}"><span class="portrait">${portrait(ch)}</span><span>${esc(ch.name)}<span class="sub">${ch.class?CLASSES[ch.class].name:'Beginner'} · Lv. ${ch.level}</span></span></button>`).join(''));
@@ -118,7 +118,7 @@ function refresh(){
  for(const [slot,id]of [[0,'skill-button'],[1,'secondary-button'],[2,'utility-button']]){const button=$(id),skill=abilities[slot],index=c.hotbar[slot],available=!!skill&&abilityAvailable(c,index);button.disabled=!available;button.querySelector('span').textContent=skill?.icon||'⌑';button.querySelector('small').textContent=available?skill.name.toUpperCase():skill?'TRAIN TALENT':'CLASS REQUIRED';button.title=available?skill.description:'Learn this technique in the class talent tab';const cd=index===0?world.player.skill:world.player.cooldowns[index];button.querySelector('b').textContent=cd>0?Math.ceil(cd):'';}
  const kills=state.kills[zoneEnemy(c.area,c.zone)?.id]||0;
  let tracker=c.class?`<strong>${CLASSES[c.class].name} · ${esc(c.name)}</strong><p>✦ ${E.talentPoints(c)} unspent talent points</p><p>${state.unlockedClasses.length} / 5 classes discovered</p>`:`<strong>Find your calling</strong><p class="${c.level>=3?'done':''}">${c.level>=3?'✓':'○'} Reach character level 3 (${c.level}/3)</p><p>○ Find Willow by the oak tree or Brann by copper ore</p><p>○ Complete your class initiation</p>`;
- const quest=E.questStatus(state,state.trackedQuest)||STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(c.class&&quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
+ const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
  if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=12?'done':''}">${kills>=12?'✓ Next route unlocked':`○ Open next route: ${kills}/12 kills`}</p>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p>${esc(l.text)}</p>`).join(''));
@@ -136,6 +136,7 @@ document.addEventListener('click',event=>{
  if(d.selectTalent){talentView.selected=d.selectTalent;renderPanel();return;}
  const selections={questFilter:'questFilter',selectQuest:'quest',cardGroup:'cardGroup',selectCard:'card',recipeFilter:'recipeFilter',selectRecipe:'recipe',enemyArea:'enemyArea',selectEnemy:'enemy',selectItem:'item',starTab:'starTab',selectSign:'sign',mapRoom:'mapRoom',stampGroup:'stampGroup',selectStamp:'stamp',selectStatue:'statue',industryTab:'industryTab',stoneItem:'stoneItem'};
  for(const[key,value]of Object.entries(selections))if(d[key]!==undefined){uiView[value]=key==='stoneItem'?Number(d[key]):d[key];if(d.openCard!==undefined)openPanel('cards');else if(d.openEnemy!==undefined)openPanel('bestiary');else renderPanel();return;}
+ if(d.openIndustry){uiView.industryTab=d.openIndustry;openPanel('industry');return;}
  if(d.codexTab){openPanel(d.codexTab);return;}
  if(d.codexItem){uiView.item=d.codexItem;uiView.itemSearch='';openPanel('items');return;}
  if(d.openRecipe){uiView.recipe=d.openRecipe;uiView.recipeFilter='all';uiView.recipeSearch='';openPanel('craft');return;}
@@ -189,6 +190,7 @@ document.addEventListener('click',event=>{
  if(d.townReturn){toast(world.townReturn(d.townReturn)?'Town return consumed.':'Carry a Bottled Town Return and choose a discovered town.');closePanel();save();refresh();return;}
  if(d.cosmeticBuy){toast(E.buyCosmetic(state,d.cosmeticBuy)?'Cosmetic unlocked for the roster.':'Not enough gems or already owned.');save();renderPanel();refresh();return;}
  if(d.cosmeticWear){E.wearCosmetic(state,c,d.cosmeticWear==='none'?null:d.cosmeticWear);save();renderPanel();return;}
+ if(d.invStorage!==undefined){inventoryView.storage=inventoryView.storage===false;renderPanel();return;}
  if(d.invTab){inventoryView.tab=d.invTab;inventoryView.worn=null;renderPanel();return;}
  if(d.invPage!==undefined){inventoryView[d.source==='chest'?'chestPage':'page']=Number(d.invPage);renderPanel();return;}
  if(d.invLockMode!==undefined){inventoryView.lockMode=!inventoryView.lockMode;inventoryView.moving=false;renderPanel();return;}

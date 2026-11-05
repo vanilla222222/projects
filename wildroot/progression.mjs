@@ -1,8 +1,8 @@
-import * as C from './chronicle.mjs?v=14';
-import * as A from './adventure.mjs?v=14';
-import * as L from './legacy.mjs?v=14';
-import * as I from './inventory.mjs?v=14';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=14';
+import * as C from './chronicle.mjs?v=15';
+import * as A from './adventure.mjs?v=15';
+import * as L from './legacy.mjs?v=15';
+import * as I from './inventory.mjs?v=15';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=15';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
