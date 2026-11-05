@@ -279,6 +279,30 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
+  // Items lying on the ground, bobbing so they read as pickups rather than placed blocks.
+  function drawDrops(state, view) {
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const half = size * 0.52;
+    for (const d of state.drops) {
+      const bob = Math.sin(state.time * 3.4 + d.x * 2.1) * size * 0.1;
+      const sx = (d.x - x0) * size - offsetX - half / 2;
+      const sy = (d.y - y0) * size - offsetY - half / 2 + bob;
+      const spec = tiles.BY_KEY[d.key];
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = size * 0.2;
+      if (spec && spec.colour) {
+        ctx.drawImage(atlas, 0, spec.id * TILE, TILE, TILE, sx, sy, half, half);
+      } else {
+        const wallSpec = tiles.WALL_BY_KEY[d.key];
+        ctx.fillStyle = wallSpec && wallSpec.colour ? wallSpec.colour : '#8894a8';
+        ctx.fillRect(sx, sy, half, half);
+      }
+      ctx.restore();
+    }
+  }
+
   function drawParticles(state, view) {
     const { x0, y0, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
@@ -319,6 +343,7 @@ function makeRenderer(canvas, deps) {
     drawParallax(state);
     drawWalls(state, view);
     drawTiles(state, view);
+    drawDrops(state, view);
     drawPlayer(state, view);
     drawLighting(state, view);
     drawBloom(state, view);

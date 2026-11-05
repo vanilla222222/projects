@@ -123,9 +123,9 @@ function baseTileAt(seed, x, y) {
 }
 
 const TREES = {
-  oak: { height: [6, 10], spacing: 7, canopy: 5, chance: 0.42 },
-  pine: { height: [8, 13], spacing: 6, canopy: 4, chance: 0.5 },
-  jungle: { height: [8, 13], spacing: 5, canopy: 6, chance: 0.62 },
+  oak: { height: [6, 10], spacing: 11, canopy: 4, chance: 0.5 },
+  pine: { height: [9, 14], spacing: 10, canopy: 3, chance: 0.55 },
+  jungle: { height: [8, 13], spacing: 10, canopy: 4, chance: 0.62 },
   none: null
 };
 
@@ -142,16 +142,21 @@ function treeAt(seed, x) {
   return { x, root, height, canopy: spec.canopy, kind: biome.tree };
 }
 
+// The canopy is an egg, wider above the trunk top than below it, with its edge eroded by a
+// per-tile hash. A solid ellipse of leaf tiles reads as a rectangular hedge once several
+// trees stand together; a ragged edge reads as foliage.
 function stampTree(write, seed, tree) {
   const trunk = idOf('trunk');
   const leaf = idOf('leaves');
   for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
   const top = tree.root - tree.height;
   const r = tree.canopy;
-  for (let dy = -r; dy <= r; dy += 1) {
+  for (let dy = -r - 1; dy <= r; dy += 1) {
     for (let dx = -r; dx <= r; dx += 1) {
-      const fall = dy > 0 ? dy * 0.55 : dy * 1.15;
-      if (dx * dx * 0.62 + fall * fall > r * r) continue;
+      const stretch = dy > 0 ? dy / 0.72 : dy / 1.25;
+      const ratio = Math.sqrt((dx * dx) / (r * r) + (stretch * stretch) / (r * r));
+      if (ratio > 1) continue;
+      if (ratio > 0.58 && unit(seed, tree.x * 31 + dx, top + dy, 2029) < (ratio - 0.58) * 2.3) continue;
       if (dx === 0 && dy > 1) continue;
       write(tree.x + dx, top + dy - 1, leaf);
     }
@@ -245,6 +250,6 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     biomeAt, biomeIndex, biomeField, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
-    baseTileAt, baseWallAt, treeAt, decorate, generateChunk
+    baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };
 }

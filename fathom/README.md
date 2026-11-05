@@ -3,9 +3,18 @@
 A side-view mining sandbox with an endless world. Dig down through biomes, strata and caves,
 light the dark with torches, and build with what you break.
 
-Open `index.html`. Left click digs, right click places, `1`-`8` or the scroll wheel pick a
-block, `A`/`D` or the arrow keys move, `W`/`Space` jumps, `[` and `]` zoom, `P` pauses.
-`?seed=anything` loads a specific world; without one a seed is drawn once and kept.
+Open `index.html`. `E` opens the backpack. Left click digs a block, or the wall behind it if
+the tile is empty; right click places whatever the selected hotbar slot holds. `1`-`0` or the
+scroll wheel pick a slot, `A`/`D` or the arrow keys move, `W`/`Space` jumps, `[` and `]` zoom,
+`P` pauses. `?seed=anything` loads a specific world; without one a seed is drawn once and kept.
+
+In the backpack, left click picks up a stack and drops it, right click takes half or places
+one at a time, and shift-click sends a stack between the hotbar and the backpack. Equipment
+slots only accept equipment. Mined blocks fall as items and fly to you, so a full backpack
+leaves them on the ground rather than deleting them.
+
+Health and mana sit top right as hearts and stars, each worth 20. Both regenerate faster the
+longer you go without being hit, and faster again standing still.
 
 ## Endless, and why that shapes everything
 
@@ -69,4 +78,7 @@ the cost of one small canvas.
 | `js/light.js` | coloured sun and emitter propagation, day cycle |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/render.js` | sky, parallax, walls, tiles, lighting, bloom, particles |
-| `js/game.js` | loop, input, camera, mining, placing, save |
+| `js/inventory.js` | slots, stacking, splitting, equipment restrictions |
+| `js/stats.js` | health, mana, regeneration, death and respawn |
+| `js/ui.js` | hearts and stars, hotbar, backpack and equipment screen |
+| `js/game.js` | loop, input, camera, mining, placing, drops, save |

@@ -101,27 +101,7 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + w + STRUCTURE_MARGIN; wx += 1) {
     const tree = gen.treeAt(seed, wx);
-    if (tree) {
-      const trunk = tiles.idOf('trunk');
-      for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
-      const top = tree.root - tree.height;
-      const r = tree.canopy;
-      for (let dy = -r; dy <= r; dy += 1) {
-        for (let dx = -r; dx <= r; dx += 1) {
-          const fall = dy > 0 ? dy * 0.55 : dy * 1.15;
-          if (dx * dx * 0.62 + fall * fall > r * r) continue;
-          if (dx === 0 && dy > 1) continue;
-          write(tree.x + dx, top + dy - 1, tiles.idOf('leaves'));
-        }
-      }
-      if (tree.kind === 'jungle') {
-        const rng = require('../js/rng.js');
-        for (let dx = -r; dx <= r; dx += 2) {
-          const len = 1 + Math.floor(rng.unit(seed, tree.x + dx, tree.root, 2017) * 4);
-          for (let i = 0; i < len; i += 1) write(tree.x + dx, top + i, tiles.idOf('vine'));
-        }
-      }
-    }
+    if (tree) gen.stampTree(write, seed, tree);
     gen.decorate(write, seed, wx);
   }
   return { out, outWalls, w, h };

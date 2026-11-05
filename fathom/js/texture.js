@@ -69,31 +69,55 @@ function paintOre(ctx, spec, variant, ox, oy) {
   }
 }
 
+// Bark: vertical fibres with a lit left edge and a dark right edge, so a one-tile trunk still
+// reads as round rather than as a flat brown stripe.
 function paintWood(ctx, spec, variant, ox, oy) {
+  const trunk = spec.key === 'trunk';
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox, oy, TILE, TILE);
   for (let x = 0; x < TILE; x += 1) {
-    const wob = Math.sin((x + variant * 3) * 0.9) * 0.5;
-    const tone = hashPixel(spec.id, variant, x, 3) > 0.5 ? 0.14 : -0.16;
-    ctx.fillStyle = shade(spec.colour, tone + wob * 0.05);
+    const across = x / (TILE - 1);
+    const round = Math.sin(across * Math.PI);
+    const fibre = hashPixel(spec.id, variant, x, 3) > 0.5 ? 0.1 : -0.12;
+    ctx.fillStyle = shade(spec.colour, fibre + (round - 0.5) * 0.42);
     ctx.fillRect(ox + x, oy, 1, TILE);
   }
-  ctx.fillStyle = shade(spec.colour, -0.3);
-  ctx.fillRect(ox, oy + 7 + (variant % 2), TILE, 1);
+  if (trunk) {
+    for (let i = 0; i < 3; i += 1) {
+      const y = 2 + hashPixel(spec.id, variant, i, 71) * (TILE - 5);
+      const h = 1 + hashPixel(spec.id, variant, i, 81) * 2.4;
+      ctx.fillStyle = shade(spec.colour, -0.3);
+      ctx.fillRect(ox + 2 + hashPixel(spec.id, variant, i, 91) * 6, oy + y, 2.4, h);
+    }
+  } else {
+    ctx.fillStyle = shade(spec.colour, -0.3);
+    ctx.fillRect(ox, oy + 7 + (variant % 2), TILE, 1);
+  }
 }
 
 function paintLeaves(ctx, spec, variant, ox, oy) {
   ctx.clearRect(ox, oy, TILE, TILE);
-  const clumps = 7;
-  for (let i = 0; i < clumps; i += 1) {
-    const cx = hashPixel(spec.id, variant, i, 5) * TILE;
-    const cy = hashPixel(spec.id, variant, i, 15) * TILE;
-    const r = 2.6 + hashPixel(spec.id, variant, i, 25) * 3.4;
-    ctx.fillStyle = shade(spec.colour, (hashPixel(spec.id, variant, i, 35) - 0.5) * 0.5);
+  ctx.save();
+  for (let i = 0; i < 9; i += 1) {
+    const cx = 1 + hashPixel(spec.id, variant, i, 5) * (TILE - 2);
+    const cy = 1 + hashPixel(spec.id, variant, i, 15) * (TILE - 2);
+    const r = 2.1 + hashPixel(spec.id, variant, i, 25) * 3.1;
+    const edge = Math.min(cx, cy, TILE - cx, TILE - cy) / (TILE / 2);
+    ctx.globalAlpha = 0.55 + edge * 0.45;
+    const tone = (hashPixel(spec.id, variant, i, 35) - 0.45) * 0.55;
+    ctx.fillStyle = shade(spec.colour, tone);
     ctx.beginPath();
     ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.globalAlpha = 1;
+  for (let i = 0; i < 5; i += 1) {
+    const cx = 2 + hashPixel(spec.id, variant, i, 45) * (TILE - 4);
+    const cy = 2 + hashPixel(spec.id, variant, i, 55) * (TILE - 6);
+    ctx.fillStyle = shade(spec.colour, 0.3);
+    ctx.fillRect(ox + cx, oy + cy, 1.4, 1.4);
+  }
+  ctx.restore();
 }
 
 function paintCrystal(ctx, spec, variant, ox, oy) {
@@ -202,7 +226,7 @@ function bakeAtlas(document, tiles) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
-      else if (spec.key === 'wood' || spec.key === 'plank') paintWood(ctx, spec, v, ox, oy);
+      else if (spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk') paintWood(ctx, spec, v, ox, oy);
       else if (spec.key === 'leaves') paintLeaves(ctx, spec, v, ox, oy);
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);
