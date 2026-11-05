@@ -8,20 +8,33 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, inventory: inventoryModule, stats: statsModule, ui: uiModule } = deps;
+    noise, autotile, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    profile: profileModule, menu: menuModule } = deps;
 
-  const seed = readSeed();
-  const world = chunks.makeWorld(seed, worldgen);
-  const renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
-  const inventory = inventoryModule.makeInventory();
-  const stats = statsModule.makeStats();
-  const ui = uiModule.makeUI(document.getElementById('hud'),
-    { tiles, texture, inventory, atlas: renderer.atlas });
+  const profiles = profileModule.makeProfiles(window.localStorage);
+  const menu = menuModule.makeMenu(document.getElementById('menu'),
+    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed });
+
+  // Nothing world-shaped exists until a world is chosen, so each of these is filled in by
+  // boot(). A character brings its own inventory and stats into whichever world it enters.
+  let seed = 0;
+  let world = null;
+  let renderer = null;
+  let inventory = null;
+  let stats = null;
+  let ui = null;
+  let characterId = null;
+  let worldId = null;
+  let running = false;
+  let sessionStart = 0;
+  let carriedCharacterSeconds = 0;
+  let carriedWorldSeconds = 0;
 
   const state = {
-    world,
-    stats,
-    player: spawnPlayer(),
+    world: null,
+    stats: null,
+    player: null,
+    colours: null,
     camera: { x: 0, y: 0, zoom: 2 },
     dayPhase: 0.12,
     time: 0,
@@ -31,29 +44,10 @@ function makeGame(canvas, deps) {
     message: '',
     messageUntil: 0
   };
-  state.camera.x = state.player.x;
-  state.camera.y = state.player.y;
 
   const input = { left: false, right: false, jump: false, down: false, dig: false };
   const pointer = { x: 0, y: 0 };
   let lastView = null;
-
-  function readSeed() {
-    const params = new URLSearchParams(location.search);
-    const given = params.get('seed');
-    if (given !== null && given !== '') {
-      const n = Number(given);
-      if (Number.isFinite(n)) return Math.floor(n) | 0;
-      let h = 0;
-      for (const ch of given) h = (Math.imul(h, 31) + ch.charCodeAt(0)) | 0;
-      return h;
-    }
-    const stored = localStorage.getItem('fathom.seed');
-    if (stored !== null) return Number(stored) | 0;
-    const fresh = (Math.random() * 0x7fffffff) | 0;
-    localStorage.setItem('fathom.seed', String(fresh));
-    return fresh;
-  }
 
   function spawnPlayer() {
     for (let probe = 0; probe < 256; probe += 1) {
@@ -240,6 +234,7 @@ function makeGame(canvas, deps) {
   let accumulator = 0;
   let previous = 0;
   function frame(now) {
+    if (!running) return;
     const dt = previous ? Math.min(0.25, (now - previous) / 1000) : 0;
     previous = now;
     if (!state.paused) {
@@ -307,6 +302,7 @@ function makeGame(canvas, deps) {
       ArrowUp: 'jump', KeyW: 'jump', Space: 'jump', ArrowDown: 'down', KeyS: 'down'
     };
     addEventListener('keydown', (ev) => {
+      if (!running) return;
       if (ev.code === 'KeyE' || ev.code === 'Tab' || ev.code === 'KeyI') {
         ui.toggle();
         ev.preventDefault();
@@ -329,10 +325,12 @@ function makeGame(canvas, deps) {
       if (ev.code === 'BracketLeft') state.camera.zoom = Math.max(1, state.camera.zoom - 0.5);
     });
     addEventListener('keyup', (ev) => {
+      if (!running) return;
       if (keymap[ev.code]) input[keymap[ev.code]] = false;
     });
-    canvas.addEventListener('mousemove', worldFromScreen);
+    canvas.addEventListener('mousemove', (ev) => { if (running) worldFromScreen(ev); });
     canvas.addEventListener('mousedown', (ev) => {
+      if (!running) return;
       worldFromScreen(ev);
       if (ui.isOpen) return;
       if (ev.button === 0) input.dig = true;
@@ -342,6 +340,7 @@ function makeGame(canvas, deps) {
     addEventListener('mouseup', () => { input.dig = false; });
     canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
     canvas.addEventListener('wheel', (ev) => {
+      if (!running) return;
       const count = inventory.section('hotbar').size;
       state.player.selected = (state.player.selected + (ev.deltaY > 0 ? 1 : -1) + count) % count;
       ev.preventDefault();
@@ -350,25 +349,21 @@ function makeGame(canvas, deps) {
   }
 
   function save() {
-    try {
-      localStorage.setItem('fathom.save', JSON.stringify({
-        world: world.serialize(), inventory: inventory.serialize(),
-        stats: { health: stats.health, maxHealth: stats.maxHealth, mana: stats.mana, maxMana: stats.maxMana }
-      }));
-    } catch (err) { /* storage blocked or full; the seed alone still rebuilds the world */ }
-  }
-
-  function restore() {
-    try {
-      const saved = JSON.parse(localStorage.getItem('fathom.save') || 'null');
-      if (!saved || !saved.world || saved.world.seed !== seed) return false;
-      world.restore(saved.world);
-      inventory.restore(saved.inventory);
-      if (saved.stats) Object.assign(stats, saved.stats);
-      return true;
-    } catch (err) {
-      return false;
-    }
+    if (!running) return;
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    profiles.saveCharacter(characterId, {
+      inventory: inventory.serialize(),
+      stats: { health: stats.health, maxHealth: stats.maxHealth,
+        mana: stats.mana, maxMana: stats.maxMana },
+      colours: state.colours,
+      playedSeconds: carriedCharacterSeconds + elapsed
+    });
+    profiles.saveWorld(worldId, {
+      world: world.serialize(),
+      dayPhase: state.dayPhase,
+      spawn: { x: state.player.x, y: state.player.y },
+      playedSeconds: carriedWorldSeconds + elapsed
+    });
   }
 
   function resize() {
@@ -377,20 +372,67 @@ function makeGame(canvas, deps) {
     canvas.height = Math.floor(canvas.clientHeight * dpr);
   }
 
-  function start() {
-    resize();
-    addEventListener('resize', resize);
-    ui.build();
-    if (!restore()) {
+  function boot(choice) {
+    characterId = choice.character.id;
+    worldId = choice.world.id;
+    const characterRecord = profiles.loadCharacter(characterId) || {};
+    const worldRecord = profiles.loadWorld(worldId) || {};
+    seed = choice.world.seed;
+
+    world = chunks.makeWorld(seed, worldgen);
+    if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
+
+    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
+    inventory = inventoryModule.makeInventory();
+    stats = statsModule.makeStats();
+    ui = uiModule.makeUI(document.getElementById('hud'),
+      { tiles, texture, inventory, atlas: renderer.atlas });
+
+    if (characterRecord.inventory) inventory.restore(characterRecord.inventory);
+    else {
       inventory.add({ key: 'torch', kind: 'block' }, 40, 'hotbar');
       inventory.add({ key: 'plankwall', kind: 'wall' }, 60, 'hotbar');
     }
-    bind();
-    say('E opens the backpack. Left click digs, right click places.', 7);
+    if (characterRecord.stats) Object.assign(stats, characterRecord.stats);
+
+    carriedCharacterSeconds = choice.character.playedSeconds || 0;
+    carriedWorldSeconds = choice.world.playedSeconds || 0;
+    sessionStart = Date.now();
+
+    state.world = world;
+    state.stats = stats;
+    state.colours = characterRecord.colours || choice.character.colours;
+    state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
+    state.player = spawnPlayer();
+    if (worldRecord.spawn
+      && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
+        state.player.width, state.player.height)) {
+      state.player.x = worldRecord.spawn.x;
+      state.player.y = worldRecord.spawn.y;
+    }
+    state.camera.x = state.player.x;
+    state.camera.y = state.player.y;
+
+    ui.build();
+    running = true;
+    say(choice.world.name + ' \u2014 seed ' + seed + '. E opens the backpack.', 7);
+    setInterval(save, 20000);
     requestAnimationFrame(frame);
   }
 
-  return { state, start, inventory, stats, seed, ui };
+  function start() {
+    resize();
+    addEventListener('resize', resize);
+    bind();
+    menu.open().then(boot);
+  }
+
+  return { state, start,
+    get inventory() { return inventory; },
+    get stats() { return stats; },
+    get seed() { return seed; },
+    get ui() { return ui; },
+    get profiles() { return profiles; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
