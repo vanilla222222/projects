@@ -1,37 +1,58 @@
-# Wildroot — Version 1
+# Wildroot — World One
 
-An original, buildless browser idle RPG for Vanilla and friends. Open through the Projects index or serve this directory over HTTP. JavaScript modules require HTTP; opening index.html directly with file:// is unsupported.
+An original side-view browser idle RPG for Vanilla and friends. Hosted under `wildroot/` in the Projects website. Serve over HTTP; JavaScript modules cannot run through `file://`.
 
-## Playable scope
+## The playable world
 
-- Six areas, 22 zones, 16 regular enemy species, one boss.
-- Caves (3): copper. Deep Caverns (4): iron and gold. Forest (5): oak and birch. Jungle (4): jungle wood. Hearthstead Town (3): class mentors, anvil and foundry. Verdant Outpost / Jungle Town (3): enchanting, alchemy and boss entrance.
-- One initial unclassed character. Individual three-step class quest lines (level, profession practice, material delivery). Warrior / Mining; Mage / Logging; Blacksmith / Smithing; Enchanter / Enchanting; Alchemist / Alchemy.
-- Each first class unlock adds one slot. Five unique base classes unlock duplicates. Version 1 has six total slots; later class tiers will expand the roster rules.
-- Independent character assignments, shared materials, route unlocks and archive bonuses. Gathering continues alongside combat on other characters.
-- Mining and logging specialists gather faster. Production specialists double material output. Equipment upgrades are per character. Coins fund crafting fees.
-- Eighteen recipes for ingots, planks, dust, tonics, weapons, armour, tools and permanent rune/vitality upgrades.
-- Three independent loot layers: enemy (one common, one rare, one legendary), World 1 (three rare, two legendary), global (five mythical). Rates are visible in Field Guide.
-- Every item has an implemented use, listed in storage. Enemy materials and rare drops can be offered to the Archive for permanent account power. No rare drop is required to advance the main route.
-- Eight-hour idle simulation on return, including combat recovery. Local autosave, backup export/import and protection against two tabs writing the same save.
-- Responsive touch-friendly layout, keyboard focus, reduced-motion support, original procedural canvas scenery.
+The main screen is a controllable platform map, not a production dashboard. Click the ground to walk, click enemies to approach and attack, click trees or ore to gather, and click NPCs, stations or portals to interact. Characters walk between platforms using ladders. Keyboard movement supports jumps; mobile has touch controls and a camera that follows the character.
 
-## First session
+Regular combat maps contain five individual monsters of the zone's species across three platforms. Enemies patrol, approach during fights, take individual hits, retaliate, drop loot and respawn. The player has health, attack and class-skill cooldowns, and recovers at the entrance after a knockout. Floor loot can be collected by walking near it or tapping it. Pending loot is saved and collected before leaving a map or switching characters.
 
-Fight Moss Slimes to level 3, visit Hearthstead, and begin a class quest. Practise that profession and deliver the required materials. A Warrior or Mage is a straightforward first character. Create another adventurer after the first class unlock and assign a different task. Clear 12 enemies in each zone to open the next route. The Jungle opens after Grove Guardians; the Outpost opens after Orchid Mantises. Upgrade equipment before facing the Rootwarden.
+AUTO searches for enemies, navigates ladders and uses the character's ability. Manual movement takes control back. Inventory, quests, professions, talents, crafting and world travel are game overlays. Class progression requires talking to the actual mentor; crafting requires reaching the station.
 
-Any character can practise any basic profession, so class quests cannot deadlock. Anvil is Hammer Lane; Foundry is the third Town zone. Enchanting is Canopy Market; Alchemy is Alchemists’ Terrace. Use the Workshop shortcuts to travel to a station.
+## Controls
 
-## Provisional content and boundaries
+- Click / tap the ground: walk to that point, using a ladder if needed.
+- Click / tap an enemy: approach and attack. A skill button deals a stronger class-specific hit.
+- Click / tap a tree or ore: approach and gather.
+- Click / tap NPCs, crafting stations or portals: walk over and interact.
+- A / D or left / right arrows: walk. W / S or up / down arrows: climb.
+- Space: jump. F: basic attack. 1: class ability. E: interact. I: inventory. M: map.
+- Touch movement buttons, jump, attack, class skill and AUTO are below the world.
 
-The six-area structure, resources, class affiliations, uniqueness rule and future tiers follow the user's plan. Working title, names, recipe quantities, quest requirements, 12-kill route gates, rates within the specified ranges, eight-hour limit and Archive are first-pass implementation choices for playtesting, not final balance commitments.
+## World One specification
 
-World 2 is reserved for ten branches, two per base class: five specialising in World 2 professions and five in World 3 professions. World 4 will add ten direct upgrades. Those worlds, professions and branches are not implemented or presented as playable.
+Six areas, 22 zones, 16 regular enemy species and one boss:
 
-This is a local-save prototype on the existing public Projects website. Friends play separate rosters. It has no accounts, shared multiplayer world, trading, paid items, storefront integrations or server-authoritative anti-cheat. Device time and local save edits remain trusted. There is no runtime backend or external dependency beyond optional web fonts (system fallbacks included).
+- Caves (3): copper. Deep Caverns (4): iron and gold.
+- Forest (5): oak and birch. Jungle (4): jungle wood.
+- Hearthstead Town (3): class mentors, anvil and foundry.
+- Verdant Outpost / Jungle Town (3): enchanting, alchemy and boss entrance.
 
-## Development
+One initial unclassed character. Each character completes a three-step initiation (level, profession practice, material delivery) to choose a class: Warrior / Mining, Mage / Logging, Blacksmith / Smithing, Enchanter / Enchanting, Alchemist / Alchemy. Each first class unlock adds one slot. All five unique classes unlock duplicates; World One has six slots.
 
-Content and dependencies: `content.mjs`. Rules and save handling: `engine.mjs`. UI: `app.mjs`. Original canvas scene: `scene.mjs`.
+Each class has an active combat ability: Warrior Cleave, Mage Arc Bolt, Blacksmith Hammerfall, Enchanter Rune Burst, Alchemist Acid Flask. Beginners have Power Strike. Level-ups grant individual talent points for attack, health or gathering. Professions also retain their existing specialisations: faster mining/logging or double production output.
 
-Run `node --test wildroot/engine.test.mjs` from the repository root. The tests cover content constraints, actual first-class progression, class restrictions/slots, independent workers, crafting and costs, travel gates, loot, archive effects, boss retreat/victory, save validation and idle claims.
+Storage, route unlocks and the Archive are account-wide. Equipment, talents, quests and skills belong to each character. Eighteen recipes cover bars, planks, dust, tonics, weapons, armour, tools and rune/vitality upgrades. Coins fund crafting fees. Every item has at least one implemented purpose, visible in inventory.
+
+Three independent loot layers remain: each enemy has one common, one rare and one legendary entry; World One has three rare and two legendary entries; global loot has five mythical entries. No rare drop is required for basic advancement. The Archive converts materials into permanent account damage.
+
+## Simulation and saves
+
+The selected character uses position-based hit-by-hit combat and proximity-based gathering. Other characters keep working through the idle model. Both feed the same loot, XP, skills and economy functions. The selected character is excluded from background simulation to prevent duplicate rewards. Opening a menu does not run both simulations on the same character.
+
+Up to eight hours are simulated on return. Existing `wildroot-v1` saves are retained, with default talent fields added to older characters. Local autosave, import/export and multi-tab protection remain. This private prototype trusts local saves/device time and has no account server, multiplayer, trading or purchases. Friends play independent rosters.
+
+Working title, enemy names, recipes and balance remain provisional. World 2's ten branches, World 3's future professions and World 4's ten upgrades are planned, not playable.
+
+## Development and validation
+
+- `content.mjs`: World One data and recipe/loot dependencies.
+- `engine.mjs`: progression, crafting, idle simulation, saves and talent rules.
+- `world.mjs`: movement, ladders, target navigation, active combat, abilities, loot and map interaction.
+- `scene.mjs`: original procedural pixel scenery and sprites.
+- `app.mjs`: game HUD, controls, overlays and save coordination.
+
+Run `node --test wildroot/engine.test.mjs wildroot/world.test.mjs` from the repository root. Checks cover progression, roster rules, crafting, old-save compatibility, idle claims, movement/jumping, ladder navigation, actual resource proximity, per-hit combat, cooldowns, auto control, NPC proximity, portal gates, knockouts, floor loot persistence and prevention of active/background duplicate rewards.
+
+Responsive controls are implemented for portrait and landscape. Actual phone hardware testing remains necessary. Artwork is original canvas code, with no copied IdleOn assets.
