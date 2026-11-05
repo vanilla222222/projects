@@ -3,7 +3,7 @@
   "rdkitVersion": "2026.09.1",
   "sourceSha256": {
     "data/library.js": "23ca2c14c386242e2b397e789243d34c4e93594beb64672d924a9cc465e9041a",
-    "data/targets.js": "c994111b869a78b68fe873c92f218ae1791b9b3e3fbf390f0b3a837221b4aacd",
+    "data/targets.js": "6bc63e6ec5c09d543ed86bc9960b55925102f42bada0ef13c9a4e0d9cf5b5227",
     "data/receptor-catalog.js": "ba321cdb5e55cfb4313719cdecd583ba0b42f9c75e256150b6c43c288e6dec9d",
     "data/receptor-ligand-annotations.js": "5baaf3e92817424997666eff1422ec70312af28413a4712a16f047828c01c98a",
     "js/receptor-catalog.js": "eaed72df5e3c0ab62aaccba3ff82928e23da6849a14571a6a42ae745522ab798",

@@ -13,7 +13,7 @@ const REFERENCE_AUDIT_BASELINE={
   "targets": 154,
   "composedTargets": 155,
   "lookupOnlyTargets": 5,
-  "sparseTargets": 44,
+  "sparseTargets": 37,
   "unresolvedLigands": 0
 };
 if(typeof module!=='undefined'&&module.exports)module.exports={REFERENCE_AUDIT_BASELINE};
