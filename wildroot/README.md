@@ -123,3 +123,18 @@ Research references: DigitalTQ’s original guides for [stamps](https://www.digi
 - Existing saves initialize all new systems. Old positions and floor loot are placed on reachable floors in the new geometry. There is still no active World Two or real-money shop.
 
 Validation: `node --test wildroot/*.test.mjs` (110 tests), `node wildroot/world1-sim.mjs` (complete World One story). Layout tests traverse every shelf and portal, check entity support and migration, and verify camera limits. AFK values are estimates; active play varies with movement and skills, and mixed rare loot can fill bags sooner than the common-loot estimate.
+
+
+## Interface overhaul and Elder Tree (v14)
+
+The bottom dock now follows the Items / Talents / Codex / Map / Players / Menu structure, alongside AUTO and a pop-up Attacks bar. Character HP, MP and XP stay under the canvas. All menus use one original wood/parchment visual system, shared selected-detail panes and vector icon art. No Idleon artwork is embedded.
+
+Inventory includes a live character sheet, equipment/tool/food/bag tabs, paper doll, 4×4 grid pages, quantity splitting, locks, drops, shared chest pages and item source links. World One now crafts greaves, rings (either ring slot), a cape and a completion-gated trophy. Existing saves and their gear remain valid.
+
+Codex contains Quick Ref, obtained quests with active/completed filters, card collection and personal set bonuses, bestiary drops, searchable item sources/uses, star signs, earned achievements and tasks. Recipes use icon grids, source-linked ingredient costs, blueprint requirements and favorites. Stamps, statues, shops, anvil products, furnaces and upgrade stones use the same visual language. Facility access requirements remain enforced.
+
+The Elder Tree branches from The Elder’s Roots (the fifth forest room). Its three zones have 10, 12 and 14 upper platforms, each joined by a shelf-to-shelf ladder graph. Heights are 2106, 2466 and 2826 world units. Both camera coordinates and the room overview handle negative vertical world coordinates. The only telescope is on Crown Observatory’s highest platform. The summit shortcut requires reaching that telescope first. Eight physical constellation markers award 16 total star points; ten connected signs affect real stats. Each character equips one sign, then two after four constellations, then three after eight.
+
+The Greenreach Vault offers eight coin-funded account upgrades. Fifteen achievements award earned gems. Solo trials are entered at Legacy Square’s board, require level 3 and one ticket, and consist of eight waves in three minutes. Enemies award trial score instead of normal loot; score pays coins on a finished run and medals award gems once. Tickets gain three per UTC day, capped at six. Reloading or leaving the game abandons unclaimed trial score. Trials are never simulated for AFK farming.
+
+Keyboard: I items, T talents, C Codex, M map, P players, Q attacks, Escape menu/close. Options control the quest helper, damage text, nearby auto pickup, AUTO skill use, reduced decorative motion, compact spacing and existing sound/save functions. There are no chat/guild/multiplayer-only UI panes or playable World Two content.
