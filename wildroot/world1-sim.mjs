@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=7';
-import * as D from './content.mjs?v=7';
-import {World} from './world.mjs?v=7';
+import * as E from './engine.mjs?v=8';
+import * as D from './content.mjs?v=8';
+import {World} from './world.mjs?v=8';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -48,7 +48,7 @@ export function runWorldOne({rng=()=>.5}={}){
  material('dust',8);material('bat-fang',6);use(hero);E.travel(s,hero,'jungle-town',0);assert.ok(E.enchant(s,hero,'weapon','force',0));assert.ok(E.enchant(s,hero,'weapon','force',1));
  bankAll();use(hero);E.travel(s,hero,'jungle-town',2);const world=new World(s,{rng});assert.ok(world.select('portal-right'));
  let frames=0;while(!s.bossDefeated&&frames++<18000){const boss=world.map.monsters.find(e=>e.enemy.id==='boss');if(world.map.boss&&boss){if(!world.auto)world.toggleAuto();if(hero.level>=10&&hero.hp<E.maxHp(hero)*.7)world.useSkill(2,true);}world.step(.02);seconds+=.02;}
- assert.ok(s.bossDefeated,`Boss did not fall: ${hero.hp} hp, level ${hero.level}, power ${E.power(s,hero)}, frames ${frames}`);bank(hero);story('heart');
+ assert.ok(s.bossDefeated,`Boss did not fall: ${hero.hp} hp, level ${hero.level}, power ${E.power(s,hero)}, frames ${frames}, room ${world.map.area}/${world.map.index}, boss ${world.map.boss}, position ${world.player.x}/${world.player.y}, target ${world.target?.id}, hp ${world.map.monsters[0]?.hp}`);bank(hero);story('heart');
  assert.equal(s.storyFlags.complete,true);assert.equal(s.unlockedClasses.length,5);assert.equal(E.slots(s),6);assert.ok(E.restoreSave(JSON.parse(JSON.stringify(s))));
  return{seconds,minutes:+(seconds/60).toFixed(2),events,level:hero.level,attack:E.power(s,hero),defense:E.defense(s,hero),chestSlots:E.chestUsed(s),chestCapacity:E.chestCapacity(s),characters:s.characters.map(c=>({name:c.name,class:c.class,bagSlots:E.bagUsed(c),capacity:E.bagCapacity(c)})),storyComplete:s.storyFlags.complete,state:s};
 }

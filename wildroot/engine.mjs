@@ -1,9 +1,9 @@
-import * as I from './inventory.mjs?v=7';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=7';
-import * as P from './progression.mjs?v=7';
-export * from './progression.mjs?v=7';
-export * from './inventory.mjs?v=7';
-export {canPay,pay} from './inventory.mjs?v=7';
+import * as I from './inventory.mjs?v=8';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=8';
+import * as P from './progression.mjs?v=8';
+export * from './progression.mjs?v=8';
+export * from './inventory.mjs?v=8';
+export {canPay,pay} from './inventory.mjs?v=8';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -22,7 +22,7 @@ export function skillXp(c,id,n){c.skills[id]+=n*(1+(c.profTalents.mastery||0)*.0
 export function areaUnlocked(s,id){if(['town','forest','caves'].includes(id))return true;if(id==='jungle')return(s.kills['forest-4']||0)>=12;if(id==='deep')return(s.kills['caves-2']||0)>=12;if(id==='jungle-town')return(s.kills['jungle-3']||0)>=12;return false;}
 export function zoneUnlocked(s,area,index){return areaUnlocked(s,area)&&(index===0||['town','jungle-town'].includes(area)||(s.kills[`${area}-${index-1}`]||0)>=12);}
 export function lockReason(s,area,index=0){if(!areaUnlocked(s,area))return area==='jungle'?'Defeat 12 Grove Guardians':area==='deep'?'Defeat 12 Echo Golems':'Defeat 12 Orchid Mantises';if(!zoneUnlocked(s,area,index))return`Defeat 12 ${zoneEnemy(area,index-1)?.name||'enemies'}`;return '';}
-export function travel(s,c,area,index){const a=areaById(area);if(!a||!Number.isInteger(index)||index<0||index>=a.zones.length||!zoneUnlocked(s,area,index))return false;c.area=area;c.zone=index;c.secret=null;c.activity='rest';c.resource=null;c.progress=0;c.recovering=false;s.visited[`${area}-${index}`]=true;return true;}
+export function travel(s,c,area,index){const a=areaById(area);if(!a||!Number.isInteger(index)||index<0||index>=a.zones.length||!zoneUnlocked(s,area,index))return false;c.position=null;c.entryPoint=null;c.area=area;c.zone=index;c.secret=null;c.activity='rest';c.resource=null;c.progress=0;c.recovering=false;s.visited[`${area}-${index}`]=true;return true;}
 export const gatherSkill=resource=>['copper','iron','gold'].includes(resource)?'mining':'logging';
 export function gatherRequirement(c,resource){const skill=gatherSkill(resource),level={copper:1,oak:1,birch:2,iron:3,'jungle-wood':3,gold:5}[resource]||1;const tool=skill==='mining'?'pick':'axe',need=resource==='gold'?2:level>1?1:0;const base=c.loadout[tool]?.base,actual=base?.startsWith('iron-')?2:base?1:c.gear[tool]||0;if(skillLevel(c,skill)<level)return`${SKILLS[skill]} level ${level} required`;if(actual<need)return`${need===2?'Iron':'Copper'} ${tool==='pick'?'Pickaxe':'Hatchet'} required`;return '';}
 export function start(s,c,activity,resource=null){const a=areaById(c.area);if(activity==='fight'&&!zoneEnemy(c.area,c.zone)&&!c.secret)return false;if(activity==='boss'&&(c.area!=='jungle-town'||c.zone!==2||!s.storyFlags.bossPermit))return false;if(activity==='gather'&&(!a.resources[c.zone].includes(resource)||gatherRequirement(c,resource)))return false;if(!['fight','boss','gather','rest'].includes(activity))return false;c.activity=activity;c.resource=resource;c.progress=0;return true;}

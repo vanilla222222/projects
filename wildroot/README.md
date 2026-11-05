@@ -86,3 +86,10 @@ Ground drops retain equipment instance IDs and runes. Reloading preserves droppe
 The game is now a single dynamic-viewport frame with the map above an integrated controls/menu dock. Both desktop and touch layouts keep movement, combat and menu buttons on screen without document scrolling; only open menus scroll. Safe-area insets are respected. Actual phone hardware testing remains outstanding.
 
 Reference research: IdleOn’s developer quality update notes describe persistent inventory locks; DigitalTQ’s beginner guide distinguishes once-per-character bag-space items from anvil-crafted category capacity pouches. Wildroot uses original item names, progression costs and artwork rather than copying IdleOn assets.
+
+
+## Paired room portals
+
+Every portal stores its destination room and a specific entrance ID. Left, right and branch entrances have distinct arrival positions; returning puts the character beside the same doorway, facing into the room. Portal labels name the actual destination. Echo Chamber has a separate elevated doorway for the deep-cavern loop, with the existing unlock gates intact. Secret rooms and the Rootwarden chamber each have one return exit to the exact parent entrance. Portal transitions immediately save destination coordinates, retain platform height across reloads, and use the arrival point for knockout recovery. Killing boss adds no longer ends the encounter while the Rootwarden is alive.
+
+Regression coverage traverses every normal-room portal in both directions, verifies unique destinations/arrivals, checks secret/boss returns and gated branch entrances, and tests save/reload on elevated arrivals.

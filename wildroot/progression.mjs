@@ -1,5 +1,5 @@
-import * as I from './inventory.mjs?v=7';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES} from './content.mjs?v=7';
+import * as I from './inventory.mjs?v=8';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES} from './content.mjs?v=8';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));

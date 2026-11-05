@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=7';
-import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=7';
+import * as E from './engine.mjs?v=8';
+import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=8';
 function tick(world,seconds,input={}){for(let i=0;i<seconds*50;i++)world.step(.02,typeof input==='function'?input(i):input);}
 function setup(options={}){const state=E.freshSave(),events=[];return{state,events,world:new World(state,{rng:()=>.5,onIntent:e=>events.push(e),onEvent:e=>events.push(e),...options})};}
 test('Maps have multiple actual enemy entities, platforms, ladders, resources and portals',()=>{
@@ -52,4 +52,30 @@ test('Background simulation preserves account rewards without double-counting th
 });
 test('Auto in town cannot create an invalid combat assignment or break the save',()=>{
  const {world,state}=setup();world.travel('town',0);assert.equal(world.toggleAuto(),false);assert.equal(world.c.activity,'rest');assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(state))));
+});
+
+test('All room doorways have unique, reciprocal destinations and arrival points',async()=>{
+ const {AREAS,SECRETS}=await import('./content.mjs?v=8');
+ for(const area of AREAS)for(let zone=0;zone<area.zones.length;zone++){
+  const map=createMap(area.id,zone),targets=map.portals.map(p=>JSON.stringify([p.destination.area,p.destination.zone,p.destination.boss||false,p.destination.secret||null]));assert.equal(new Set(targets).size,targets.length);
+  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=8');arrivals.push(JSON.stringify(entrancePoint(portal.id)));}assert.equal(new Set(arrivals).size,arrivals.length);
+ }
+ for(const[id,d]of Object.entries(SECRETS)){const room=createMap(d.area,d.zone,false,id);assert.equal(room.portals.length,1);assert.equal(room.portals[0].destination.entrance,'secret-'+id);assert.ok(createMap(d.area,d.zone).discoveries.some(e=>e.id===room.portals[0].destination.entrance));}
+});
+test('Entering opposite portals gives different positions and the transition frame preserves the destination',()=>{
+ const{world,state}=setup();state.kills['forest-0']=12;state.kills['forest-1']=12;assert.ok(world.travel('forest',1));assert.equal(world.player.x,135);assert.ok(world.travel('forest',2));assert.equal(world.player.x,135);assert.ok(world.usePortal(world.map.portals.find(p=>p.id==='portal-left')));assert.equal(world.c.zone,1);assert.equal(world.player.x,1140);assert.equal(world.c.position.x,1140);
+ world.player.x=1180;world.select('portal-right');world.step(.02);assert.equal(world.c.zone,2);assert.equal(world.player.x,135);assert.equal(world.c.position.x,135);const saved=E.restoreSave(JSON.parse(JSON.stringify(state))),reloaded=new World(saved);assert.equal(reloaded.player.x,135);assert.equal(reloaded.target,null);
+});
+test('The deep-cavern loop has a separate elevated return doorway and keeps progression gates',()=>{
+ const{world,state}=setup();state.kills['caves-1']=12;assert.ok(world.travel('caves',2));const branch=world.map.portals.find(p=>p.id==='portal-deep-return');assert.equal(world.usePortal(branch),false);state.kills['deep-2']=12;state.kills['caves-2']=12;assert.ok(world.usePortal(branch));assert.equal(world.c.area,'deep');assert.equal(world.c.zone,3);assert.equal(world.player.x,1140);assert.ok(world.usePortal(world.map.portals.find(p=>p.id==='portal-right')));assert.equal(world.c.area,'caves');assert.equal(world.player.x,1040);assert.equal(world.player.y,342);const loaded=new World(E.restoreSave(JSON.parse(JSON.stringify(state))));assert.equal(loaded.player.y,342);assert.equal(loaded.player.x,1040);
+});
+test('Secret and boss rooms have one exit back to their exact parent doorway',()=>{
+ const{world,state}=setup();state.kills['forest-2']=12;state.secretUnlocks.push('sunwell');world.travel('forest',3);world.player.x=655;world.select('secret-sunwell');world.step(.02);assert.equal(world.map.secret,'sunwell');assert.equal(world.player.x,135);assert.equal(world.map.portals.length,1);world.usePortal(world.map.portals[0]);assert.equal(world.map.secret,null);assert.equal(world.c.zone,3);assert.equal(world.player.x,725);
+ state.kills['jungle-3']=12;world.travel('jungle-town',2);const gate=world.map.portals.find(p=>p.id==='portal-right');assert.equal(world.usePortal(gate),false);state.storyFlags.bossPermit=true;assert.ok(world.usePortal(gate));assert.equal(world.map.boss,true);assert.equal(world.player.x,135);assert.equal(world.map.portals.length,1);assert.ok(world.usePortal(world.map.portals[0]));assert.equal(world.map.boss,false);assert.equal(world.c.zone,2);assert.equal(world.player.x,1140);assert.equal(world.c.activity,'rest');
+});
+test('A boss minion cannot trigger victory or erase the living boss',()=>{
+ const{world,state,events}=setup();state.kills['jungle-3']=12;state.storyFlags.bossPermit=true;world.travel('jungle-town',2);world.usePortal(world.map.portals.find(p=>p.id==='portal-right'));const boss=world.map.monsters[0],add={...boss,id:'boss-add-test',enemy:{...boss.enemy,id:'forest-0',hp:1},hp:1,dead:0};world.map.monsters.push(add);world.hit(add,100);assert.equal(state.bossDefeated,false);assert.equal(boss.dead,0);assert.equal(events.some(e=>e.type==='victory'),false);
+});
+test('Knockouts recover beside the room entrance and reassignment clears old-room positions',()=>{
+ const{world,state}=setup();state.kills['forest-0']=12;state.kills['forest-1']=12;world.travel('forest',2);world.usePortal(world.map.portals[0]);assert.equal(world.c.entryPoint.x,1140);world.player.x=700;world.player.respawn=.01;world.c.hp=0;world.step(.02);assert.equal(world.player.x,1140);assert.equal(world.player.y,GROUND);assert.equal(world.c.hp,E.maxHp(world.c));E.travel(state,world.c,'town',0);assert.equal(world.c.position,null);assert.equal(world.c.entryPoint,null);
 });

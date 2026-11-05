@@ -1,6 +1,6 @@
-import * as D from './content.mjs?v=7';
-import * as E from './engine.mjs?v=7';
-import {abilitySet} from './world.mjs?v=7';
+import * as D from './content.mjs?v=8';
+import * as E from './engine.mjs?v=8';
+import {abilitySet} from './world.mjs?v=8';
 export const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n).toLocaleString();
 export function costs(s,cost){return`<div class="costs">${Object.entries(cost).map(([id,n])=>`<span class="${E.amount(s,id)<n?'missing':''}">${esc(D.ITEMS[id]?.name||id)} ${fmt(E.amount(s,id))}/${n}</span>`).join('')}</div>`;}
