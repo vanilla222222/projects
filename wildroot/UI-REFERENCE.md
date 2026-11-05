@@ -27,3 +27,12 @@ Excluded: chat, guild interfaces, parties and multiplayer-only activities; later
 - [Official game overview](https://www.legendsofidleon.com/) — roster, classes and cross-skill progression context.
 
 These references vary in age. They are used to identify recurring interface patterns rather than claim exact current-game parity. The main wiki was inaccessible to the research crawler, so visual screenshots, the official overview and independent guides were cross-checked instead.
+
+## v16 research and adaptations
+
+Research reviewed Idleon's anvil and alchemy flows rather than reproducing their exact world timing or prices:
+- https://www.digitaltq.com/wiki/idleon/crafting-guide-the-anvil — production/points, recipe unlock hints, crafted page expansions.
+- https://gameslikefinder.com/article/idleon-recipe-unlocks/ — task/quest/drop recipe sources.
+- https://www.digitaltq.com/wiki/idleon/alchemy — four coloured brewing cauldrons, character assignments, bubbles, liquids, vials and coin-funded upgrades.
+
+Wildroot intentionally places alchemy in World One, uses its own smaller skill curve, adds explicit discovery safety nets, and keeps enchanting as a distinct original gear system. Remote view/claim/upgrade permissions are separate; none are awarded in World One. Idleon's access rules differ by feature and version, so no universal World Five unlock is assumed. Sigils and other later-world systems are omitted. No chat, guild or paid microtransaction content was added.

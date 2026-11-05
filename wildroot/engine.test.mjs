@@ -31,8 +31,8 @@ test('Multiple characters produce independently while selection changes',()=>{
  assert.equal(E.start(s,two,'gather','gold'),false);assert.equal(E.start(s,one,'boss'),false);
 });
 test('Crafting enforces station, costs and equipment ownership; specialists double output',()=>{
- const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.craft(s,c,'copper-bar'),false);E.travel(s,c,'town',2);c.class='blacksmith';const before=c.bag['copper-bar']||0;assert.ok(E.craft(s,c,'copper-bar'));assert.equal(c.bag['copper-bar']||0,before);E.advanceProduction(s,8);assert.equal(c.bag['copper-bar'],before+2);assert.equal(s.inventory.copper,997);assert.equal(s.coins,9998);
- E.travel(s,c,'town',1);assert.ok(E.craft(s,c,'blade'));assert.equal(c.gear.weapon,1);assert.equal(E.craft(s,c,'blade'),true);assert.equal(c.packGear.length,1);assert.equal(E.craft(s,c,'not-a-recipe'),false);s.inventory['jungle-wood']=0;assert.equal(E.craft(s,c,'gold-blade'),false);
+ const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.craft(s,c,'copper-bar'),false);E.travel(s,c,'town',2);c.position={x:1520,y:644};c.class='blacksmith';const before=c.bag['copper-bar']||0;assert.ok(E.craft(s,c,'copper-bar'));assert.equal(c.bag['copper-bar']||0,before);E.advanceProduction(s,8);assert.equal(c.bag['copper-bar'],before+2);assert.equal(s.inventory.copper,997);assert.equal(s.coins,9998);
+ E.travel(s,c,'town',1);c.position={x:1390,y:644};assert.ok(E.craft(s,c,'blade'));assert.equal(c.gear.weapon,1);assert.equal(E.craft(s,c,'blade'),true);assert.equal(c.packGear.length,1);assert.equal(E.craft(s,c,'not-a-recipe'),false);s.inventory['jungle-wood']=0;assert.equal(E.craft(s,c,'gold-blade'),false);
 });
 test('Material studies consume resources and improve a specific account discipline',()=>{
  const s=E.freshSave(),c=E.selected(s),before=E.maxHp(c);s.inventory['moss-slime']=10;assert.ok(E.offer(s,'moss-slime'));assert.equal(s.inventory['moss-slime'],0);assert.equal(s.archive['moss-slime'],1);assert.equal(E.offer(s,'moss-slime'),false);assert.equal(E.offer(s,'oak'),false);
