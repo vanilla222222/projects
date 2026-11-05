@@ -33,8 +33,44 @@ const TILES = [
   { id: 24, key: 'crystal', name: 'Cave Crystal', solid: true, opacity: 12, emit: 11, hardness: 1.2, colour: '#8fa8ff', grain: 0.18 },
   { id: 25, key: 'mushroom', name: 'Glowcap', solid: false, opacity: 4, emit: 7, hardness: 0.1, colour: '#b58ae0', grain: 0.2 },
   { id: 26, key: 'vine', name: 'Vine', solid: false, opacity: 12, emit: 0, hardness: 0.1, colour: '#4a7a30', grain: 0.2 },
-  { id: 27, key: 'glass', name: 'Glass', solid: true, opacity: 6, emit: 0, hardness: 0.4, colour: '#c8e4ef', grain: 0.03 }
+  { id: 27, key: 'trunk', name: 'Tree Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#7a5330', grain: 0.1, drops: 'wood' },
+  { id: 28, key: 'glass', name: 'Glass', solid: true, opacity: 6, emit: 0, hardness: 0.4, colour: '#c8e4ef', grain: 0.03 }
 ];
+
+// Walls are the background layer. A tile can hold a wall and a block at once: the block is
+// what you collide with, the wall is what remains behind when you mine the block out, and it
+// is what makes a dug tunnel read as carved rock rather than a hole in the image.
+const NO_WALL = 0;
+const WALLS = [
+  { id: 0, key: 'none', name: 'None', colour: null, opacity: 0 },
+  { id: 1, key: 'dirtwall', name: 'Dirt Wall', colour: '#3a2d24', opacity: 7, natural: true },
+  { id: 2, key: 'stonewall', name: 'Stone Wall', colour: '#2f2f38', opacity: 8, natural: true },
+  { id: 3, key: 'granitewall', name: 'Granite Wall', colour: '#2b2838', opacity: 8, natural: true },
+  { id: 4, key: 'basaltwall', name: 'Basalt Wall', colour: '#231f26', opacity: 9, natural: true },
+  { id: 5, key: 'slatewall', name: 'Slate Wall', colour: '#1b1f27', opacity: 9, natural: true },
+  { id: 6, key: 'sandwall', name: 'Sandstone Wall', colour: '#5f5231', opacity: 7, natural: true },
+  { id: 7, key: 'snowwall', name: 'Snow Wall', colour: '#6a7682', opacity: 6, natural: true },
+  { id: 8, key: 'plankwall', name: 'Plank Wall', colour: '#4a3420', opacity: 7 },
+  { id: 9, key: 'brickwall', name: 'Brick Wall', colour: '#3b3741', opacity: 8 },
+  { id: 10, key: 'glasswall', name: 'Glass Wall', colour: '#39525c', opacity: 2 }
+];
+
+const WALL_BY_KEY = {};
+for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
+
+function wall(id) {
+  return WALLS[id] || WALLS[0];
+}
+
+function wallOpacityOf(id) {
+  return wall(id).opacity || 0;
+}
+
+function wallIdOf(key) {
+  const found = WALL_BY_KEY[key];
+  if (!found) throw new Error('unknown wall key: ' + key);
+  return found.id;
+}
 
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
@@ -62,5 +98,6 @@ function idOf(key) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf };
+  module.exports = { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf,
+    NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 }

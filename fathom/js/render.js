@@ -112,49 +112,32 @@ function makeRenderer(canvas, deps) {
     }
   }
 
-  // Wall colour by depth: earth near the surface, cooling to stone and then to near-black at
-  // the bottom of the world, so depth is readable without a HUD.
-  function wallColour(depth) {
-    const bands = [
-      [0, [58, 42, 31]], [48, [52, 40, 34]], [300, [44, 42, 48]],
-      [540, [38, 34, 44]], [760, [28, 26, 34]], [1056, [18, 16, 22]]
-    ];
-    let lo = bands[0];
-    let hi = bands[bands.length - 1];
-    for (let i = 0; i < bands.length - 1; i += 1) {
-      if (depth >= bands[i][0] && depth <= bands[i + 1][0]) {
-        lo = bands[i];
-        hi = bands[i + 1];
-        break;
-      }
-    }
-    const t = hi[0] === lo[0] ? 0 : (depth - lo[0]) / (hi[0] - lo[0]);
-    const c = [0, 1, 2].map((k) => Math.round(lo[1][k] + (hi[1][k] - lo[1][k]) * Math.min(1, Math.max(0, t))));
-    return 'rgb(' + c.join(',') + ')';
-  }
-
-  // Air below ground is drawn as a dark wall rather than left transparent. Without this a dug
-  // tunnel shows the sky gradient through it and the underground reads as a hole in the image
-  // instead of a space inside rock.
+  // The wall layer, drawn behind the blocks. This is real per-tile data rather than a painted
+  // backdrop, so a tunnel shows the wall its stratum generated and a player-placed wall shows
+  // where it was put.
   function drawWalls(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
-    // Opaque, not alpha over the sky: blending a dark wall over a blue gradient leaves the
-    // tunnel reading as washed teal instead of earth.
+    for (let ty = 0; ty < rows; ty += 1) {
+      for (let tx = 0; tx < cols; tx += 1) {
+        const id = state.world.getWall(x0 + tx, y0 + ty);
+        if (id === 0) continue;
+        const spec = tiles.wall(id);
+        ctx.fillStyle = spec.colour;
+        ctx.fillRect(tx * size - offsetX, ty * size - offsetY, size + 1, size + 1);
+      }
+    }
+    // A soft dark edge where wall meets open sky stops the boundary reading as a hard line.
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
       const surface = worldgen.surfaceHeight(state.world.seed, wx);
-      const from = Math.max(0, surface - y0);
-      if (from >= rows) continue;
-      const top = from * size - offsetY;
-      const bottom = rows * size - offsetY;
-      const depthTop = Math.max(0, y0 + from - surface);
-      const depthBottom = Math.max(0, y0 + rows - surface);
-      const g = ctx.createLinearGradient(0, top, 0, bottom);
-      g.addColorStop(0, wallColour(depthTop));
-      g.addColorStop(1, wallColour(depthBottom));
+      const sy = (surface - y0) * size - offsetY;
+      if (sy < -size * 2 || sy > canvas.height + size) continue;
+      const g = ctx.createLinearGradient(0, sy - size * 2.5, 0, sy + size * 1.5);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.42)');
       ctx.fillStyle = g;
-      ctx.fillRect(tx * size - offsetX, top, size + 1, bottom - top);
+      ctx.fillRect(tx * size - offsetX, sy - size * 2.5, size + 1, size * 4);
     }
   }
 

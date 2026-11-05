@@ -47,9 +47,10 @@
 <script>
 (function boot() {
   const deps = {
-    tiles: { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf },
+    tiles: { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf,
+      NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf },
     worldgen: { CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, ORE_BANDS,
-      biomeAt, surfaceHeight, baseTileAt, treeAt, generateChunk },
+      biomeAt, surfaceHeight, baseTileAt, baseWallAt, treeAt, generateChunk },
     chunks: { makeWorld },
     autotile: { maskAt, edges, exposure, isBuried },
     texture: { TILE, VARIANTS, bakeAtlas, variantFor, shade },

@@ -143,7 +143,7 @@ function treeAt(seed, x) {
 }
 
 function stampTree(write, seed, tree) {
-  const trunk = idOf('wood');
+  const trunk = idOf('trunk');
   const leaf = idOf('leaves');
   for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
   const top = tree.root - tree.height;
@@ -181,13 +181,36 @@ function decorate(write, seed, x) {
   }
 }
 
+// The wall behind a tile, which is what remains visible when the block is mined out. It is
+// chosen from the stratum rather than the block, so a cave cut through stone still shows
+// stone wall, and an ore pocket does not leave an ore-coloured hole.
+function baseWallAt(seed, x, y) {
+  if (y < 0 || y >= WORLD_H) return 0;
+  const surface = surfaceHeight(seed, x);
+  const depth = y - surface;
+  if (depth < 0) return 0;
+  const biome = biomeAt(seed, x);
+  const layer = stratum(seed, x, y, depth);
+  if (layer === 'surface' || layer === 'filler') {
+    if (biome.key === 'desert') return wallIdOf('sandwall');
+    if (biome.key === 'tundra') return wallIdOf('snowwall');
+    return wallIdOf('dirtwall');
+  }
+  if (layer === 'stone') return wallIdOf('stonewall');
+  if (layer === 'granite') return wallIdOf('granitewall');
+  if (layer === 'basalt') return wallIdOf('basaltwall');
+  return wallIdOf('slatewall');
+}
+
 function generateChunk(seed, cx, cy) {
   const tiles = new Uint8Array(CHUNK * CHUNK);
+  const walls = new Uint8Array(CHUNK * CHUNK);
   const x0 = cx * CHUNK;
   const y0 = cy * CHUNK;
   for (let ty = 0; ty < CHUNK; ty += 1) {
     for (let tx = 0; tx < CHUNK; tx += 1) {
       tiles[ty * CHUNK + tx] = baseTileAt(seed, x0 + tx, y0 + ty);
+      walls[ty * CHUNK + tx] = baseWallAt(seed, x0 + tx, y0 + ty);
     }
   }
   const write = (wx, wy, id) => {
@@ -204,7 +227,7 @@ function generateChunk(seed, cx, cy) {
     if (tree) stampTree(write, seed, tree);
     decorate(write, seed, wx);
   }
-  return tiles;
+  return { tiles, walls };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -218,9 +241,10 @@ if (typeof module !== 'undefined' && module.exports) {
   global.ridged2 = noise.ridged2;
   global.AIR = tiles.AIR;
   global.idOf = tiles.idOf;
+  global.wallIdOf = tiles.wallIdOf;
   module.exports = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     biomeAt, biomeIndex, biomeField, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
-    baseTileAt, treeAt, decorate, generateChunk
+    baseTileAt, baseWallAt, treeAt, decorate, generateChunk
   };
 }

@@ -10,8 +10,8 @@ const { CHUNK, WORLD_H, STRUCTURE_MARGIN } = gen;
 
 const SEED = 20260105;
 
-function bytes(a) {
-  return Buffer.from(a).toString('base64');
+function bytes(chunk) {
+  return Buffer.from(chunk.tiles).toString('base64') + '|' + Buffer.from(chunk.walls).toString('base64');
 }
 
 let checks = 0;
@@ -61,7 +61,7 @@ for (let cx = -2; cx <= 2; cx += 1) {
     const chunk = gen.generateChunk(SEED, cx, cy);
     for (let ty = 0; ty < CHUNK; ty += 1) {
       for (let tx = 0; tx < CHUNK; tx += 1) {
-        const id = chunk[ty * CHUNK + tx];
+        const id = chunk.tiles[ty * CHUNK + tx];
         const band = oreIds.get(id);
         if (!band) continue;
         const x = cx * CHUNK + tx;
@@ -83,9 +83,11 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
   const x0 = cx0 * CHUNK;
   const y0 = cy0 * CHUNK;
   const out = new Uint8Array(w * h);
+  const outWalls = new Uint8Array(w * h);
   for (let ty = 0; ty < h; ty += 1) {
     for (let tx = 0; tx < w; tx += 1) {
       out[ty * w + tx] = gen.baseTileAt(seed, x0 + tx, y0 + ty);
+      outWalls[ty * w + tx] = gen.baseWallAt(seed, x0 + tx, y0 + ty);
     }
   }
   const write = (wx, wy, id) => {
@@ -100,7 +102,7 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + w + STRUCTURE_MARGIN; wx += 1) {
     const tree = gen.treeAt(seed, wx);
     if (tree) {
-      const trunk = tiles.idOf('wood');
+      const trunk = tiles.idOf('trunk');
       for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
       const top = tree.root - tree.height;
       const r = tree.canopy;
@@ -122,7 +124,7 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
     }
     gen.decorate(write, seed, wx);
   }
-  return { out, w, h };
+  return { out, outWalls, w, h };
 }
 
 let seamTiles = 0;
@@ -137,9 +139,18 @@ for (const [cx0, cy0] of [[-6, 5], [0, 5], [11, 6], [-21, 7]]) {
       const chunk = gen.generateChunk(SEED, cx0 + i, cy0 + j);
       for (let ty = 0; ty < CHUNK; ty += 1) {
         for (let tx = 0; tx < CHUNK; tx += 1) {
-          const got = chunk[ty * CHUNK + tx];
+          const got = chunk.tiles[ty * CHUNK + tx];
           const want = whole.out[(j * CHUNK + ty) * whole.w + (i * CHUNK + tx)];
-          seamTiles += 1;
+          const gotWall = chunk.walls[ty * CHUNK + tx];
+          const wantWall = whole.outWalls[(j * CHUNK + ty) * whole.w + (i * CHUNK + tx)];
+          seamTiles += 2;
+          if (gotWall !== wantWall) {
+            seamMismatch += 1;
+            if (firstMismatches.length < 6) {
+              firstMismatches.push({ layer: 'wall', x: (cx0 + i) * CHUNK + tx, y: (cy0 + j) * CHUNK + ty,
+                chunked: tiles.wall(gotWall).key, whole: tiles.wall(wantWall).key });
+            }
+          }
           if (got !== want) {
             seamMismatch += 1;
             if (firstMismatches.length < 6) {
@@ -159,7 +170,33 @@ assert.equal(seamMismatch, 0,
     + ' tiles; first: ' + JSON.stringify(firstMismatches));
 checks += 1;
 
-// 7. Spawn must be standable: solid ground with headroom above it.
+// 7. Every tile below the surface carries a wall, so mining a block never leaves a hole
+// through to the sky, and no tile above the surface carries one.
+let walled = 0;
+let missingWall = 0;
+let strayWall = 0;
+for (let x = -300; x <= 300; x += 23) {
+  const surface = gen.surfaceHeight(SEED, x);
+  for (let y = surface - 6; y < surface + 260; y += 1) {
+    const w = gen.baseWallAt(SEED, x, y);
+    if (y < surface) {
+      if (w !== 0) strayWall += 1;
+    } else if (w === 0) missingWall += 1;
+    else walled += 1;
+  }
+}
+assert.equal(missingWall, 0, missingWall + ' below-surface tiles have no wall behind them');
+assert.equal(strayWall, 0, strayWall + ' above-surface tiles carry a wall');
+checks += 2;
+
+// 8. A tree must not block movement: trunks and foliage are walk-through, so the player
+// never has to mine a forest to cross it.
+for (const key of ['trunk', 'leaves', 'vine']) {
+  check(!tiles.isSolid(tiles.idOf(key)), key + ' is solid, so trees would block movement');
+}
+check(tiles.isSolid(tiles.idOf('wood')), 'placed wood should still be a solid building block');
+
+// 9. Spawn must be standable: solid ground with headroom above it.
 for (let x = -500; x <= 500; x += 97) {
   const surface = gen.surfaceHeight(SEED, x);
   check(tiles.isSolid(gen.baseTileAt(SEED, x, surface)), 'no solid ground at column ' + x);
@@ -168,5 +205,6 @@ for (let x = -500; x <= 500; x += 97) {
 }
 
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
-  + ' tiles agree between chunked and one-piece generation; ' + oresSeen
-  + ' ore tiles all inside their depth bands; worst surface step ' + worstStep + ' tiles');
+  + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
+  + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
+  + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles');
