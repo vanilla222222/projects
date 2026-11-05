@@ -23,6 +23,7 @@
 <script src="js/player.js"></script>
 <script src="js/mining.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/craft.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/render.js"></script>
@@ -45,6 +46,8 @@
       useTimeOf, requirementOf, toughnessOf, canMine, damagePerHit, hitsFor, secondsFor, requirementName },
     noise: { fbm1, fbm2, ridged2, value1, value2, smooth },
     render: { makeRenderer },
+    craft: { RECIPES, ITEMS, STATION_REACH_X, STATION_REACH_Y, stationsNear,
+      canAfford, available, atStation, craft, kindOf, nameOf },
     inventory: { makeInventory, LAYOUT, STACK_MAX },
     stats: { makeStats, step: stepStats, damage, heal, spendMana, respawn, raiseMaxHealth, raiseMaxMana, hearts, stars },
     ui: { makeUI },

@@ -415,3 +415,54 @@ html, body {
 .primary:hover { filter: brightness(1.1); }
 .ghost { background: rgba(22, 30, 48, 0.86); color: var(--dim); }
 .ghost:hover { color: var(--ink); border-color: var(--accent); }
+
+/* Crafting. The list is a third panel on the inventory screen, scrolling on its own so a
+   long recipe list never pushes the backpack off the screen. */
+.craft-panel {
+  padding: 14px;
+  pointer-events: auto;
+  width: 290px;
+  display: flex;
+  flex-direction: column;
+}
+.craft-panel .stations {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9fb0c4;
+}
+.craft-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 340px;
+}
+.craft-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(12, 16, 24, 0.55);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.craft-row:hover {
+  background: rgba(60, 86, 122, 0.55);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+.craft-row canvas { image-rendering: pixelated; flex: 0 0 auto; }
+.craft-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.craft-name { font-size: 13px; }
+.craft-cost { font-size: 11px; color: #94a3b8; }
+.craft-empty { margin: 10px 0 0; font-size: 12px; color: #7f8da0; }
+
+@media (max-width: 1100px) {
+  .craft-panel { width: 240px; }
+  .craft-list { max-height: 240px; }
+}

@@ -199,6 +199,56 @@ function paintGlass(ctx, spec, variant, ox, oy) {
   ctx.stroke();
 }
 
+// The three stations. Each is drawn as a recognisable silhouette rather than a tinted
+// square, because a bench you cannot pick out of a wall of dirt is a bench you lose.
+function paintStation(ctx, spec, variant, ox, oy) {
+  const base = spec.colour;
+  if (spec.key === 'workbench') {
+    ctx.fillStyle = shade(base, 0.12);
+    ctx.fillRect(ox + 1, oy + 5, 14, 3);          // the top
+    ctx.fillStyle = shade(base, -0.22);
+    ctx.fillRect(ox + 2, oy + 8, 2, 7);           // legs
+    ctx.fillRect(ox + 12, oy + 8, 2, 7);
+    ctx.fillRect(ox + 4, oy + 10, 8, 1);          // the stretcher
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    ctx.fillRect(ox + 1, oy + 5, 14, 1);
+    // A saw and a plane laid on the bench, placed by variant so benches differ.
+    ctx.fillStyle = variant % 2 ? '#b9c2cc' : '#8e6b45';
+    ctx.fillRect(ox + 4 + (variant % 3), oy + 3, 5, 2);
+    return;
+  }
+  if (spec.key === 'furnace') {
+    ctx.fillStyle = shade(base, -0.1);
+    ctx.fillRect(ox + 1, oy + 2, 14, 13);
+    ctx.fillStyle = shade(base, -0.35);
+    ctx.fillRect(ox + 1, oy + 2, 14, 2);          // the lintel
+    // The mouth, and the fire in it. This is the tile's own light source.
+    ctx.fillStyle = '#1a1210';
+    ctx.fillRect(ox + 4, oy + 7, 8, 8);
+    const flicker = 0.55 + variant * 0.12;
+    const grad = ctx.createLinearGradient(0, oy + 15, 0, oy + 7);
+    grad.addColorStop(0, 'rgba(255,214,120,' + flicker.toFixed(2) + ')');
+    grad.addColorStop(0.5, 'rgba(240,120,40,' + (flicker * 0.8).toFixed(2) + ')');
+    grad.addColorStop(1, 'rgba(180,40,20,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(ox + 5, oy + 8, 6, 7);
+    ctx.fillStyle = shade(base, 0.18);
+    ctx.fillRect(ox + 1, oy + 2, 14, 1);
+    return;
+  }
+  // Anvil: the classic horn-and-waist silhouette.
+  ctx.fillStyle = shade(base, -0.3);
+  ctx.fillRect(ox + 4, oy + 12, 8, 3);            // the base
+  ctx.fillRect(ox + 6, oy + 8, 4, 4);             // the waist
+  ctx.fillStyle = base;
+  ctx.fillRect(ox + 2, oy + 5, 12, 3);            // the face
+  ctx.fillRect(ox + 1, oy + 6, 2, 2);             // the horn
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.fillRect(ox + 2, oy + 5, 12, 1);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(ox + 2, oy + 7, 12, 1);
+}
+
 function paintBrick(ctx, spec, variant, ox, oy) {
   ctx.fillStyle = shade(spec.colour, -0.18);
   ctx.fillRect(ox, oy, TILE, TILE);
@@ -231,6 +281,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);
       else if (spec.key === 'brick') paintBrick(ctx, spec, v, ox, oy);
+      else if (spec.station) paintStation(ctx, spec, v, ox, oy);
       else if (!spec.solid) paintSmall(ctx, spec, v, ox, oy);
       else {
         ctx.fillStyle = spec.colour;

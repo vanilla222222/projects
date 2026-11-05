@@ -5,7 +5,10 @@
 // uses, so a slot shows the block it will place.
 
 function makeUI(root, deps) {
-  const { tiles, texture, inventory, atlas, mining } = deps;
+  const { tiles, texture, inventory, atlas, mining, craft } = deps;
+  let craftRows = [];
+  let craftSignature = null;
+  let onCraft = null;
   const els = {};
   let open = false;
 
@@ -50,6 +53,24 @@ function makeUI(root, deps) {
       ctx.fillRect(12 * u, 4 * u, 2 * u, 2 * u);
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
       ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
+      return canvas;
+    }
+    const itemSpec = craft && craft.ITEMS[item.key];
+    if (itemSpec) {
+      // An ingot: a stubby trapezoid with a lit top edge, so bars read apart from blocks.
+      const u = size / 16;
+      ctx.fillStyle = itemSpec.colour;
+      ctx.beginPath();
+      ctx.moveTo(4 * u, 6 * u);
+      ctx.lineTo(12 * u, 6 * u);
+      ctx.lineTo(14 * u, 11 * u);
+      ctx.lineTo(2 * u, 11 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillRect(4 * u, 6 * u, 8 * u, 1.5 * u);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(2 * u, 10 * u, 12 * u, 1 * u);
       return canvas;
     }
     ctx.fillStyle = '#8894a8';
@@ -132,6 +153,12 @@ function makeUI(root, deps) {
       }
     }
 
+    const craftPanel = el('div', 'panel craft-panel', els.screen);
+    el('h2', null, craftPanel).textContent = 'Crafting';
+    els.craftStations = el('p', 'stations', craftPanel);
+    els.craftList = el('div', 'craft-list', craftPanel);
+    els.craftEmpty = el('p', 'craft-empty', craftPanel);
+
     els.bar = el('div', 'hotbar', root);
     els.hotbarSlots = [];
     const hotbar = inventory.section('hotbar');
@@ -175,6 +202,49 @@ function makeUI(root, deps) {
     }
   }
 
+  // Rebuilt only when what it would show actually changes. Rebuilding every frame looked
+  // fine but detached every row from under the cursor, so a click could land on an element
+  // that no longer existed; the signature below is what makes a click reliable.
+  function paintCrafting(state) {
+    if (!craft || !els.craftList) return;
+    const stations = (state && state.stations) || new Set();
+    const list = craft.available(inventory, stations);
+    const signature = Array.from(stations).sort().join(',') + '|'
+      + list.map(r => r.out.key + 'x' + r.out.count).join(',');
+    if (signature === craftSignature) return;
+    craftSignature = signature;
+
+    const names = Array.from(stations).map(s2 => s2[0].toUpperCase() + s2.slice(1));
+    els.craftStations.textContent = names.length
+      ? 'At: ' + names.join(', ')
+      : 'No station in reach \u2014 by hand only';
+
+    els.craftList.textContent = '';
+    craftRows = [];
+    for (const recipe of list) {
+      const row = el('button', 'craft-row', els.craftList);
+      row.appendChild(iconFor(recipe.out, 30));
+      const text = el('span', 'craft-text', row);
+      const title = el('span', 'craft-name', text);
+      title.textContent = craft.nameOf(recipe.out.key, tiles)
+        + (recipe.out.count > 1 ? ' \u00d7' + recipe.out.count : '');
+      const cost = el('span', 'craft-cost', text);
+      cost.textContent = recipe.need
+        .map(([key, count]) => count + ' ' + craft.nameOf(key, tiles))
+        .join(', ');
+      row.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (onCraft) onCraft(recipe);
+      });
+      craftRows.push(row);
+    }
+    const total = craft.atStation(stations).length;
+    els.craftEmpty.textContent = list.length
+      ? ''
+      : (total ? 'Nothing you can afford yet.' : 'Find or place a station.');
+  }
+
   function sync(state) {
     for (let i = 0; i < els.hotbarSlots.length; i += 1) {
       paintSlot(els.hotbarSlots[i], inventory.section('hotbar').from + i);
@@ -187,6 +257,7 @@ function makeUI(root, deps) {
         paintSlot(els.equipSlots[i], Number(els.equipSlots[i].dataset.index));
       }
       paintSlot(els.trashSlot, inventory.section('trash').from);
+      paintCrafting(state);
     }
     const held = inventory.held;
     els.held.textContent = '';
@@ -209,6 +280,7 @@ function makeUI(root, deps) {
 
   function setOpen(value) {
     open = value;
+    craftSignature = null;
     els.screen.classList.toggle('visible', open);
     sync();
   }
@@ -220,7 +292,8 @@ function makeUI(root, deps) {
 
   return { build, sync, toggle, setOpen, get isOpen() { return open; },
     setField(key, text) { if (els[key]) els[key].textContent = text; },
-    setMessage(text) { if (els.message) els.message.textContent = text; } };
+    setMessage(text) { if (els.message) els.message.textContent = text; },
+    set onCraft(fn) { onCraft = fn; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

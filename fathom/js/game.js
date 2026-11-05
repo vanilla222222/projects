@@ -8,7 +8,7 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, mining, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    noise, autotile, mining, craft, inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
@@ -32,6 +32,7 @@ function makeGame(canvas, deps) {
 
   const state = {
     world: null,
+    stations: new Set(),
     stats: null,
     player: null,
     colours: null,
@@ -305,6 +306,9 @@ function makeGame(canvas, deps) {
   }
 
   function syncUI() {
+    // Recomputed every frame so that mining a bench out, or walking away from one, closes
+    // its recipes the moment it happens rather than the next time the screen is opened.
+    state.stations = craft.stationsNear(world, tiles, state.player.x, state.player.y);
     const hour = ((state.dayPhase + 0.5) * 24) % 24;
     ui.setField('clock', String(Math.floor(hour)).padStart(2, '0') + ':'
       + String(Math.floor((hour % 1) * 60)).padStart(2, '0'));
@@ -416,7 +420,15 @@ function makeGame(canvas, deps) {
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
-      { tiles, texture, inventory, atlas: renderer.atlas, mining });
+      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
+    ui.onCraft = (recipe) => {
+      if (craft.craft(inventory, recipe)) {
+        say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
+      } else {
+        say('No room for that', 1.2);
+      }
+      ui.sync(state);
+    };
 
     if (characterRecord.inventory) inventory.restore(characterRecord.inventory);
     else {

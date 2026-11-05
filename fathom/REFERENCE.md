@@ -113,3 +113,24 @@ assumes, across all 7 tiers and every tile.
 
 The thresholds themselves are Fathom's own, scaled to its seven pickaxes: basalt 45,
 slate 65, crystal 45, silver ore 35, gold ore 45, cobalt ore 65, emberite ore 100.
+
+## Crafting
+
+Fetched from terraria.wiki.gg, 2026-11-05 (1.4.4+).
+
+- A recipe appears in the list **only when every ingredient is already held**. The list is
+  therefore a description of what you can do now, not a catalogue to study.
+- Crafting stations are furniture placed in the world, not menu tabs.
+- **Station reach is 5 tiles left/right and 3 tiles up/down** (a 13x9 box around the
+  player), the same reach as tools and chests. Walk out of the box and the station's
+  recipes disappear.
+
+### Where Fathom departs
+
+- Terraria's stations are multi-tile furniture. Fathom's occupy **one tile each** and are
+  non-solid, so a bench never blocks the tunnel you put it in.
+- The chain is Fathom's own: wood by hand gives a bench; the bench gives a furnace and an
+  anvil; the furnace smelts the six ores into bars; the anvil turns bars into the six
+  pickaxes above wood. `tools/craft-test.js` proves the graph closes, so a player holding
+  nothing but raw ore can reach the best pickaxe, and every gated tile has a craftable
+  pickaxe that opens it.

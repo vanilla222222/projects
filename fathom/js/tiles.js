@@ -34,7 +34,13 @@ const TILES = [
   { id: 25, key: 'mushroom', name: 'Glowcap', solid: false, opacity: 4, emit: 7, hardness: 0.1, colour: '#b58ae0', grain: 0.2 },
   { id: 26, key: 'vine', name: 'Vine', solid: false, opacity: 12, emit: 0, hardness: 0.1, colour: '#4a7a30', grain: 0.2 },
   { id: 27, key: 'trunk', name: 'Tree Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#7a5330', grain: 0.1, drops: 'wood' },
-  { id: 28, key: 'glass', name: 'Glass', solid: true, opacity: 6, emit: 0, hardness: 0.4, colour: '#c8e4ef', grain: 0.03 }
+  { id: 28, key: 'glass', name: 'Glass', solid: true, opacity: 6, emit: 0, hardness: 0.4, colour: '#c8e4ef', grain: 0.03 },
+  // Crafting stations. Terraria's are multi-tile furniture; Fathom's occupy one tile each
+  // and are walked through rather than stood on, so a station never blocks a tunnel.
+  // `station` is the name recipes ask for. REFERENCE.md lists this as a departure.
+  { id: 29, key: 'workbench', name: 'Work Bench', solid: false, opacity: 8, emit: 0, hardness: 0.2, colour: '#8a6038', grain: 0.12, toughness: 60, station: 'workbench' },
+  { id: 30, key: 'furnace', name: 'Furnace', solid: false, opacity: 8, emit: 10, hardness: 0.4, colour: '#6a5348', grain: 0.14, toughness: 90, station: 'furnace' },
+  { id: 31, key: 'anvil', name: 'Iron Anvil', solid: false, opacity: 8, emit: 0, hardness: 0.6, colour: '#71737d', grain: 0.1, toughness: 120, station: 'anvil' }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is
