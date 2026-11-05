@@ -14,7 +14,7 @@
 #
 # Run: python3 -I derive-Penicillin-references.py    (reads library.json in cwd)
 
-import json, re, sys, collections
+import json, os, re, subprocess, sys, tempfile, collections
 from rdkit import Chem, RDLogger
 from rdkit.Chem import rdCIPLabeler
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
@@ -89,7 +89,31 @@ def wrap(prefix):
 
 # ---------------------------------------------------------------- anchors
 
-lib = json.load(open('library.json'))
+def note(*a):
+    print(*a, file=sys.stderr)
+
+
+def load_library():
+    here = os.path.dirname(os.path.abspath(__file__))
+    cache = os.environ.get("MP_DERIVE_CACHE")
+    if not cache:
+        cache = tempfile.mkdtemp(prefix="mp-derive-penam-")
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
+    path = os.path.join(cache, "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.path.dirname(here), stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
+
+lib = load_library()
 penam = Chem.MolFromSmarts(PENAM_SMARTS)
 assert penam is not None
 
@@ -101,26 +125,26 @@ proven = []
 for nm in ANCHOR_NAMES:
     r = by_name.get(nm)
     if r is None:
-        print('anchor missing:', nm); continue
+        note('anchor missing:', nm); continue
     if not r.get('source'):
-        print('anchor rejected (not externally sourced):', nm); continue
+        note('anchor rejected (not externally sourced):', nm); continue
     m = Chem.MolFromSmiles(r['smiles'])
     if m is None:
-        print('anchor rejected (unparseable):', nm); continue
+        note('anchor rejected (unparseable):', nm); continue
     if not m.HasSubstructMatch(penam):
-        print('anchor rejected (no penam core):', nm); continue
+        note('anchor rejected (no penam core):', nm); continue
     cip = core_cip(m, penam)
     if cip != NATURAL_CIP:
-        print('anchor rejected (core stereo not 2S,5R,6R):', nm, cip); continue
+        note('anchor rejected (core stereo not 2S,5R,6R):', nm, cip); continue
     if CalcMolFormula(m) != r['formula']:
-        print('anchor rejected (formula mismatch):', nm, r['formula'], CalcMolFormula(m)); continue
+        note('anchor rejected (formula mismatch):', nm, r['formula'], CalcMolFormula(m)); continue
     proven.append(r)
-    print('anchor proven: %-26s %-14s C2=%s C5=%s C6=%s  [%s]'
+    note('anchor proven: %-26s %-14s C2=%s C5=%s C6=%s  [%s]'
           % (nm, r['formula'], cip[3], cip[11], cip[12], r['source']['provider']))
 
 if len(proven) < 2:
     sys.exit('HARD GATE FAILED: proven sourced anchors = %d (< 2). Class not derivable.' % len(proven))
-print('proven sourced anchors: %d\n' % len(proven))
+note('proven sourced anchors: %d\n' % len(proven))
 
 # Scaffold tags copied verbatim from anchor[0] (benzylpenicillin).
 ANCHOR_SMILES = proven[0]['smiles']
@@ -201,7 +225,7 @@ for name, side, acid, ester, alc, basis in CANDIDATES:
     built.append({'name': name, 'cls': TARGET_CLS, 'formula': diff,
                   'smiles': Chem.MolToSmiles(m), '_basis': basis})
 
-print('candidates enumerated: %d   built: %d   dropped pre-gate: %d\n'
+note('candidates enumerated: %d   built: %d   dropped pre-gate: %d\n'
       % (len(CANDIDATES), len(built), len(dropped)))
 
 # ---------------------------------------------------------------- gates
@@ -243,28 +267,23 @@ for row in built:
     seen_names.add(nm.casefold()); seen_flat[f] = nm
     rows.append(row)
 
-print('--- suppressed by gates: %d ---' % len(suppressed))
+note('--- suppressed by gates: %d ---' % len(suppressed))
 for nm, why, basis in suppressed:
-    print('  %-70s %s   [%s]' % (nm, why, basis))
-print('\n--- dropped pre-gate: %d ---' % len(dropped))
+    note('  %-70s %s   [%s]' % (nm, why, basis))
+note('\n--- dropped pre-gate: %d ---' % len(dropped))
 for nm, why, basis in dropped:
-    print('  %-70s %s   [%s]' % (nm, why, basis))
+    note('  %-70s %s   [%s]' % (nm, why, basis))
 
-print('\n--- accepted rows: %d ---' % len(rows))
+note('\n--- accepted rows: %d ---' % len(rows))
 for r in rows:
-    print('  %-46s %-14s %s' % (r['name'], r['formula'], r['smiles']))
+    note('  %-46s %-14s %s' % (r['name'], r['formula'], r['smiles']))
 
 for r in rows:
     r.pop('_basis')
 
-with open('Penicillin-rows.js', 'w') as fh:
-    fh.write('[\n')
-    for i, r in enumerate(rows):
-        fh.write("  { name: %s, cls: %s, formula: %s, smiles: %s }%s\n"
-                 % (jsq(r['name']), jsq(r['cls']), jsq(r['formula']), jsq(r['smiles']),
-                    '' if i == len(rows) - 1 else ','))
-    fh.write(']\n')
+for r in rows:
+    sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                     % (jsq(r['name']), jsq(r['cls']), jsq(r['formula']), jsq(r['smiles'])))
 
-json.dump(rows, open('rows.json', 'w'), indent=1)
-print('\nwrote Penicillin-rows.js (%d rows) and rows.json' % len(rows))
-print('class size would become 12 + %d = %d' % (len(rows), 12 + len(rows)))
+note('\nemitted %d rows' % len(rows))
+note('class size would become 12 + %d = %d' % (len(rows), 12 + len(rows)))

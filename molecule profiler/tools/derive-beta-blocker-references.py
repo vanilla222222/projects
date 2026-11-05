@@ -6,13 +6,38 @@
 # stereo-stripped canonical-SMILES collision (library + batch), cls equality.
 # Read-only with respect to /home/user/projects. Run with: python3 -I
 
-import json, os, collections
+import json, os, subprocess, sys, tempfile, collections
 from rdkit import Chem, RDLogger
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 
 RDLogger.DisableLog('rdApp.*')
 HERE = os.path.dirname(os.path.abspath(__file__))
-LIB = json.load(open(os.path.join(HERE, 'library.json')))
+
+
+def note(*a):
+    print(*a, file=sys.stderr)
+
+
+def load_library():
+    cache = os.environ.get("MP_DERIVE_CACHE")
+    if not cache:
+        cache = tempfile.mkdtemp(prefix="mp-derive-bblock-")
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
+    path = os.path.join(cache, "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=os.path.dirname(HERE), stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
+
+LIB = load_library()
 TARGET_CLS = 'Beta blocker'
 
 # ---------------------------------------------------------------- anchors
@@ -55,13 +80,13 @@ for n in ANCHOR_NAMES:
     a, why = prove_anchor(n)
     (anchors.append(a) if a else anchor_fail.append((n, why)))
 
-print('=== ANCHOR PROOF ===')
+note('=== ANCHOR PROOF ===')
 for a in anchors:
-    print(f"  OK   {a['name']:24s} {a['provider']:12s} {a['formula']:12s} "
+    note(f"  OK   {a['name']:24s} {a['provider']:12s} {a['formula']:12s} "
           f"carbinol atom {a['carbinol_idx']:2d} CIP={a['cip']:4s} token={a['stereo_token']}")
 for n, why in anchor_fail:
-    print(f"  FAIL {n}: {why}")
-print(f'  proven anchors = {len(anchors)}')
+    note(f"  FAIL {n}: {why}")
+note(f'  proven anchors = {len(anchors)}')
 if len(anchors) < 2:
     raise SystemExit('ABORT: fewer than 2 proven sourced anchors.')
 
@@ -206,25 +231,21 @@ for c in CANDIDATES:
     accounting['accepted'] += 1
     log.append(('ACCEPTED', n, formula + '  ' + smi))
 
-print('\n=== GATE LOG ===')
+note('\n=== GATE LOG ===')
 for tag, n, why in log:
-    print(f'  {tag:21s} {n:24s} {why}')
-print('\n=== ACCOUNTING ===')
+    note(f'  {tag:21s} {n:24s} {why}')
+note('\n=== ACCOUNTING ===')
 for k in ('enumerated', 'name-collision', 'structure-collision', 'refused', 'accepted'):
-    print(f'  {k:21s} {accounting[k]}')
+    note(f'  {k:21s} {accounting[k]}')
 
 cur = sum(1 for r in LIB if r.get('cls') == TARGET_CLS)
-print(f"\ncls={TARGET_CLS!r} currently {cur} rows; + {len(rows)} accepted = {cur + len(rows)}")
+note(f"\ncls={TARGET_CLS!r} currently {cur} rows; + {len(rows)} accepted = {cur + len(rows)}")
 
 
 def jsq(s):
     return '"%s"' % s if "'" in s else "'%s'" % s
 
-out = ['[']
 for r in rows:
-    out.append("  { name: %s, cls: %s, formula: %s, smiles: %s }," %
-               (jsq(r['name']), jsq(r['cls']), jsq(r['formula']), jsq(r['smiles'])))
-out.append(']')
-open(os.path.join(HERE, 'Beta-blocker-rows.js'), 'w').write('\n'.join(out) + '\n')
-json.dump(rows, open(os.path.join(HERE, 'accepted.json'), 'w'), indent=1)
-print('\nwrote Beta-blocker-rows.js (%d rows)' % len(rows))
+    sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n" %
+                     (jsq(r['name']), jsq(r['cls']), jsq(r['formula']), jsq(r['smiles'])))
+note('\nemitted %d rows' % len(rows))

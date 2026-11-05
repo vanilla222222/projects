@@ -126,6 +126,31 @@ exit 0. No emitted row changes, because the class is saturated.
 
 ## The loader to converge on
 
+## Generators that wrote into the project
+
+Three generators read a dump *file* rather than the module, so they fell outside the conversion
+above and needed their own. They also wrote their output into the repository.
+
+`derive-arb-references.py` wrote its corpus dump to `tools/library.json` as a list of 4-element
+lists, and `derive-beta-blocker-references.py` read that same path expecting dicts. Running the
+first and then the second is a `TypeError: list indices must be integers or slices, not str` —
+reproduced, not inferred. The second generator worked only on a machine where the first had never
+run. `derive-penicillin-references.py` read `library.json` from the current directory, which
+nothing creates, so it simply crashed; its own header documented the requirement.
+
+All three now take the library through the cache-directory loader, write their rows to stdout and
+their diagnostics to stderr, and write no files at all. Run in the order that used to break, the
+three now exit 0 and leave nothing behind: a mirror containing only `data/library.js` and the
+three scripts still contains only those four files afterwards. `derive-arb` also had the project
+root hard-coded as an absolute path, now derived from the script's own location.
+
+Two incidental notes. `derive-beta-blocker` already had a local variable named `log`, so its
+stderr helper is `note()`; and `derive-beta-blocker` and `derive-penicillin` both wrapped their
+rows in `[` and `]` with the last row's comma suppressed, which is not the splice format — they
+now emit bare comma-terminated rows like every other generator. `derive-penicillin` still prints
+`class size would become 12 + N`, where 12 is a stale constant: the class holds more than that
+now. The figure is diagnostic only and no row depends on it.
+
 50 of the 51 are now converted. `derive-opioid-references.py` is **held back**: two of its six
 families enumerate novel 4-anilidopiperidines and `main` iterates every family with no option to
 select, so it cannot be run, and its conversion is unverified. It is the one generator still

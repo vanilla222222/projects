@@ -7,15 +7,30 @@
 # (site, value) pair at two unanimous anchors, aborts if an admitted cell holds fewer,
 # then runs the house gates over the whole candidate pool and writes rows.js.
 
-import json, os, subprocess, sys, itertools
+import json, os, subprocess, sys, tempfile, itertools
 from collections import defaultdict
 from rdkit import Chem, RDLogger
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 
 RDLogger.DisableLog('rdApp.*')
 HERE = os.path.dirname(os.path.abspath(__file__))
-PROJECT = '/home/user/projects/molecule profiler'
-DUMP = os.path.join(HERE, 'library.json')
+PROJECT = os.path.dirname(HERE)
+
+
+def log(*a):
+    print(*a, file=sys.stderr)
+
+
+def cache_dir():
+    d = os.environ.get("MP_DERIVE_CACHE")
+    if not d:
+        d = tempfile.mkdtemp(prefix="mp-derive-arb-")
+    if not os.path.isdir(d):
+        os.makedirs(d)
+    return d
+
+
+DUMP = os.path.join(cache_dir(), 'arb-corpus.json')
 TARGET = 50
 CLS = 'Angiotensin receptor blocker'
 
@@ -80,7 +95,7 @@ def jsq(s):
 
 
 def fail(msg):
-    print('\nABORT: ' + msg)
+    log('\nABORT: ' + msg)
     sys.exit(1)
 
 
@@ -192,24 +207,24 @@ def dump_corpus():
     return json.load(open(DUMP))
 
 
-print('=' * 76)
-print('Angiotensin receptor blocker -- template-anchored derivation')
-print('=' * 76)
+log('=' * 76)
+log('Angiotensin receptor blocker -- template-anchored derivation')
+log('=' * 76)
 rows = dump_corpus()
 mols = [Chem.MolFromSmiles(r[1]) for r in rows]
 bad = sum(1 for m in mols if m is None)
 inclass = [i for i, r in enumerate(rows) if r[2] == CLS]
-print('corpus rows (measured through data/library.js) : %d' % len(rows))
-print('externally sourced rows                        : %d' % sum(r[3] for r in rows))
-print('unparseable stored rows                        : %d' % bad)
-print('rows under cls %-32s: %d (sourced %d)' % (CLS, len(inclass), sum(rows[i][3] for i in inclass)))
+log('corpus rows (measured through data/library.js) : %d' % len(rows))
+log('externally sourced rows                        : %d' % sum(r[3] for r in rows))
+log('unparseable stored rows                        : %d' % bad)
+log('rows under cls %-32s: %d (sourced %d)' % (CLS, len(inclass), sum(rows[i][3] for i in inclass)))
 if bad:
     fail('corpus holds unparseable rows')
 
-print('\n-- SMARTS validation --')
-print('   queries discarded before trusting any core : %d' % len(DISCARDED))
+log('\n-- SMARTS validation --')
+log('   queries discarded before trusting any core : %d' % len(DISCARDED))
 for q, why in DISCARDED:
-    print('     %-44s %s' % (q, why))
+    log('     %-44s %s' % (q, why))
 negm = [(n, Chem.MolFromSmiles(s)) for n, s in NEGATIVES]
 for k in sorted(TEMPLATES):
     name, tmpl, sma = TEMPLATES[k]
@@ -218,12 +233,12 @@ for k in sorted(TEMPLATES):
         fail('%s query did not compile' % name)
     tp = sum(1 for s in POSITIVES[k] if Chem.MolFromSmiles(s).HasSubstructMatch(q))
     fp = [n for n, m in negm if m.HasSubstructMatch(q)]
-    print('   %-38s positives %d/%d  negatives %d/%d clean %s'
+    log('   %-38s positives %d/%d  negatives %d/%d clean %s'
           % (name, tp, len(POSITIVES[k]), len(negm) - len(fp), len(negm), fp if fp else ''))
     if tp != len(POSITIVES[k]) or fp:
         fail('%s failed validation' % name)
 
-print('\n-- tetrazole tautomer measurement --')
+log('\n-- tetrazole tautomer measurement --')
 tzc, tzrows = defaultdict(int), 0
 for m in mols:
     f = tz_form(m)
@@ -231,21 +246,21 @@ for m in mols:
         tzrows += 1
         for v in f:
             tzc[v] += 1
-print('   rows bearing a CN4 tetrazole ring : %d' % tzrows)
+log('   rows bearing a CN4 tetrazole ring : %d' % tzrows)
 for k2 in sorted(tzc):
-    print('   %-16s rings %d' % (k2, tzc[k2]))
+    log('   %-16s rings %d' % (k2, tzc[k2]))
 q1 = Chem.MolFromSmarts(TEMPLATES[1][2])
 sart = [i for i, m in enumerate(mols) if m.HasSubstructMatch(q1)]
 sc = defaultdict(int)
 for i in sart:
     for v in tz_form(mols[i]):
         sc[v] += 1
-print('   within the T1 core census         : %s' % dict(sc))
-print('   handling: census and anchor matching run on tetrazole-normalised molecules')
-print('   (indicated H moved to the ring N adjacent to C5, 1H form); N-substituted and')
-print('   ionised tetrazoles are left untouched; the identity gate stays stereo-inclusive.')
+log('   within the T1 core census         : %s' % dict(sc))
+log('   handling: census and anchor matching run on tetrazole-normalised molecules')
+log('   (indicated H moved to the ring N adjacent to C5, 1H form); N-substituted and')
+log('   ionised tetrazoles are left untouched; the identity gate stays stereo-inclusive.')
 
-print('\n-- per-core census (never pooled) --')
+log('\n-- per-core census (never pooled) --')
 census = {}
 for k in sorted(TEMPLATES):
     name, tmpl, sma = TEMPLATES[k]
@@ -260,12 +275,12 @@ for k in sorted(TEMPLATES):
             if any(ri.NumAtomRings(a) > 1 for a in mt):
                 fused.append(i); break
     census[k] = (hits, src, fused)
-    print('   %-38s hits %-4d sourced %-3d ring-fused %-3d'
+    log('   %-38s hits %-4d sourced %-3d ring-fused %-3d'
           % (name, len(hits), len(src), len(fused)))
     for i in src:
-        print('        sourced: %s' % rows[i][0])
+        log('        sourced: %s' % rows[i][0])
 
-print('\n-- anchor transcription, stereo-inclusive canonical identity --')
+log('\n-- anchor transcription, stereo-inclusive canonical identity --')
 transcribed, unanimous = defaultdict(set), defaultdict(set)
 proven, dropped = [], []
 for k in sorted(TEMPLATES):
@@ -290,15 +305,15 @@ for k in sorted(TEMPLATES):
             transcribed[(k, 'S1', h)].add(i)
         if len(set(hs)) == 1 and len(good) == 1:
             unanimous[(k, 'S1', good[0])].add(i)
-        print('   %-38s %-24s reproductions %d  distinct arm values %d  identity OK'
+        log('   %-38s %-24s reproductions %d  distinct arm values %d  identity OK'
               % (name, rows[i][0], len(hs), len(set(hs))))
         proven.append((k, rows[i][0], good[0]))
-print('   anchors proven  : %d' % len(proven))
-print('   anchors dropped : %d' % len(dropped))
+log('   anchors proven  : %d' % len(proven))
+log('   anchors dropped : %d' % len(dropped))
 for n, r, why in dropped:
-    print('     dropped %-30s %-24s %s' % (n, r, why))
+    log('     dropped %-30s %-24s %s' % (n, r, why))
 
-print('\n-- two-anchor gate per (site, value) --')
+log('\n-- two-anchor gate per (site, value) --')
 cells, refused = {}, []
 for key in sorted(set(list(transcribed) + list(unanimous)), key=lambda t: (t[0], t[1], t[2])):
     t, u = len(transcribed[key]), len(unanimous[key])
@@ -306,17 +321,17 @@ for key in sorted(set(list(transcribed) + list(unanimous)), key=lambda t: (t[0],
         cells[key] = u
     else:
         refused.append((key, t, u, sorted(rows[i][0] for i in (unanimous[key] or transcribed[key]))))
-print('   admitted cells : %d' % len(cells))
-print('   refused cells  : %d' % len(refused))
+log('   admitted cells : %d' % len(cells))
+log('   refused cells  : %d' % len(refused))
 for key, t, u, who in refused:
-    print('     REFUSED core T%d site %s  transcribed %d  unanimous %d  from %s'
+    log('     REFUSED core T%d site %s  transcribed %d  unanimous %d  from %s'
           % (key[0], key[1], t, u, ', '.join(who)))
-    print('        value %s' % key[2])
+    log('        value %s' % key[2])
 for key, u in cells.items():
     if u < 2:
         fail('admitted cell below two anchors: %s' % (key,))
 
-print('\n-- attested-only slot enumeration --')
+log('\n-- attested-only slot enumeration --')
 bysite = defaultdict(list)
 for (k, site, val) in cells:
     bysite[(k, site)].append(val)
@@ -324,7 +339,7 @@ pool = []
 for k in sorted(TEMPLATES):
     sites = sorted([s for (kk, s) in bysite if kk == k])
     if not sites:
-        print('   core T%d: no admitted cell, 0 candidates' % k)
+        log('   core T%d: no admitted cell, 0 candidates' % k)
         continue
     for combo in itertools.product(*[bysite[(k, s)] for s in sites]):
         mol = None
@@ -333,20 +348,20 @@ for k in sorted(TEMPLATES):
             mol = build(tmpl, h)
         if mol is not None:
             pool.append((k, combo, Chem.MolToSmiles(mol)))
-print('   candidate pool before gates : %d' % len(pool))
+log('   candidate pool before gates : %d' % len(pool))
 
-print('\n-- naming-convention witnesses measured in the %d stored names --' % len(rows))
+log('\n-- naming-convention witnesses measured in the %d stored names --' % len(rows))
 names = [r[0] for r in rows]
 for frag in ['tetrazol', 'biphenyl', 'benzimidazol', 'oxadiazol', 'imidazol', 'pyrimidin',
              'bis(', 'tris(', 'di(', 'tri(', 'tert-', 'fluoromethyl', '[', '{', '1H-', '2H-',
              'FC', 'CF']:
-    print('   %-14s witnesses %d case-insensitive, %d case-sensitive'
+    log('   %-14s witnesses %d case-insensitive, %d case-sensitive'
           % (frag, sum(1 for n in names if frag.lower() in n.lower()),
              sum(1 for n in names if frag in n)))
 
 ARM_NAMES = {}
 
-print('\n-- gate accounting over the whole pool --')
+log('\n-- gate accounting over the whole pool --')
 surv = list(pool)
 corpus_flat = {}
 corpus_names = set()
@@ -358,7 +373,7 @@ def gate(label, keep):
     global surv
     before = len(surv)
     surv = [c for c in surv if keep(c)]
-    print('   %-40s in %-4d out %-4d removed %d' % (label, before, len(surv), before - len(surv)))
+    log('   %-40s in %-4d out %-4d removed %d' % (label, before, len(surv), before - len(surv)))
 
 gate('naming-convention', lambda c: all(h in ARM_NAMES for h in c[1]))
 gate('parse', lambda c: Chem.MolFromSmiles(c[2]) is not None)
@@ -382,21 +397,20 @@ def uniq_name(c):
     seenn.add(k)
     return True
 gate('intra-batch name collision', uniq_name)
-print('   passing pool : %d' % len(surv))
+log('   passing pool : %d' % len(surv))
 
 need = TARGET - len(inclass)
-print('\n-- capacity --')
-print('   class rows now           : %d' % len(inclass))
-print('   rows needed to reach %d  : %d' % (TARGET, need))
-print('   measured capacity        : %d' % len(surv))
+log('\n-- capacity --')
+log('   class rows now           : %d' % len(inclass))
+log('   rows needed to reach %d  : %d' % (TARGET, need))
+log('   measured capacity        : %d' % len(surv))
 emit = surv[:need]
-with open(os.path.join(HERE, 'rows.js'), 'w') as fh:
-    for k, combo, smi in emit:
-        m = Chem.MolFromSmiles(smi)
-        fh.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
-                 % (jsq(ARM_NAMES[combo[0]]), jsq(CLS), jsq(CalcMolFormula(m)), jsq(smi)))
-print('   rows emitted to rows.js  : %d' % len(emit))
-print('   class total reached      : %d' % (len(inclass) + len(emit)))
+for k, combo, smi in emit:
+    m = Chem.MolFromSmiles(smi)
+    sys.stdout.write("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                     % (jsq(ARM_NAMES[combo[0]]), jsq(CLS), jsq(CalcMolFormula(m)), jsq(smi)))
+log('   rows emitted             : %d' % len(emit))
+log('   class total reached      : %d' % (len(inclass) + len(emit)))
 if len(emit) < need:
-    print('   CEILING: %d, below the %d target' % (len(inclass) + len(emit), TARGET))
-print('\nexit 0')
+    log('   CEILING: %d, below the %d target' % (len(inclass) + len(emit), TARGET))
+log('\nexit 0')
