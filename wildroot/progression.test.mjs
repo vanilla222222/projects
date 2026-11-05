@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=8';
-import * as D from './content.mjs?v=8';
-import {World,createMap,GROUND,abilitySet} from './world.mjs?v=8';
+import * as E from './engine.mjs?v=9';
+import * as D from './content.mjs?v=9';
+import {World,createMap,GROUND,abilitySet} from './world.mjs?v=9';
 function rich(s){s.coins=10000;for(const id of Object.keys(D.ITEMS))s.inventory[id]=1000;for(const id of ['ironworking','gilding','brewing','verdant-steel','sunwell','heartwood'])E.unlock(s,id);}
 function tick(w,n,input={}){for(let i=0;i<n*50;i++)w.step(.02,typeof input==='function'?input(i):input);}
 test('Every town zone has an actual universal storage chest',()=>{for(const a of D.AREAS.filter(a=>['town','jungle-town'].includes(a.id)))for(let i=0;i<a.zones.length;i++){const map=createMap(a.id,i);assert.equal(map.storage.length,1);assert.equal(map.storage[0].kind,'storage');assert.ok(map.entities.includes(map.storage[0]));}});
@@ -43,7 +43,7 @@ test('Potions must be carried and expire within an offline claim rather than boo
  const s=E.freshSave(),c=E.selected(s);s.inventory['mining-tonic']=1;assert.equal(E.drink(s,c,'mining-tonic'),false);E.give(c,'mining-tonic',1);assert.ok(E.drink(s,c,'mining-tonic'));E.travel(s,c,'caves',0);E.start(s,c,'gather','copper');const reference=E.restoreSave(JSON.parse(JSON.stringify(s)));E.advance(reference,1200,()=>.5);E.advance(reference,600,()=>.5);E.advance(s,1800,()=>.5);const n=(c.bag.copper||0)+(c.overflow.copper||0),r=reference.characters[0];assert.equal(n,(r.bag.copper||0)+(r.overflow.copper||0));assert.equal(c.buffs.length,0);
 });
 test('Saved combat/profession builds validate point budgets and can only be changed in town',()=>{
- const s=E.freshSave(),c=E.selected(s);c.level=8;c.skills.mining=120;assert.ok(E.train(c,'precision'));assert.ok(E.train(c,'efficiency','profession'));assert.ok(E.saveBuild(c,0));assert.equal(E.resetBuild(c),false);E.travel(s,c,'town',0);assert.ok(E.resetBuild(c));assert.equal(c.talents.precision,0);assert.ok(E.loadBuild(c,0));assert.equal(c.talents.precision,1);assert.equal(c.profTalents.efficiency,1);c.builds[1]={talents:{power:99},profTalents:{}};assert.equal(E.loadBuild(c,1),false);
+ const s=E.freshSave(),c=E.selected(s);c.level=8;c.skills.mining=120;assert.ok(E.train(c,'precision'));assert.ok(E.train(c,'efficiency','profession'));assert.ok(E.saveBuild(c,0));assert.equal(E.resetBuild(c),false);E.travel(s,c,'town',0);E.give(c,'reset-potion',1);assert.ok(E.resetBuild(c));assert.equal(c.talents.precision,0);assert.ok(E.loadBuild(c,0));assert.equal(c.talents.precision,1);assert.equal(c.profTalents.efficiency,1);c.builds[1]={talents:{power:99},profTalents:{}};assert.equal(E.loadBuild(c,1),false);
 });
 test('Story quests enforce prerequisite chains, consume deliveries once and cannot unlock boss early',()=>{
  const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.acceptQuest(s,'seal'),false);assert.equal(s.storyFlags.bossPermit,false);assert.ok(E.acceptQuest(s,'first-roots'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);s.kills['forest-0']=8;assert.ok(E.claimQuest(s,c,'first-roots','steward'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);assert.ok(c.bag['woven-pouch']);assert.ok(E.acceptQuest(s,'tools'));const bars=s.inventory['copper-bar'];assert.equal(E.claimQuest(s,c,'tools','mage'),false);assert.equal(s.inventory['copper-bar'],bars);assert.ok(E.claimQuest(s,c,'tools','blacksmith'));assert.equal(s.inventory['copper-bar'],bars-4);
@@ -52,7 +52,7 @@ test('Secret passages and boss entrance obey their quest gates',()=>{
  const s=E.freshSave(),w=new World(s,{rng:()=>.5});s.kills['jungle-3']=12;w.travel('jungle-town',2);w.player.x=1180;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,false);s.storyFlags.bossPermit=true;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,true);assert.equal(E.secretOpen(s,'sunwell'),false);s.secretUnlocks.push('sunwell');assert.ok(E.secretOpen(s,'sunwell'));
 });
 test('Secondary and utility abilities have level gates, independent cooldowns and safe saved buffs',()=>{
- const s=E.freshSave(),c=E.selected(s);c.class='warrior';const w=new World(s,{rng:()=>.5});w.player.x=650;assert.equal(w.useSkill(1),false);c.level=10;c.hp=10;assert.ok(w.useSkill(1));assert.ok(w.player.cooldowns[1]>0);assert.ok(w.useSkill(2));assert.ok(c.hp>10);assert.equal(w.useSkill(2),false);assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));assert.equal(abilitySet(c).length,3);
+ const s=E.freshSave(),c=E.selected(s);c.class='warrior';const w=new World(s,{rng:()=>.5});w.player.x=650;assert.equal(w.useSkill(1),false);c.level=10;E.train(c,'secondary','class');E.train(c,'utility','class');c.hp=10;assert.ok(w.useSkill(1));assert.ok(w.player.cooldowns[1]>0);assert.ok(w.useSkill(2));assert.ok(c.hp>10);assert.equal(w.useSkill(2),false);assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));assert.equal(abilitySet(c).length,3);
 });
 test('Enemy attacks telegraph first and jumping can dodge the impact',()=>{
  const s=E.freshSave(),w=new World(s,{rng:()=>.5}),c=w.c,e=w.map.monsters[0];w.player.x=e.x-50;c.activity='fight';w.target=e;e.attack=0;w.player.attack=100;const hp=c.hp;w.step(.02);assert.ok(e.telegraph);assert.equal(c.hp,hp);w.player.y=GROUND-100;w.player.grounded=false;w.player.vy=0;for(let i=0;i<55;i++){w.player.y=GROUND-100;w.player.vy=0;w.step(.02);}assert.equal(c.hp,hp);

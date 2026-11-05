@@ -1,5 +1,5 @@
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=8';
-import * as E from './engine.mjs?v=8';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=9';
+import * as E from './engine.mjs?v=9';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -14,25 +14,26 @@ export const ABILITIES={
 export const SECONDARY={warrior:{name:'Shield Bash',icon:'▣',cooldown:12,mult:1.5,range:145,aoe:true,stun:1.5,description:'Stun nearby enemies for 1.5 seconds.'},mage:{name:'Thorn Volley',icon:'❧',cooldown:10,mult:1.8,range:420,aoe:true,description:'Strike every enemy on your platform in range.'},blacksmith:{name:'Forge Sweep',icon:'⚒',cooldown:11,mult:2.1,range:160,aoe:true,description:'A broad hammer sweep.'},enchanter:{name:'Binding Roots',icon:'❋',cooldown:12,mult:1.4,range:270,aoe:true,stun:2,description:'Bind enemies for two seconds.'},alchemist:{name:'Volatile Brew',icon:'⚗',cooldown:12,mult:1.3,range:290,aoe:true,poison:true,description:'Splash foes and poison them for five seconds.'}};
 export const UTILITY={warrior:{name:'Rally',icon:'⚑',cooldown:25,self:true,range:0,mult:0,heal:.2,buff:{type:'attack',value:.12,remaining:12},description:'Restore 20% health and gain 12% attack for 12s.'},mage:{name:'Windstep',icon:'➶',cooldown:22,self:true,range:0,mult:0,buff:{type:'speed',value:.3,remaining:12},description:'+30% movement speed for 12 seconds.'},blacksmith:{name:'Iron Skin',icon:'▱',cooldown:25,self:true,range:0,mult:0,buff:{type:'defense',value:4,remaining:15},description:'+4 defense for 15 seconds.'},enchanter:{name:'Warding Light',icon:'✦',cooldown:24,self:true,range:0,mult:0,heal:30,buff:{type:'defense',value:3,remaining:12},description:'Heal 30 and gain +3 defense for 12 seconds.'},alchemist:{name:'Restorative',icon:'♥',cooldown:25,self:true,range:0,mult:0,heal:.35,description:'Restore 35% maximum health.'}};
 export function abilitySet(c){return[ABILITIES[c.class||'novice'],SECONDARY[c.class],UTILITY[c.class]];}
+export function assignedAbilities(c){const all=abilitySet(c);return(c.hotbar||[0,1,2]).map(i=>all[i]);}
+export function abilityAvailable(c,index){return index===0||!!c.class&&c.level>=(index===1?6:10)&&(c.classTalents?.[index===1?'secondary':'utility']||0)>0;}
 export function createMap(area,index,boss=false,secret=null){
  const town=!boss&&!secret&&['town','jungle-town'].includes(area),enemy=boss?ENEMIES.boss:secret?ENEMIES[SECRETS[secret]?.enemy]:zoneEnemy(area,index);
  const monsters=enemy?(boss||secret?[{x:950,y:GROUND}]:[{x:700,y:GROUND},{x:940,y:GROUND},{x:1110,y:GROUND},{x:490,y:462},{x:840,y:342}]).map((p,i)=>({...p,home:p.x,id:`enemy-${i}`,kind:'enemy',enemy,hp:enemy.hp,dead:0,attack:1.5+i*.15,phase:i,facing:-1})):[];
  const resources=areaById(area).resources[index].map((resource,i)=>({id:`node-${i}`,kind:'node',resource,x:i?520:425,y:i?462:GROUND,progress:0}));
  const npcs=[];
- if(area==='town'&&index===0){for(const [i,id]of ['warrior','mage','blacksmith'].entries())npcs.push({id:`npc-${id}`,kind:'npc',classId:id,name:CLASSES[id].trainer,x:300+i*260,y:GROUND});}
- if(area==='town'&&index===1)npcs.push({id:'npc-blacksmith',kind:'npc',classId:'blacksmith',name:'Flint',x:355,y:GROUND});
- if(area==='town'&&index===2)npcs.push({id:'npc-blacksmith',kind:'npc',classId:'blacksmith',name:'Flint',x:355,y:GROUND});
- if(area==='jungle-town'&&index<2){const id=index===0?'enchanter':'alchemist';npcs.push({id:`npc-${id}`,kind:'npc',classId:id,name:CLASSES[id].trainer,x:355,y:GROUND});}
+ for(const[id,d]of Object.entries(CLASSES))if(!boss&&!secret&&area===d.town&&index===d.zone)npcs.push({id:'npc-'+id,kind:'npc',classId:id,name:d.trainer,x:d.x,y:GROUND});
  if(area==='town'&&index===0)npcs.push({id:'npc-steward',kind:'npc',classId:null,role:'steward',name:'Hesta',x:1060,y:GROUND});
  const station=area==='town'?(index===1?'anvil':index===2?'foundry':null):area==='jungle-town'?(index===0?'enchanting':index===1?'alchemy':null):null;
  const stations=station?[{id:'station',kind:'station',station,x:815,y:GROUND,name:station[0].toUpperCase()+station.slice(1)}]:[];
+ const facilities=town?(area==='town'&&index===3?[{id:'stamps',kind:'stamps',name:'Stamp Registry',x:350,y:GROUND},{id:'statues',kind:'statues',name:'Statue Keeper',x:650,y:GROUND},{id:'world-gate',kind:'worldgate',name:'World 2 Gate · dormant',x:1030,y:GROUND}]:index===0?[{id:'shop',kind:'shop',name:area==='town'?'Pip’s General Store':'Nori’s Supply Stall',x:area==='town'?680:565,y:GROUND}]:[]):[];
  const portals=roomPortals(area,index,boss,secret);
  const storage=town&&!secret?[{id:'storage',kind:'storage',name:'Storage Chest',x:160,y:GROUND}]:[];
  const discoveries=!secret&&!boss?Object.entries(SECRETS).filter(([id,d])=>d.area===area&&d.zone===index).map(([id,d])=>({id:'secret-'+id,kind:'discovery',secret:id,name:d.name,x:655,y:GROUND})):[];
- return{area,index,boss,secret,town,monsters,resources:secret?[]:resources,npcs:secret?[]:npcs,stations:secret?[]:stations,portals,discoveries,storage,entities:[...storage,...monsters,...(secret?[]:resources),...(secret?[]:npcs),...(secret?[]:stations),...portals,...discoveries]};
+ return{area,index,boss,secret,town,facilities,monsters,resources:secret?[]:resources,npcs:secret?[]:npcs,stations:secret?[]:stations,portals,discoveries,storage,entities:[...facilities,...storage,...monsters,...(secret?[]:resources),...(secret?[]:npcs),...(secret?[]:stations),...portals,...discoveries]};
 }
 export function nextRoute(area,index,direction){
- const zones=areaById(area).zones.length;
+ const zones=area==='town'?3:areaById(area).zones.length;
+ if(area==='town'&&index===3)return{area:'town',zone:0};
  if(direction<0){if(index>0)return{area,zone:index-1};return{town:['forest',0],forest:['town',0],caves:['town',2],jungle:['forest',4],deep:['caves',2],'jungle-town':['jungle',3]}[area].reduce((o,v,i)=>(o[i?'zone':'area']=v,o),{});}
  if(index<zones-1)return{area,zone:index+1};
  if(area==='jungle-town')return{boss:true};
@@ -41,12 +42,14 @@ export function nextRoute(area,index,direction){
 // Every doorway names both its destination room and the entrance in that room.
 export function entrancePoint(id='portal-left'){
  if(id==='portal-right')return{x:1140,y:GROUND,facing:-1};
+ if(id==='portal-town-square')return{x:1040,y:342,facing:-1};
  if(id==='portal-deep-return')return{x:1040,y:342,facing:-1};
  if(id.startsWith('secret-'))return{x:725,y:GROUND,facing:1};
  return{x:135,y:GROUND,facing:1};
 }
 export function roomPortals(area,index,boss=false,secret=null){
- const make=(id,direction,to)=>{const point=id==='portal-deep-return'?{x:1110,y:342}:{x:direction<0?65:1210,y:GROUND};return{id,kind:'portal',...point,direction,destination:to,name:to.boss?'The Rootwarden':to.secret?SECRETS[to.secret].name:areaById(to.area).zones[to.zone]};};
+ const make=(id,direction,to)=>{const point=['portal-deep-return','portal-town-square'].includes(id)?{x:1110,y:342}:{x:direction<0?65:1210,y:GROUND};return{id,kind:'portal',...point,direction,destination:to,name:to.boss?'The Rootwarden':to.secret?SECRETS[to.secret].name:areaById(to.area).zones[to.zone]};};
+ if(area==='town'&&index===3&&!secret&&!boss)return[make('portal-left',-1,{area:'town',zone:0,entrance:'portal-town-square'})];
  if(secret)return[make('portal-left',-1,{area,zone:index,entrance:'secret-'+secret})];
  if(boss)return[make('portal-left',-1,{area,zone:index,entrance:'portal-right'})];
  const portals=[-1,1].map(direction=>{const route=nextRoute(area,index,direction),to=route.boss?{area,zone:index,boss:true,entrance:'portal-left'}:{...route};
@@ -54,6 +57,7 @@ export function roomPortals(area,index,boss=false,secret=null){
   return make(direction<0?'portal-left':'portal-right',direction,to);
  });
  // The deep-cavern loop has its own elevated doorway in the Echo Chamber.
+ if(area==='town'&&index===0)portals.push(make('portal-town-square',0,{area:'town',zone:3,entrance:'portal-left'}));
  if(area==='caves'&&index===2)portals.push(make('portal-deep-return',0,{area:'deep',zone:3,entrance:'portal-right'}));
  return portals;
 }
@@ -74,6 +78,8 @@ export class World {
  this.enter(!!destination?.boss);if(destination?.boss)this.findTarget();this.onEvent({type:'portal'});return true;
  }
  usePortal(portal){if(!this.map.portals.includes(portal))return false;const to=portal.destination;if(this.travel(to.area,to.zone,to))return true;this.onEvent({type:'notice',text:to.boss?'Complete An Unquiet Seal with Mira to open the boss gate.':E.lockReason(this.state,to.area,to.zone)||'That route is not open yet.'});return false;}
+ teleport(area,index,now=Date.now()){if(!E.teleportAllowed(this.state,this.c,area,index,now))return false;if(this.c.area===area&&this.c.zone===index&&!this.map.boss&&!this.map.secret)return true;if(!this.travel(area,index))return false;this.state.teleports.count--;return true;}
+ townReturn(area='town'){if(!['town','jungle-town'].includes(area)||!E.discovered(this.state,area,0)||!this.c.bag['town-teleport'])return false;if(this.c.area===area&&this.c.zone===0&&!this.map.boss&&!this.map.secret)return false;if(!this.travel(area,0))return false;this.c.bag['town-teleport']--;return true;}
  select(id){const entity=this.map.entities.find(e=>e.id===id);if(!entity||entity.kind==='enemy'&&entity.dead>0)return false;if(entity.kind==='node'&&E.gatherRequirement(this.c,entity.resource)){this.onEvent({type:'notice',text:E.gatherRequirement(this.c,entity.resource)});return false;}this.target=entity;this.destination=null;this.pendingSkill=false;if(entity.kind==='enemy'){this.c.activity=this.map.boss?'boss':'fight';this.c.resource=null;}else if(entity.kind==='node'){this.c.activity='gather';this.c.resource=entity.resource;}else{this.c.activity='rest';this.auto=false;}this.c.progress=0;return true;}
  walkTo(x,y=GROUND){let floor=PLATFORMS.filter(p=>x>=p.x&&x<=p.x+p.w).sort((a,b)=>Math.abs(a.y-y)-Math.abs(b.y-y))[0]||PLATFORMS[0];this.destination={x:Math.max(25,Math.min(WIDTH-25,x)),y:floor.y};this.target=null;this.c.activity='rest';this.c.progress=0;this.auto=false;}
  stop(){this.target=null;this.destination=null;this.auto=false;this.c.activity='rest';this.c.progress=0;}
@@ -87,14 +93,14 @@ export class World {
  collectAll(){for(const drop of [...this.groundLoot]){this.collect(drop);if(this.groundLoot.includes(drop)&&drop.itemId!=='coins'){if(drop.gear)this.c.packGear.push(drop.gear);else E.give(this.c,drop.itemId,drop.count);this.groundLoot.splice(this.groundLoot.indexOf(drop),1);}}this.c.groundLoot=this.groundLoot;}
  pickLoot(id){const drop=this.groundLoot.find(d=>d.id===id);if(!drop)return false;this.target=drop;this.destination=null;this.auto=false;return true;}
  basicAttack(){const p=this.player;if(p.attack>0||p.respawn>0)return false;let e=this.target?.kind==='enemy'?this.target:this.map.monsters.find(e=>e.dead<=0&&Math.abs(e.x-p.x)<110&&Math.abs(e.y-p.y)<65);if(!e||e.dead>0||Math.abs(e.x-p.x)>115||Math.abs(e.y-p.y)>65)return false;this.target=e;this.c.activity=this.map.boss?'boss':'fight';p.facing=e.x>p.x?1:-1;p.attack=E.attackInterval(this.c);p.flash=.24;this.onEvent({type:'attack'});this.hit(e);return true;}
- useSkill(index=0,quiet=false){const p=this.player,abilities=abilitySet(this.c),ability=abilities[index];if(!ability||index>0&&this.c.level<(index===1?6:10)){if(!quiet)this.onEvent({type:'notice',text:'This ability unlocks at level '+(index===1?6:10)+'.'});return false;}const cooldown=index===0?p.skill:p.cooldowns[index];if(cooldown>0||p.respawn>0)return false;let targets=this.map.monsters.filter(e=>e.dead<=0&&Math.abs(e.x-p.x)<ability.range&&Math.abs(e.y-p.y)<80).sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x));if(!targets.length&&!ability.self){if(!quiet)this.onEvent({type:'notice',text:'Move closer to an enemy first.'});return false;}if(targets.length&&!ability.self){this.target=targets[0];this.c.activity=this.map.boss?'boss':'fight';}if(!ability.aoe)targets=targets.slice(0,1);for(const e of ability.self?[]:targets){this.hit(e,ability.mult*E.skillPower(this.c));if(ability.stun)e.stun=ability.stun;if(ability.poison)e.poison={remaining:5,next:1,mult:.25};}if(index===0)p.skill=ability.cooldown;else p.cooldowns[index]=ability.cooldown;p.flash=.4;if(ability.heal)this.c.hp=Math.min(E.maxHp(this.c),this.c.hp+(ability.heal<=1?ability.heal*E.maxHp(this.c):ability.heal));if(ability.buff){this.c.buffs=this.c.buffs.filter(b=>b.source!=='ability'||b.type!==ability.buff.type);this.c.buffs.push({...ability.buff,source:'ability'});}this.particle(p.x,p.y-110,ability.name,'#b4dcff');this.onEvent({type:'ability'});return true;}
+ useSkill(index=0,quiet=false){index=this.c.hotbar?.[index]??index;const p=this.player,abilities=abilitySet(this.c),ability=abilities[index];if(!ability||!abilityAvailable(this.c,index)){if(!quiet)this.onEvent({type:'notice',text:'Learn this ability in the class talent tab (level '+(index===1?6:10)+').'});return false;}const cooldown=index===0?p.skill:p.cooldowns[index];if(cooldown>0||p.respawn>0)return false;let targets=this.map.monsters.filter(e=>e.dead<=0&&Math.abs(e.x-p.x)<ability.range&&Math.abs(e.y-p.y)<80).sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x));if(!targets.length&&!ability.self){if(!quiet)this.onEvent({type:'notice',text:'Move closer to an enemy first.'});return false;}if(targets.length&&!ability.self){this.target=targets[0];this.c.activity=this.map.boss?'boss':'fight';}if(!ability.aoe)targets=targets.slice(0,1);for(const e of ability.self?[]:targets){this.hit(e,ability.mult*E.skillPower(this.c)*(index===1?1+Math.max(0,(this.c.classTalents?.secondary||0)-1)*.05:1));if(ability.stun)e.stun=ability.stun;if(ability.poison)e.poison={remaining:5,next:1,mult:.25};}if(index===0)p.skill=ability.cooldown;else p.cooldowns[index]=ability.cooldown;p.flash=.4;if(ability.heal)this.c.hp=Math.min(E.maxHp(this.c),this.c.hp+(ability.heal<=1?ability.heal*E.maxHp(this.c):ability.heal));if(ability.buff){this.c.buffs=this.c.buffs.filter(b=>b.source!=='ability'||b.type!==ability.buff.type);this.c.buffs.push({...ability.buff,remaining:ability.buff.remaining*(1+Math.max(0,(this.c.classTalents?.utility||0)-1)*.03),source:'ability'});}this.particle(p.x,p.y-110,ability.name,'#b4dcff');this.onEvent({type:'ability'});return true;}
  interact(){const p=this.player,near=this.map.entities.filter(e=>e.kind!=='enemy'&&Math.abs(e.x-p.x)<110&&Math.abs(e.y-p.y)<90).sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x))[0];if(near){this.select(near.id);return true;}return this.basicAttack();}
  follow(dt){const p=this.player,t=this.target||this.destination;if(!t)return 0;const distance=Math.abs(t.x-p.x),range=t.kind==='enemy'?85:t.kind==='node'?58:t.kind?65:5;
   if(Math.abs(t.y-p.y)>30&&!p.climbing&&p.grounded){const onUpper=p.y<GROUND-30;const ladder=onUpper?LADDERS.find(l=>Math.abs(l.top-p.y)<10):LADDERS.find(l=>Math.abs(l.top-t.y)<10);if(ladder){if(Math.abs(p.x-ladder.x)<10){p.climbing=true;p.climbTo=onUpper?ladder.bottom:ladder.top;p.ladder=ladder;p.vy=0;}else return Math.sign(ladder.x-p.x);}return 0;}
   if(p.climbing)return 0;
   if(Math.abs(t.y-p.y)<35&&distance<=range){
-   if(t.kind==='enemy'){this.basicAttack();if(this.auto&&p.skill<=0)this.useSkill(0,true);if(this.auto&&this.c.level>=6&&p.cooldowns[1]<=0)this.useSkill(1,true);if(this.auto&&this.c.level>=10&&this.c.hp<E.maxHp(this.c)*.6)this.useSkill(2,true);}
-   else if(t.kind==='node'){if(E.carryRoom(this.c,t.resource)<1){this.stop();this.onEvent({type:'notice',text:'Backpack full. Deposit items at a town chest.'});return 0;}const requirement=E.gatherRequirement(this.c,t.resource);if(requirement){this.stop();this.onEvent({type:'notice',text:requirement});return 0;}this.c.activity='gather';this.c.resource=t.resource;this.c.progress+=dt;const interval=E.gatherInterval(this.c,t.resource);if(this.c.progress>=interval){this.c.progress-=interval;const yielded=E.gatherYield(this.c,1,this.rng);E.give(this.c,t.resource,yielded);E.skillXp(this.c,E.gatherSkill(t.resource),2);E.gainXp(this.c,.4);p.flash=.25;this.particle(t.x,t.y-100,'+1','#c1ef8f');this.onEvent({type:'loot',id:t.resource,count:yielded});this.onEvent({type:'gather',resource:t.resource});}}
+   if(t.kind==='enemy'){this.basicAttack();if(this.auto)for(let slot=0;slot<3;slot++){const abilityIndex=this.c.hotbar?.[slot]??slot;if(abilityIndex!==2||this.c.hp<E.maxHp(this.c)*.6)this.useSkill(slot,true);}}
+   else if(t.kind==='node'){if(E.carryRoom(this.c,t.resource)<1){this.stop();this.onEvent({type:'notice',text:'Backpack full. Deposit items at a town chest.'});return 0;}const requirement=E.gatherRequirement(this.c,t.resource);if(requirement){this.stop();this.onEvent({type:'notice',text:requirement});return 0;}this.c.activity='gather';this.c.resource=t.resource;this.c.progress+=dt;const interval=E.gatherInterval(this.c,t.resource);if(this.c.progress>=interval){this.c.progress-=interval;const yielded=E.gatherYield(this.c,1,this.rng);E.give(this.c,t.resource,yielded);E.grantGatherStatues(this.c,t.resource,1,this.rng);E.skillXp(this.c,E.gatherSkill(t.resource),2);E.gainXp(this.c,.4);p.flash=.25;this.particle(t.x,t.y-100,'+1','#c1ef8f');this.onEvent({type:'loot',id:t.resource,count:yielded});this.onEvent({type:'gather',resource:t.resource});}}
    else if(t.kind==='drop'){this.collect(t);this.target=null;}
    else if(t.kind==='discovery'){this.target=null;if(!this.travel(this.c.area,this.c.zone,{secret:t.secret,entrance:'portal-left'}))this.onEvent({type:'notice',text:t.secret==='sunwell'?'Complete Letters from the Canopy with Willow.':'Complete Outpost Supplies and train all five class professions to level 2.'});}
    else if(t.kind==='portal'){this.target=null;this.usePortal(t);}

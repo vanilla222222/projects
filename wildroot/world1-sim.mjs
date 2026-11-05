@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=8';
-import * as D from './content.mjs?v=8';
-import {World} from './world.mjs?v=8';
+import * as E from './engine.mjs?v=9';
+import * as D from './content.mjs?v=9';
+import {World} from './world.mjs?v=9';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -29,12 +29,12 @@ export function runWorldOne({rng=()=>.5}={}){
  function ensureCosts(cost){let guard=0;while(!Object.entries(cost).every(([id,n])=>stock(id)>=n)&&guard++<20)for(const[id,n]of Object.entries(cost))material(id,n);assert.ok(guard<20,'overlapping ingredient cycle');}
  function gear(base,target){const def=D.EQUIPMENT[base],r=D.RECIPES.find(r=>r.equipment===base);assert.ok(r);assert.ok(E.recipeOpen(s,r),`gear unlock ${base}`);ensureCosts(r.cost);const crafter=worker('smithing');use(crafter);E.travel(s,crafter,'town',1);const uid=s.nextEquipmentId;assert.ok(E.craft(s,crafter,r.id),'gear '+base);if(crafter.loadout[def.slot]?.uid===uid){if(crafter===target)return;assert.ok(E.unequip(s,crafter,def.slot));}bank(crafter);assert.ok(E.depositGear(s,crafter,uid));bank(target);assert.ok(E.withdrawGear(s,target,uid));assert.ok(E.equip(s,target,uid));}
  function expand(id,c=hero){material(id,1);bank(c);assert.ok(E.withdraw(s,c,id,1));assert.ok(E.useExpansion(s,c,id));bank(c);}
- function story(id){const q=D.STORY.find(q=>q.id===id);for(const[k,n]of Object.entries(q.deliver||{}))material(k,n);bankAll();use(hero);const giver=q.giver==='steward'?{town:'town'}:D.CLASSES[q.giver];E.travel(s,hero,giver.town,q.giver==='alchemist'?1:0);assert.ok(E.acceptQuest(s,id),'accept '+id);assert.ok(E.questStatus(s,id).ready,`quest ${id}: ${JSON.stringify(E.questStatus(s,id).tasks)}`);assert.ok(E.claimQuest(s,hero,id,q.giver),'claim '+id);events.push({event:id,minutes:+(seconds/60).toFixed(2)});bank(hero);}
- function initiation(c,id){use(c);while(c.level<3)fight(c,'forest',0,8);const def=D.CLASSES[id];E.travel(s,c,def.town,id==='alchemist'?1:0);assert.ok(E.progressClass(s,c,id),'first step '+id);
+ function story(id){const q=D.STORY.find(q=>q.id===id);for(const[k,n]of Object.entries(q.deliver||{}))material(k,n);bankAll();use(hero);const giver=q.giver==='steward'?{town:'town'}:D.CLASSES[q.giver];E.travel(s,hero,giver.town,giver.zone||0);assert.ok(E.acceptQuest(s,id),'accept '+id);assert.ok(E.questStatus(s,id).ready,`quest ${id}: ${JSON.stringify(E.questStatus(s,id).tasks)}`);assert.ok(E.claimQuest(s,hero,id,q.giver),'claim '+id);events.push({event:id,minutes:+(seconds/60).toFixed(2)});bank(hero);}
+ function initiation(c,id){use(c);while(c.level<3)fight(c,'forest',0,8);const def=D.CLASSES[id];E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'first step '+id);
   if(['mining','logging'].includes(def.skill)){gather(c,def.skill==='mining'?'copper':'oak',Math.max(30,Math.ceil((12-c.skills[def.skill])/2)));}
   else if(def.skill==='smithing'){material('oak',6);use(c);E.travel(s,c,'town',2);assert.ok(E.enqueue(s,c,'charcoal',2));while(s.jobs.length)tick(5);bank(c);}
-  else{const r=D.RECIPES.find(r=>r.id===(id==='enchanter'?'dust':'tonic'));for(const[k,n]of Object.entries(r.cost))material(k,n*2);use(c);E.travel(s,c,def.town,id==='alchemist'?1:0);assert.ok(E.craft(s,c,r.id));assert.ok(E.craft(s,c,r.id));bank(c);}
-  for(const[k,n]of Object.entries(def.needs))material(k,n);use(c);E.travel(s,c,def.town,id==='alchemist'?1:0);assert.ok(E.progressClass(s,c,id),'practice '+id);assert.ok(E.progressClass(s,c,id),'deliver '+id);events.push({event:'class-'+id,minutes:+(seconds/60).toFixed(2)});bank(c);
+  else{const r=D.RECIPES.find(r=>r.id===(id==='enchanter'?'dust':'tonic'));for(const[k,n]of Object.entries(r.cost))material(k,n*2);use(c);E.travel(s,c,def.town,def.zone);assert.ok(E.craft(s,c,r.id));assert.ok(E.craft(s,c,r.id));bank(c);}
+  for(const[k,n]of Object.entries(def.needs))material(k,n);use(c);E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'practice '+id);assert.ok(E.progressClass(s,c,id),'deliver '+id);events.push({event:'class-'+id,minutes:+(seconds/60).toFixed(2)});bank(c);
  }
  fight(hero,'forest',0,24);initiation(hero,'warrior');story('first-roots');E.withdraw(s,hero,'woven-pouch',1);E.useExpansion(s,hero,'woven-pouch');bank(hero);
  E.createCharacter(s,'Willow’s Apprentice');const mage=E.selected(s);initiation(mage,'mage');story('tools');expand('wooden-crate');gear('copper-sword',hero);gear('copper-mail',hero);gear('copper-pick',hero);gear('copper-axe',mage);

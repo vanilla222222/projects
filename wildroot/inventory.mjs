@@ -1,9 +1,9 @@
-import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS} from './content.mjs?v=8';
+import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS} from './content.mjs?v=9';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}
 export function carryType(id){return ['copper','iron','gold'].includes(id)?'mining':['oak','birch','jungle-wood'].includes(id)?'logging':id==='tonic'||POTIONS[id]?'food':'materials';}
-export function stackLimit(c,id){return BAG_STACK+(c.usedCapacityBags||[]).reduce((n,key)=>n+(CAPACITY_BAGS[key]?.type===carryType(id)?CAPACITY_BAGS[key].bonus:0),0);}
+export function stackLimit(c,id){return Math.floor((1+(c.accountBonuses?.carry||0))*(BAG_STACK+(c.usedCapacityBags||[]).reduce((n,key)=>n+(CAPACITY_BAGS[key]?.type===carryType(id)?CAPACITY_BAGS[key].bonus:0),0)));}
 export function bagCapacity(c){return 16+(c.usedExpansions||[]).reduce((n,id)=>n+(EXPANSIONS[id]?.target==='bag'?EXPANSIONS[id].slots:0),0);}
 export function chestCapacity(s){return 24+(s.usedChestExpansions||[]).reduce((n,id)=>n+(EXPANSIONS[id]?.target==='chest'?EXPANSIONS[id].slots:0),0);}
 export function materialSlots(bag,stack){return Object.values(bag||{}).reduce((n,q)=>n+(q>0?Math.ceil(q/stack):0),0);}
