@@ -1,14 +1,14 @@
-import * as Prof from './profession-panels.mjs?v=16';
-import * as UI from './ui-panels.mjs?v=16';
-import {icon,portrait} from './ui-art.mjs?v=16';
-import * as AUI from './adventure-panels.mjs?v=16';
-import * as T from './town-panels.mjs?v=16';
-import * as U from './panels.mjs?v=16';
-import {GameAudio} from './audio.mjs?v=16';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=16';
-import * as E from './engine.mjs?v=16';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=16';
-import {drawWorld,viewFor} from './scene.mjs?v=16';
+import * as Prof from './profession-panels.mjs?v=17';
+import * as UI from './ui-panels.mjs?v=17';
+import {icon,portrait} from './ui-art.mjs?v=17';
+import * as AUI from './adventure-panels.mjs?v=17';
+import * as T from './town-panels.mjs?v=17';
+import * as U from './panels.mjs?v=17';
+import {GameAudio} from './audio.mjs?v=17';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=17';
+import * as E from './engine.mjs?v=17';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=17';
+import {drawWorld,viewFor} from './scene.mjs?v=17';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -89,9 +89,9 @@ function renderPanel(){
  if(kind==='chapter-complete'){title='The Greenreach restored';eyebrow='WORLD ONE STORY COMPLETE';body='<p class="intro">Hesta repairs the well. You have brought five callings together, quieted the Rootbound Gate and earned the Heartwood blueprint. Secret discoveries, world tasks and equipment builds remain within World One.</p><button class="primary" data-close="">Return to the Greenreach</button>';}
  if(kind==='load-error'){title='Your save needs attention';body=`<p class="intro">${esc(loadError)}. Your existing save has been left untouched. Export it before starting fresh, or import a backup.</p><div class="save-actions"><button data-export="">Export original save</button><button data-import="">Import backup</button><button data-fresh="">Start fresh</button></div>`;}
  if(kind==='paused'){title='This roster is open elsewhere';body='<p class="intro">Another tab updated the save. Reload to continue from the latest version.</p><button data-reload="">Reload latest save</button>';}
- const serviceId=kind==='industry'?(uiView.industryTab==='furnaces'?'foundry':'anvil'):['tasks','stamps','statues','vault'].includes(kind)?kind:kind==='stars'&&state.stars.unlocked?'stars':null;
+ const serviceId=kind==='industry'?(uiView.industryTab==='furnaces'?'foundry':'anvil'):['shop','tasks','stamps','statues','vault'].includes(kind)?kind:kind==='stars'&&state.stars.unlocked?'stars':null;
  if(serviceId&&!E.serviceAccess(state,c,serviceId))body=Prof.locked(state,c,serviceId);
- if(uiView.firstVisit&&(kind==='craft'||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
+ if(uiView.firstVisit&&(kind==='craft'&&uiView.profession===uiView.firstVisit||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
  const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ONE · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);
 }
@@ -154,12 +154,12 @@ document.addEventListener('click',event=>{
  if(d.vialUpgrade)ok=E.upgradeVial(state,c,d.vialUpgrade);
  if(d.alchemyCoin)ok=E.coinAlchemy(state,c,d.alchemyCoin,d.kind);
  E.syncAccount(state);toast(ok?'Progress saved.':'Check requirements, materials and facility access.');save();renderPanel();refresh();return;}
- const selections={anvilTab:'anvilTab',alchemyTab:'alchemyTab',cauldron:'cauldron',enchantGear:'enchantGear',enchantSlot:'enchantSlot',enchantRune:'enchantRune',enchantTab:'enchantTab',questFilter:'questFilter',selectQuest:'quest',cardGroup:'cardGroup',selectCard:'card',recipeFilter:'recipeFilter',selectRecipe:'recipe',enemyArea:'enemyArea',selectEnemy:'enemy',selectItem:'item',starTab:'starTab',selectSign:'sign',mapRoom:'mapRoom',stampGroup:'stampGroup',selectStamp:'stamp',selectStatue:'statue',industryTab:'industryTab',stoneItem:'stoneItem'};
+ const selections={recipePage:'recipePage',anvilTab:'anvilTab',alchemyTab:'alchemyTab',cauldron:'cauldron',enchantGear:'enchantGear',enchantSlot:'enchantSlot',enchantRune:'enchantRune',enchantTab:'enchantTab',questFilter:'questFilter',selectQuest:'quest',cardGroup:'cardGroup',selectCard:'card',recipeFilter:'recipeFilter',selectRecipe:'recipe',enemyArea:'enemyArea',selectEnemy:'enemy',selectItem:'item',starTab:'starTab',selectSign:'sign',mapRoom:'mapRoom',stampGroup:'stampGroup',selectStamp:'stamp',selectStatue:'statue',industryTab:'industryTab',stoneItem:'stoneItem'};
  for(const[key,value]of Object.entries(selections))if(d[key]!==undefined){uiView.enchantConfirm=false;uiView[value]=key==='stoneItem'?Number(d[key]):d[key];if(d.openCard!==undefined)openPanel('cards');else if(d.openEnemy!==undefined)openPanel('bestiary');else renderPanel();return;}
  if(d.openIndustry){uiView.anvilTab=d.openIndustry==='produce'?'produce':'craft';uiView.industryTab=d.openIndustry;openPanel('industry');return;}
  if(d.codexTab){openPanel(d.codexTab);return;}
  if(d.codexItem){uiView.item=d.codexItem;uiView.itemSearch='';openPanel('items');return;}
- if(d.openRecipe){uiView.profession=RECIPES.find(r=>r.id===d.openRecipe)?.station||'anvil';uiView.anvilTab='craft';uiView.recipe=d.openRecipe;uiView.recipeFilter='all';uiView.recipeSearch='';openPanel('craft');return;}
+ if(d.openRecipe){uiView.profession=RECIPES.find(r=>r.id===d.openRecipe)?.station||'anvil';uiView.anvilTab='craft';uiView.recipePage=E.recipePage(RECIPES.find(r=>r.id===d.openRecipe));uiView.recipe=d.openRecipe;uiView.recipeFilter='all';uiView.recipeSearch='';openPanel('craft');return;}
  if(d.revealRoom){uiView.mapRoom=d.revealRoom;openPanel('map');return;}
  if(d.recipeFavorite){E.favoriteRecipe(state,d.recipeFavorite);save();renderPanel();return;}
  if(d.shopItem){shopView.item=d.shopItem;renderPanel();return;}

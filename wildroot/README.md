@@ -139,7 +139,7 @@ The Greenreach Vault offers eight coin-funded account upgrades. Fifteen achievem
 
 Keyboard: I items, T talents, C Codex, M map, P players, Q attacks, Escape menu/close. Options control the quest helper, damage text, nearby auto pickup, AUTO skill use, reduced decorative motion, compact spacing and existing sound/save functions. There are no chat/guild/multiplayer-only UI panes or playable World Two content.
 
-## v16 — readable facilities and a steeper World One
+## v17 — readable facilities and a steeper World One
 
 Dialogs now use readable body text, wrapping titles and full-height details, with internal scrolling and single-column phone layouts. The fixed game dock stays under the world. The Codex Field Guide explains each facility's location and the copper → iron → outpost → masterwork → telescope → completion route.
 
@@ -153,4 +153,6 @@ Alchemy is now four brewing cauldrons with exclusive character assignments (two 
 
 Enemy HP and damage use authored, accelerating curves rather than the former linear tiers. The starter slime is unchanged. Late jungle/deep/tree rooms demand real upgrades; XP/coins scale more slowly than HP. No dynamic enemy scaling against character level. The deterministic campaign now crafts recipe-page books, claims anvil products, invests earned talents and upgrades armour before late routes; it completes all five classes and the active Rootwarden fight in approximately 96 simulated minutes. This is a regression scenario, not a measured human playtime promise.
 
-Validation: `node --test wildroot/*.test.mjs` and `node wildroot/world1-sim.mjs`. Tests cover physical access, separate remote permissions, page consumption, migration, exact costs, enchant replacement, assignments, offline caps, bubble discovery safety nets, vials, malformed saves and combat progression.
+Validation: `node --test wildroot/*.test.mjs` (148 passing tests) and `node wildroot/world1-sim.mjs`. Tests cover physical access, separate remote permissions, page consumption, migration, exact costs, enchant replacement, assignments, offline caps, bubble discovery safety nets, vials, malformed saves and combat progression.
+
+Live QA confirmed page-book crafting/consumption, production claiming, point menus, station navigation, assignments, bubble upgrading and vial discovery. Follow-up polish separates the three recipe-page galleries, keeps station recipes focused, bounds gallery scrolling and corrects first-visit tips.

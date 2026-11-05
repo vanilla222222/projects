@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=16';
-import * as D from './content.mjs?v=16';
-import {World} from './world.mjs?v=16';
+import * as E from './engine.mjs?v=17';
+import * as D from './content.mjs?v=17';
+import {World} from './world.mjs?v=17';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];

@@ -55,3 +55,6 @@
  #panel-tabs {display:flex;flex-wrap:wrap;position:static;overflow:visible;}
  #panel-tabs button {flex:1 1 80px;min-height:40px;font-size:11px!important;white-space:normal;}
 }
+/* Keep recipe browsing beside its details rather than extending the entire dialog. */
+#panel-content .recipe-icon-grid {max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 8px 2px;}
+@media(max-width:800px){#panel-content .recipe-icon-grid {max-height:300px;}}
