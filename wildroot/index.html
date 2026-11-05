@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#233b31"><meta name="description" content="Wildroot — a shared-roster idle adventure. Explore the Greenreach, learn five professions, and build your way to the Rootwarden.">
+<title>Wildroot · World One</title><link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<header class="topbar"><a class="wordmark" href="./" aria-label="Wildroot home"><span class="brand-icon">♧</span> WILDROOT<span class="alpha">V1</span></a><div class="top-right"><span class="world-label">THE GREENREACH <span> / </span> WORLD 01</span><button id="open-settings" class="quiet" aria-label="Open save and help">Save & help</button><a class="quiet back" href="../index.html">Projects ↗</a></div></header>
+<main class="shell">
+<div class="page-heading"><div><p class="eyebrow">A SMALL BEGINNING. A WORLD TO GROW.</p><h1>Your next adventure is growing.</h1></div><div class="account-summary"><span id="coin-count">0</span><small>SHARED COINS</small><span class="save-state" id="save-state">Saved on this device</span></div></div>
+<div class="game-layout">
+<aside class="roster-panel"><div class="section-heading"><h2>Your adventurers</h2><span id="slot-count" class="counter">1 / 1</span></div><p class="subtle roster-hint">One account. Many paths.</p><div id="roster"></div><button id="new-character" class="new-character">＋ New adventurer</button><p class="footnote">A first class unlock opens another slot. Everyone keeps working.</p><div class="roster-bottom"><span class="little-leaf">❧</span><p>Plant the roots.<br>Build the whole roster.</p></div></aside>
+<section class="adventure-panel" aria-label="Adventure"><div class="scene-heading"><div><p id="area-label" class="eyebrow">FOREST · ZONE 01</p><h2 id="zone-name">Mossy Clearing</h2></div><span id="activity-badge" class="activity-badge">At rest</span></div>
+<div class="scene"><canvas id="scene" width="1000" height="420" aria-label="Illustrated adventure scene"></canvas><div class="scene-sky-label"><span class="live-dot"></span> WORLD ONE <span>·</span> <span id="scene-status">Take your first step</span></div><button id="scene-target" class="scene-target" aria-label="Start fighting the enemy"></button><div class="scene-caption"><span id="scene-caption">The Greenreach</span><span>❧</span></div></div>
+<div class="action-panel"><div id="encounter"></div><div id="actions" class="action-buttons"></div></div>
+<div class="character-strip" id="character-strip"></div>
+</section>
+<aside class="map-panel"><div class="section-heading"><h2>The world awaits</h2><span class="map-mark">⌖</span></div><p class="subtle">Six places. A thousand little discoveries.</p><div id="world-map"></div><div id="zone-selector"></div><div class="map-note"><span>✦</span><p id="world-goal">Follow the Forest to discover the Jungle.</p></div></aside>
+</div>
+<section class="workbench"><nav id="tabs" class="tabs" aria-label="Game panels"><button data-tab="quests" class="active">Class quests <span>05</span></button><button data-tab="craft">Workshop</button><button data-tab="inventory">Shared storage</button><button data-tab="archive">The archive</button><button data-tab="journal">Field guide</button></nav><div id="tab-panel" class="tab-panel"></div></section>
+<footer class="game-footer"><span>WILDROOT <span>·</span> WORLD ONE</span><span>Local saves · 8h idle limit · No purchases</span><span id="footer-status">Your story starts here.</span></footer>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<dialog id="modal"><div id="modal-content"></div><button id="close-modal" class="primary modal-close">Back to the world</button></dialog>
+<input id="import-file" type="file" accept="application/json,.json" hidden>
+<script type="module" src="app.mjs?v=1"></script>
+</body></html>
