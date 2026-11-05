@@ -56,3 +56,5 @@ Working title, enemy names, recipes and balance remain provisional. World 2's te
 Run `node --test wildroot/engine.test.mjs wildroot/world.test.mjs` from the repository root. Checks cover progression, roster rules, crafting, old-save compatibility, idle claims, movement/jumping, ladder navigation, actual resource proximity, per-hit combat, cooldowns, auto control, NPC proximity, portal gates, knockouts, floor loot persistence and prevention of active/background duplicate rewards.
 
 Responsive controls are implemented for portrait and landscape. Actual phone hardware testing remains necessary. Artwork is original canvas code, with no copied IdleOn assets.
+
+Live browser checks verified the retained Warrior save, proximity-based mentor dialogue, portal travel into Forest, a ground fight awarding XP/coins/materials, and ladder navigation into an upper-platform fight. Phone hardware testing is still outstanding.
