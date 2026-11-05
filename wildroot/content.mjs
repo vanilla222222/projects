@@ -1,4 +1,4 @@
-import {roomLayout} from './layouts.mjs?v=15';
+import {roomLayout} from './layouts.mjs?v=16';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -61,7 +61,7 @@ export const RECIPES = [
 // Every material has a real sink. Rare discoveries create permanent account growth.
 export const OFFERINGS=Object.keys(ITEMS).filter(id=>!['copper','iron','gold','oak','birch','jungle-wood','copper-bar','iron-bar','gold-bar','plank','dust','tonic'].includes(id));
 export function purposes(id){
- const uses=[];if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>r.cost[id]).map(r=>r.name));
+ const uses=[];if(id.startsWith('anvil-expansion-'))uses.push('Consume once at the anvil to unlock account recipe page '+id.slice(-1));if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>r.cost[id]).map(r=>r.name));
  for(const c of Object.values(CLASSES))if(c.needs[id])uses.push(`${c.name} initiation`);
  if(OFFERINGS.includes(id))uses.push('Material research at the Stamp Registry');
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
@@ -337,3 +337,20 @@ CARD_COLLECTIONS.tree={name:'Life Above',ids:['tree-0','tree-1','tree-2'],effect
 
 // Use the authored room names consistently in portals, maps, quests and the HUD.
 for(const a of AREAS)a.zones=a.zones.map((_,i)=>roomLayout(a.id,i).title);
+
+// Account recipe pages are crafted, then consumed once at the anvil.
+for(const [page,cost,unlock] of [[2,{'iron-bar':2,plank:5},'ironworking'],[3,{'gold-bar':2,thread:10},'gilding']]){const id='anvil-expansion-'+page;item(id,'Anvil Expansion '+page,'rare','▣');RECIPES.push({id,name:ITEMS[id].name,station:'anvil',skill:'smithing',cost,output:id,count:1,unlock});}
+
+// Authored route curves. Side routes meet at comparable difficulty; no level scaling.
+export const ENEMY_CURVES={
+ forest:{hp:[16,30,52,84,130],attack:[1,2,4,6,9]},
+ caves:{hp:[35,68,125],attack:[3,6,10]},
+ jungle:{hp:[175,265,400,600],attack:[12,16,21,27]},
+ deep:{hp:[160,255,415,670],attack:[12,17,23,30]},
+ tree:{hp:[200,380,700],attack:[14,22,32]}
+};
+for(const [area,curve] of Object.entries(ENEMY_CURVES))curve.hp.forEach((hp,i)=>{const e=ENEMIES[area+'-'+i];e.xp=Math.round(e.xp*Math.sqrt(hp/e.hp));e.coins=Math.round(e.coins*(hp/e.hp)**.25);e.hp=hp;e.attack=curve.attack[i];});
+ENEMIES.boss.hp=2600;ENEMIES.boss.attack=24;
+
+// Preserve legacy permanent bonuses; new progress uses equipment enchantments and bubbles.
+for(const r of RECIPES)if(['rune','elixir'].includes(r.id))r.retired=true;

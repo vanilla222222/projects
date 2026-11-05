@@ -8,20 +8,34 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, inventory: inventoryModule, stats: statsModule, ui: uiModule } = deps;
+    noise, autotile, mining, craft, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    profile: profileModule, menu: menuModule } = deps;
 
-  const seed = readSeed();
-  const world = chunks.makeWorld(seed, worldgen);
-  const renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
-  const inventory = inventoryModule.makeInventory();
-  const stats = statsModule.makeStats();
-  const ui = uiModule.makeUI(document.getElementById('hud'),
-    { tiles, texture, inventory, atlas: renderer.atlas });
+  const profiles = profileModule.makeProfiles(window.localStorage);
+  const menu = menuModule.makeMenu(document.getElementById('menu'),
+    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed });
+
+  // Nothing world-shaped exists until a world is chosen, so each of these is filled in by
+  // boot(). A character brings its own inventory and stats into whichever world it enters.
+  let seed = 0;
+  let world = null;
+  let renderer = null;
+  let inventory = null;
+  let stats = null;
+  let ui = null;
+  let characterId = null;
+  let worldId = null;
+  let running = false;
+  let sessionStart = 0;
+  let carriedCharacterSeconds = 0;
+  let carriedWorldSeconds = 0;
 
   const state = {
-    world,
-    stats,
-    player: spawnPlayer(),
+    world: null,
+    stations: new Set(),
+    stats: null,
+    player: null,
+    colours: null,
     camera: { x: 0, y: 0, zoom: 2 },
     dayPhase: 0.12,
     time: 0,
@@ -31,29 +45,10 @@ function makeGame(canvas, deps) {
     message: '',
     messageUntil: 0
   };
-  state.camera.x = state.player.x;
-  state.camera.y = state.player.y;
 
   const input = { left: false, right: false, jump: false, down: false, dig: false };
   const pointer = { x: 0, y: 0 };
   let lastView = null;
-
-  function readSeed() {
-    const params = new URLSearchParams(location.search);
-    const given = params.get('seed');
-    if (given !== null && given !== '') {
-      const n = Number(given);
-      if (Number.isFinite(n)) return Math.floor(n) | 0;
-      let h = 0;
-      for (const ch of given) h = (Math.imul(h, 31) + ch.charCodeAt(0)) | 0;
-      return h;
-    }
-    const stored = localStorage.getItem('fathom.seed');
-    if (stored !== null) return Number(stored) | 0;
-    const fresh = (Math.random() * 0x7fffffff) | 0;
-    localStorage.setItem('fathom.seed', String(fresh));
-    return fresh;
-  }
 
   function spawnPlayer() {
     for (let probe = 0; probe < 256; probe += 1) {
@@ -142,15 +137,45 @@ function makeGame(canvas, deps) {
       state.player.mining = null;
       return;
     }
-    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
-    const hardness = diggingWall ? 0.45 : spec.hardness;
-    const current = state.player.mining;
-    if (!current || current.x !== aim.x || current.y !== aim.y || current.wall !== diggingWall) {
-      state.player.mining = { x: aim.x, y: aim.y, progress: 0, id, wall: diggingWall };
+
+    // You have to be holding the pickaxe, as in Terraria. That is what makes the hotbar
+    // a decision rather than a shelf.
+    const held = selectedItem();
+    const tool = mining.isTool(held) ? held : null;
+    if (!tool) {
+      state.player.mining = null;
+      say('Hold a pickaxe to mine', 0.9);
       return;
     }
-    current.progress += dt;
-    if (current.progress < hardness) return;
+
+    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
+    const power = mining.powerOf(tool);
+    // Walls come away like soft ground: they are a backing, not a seam of rock.
+    const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
+    if (perHit <= 0) {
+      state.player.mining = null;
+      say(spec.name + ' needs a ' + mining.requirementName(spec), 1.6);
+      return;
+    }
+
+    const current = state.player.mining;
+    if (!current || current.x !== aim.x || current.y !== aim.y || current.wall !== diggingWall) {
+      // A fresh tile starts undamaged and swings at once, so the first click always bites.
+      const toughness = diggingWall ? mining.BREAK_AT : mining.toughnessOf(spec);
+      state.player.mining = { x: aim.x, y: aim.y, damage: perHit, swing: 0,
+        id, wall: diggingWall, perHit, toughness };
+      spawnParticles(aim.x, aim.y, spec.colour, 2);
+      if (perHit < toughness) return;
+    } else {
+      current.perHit = perHit;
+      current.swing += dt;
+      if (current.swing < mining.useTimeOf(tool)) return;
+      current.swing -= mining.useTimeOf(tool);
+      current.damage += perHit;
+      spawnParticles(aim.x, aim.y, spec.colour, 2);
+      if (current.damage < current.toughness) return;
+    }
+
     if (diggingWall) {
       world.setWall(aim.x, aim.y, 0);
       spawnParticles(aim.x, aim.y, spec.colour, 6);
@@ -240,6 +265,7 @@ function makeGame(canvas, deps) {
   let accumulator = 0;
   let previous = 0;
   function frame(now) {
+    if (!running) return;
     const dt = previous ? Math.min(0.25, (now - previous) / 1000) : 0;
     previous = now;
     if (!state.paused) {
@@ -269,17 +295,20 @@ function makeGame(canvas, deps) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = aim.inReach ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.18)';
     ctx.strokeRect(sx + 1, sy + 1, size - 2, size - 2);
-    const mining = state.player.mining;
-    if (mining) {
-      const spec = mining.wall ? tiles.wall(mining.id) : tiles.tile(mining.id);
-      const hardness = mining.wall ? 0.45 : spec.hardness;
+    const dig = state.player.mining;
+    if (dig) {
+      const spec = dig.wall ? tiles.wall(dig.id) : tiles.tile(dig.id);
+
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
-      ctx.fillRect(sx + 2, sy + size - 6, (size - 4) * Math.min(1, mining.progress / hardness), 4);
+      ctx.fillRect(sx + 2, sy + size - 6, (size - 4) * Math.min(1, dig.damage / dig.toughness), 4);
     }
     ctx.restore();
   }
 
   function syncUI() {
+    // Recomputed every frame so that mining a bench out, or walking away from one, closes
+    // its recipes the moment it happens rather than the next time the screen is opened.
+    state.stations = craft.stationsNear(world, tiles, state.player.x, state.player.y);
     const hour = ((state.dayPhase + 0.5) * 24) % 24;
     ui.setField('clock', String(Math.floor(hour)).padStart(2, '0') + ':'
       + String(Math.floor((hour % 1) * 60)).padStart(2, '0'));
@@ -307,6 +336,7 @@ function makeGame(canvas, deps) {
       ArrowUp: 'jump', KeyW: 'jump', Space: 'jump', ArrowDown: 'down', KeyS: 'down'
     };
     addEventListener('keydown', (ev) => {
+      if (!running) return;
       if (ev.code === 'KeyE' || ev.code === 'Tab' || ev.code === 'KeyI') {
         ui.toggle();
         ev.preventDefault();
@@ -329,10 +359,12 @@ function makeGame(canvas, deps) {
       if (ev.code === 'BracketLeft') state.camera.zoom = Math.max(1, state.camera.zoom - 0.5);
     });
     addEventListener('keyup', (ev) => {
+      if (!running) return;
       if (keymap[ev.code]) input[keymap[ev.code]] = false;
     });
-    canvas.addEventListener('mousemove', worldFromScreen);
+    canvas.addEventListener('mousemove', (ev) => { if (running) worldFromScreen(ev); });
     canvas.addEventListener('mousedown', (ev) => {
+      if (!running) return;
       worldFromScreen(ev);
       if (ui.isOpen) return;
       if (ev.button === 0) input.dig = true;
@@ -342,6 +374,7 @@ function makeGame(canvas, deps) {
     addEventListener('mouseup', () => { input.dig = false; });
     canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
     canvas.addEventListener('wheel', (ev) => {
+      if (!running) return;
       const count = inventory.section('hotbar').size;
       state.player.selected = (state.player.selected + (ev.deltaY > 0 ? 1 : -1) + count) % count;
       ev.preventDefault();
@@ -350,25 +383,21 @@ function makeGame(canvas, deps) {
   }
 
   function save() {
-    try {
-      localStorage.setItem('fathom.save', JSON.stringify({
-        world: world.serialize(), inventory: inventory.serialize(),
-        stats: { health: stats.health, maxHealth: stats.maxHealth, mana: stats.mana, maxMana: stats.maxMana }
-      }));
-    } catch (err) { /* storage blocked or full; the seed alone still rebuilds the world */ }
-  }
-
-  function restore() {
-    try {
-      const saved = JSON.parse(localStorage.getItem('fathom.save') || 'null');
-      if (!saved || !saved.world || saved.world.seed !== seed) return false;
-      world.restore(saved.world);
-      inventory.restore(saved.inventory);
-      if (saved.stats) Object.assign(stats, saved.stats);
-      return true;
-    } catch (err) {
-      return false;
-    }
+    if (!running) return;
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    profiles.saveCharacter(characterId, {
+      inventory: inventory.serialize(),
+      stats: { health: stats.health, maxHealth: stats.maxHealth,
+        mana: stats.mana, maxMana: stats.maxMana },
+      colours: state.colours,
+      playedSeconds: carriedCharacterSeconds + elapsed
+    });
+    profiles.saveWorld(worldId, {
+      world: world.serialize(),
+      dayPhase: state.dayPhase,
+      spawn: { x: state.player.x, y: state.player.y },
+      playedSeconds: carriedWorldSeconds + elapsed
+    });
   }
 
   function resize() {
@@ -377,20 +406,84 @@ function makeGame(canvas, deps) {
     canvas.height = Math.floor(canvas.clientHeight * dpr);
   }
 
-  function start() {
-    resize();
-    addEventListener('resize', resize);
-    ui.build();
-    if (!restore()) {
+  function boot(choice) {
+    characterId = choice.character.id;
+    worldId = choice.world.id;
+    const characterRecord = profiles.loadCharacter(characterId) || {};
+    const worldRecord = profiles.loadWorld(worldId) || {};
+    seed = choice.world.seed;
+
+    world = chunks.makeWorld(seed, worldgen);
+    if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
+
+    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
+    inventory = inventoryModule.makeInventory();
+    stats = statsModule.makeStats();
+    ui = uiModule.makeUI(document.getElementById('hud'),
+      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
+    ui.onCraft = (recipe) => {
+      if (craft.craft(inventory, recipe)) {
+        say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
+      } else {
+        say('No room for that', 1.2);
+      }
+      ui.sync(state);
+    };
+
+    if (characterRecord.inventory) inventory.restore(characterRecord.inventory);
+    else {
+      inventory.add({ key: 'wood-pick', kind: 'tool' }, 1, 'hotbar');
       inventory.add({ key: 'torch', kind: 'block' }, 40, 'hotbar');
       inventory.add({ key: 'plankwall', kind: 'wall' }, 60, 'hotbar');
     }
-    bind();
-    say('E opens the backpack. Left click digs, right click places.', 7);
+    if (characterRecord.stats) Object.assign(stats, characterRecord.stats);
+
+    carriedCharacterSeconds = choice.character.playedSeconds || 0;
+    carriedWorldSeconds = choice.world.playedSeconds || 0;
+    sessionStart = Date.now();
+
+    state.world = world;
+    state.stats = stats;
+    state.colours = characterRecord.colours || choice.character.colours;
+    state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
+    state.player = spawnPlayer();
+    if (worldRecord.spawn
+      && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
+        state.player.width, state.player.height)) {
+      state.player.x = worldRecord.spawn.x;
+      state.player.y = worldRecord.spawn.y;
+    }
+    state.camera.x = state.player.x;
+    state.camera.y = state.player.y;
+
+    ui.build();
+    running = true;
+    say(choice.world.name + ' \u2014 seed ' + seed + '. E opens the backpack.', 7);
+    setInterval(save, 20000);
     requestAnimationFrame(frame);
   }
 
-  return { state, start, inventory, stats, seed, ui };
+  function start() {
+    resize();
+    addEventListener('resize', resize);
+    bind();
+    menu.open().then(boot);
+  }
+
+  // A narrow seam for the browser checks: aim the cursor at a tile and swing once. It
+  // drives the same mine() the mouse does, so a wiring mistake shows up here too.
+  function swingAt(x, y, dt) {
+    pointer.x = x + 0.5;
+    pointer.y = y + 0.5;
+    mine(dt);
+  }
+
+  return { state, start, deps, swingAt, selectedItem,
+    get inventory() { return inventory; },
+    get stats() { return stats; },
+    get seed() { return seed; },
+    get ui() { return ui; },
+    get profiles() { return profiles; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

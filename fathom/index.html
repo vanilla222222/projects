@@ -9,6 +9,7 @@
 <body>
 <canvas id="stage"></canvas>
 
+<div id="menu"></div>
 <div id="hud"></div>
 
 <script src="js/rng.js"></script>
@@ -20,10 +21,14 @@
 <script src="js/texture.js"></script>
 <script src="js/light.js"></script>
 <script src="js/player.js"></script>
+<script src="js/mining.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/craft.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/game.js"></script>
 <script>
 (function boot() {
@@ -36,12 +41,18 @@
     autotile: { maskAt, edges, exposure, isBuried },
     texture: { TILE, VARIANTS, bakeAtlas, variantFor, shade },
     light: { makeLightField, sunTint, sunStrength, solarElevation, EMIT_TINTS },
-    player: { makePlayer, step, overlapsSolid, unstick, aimTile, REACH },
+    player: { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, REACH },
+    mining: { TOOLS, TIER_COLOURS, BREAK_AT, toolSpec, isTool, tierColour, powerOf,
+      useTimeOf, requirementOf, toughnessOf, canMine, damagePerHit, hitsFor, secondsFor, requirementName },
     noise: { fbm1, fbm2, ridged2, value1, value2, smooth },
     render: { makeRenderer },
+    craft: { RECIPES, ITEMS, STATION_REACH_X, STATION_REACH_Y, stationsNear,
+      canAfford, available, atStation, craft, kindOf, nameOf },
     inventory: { makeInventory, LAYOUT, STACK_MAX },
     stats: { makeStats, step: stepStats, damage, heal, spendMana, respawn, raiseMaxHealth, raiseMaxMana, hearts, stars },
-    ui: { makeUI }
+    ui: { makeUI },
+    profile: { makeProfiles, parseSeed, SKIN_TONES, HAIR_COLOURS, SHIRT_COLOURS, PANTS_COLOURS },
+    menu: { makeMenu }
   };
   const game = makeGame(document.getElementById('stage'), deps);
   game.start();

@@ -10,48 +10,202 @@ const WORLD_H = 1056;
 const SKY_H = 192;
 const STRUCTURE_MARGIN = 14;
 
+// Biomes sit in a climate space rather than a line. The old model picked a biome by
+// flooring a single 1-D field, which forces every biome into a fixed order: tundra could
+// never border desert, and there was nowhere to put an ocean. Now two independent fields,
+// temperature and moisture, place each column in a 2-D space, and each biome owns a region
+// of it. Identity is whichever biome's weight is highest; height bias is the weighted
+// average of the same weights. Using one set of weights for both is what keeps terrain
+// continuous across a border while the surface material still changes abruptly.
+//
+// `bias` is how high the biome sits. `sub` is what lies under the filler. `wall` is the
+// background it leaves behind. `tree` names a species in TREES, or 'none'.
 const BIOMES = [
-  { key: 'tundra', bias: -10, name: 'Tundra', surface: 'snow', filler: 'snow', sub: 'dirt', tree: 'pine', grass: false },
-  { key: 'plains', bias: 0, name: 'Plains', surface: 'grass', filler: 'dirt', sub: 'dirt', tree: 'oak', grass: true },
-  { key: 'forest', bias: 2, name: 'Deepwood', surface: 'grass', filler: 'dirt', sub: 'dirt', tree: 'oak', grass: true },
-  { key: 'jungle', bias: 6, name: 'Jungle', surface: 'grass', filler: 'dirt', sub: 'clay', tree: 'jungle', grass: true },
-  { key: 'desert', bias: 16, name: 'Dunes', surface: 'sand', filler: 'sand', sub: 'sand', tree: 'none', grass: false }
+  { key: 'tundra', name: 'Tundra', temp: 0.08, moist: 0.35, bias: -8,
+    surface: 'snow', filler: 'snow', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
+  { key: 'taiga', name: 'Taiga', temp: 0.2, moist: 0.72, bias: 2,
+    surface: 'snow', filler: 'dirt', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
+  { key: 'highlands', name: 'Highlands', temp: 0.3, moist: 0.18, bias: -26,
+    surface: 'stone', filler: 'stone', sub: 'stone', wall: 'stonewall', tree: 'none', grass: false },
+  { key: 'plains', name: 'Plains', temp: 0.5, moist: 0.42, bias: 0,
+    surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
+  { key: 'forest', name: 'Deepwood', temp: 0.46, moist: 0.68, bias: 4,
+    surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
+  { key: 'marsh', name: 'Mire', temp: 0.55, moist: 0.93, bias: 18,
+    surface: 'peat', filler: 'peat', sub: 'mud', wall: 'mudwall', tree: 'oak', grass: true },
+  { key: 'savanna', name: 'Savanna', temp: 0.8, moist: 0.45, bias: 2,
+    surface: 'grass', filler: 'dirt', sub: 'redclay', wall: 'dirtwall', tree: 'acacia', grass: true },
+  { key: 'jungle', name: 'Jungle', temp: 0.85, moist: 0.86, bias: 8,
+    surface: 'junglegrass', filler: 'mud', sub: 'mud', wall: 'mudwall', tree: 'jungle', grass: true },
+  { key: 'badlands', name: 'Badlands', temp: 0.66, moist: 0.08, bias: -14,
+    surface: 'redclay', filler: 'redclay', sub: 'sandstone', wall: 'redclaywall', tree: 'none', grass: false },
+  { key: 'desert', name: 'Dunes', temp: 0.94, moist: 0.13, bias: 14,
+    surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false },
+
+  // Overlays. These are never selected by climate; they replace whatever climate chose,
+  // so they are listed after it and carry their own bias handling.
+  { key: 'beach', name: 'Shore', temp: -1, moist: -1, bias: 0,
+    surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
+  { key: 'ocean', name: 'Ocean', temp: -1, moist: -1, bias: 0,
+    surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
+  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0,
+    surface: 'blightgrass', filler: 'dirt', sub: 'blight', wall: 'blightwall', tree: 'blighted', grass: false, overlay: true },
+  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0,
+    surface: 'fleshgrass', filler: 'dirt', sub: 'flesh', wall: 'fleshwall', tree: 'blighted', grass: false, overlay: true }
 ];
 
-// A continuous position in biome space. biomeAt() floors it, which lets surface material and
-// tree species change abruptly at a border, while heightBias() interpolates it, which keeps
-// terrain height continuous. Stepping the height bias instead puts a cliff at every border:
-// desert sits 16 tiles higher than tundra, so the two meeting made a 26-tile wall.
-function biomeField(seed, x) {
-  const n = fbm1(seed, x * 0.0016, 311, 3, 2, 0.5);
-  const warp = fbm1(seed, x * 0.0071, 977, 2, 2, 0.5) * 0.12;
-  const t = Math.min(0.9999, Math.max(0, (n + warp - 0.5) * 1.9 + 0.5));
-  return t * BIOMES.length;
+const BY_BIOME = {};
+for (const b of BIOMES) BY_BIOME[b.key] = b;
+const CLIMATE_BIOMES = BIOMES.filter(b => !b.overlay);
+
+// Sea level. Terrain is allowed to fall below it; where it does, the gap fills with water.
+const SEA_LEVEL = SKY_H + 104;
+const BEACH_BAND = 10;
+
+// --- the fields -------------------------------------------------------------------------
+// All three are pure in x, so two chunks asking about the same column get the same answer.
+
+// Summed octaves of value noise pile up around the middle: measured over 60,000 columns,
+// the raw fields sat between 0.29 and 0.69 at the 5th and 95th percentiles. Biomes placed
+// at the corners of climate space were therefore unreachable, and three of ten never
+// generated at all. The stretch below opens the measured band out to very nearly the full
+// range, which is what puts desert and badlands on the map.
+const CLIMATE_STRETCH = 2.25;
+
+function stretch(v) {
+  return Math.min(1, Math.max(0, (v - 0.5) * CLIMATE_STRETCH + 0.5));
 }
 
-function biomeIndex(seed, x) {
-  return Math.min(BIOMES.length - 1, Math.floor(biomeField(seed, x)));
+function temperature(seed, x) {
+  const broad = fbm1(seed, x * 0.00042, 311, 3, 2, 0.52);
+  const local = fbm1(seed, x * 0.0036, 733, 2, 2, 0.5);
+  return stretch(broad * 0.78 + local * 0.22);
+}
+
+function moisture(seed, x) {
+  const broad = fbm1(seed, x * 0.00051, 419, 3, 2, 0.5);
+  const local = fbm1(seed, x * 0.0041, 821, 2, 2, 0.5);
+  return stretch(broad * 0.74 + local * 0.26);
+}
+
+// How much land there is here. Below zero is sea floor, and the deeper it goes the deeper
+// the ocean. A separate low-frequency field so coastlines do not track the climate.
+function continent(seed, x) {
+  const base = fbm1(seed, x * 0.00036, 577, 4, 2, 0.5);
+  const detail = fbm1(seed, x * 0.0029, 643, 2, 2, 0.5);
+  return (base * 0.82 + detail * 0.18 - 0.42) * 2.6;
+}
+
+// Smooth membership in each climate biome. The kernel is wide enough that neighbouring
+// biomes always overlap, which is what makes the blended height bias continuous.
+function climateWeights(seed, x) {
+  const t = temperature(seed, x);
+  const m = moisture(seed, x);
+  const weights = new Array(CLIMATE_BIOMES.length);
+  for (let i = 0; i < CLIMATE_BIOMES.length; i += 1) {
+    const b = CLIMATE_BIOMES[i];
+    const dt = (t - b.temp) / 0.26;
+    const dm = (m - b.moist) / 0.3;
+    weights[i] = Math.exp(-(dt * dt + dm * dm));
+  }
+  return weights;
+}
+
+// Columns are asked about repeatedly, once per tile in the column and again by trees and
+// decoration. The cache is keyed by seed and x only, so it never makes a chunk's answer
+// depend on which chunk asked.
+const COLUMN_CACHE_SIZE = 4096;
+const columnCache = new Array(COLUMN_CACHE_SIZE);
+let columnCacheSeed = null;
+
+function columnOf(seed, x) {
+  if (columnCacheSeed !== seed) {
+    columnCache.length = 0;
+    columnCache.length = COLUMN_CACHE_SIZE;
+    columnCacheSeed = seed;
+  }
+  const slot = ((x % COLUMN_CACHE_SIZE) + COLUMN_CACHE_SIZE) % COLUMN_CACHE_SIZE;
+  const hit = columnCache[slot];
+  if (hit && hit.x === x) return hit;
+  const built = buildColumn(seed, x);
+  columnCache[slot] = built;
+  return built;
+}
+
+// Corruption and crimson. The world is divided into bands; a band either carries a blight
+// or does not, and a hash of the band index decides which of the two it is, so the pair
+// never overlap and neither has to win a fight for space.
+const BLIGHT_BAND = 420;
+
+function blightAt(seed, x) {
+  const band = Math.floor(x / BLIGHT_BAND);
+  if (unit(seed, band, 0, 3301) > 0.3) return null;
+  const centre = band * BLIGHT_BAND + BLIGHT_BAND * (0.25 + unit(seed, band, 0, 3307) * 0.5);
+  const half = 70 + unit(seed, band, 0, 3313) * 110;
+  const edge = (fbm1(seed, x * 0.02, 3319, 2, 2, 0.5) - 0.5) * 34;
+  if (Math.abs(x - centre) + edge > half) return null;
+  return unit(seed, band, 0, 3323) < 0.5 ? 'blight' : 'crimson';
+}
+
+function buildColumn(seed, x) {
+  const weights = climateWeights(seed, x);
+  let best = 0;
+  let total = 0;
+  let blended = 0;
+  for (let i = 0; i < weights.length; i += 1) {
+    if (weights[i] > weights[best]) best = i;
+    total += weights[i];
+    blended += weights[i] * CLIMATE_BIOMES[i].bias;
+  }
+  const bias = total > 0 ? blended / total : 0;
+  const land = continent(seed, x);
+
+  // Height first, because whether this column is shore or sea depends on where it lands.
+  const rolling = (fbm1(seed, x * 0.0085, 11, 4, 2, 0.5) - 0.5) * 48;
+  const hills = (fbm1(seed, x * 0.0022, 29, 3, 2, 0.55) - 0.5) * 132;
+  const detail = (fbm1(seed, x * 0.055, 53, 2, 2, 0.5) - 0.5) * 9;
+  // Below sea level the shape flattens into a basin rather than keeping its hills, so an
+  // ocean floor reads as a floor and not as drowned countryside.
+  // Land sits above sea level by default; only a column whose continent field has gone
+  // negative is pushed below it. `relief` flattens the hills as the floor drops, so an
+  // ocean bed reads as a bed rather than as drowned countryside.
+  const shelf = Math.max(0, -land);
+  const relief = Math.max(0, 1 - shelf * 2.2);
+  let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
+    + shelf * 265 - Math.max(0, land) * 12;
+  h = Math.max(SKY_H + 24, Math.min(WORLD_H - 420, Math.round(h)));
+
+  // Identity. Sea and shore override climate; a blight overrides everything but the sea.
+  let biome = CLIMATE_BIOMES[best];
+  if (h > SEA_LEVEL) biome = BY_BIOME.ocean;
+  else if (h > SEA_LEVEL - BEACH_BAND) biome = BY_BIOME.beach;
+  else {
+    const blight = blightAt(seed, x);
+    if (blight) biome = BY_BIOME[blight];
+  }
+  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land, weights };
 }
 
 function biomeAt(seed, x) {
-  return BIOMES[biomeIndex(seed, x)];
+  return columnOf(seed, x).biome;
+}
+
+// The climate biome under an overlay: what this column would be without sea or blight.
+// Used for the strata, so a blighted forest still has forest rock beneath it.
+function climateAt(seed, x) {
+  return columnOf(seed, x).climate;
+}
+
+function biomeIndex(seed, x) {
+  return BIOMES.indexOf(biomeAt(seed, x));
 }
 
 function heightBias(seed, x) {
-  const f = biomeField(seed, x);
-  const i = Math.min(BIOMES.length - 1, Math.floor(f));
-  const j = Math.min(BIOMES.length - 1, i + 1);
-  const t = smooth(Math.min(1, Math.max(0, f - i)));
-  return BIOMES[i].bias + (BIOMES[j].bias - BIOMES[i].bias) * t;
+  return columnOf(seed, x).bias;
 }
 
 function surfaceHeight(seed, x) {
-  const base = SKY_H + 96;
-  const rolling = (fbm1(seed, x * 0.0085, 11, 4, 2, 0.5) - 0.5) * 58;
-  const hills = (fbm1(seed, x * 0.0022, 29, 3, 2, 0.55) - 0.5) * 150;
-  const detail = (fbm1(seed, x * 0.055, 53, 2, 2, 0.5) - 0.5) * 9;
-  const h = base + rolling + hills + detail + heightBias(seed, x);
-  return Math.max(SKY_H + 24, Math.min(WORLD_H - 420, Math.round(h)));
+  return columnOf(seed, x).height;
 }
 
 function caveDensity(seed, x, y, depth) {
@@ -61,9 +215,12 @@ function caveDensity(seed, x, y, depth) {
   return tunnels * 0.62 + rooms * 0.38 * squeeze;
 }
 
-function stratum(seed, x, y, depth) {
+function stratum(seed, x, y, depth, column) {
   const jitter = (fbm1(seed, x * 0.02, 409, 2, 2, 0.5) - 0.5) * 22;
   if (depth < 7 + jitter * 0.2) return 'surface';
+  // A blight's own rock runs well below its grass, so digging out of one takes effort.
+  if (column && (column.biome.key === 'blight' || column.biome.key === 'crimson')
+    && depth < 66 + jitter) return 'blighted';
   if (depth < 46 + jitter) return 'filler';
   if (depth < 300 + jitter * 2) return 'stone';
   if (depth < 540 + jitter * 2) return 'granite';
@@ -91,10 +248,14 @@ function oreAt(seed, x, y, depth) {
 
 function baseTileAt(seed, x, y) {
   if (y < 0 || y >= WORLD_H) return AIR;
-  const surface = surfaceHeight(seed, x);
-  if (y < surface) return AIR;
+  const column = columnOf(seed, x);
+  const surface = column.height;
+  // Above the ground: air, unless this column's ground lies below sea level, in which
+  // case everything between the two is water. That single rule is the whole ocean.
+  if (y < surface) return y >= SEA_LEVEL ? idOf('water') : AIR;
+
   const depth = y - surface;
-  const biome = biomeAt(seed, x);
+  const biome = column.biome;
 
   if (depth > 4 && caveDensity(seed, x, y, depth) > 0.605) {
     const glow = fbm2(seed, x * 0.09, y * 0.09, 1901, 2, 2, 0.5);
@@ -102,44 +263,59 @@ function baseTileAt(seed, x, y) {
     return AIR;
   }
 
-  const layer = stratum(seed, x, y, depth);
+  const layer = stratum(seed, x, y, depth, column);
   if (layer === 'surface') {
     if (depth === 0) return idOf(biome.surface);
     return idOf(biome.filler);
   }
   if (layer === 'filler') {
     const pocket = fbm2(seed, x * 0.07, y * 0.07, 1801, 2, 2, 0.5);
-    if (pocket > 0.84 && biome.sub === 'clay') return idOf('clay');
-    return idOf(biome.filler === 'snow' ? 'dirt' : biome.filler);
+    if (pocket > 0.84) return idOf(biome.sub);
+    if (biome.filler === 'snow') return idOf('dirt');
+    return idOf(biome.filler);
+  }
+  // A blight reaches below its grass: the stone under it is its own, for a while.
+  if (layer === 'blighted') {
+    const ore = oreAt(seed, x, y, depth);
+    if (ore) return idOf(ore);
+    return idOf(biome.sub);
   }
 
   const ore = oreAt(seed, x, y, depth);
   if (ore) return idOf(ore);
   if (layer === 'stone') {
     const vein = fbm2(seed, x * 0.05, y * 0.05, 1951, 2, 2, 0.5);
-    return vein > 0.88 ? idOf('clay') : idOf('stone');
+    if (vein > 0.88) return idOf(column.climate.key === 'jungle' ? 'mud' : 'clay');
+    return idOf('stone');
   }
   return idOf(layer);
 }
 
 const TREES = {
   oak: { height: [6, 10], spacing: 11, canopy: 4, chance: 0.5 },
-  pine: { height: [9, 14], spacing: 10, canopy: 3, chance: 0.55 },
-  jungle: { height: [8, 13], spacing: 10, canopy: 4, chance: 0.62 },
+  pine: { height: [9, 14], spacing: 10, canopy: 3, chance: 0.55, conifer: true },
+  jungle: { height: [8, 13], spacing: 10, canopy: 4, chance: 0.62, vines: true },
+  // Flat-topped and sparse: a savanna reads as savanna because of the gaps between trees.
+  acacia: { height: [5, 8], spacing: 17, canopy: 5, chance: 0.34, flat: true },
+  // Blighted trees are bare: no canopy at all, just a crooked trunk.
+  blighted: { height: [5, 11], spacing: 9, canopy: 0, chance: 0.5, bare: true },
   none: null
 };
 
 function treeAt(seed, x) {
-  const biome = biomeAt(seed, x);
+  const column = columnOf(seed, x);
+  const biome = column.biome;
   const spec = TREES[biome.tree];
   if (!spec) return null;
+  // Nothing roots underwater, and nothing roots on a beach.
+  if (column.height >= SEA_LEVEL - 2) return null;
   if (((x % spec.spacing) + spec.spacing) % spec.spacing !== 0) return null;
   if (unit(seed, x, 0, 2003) > spec.chance) return null;
   const span = spec.height[1] - spec.height[0];
   const height = spec.height[0] + Math.floor(unit(seed, x, 0, 2011) * (span + 1));
-  const root = surfaceHeight(seed, x);
+  const root = column.height;
   if (baseTileAt(seed, x, root) !== idOf(biome.surface)) return null;
-  return { x, root, height, canopy: spec.canopy, kind: biome.tree };
+  return { x, root, height, canopy: spec.canopy, kind: biome.tree, spec };
 }
 
 // The canopy is an egg, wider above the trunk top than below it, with its edge eroded by a
@@ -148,20 +324,39 @@ function treeAt(seed, x) {
 function stampTree(write, seed, tree) {
   const trunk = idOf('trunk');
   const leaf = idOf('leaves');
+  const spec = tree.spec || TREES[tree.kind] || {};
   for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
   const top = tree.root - tree.height;
+
+  // A blighted tree has no canopy: a few crooked branches and nothing else.
+  if (spec.bare) {
+    for (let i = 2; i < tree.height; i += 2) {
+      if (unit(seed, tree.x, i, 2041) > 0.55) continue;
+      const dir = unit(seed, tree.x, i, 2043) < 0.5 ? -1 : 1;
+      const len = 1 + Math.floor(unit(seed, tree.x, i, 2047) * 2);
+      for (let j = 1; j <= len; j += 1) write(tree.x + dir * j, tree.root - i, trunk);
+    }
+    return;
+  }
+
   const r = tree.canopy;
   for (let dy = -r - 1; dy <= r; dy += 1) {
     for (let dx = -r; dx <= r; dx += 1) {
-      const stretch = dy > 0 ? dy / 0.72 : dy / 1.25;
-      const ratio = Math.sqrt((dx * dx) / (r * r) + (stretch * stretch) / (r * r));
+      // Conifers taper to a point, flat-tops spread sideways, everything else is an egg.
+      let stretch;
+      if (spec.conifer) stretch = dy > 0 ? dy / 0.95 : dy / 1.9;
+      else if (spec.flat) stretch = dy > 0 ? dy / 0.45 : dy / 0.8;
+      else stretch = dy > 0 ? dy / 0.72 : dy / 1.25;
+      const squash = spec.flat ? 1.25 : 1;
+      const ratio = Math.sqrt((dx * dx) / (r * r * squash * squash)
+        + (stretch * stretch) / (r * r));
       if (ratio > 1) continue;
       if (ratio > 0.58 && unit(seed, tree.x * 31 + dx, top + dy, 2029) < (ratio - 0.58) * 2.3) continue;
       if (dx === 0 && dy > 1) continue;
       write(tree.x + dx, top + dy - 1, leaf);
     }
   }
-  if (tree.kind === 'jungle') {
+  if (spec.vines) {
     for (let dx = -r; dx <= r; dx += 2) {
       const len = 1 + Math.floor(unit(seed, tree.x + dx, tree.root, 2017) * 4);
       for (let i = 0; i < len; i += 1) write(tree.x + dx, top + i, idOf('vine'));
@@ -191,15 +386,12 @@ function decorate(write, seed, x) {
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y) {
   if (y < 0 || y >= WORLD_H) return 0;
-  const surface = surfaceHeight(seed, x);
-  const depth = y - surface;
+  const column = columnOf(seed, x);
+  const depth = y - column.height;
   if (depth < 0) return 0;
-  const biome = biomeAt(seed, x);
-  const layer = stratum(seed, x, y, depth);
-  if (layer === 'surface' || layer === 'filler') {
-    if (biome.key === 'desert') return wallIdOf('sandwall');
-    if (biome.key === 'tundra') return wallIdOf('snowwall');
-    return wallIdOf('dirtwall');
+  const layer = stratum(seed, x, y, depth, column);
+  if (layer === 'surface' || layer === 'filler' || layer === 'blighted') {
+    return wallIdOf(column.biome.wall);
   }
   if (layer === 'stone') return wallIdOf('stonewall');
   if (layer === 'granite') return wallIdOf('granitewall');
@@ -249,7 +441,9 @@ if (typeof module !== 'undefined' && module.exports) {
   global.wallIdOf = tiles.wallIdOf;
   module.exports = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    biomeAt, biomeIndex, biomeField, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
+    SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
+    temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
+    biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };
 }

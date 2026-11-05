@@ -1,16 +1,20 @@
-import * as C from './chronicle.mjs?v=15';
-export * from './chronicle.mjs?v=15';
-import * as A from './adventure.mjs?v=15';
-export * from './adventure.mjs?v=15';
-import * as L from './legacy.mjs?v=15';
-export * from './legacy.mjs?v=15';
-import * as I from './inventory.mjs?v=15';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=15';
-import * as P from './progression.mjs?v=15';
-export * from './progression.mjs?v=15';
-export {initialize,validate} from './progression.mjs?v=15';
-export * from './inventory.mjs?v=15';
-export {canPay,pay} from './inventory.mjs?v=15';
+import * as S from './services.mjs?v=16';
+export * from './services.mjs?v=16';
+export * from './workshop.mjs?v=16';
+export * from './alchemy.mjs?v=16';
+import * as C from './chronicle.mjs?v=16';
+export * from './chronicle.mjs?v=16';
+import * as A from './adventure.mjs?v=16';
+export * from './adventure.mjs?v=16';
+import * as L from './legacy.mjs?v=16';
+export * from './legacy.mjs?v=16';
+import * as I from './inventory.mjs?v=16';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=16';
+import * as P from './progression.mjs?v=16';
+export * from './progression.mjs?v=16';
+export {initialize,validate} from './progression.mjs?v=16';
+export * from './inventory.mjs?v=16';
+export {canPay,pay} from './inventory.mjs?v=16';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -61,12 +65,12 @@ export function createCharacter(s,name){if(s.characters.length>=slots(s))return 
 export function stationFor(c){if(c.area==='town')return c.zone===2?'foundry':c.zone===1?'anvil':null;if(c.area==='jungle-town')return c.zone===0?'enchanting':c.zone===1?'alchemy':null;return null;}
 export function craftCost(c,r){const factor=r.repeat?1+Math.floor((c.gear[r.upgrade]||0)/3):1;return Object.fromEntries(Object.entries(r.cost).map(([k,n])=>[k,n*factor]));}
 export function craftFee(c,r){return r.equipment?5:r.upgrade?5*(r.tier||1+Math.floor(c.gear[r.upgrade]/3)):2;}
-export function canCraft(s,c,r){return !(r.unique&&s.worldCompletionCrafted)&&!(EXPANSIONS[r.output]?.target==='chest'&&s.usedChestExpansions.includes(r.output))&&P.recipeOpen(s,r)&&stationFor(c)===r.station&&s.coins>=craftFee(c,r)&&hasCost(s,craftCost(c,r),c)&&(!r.equipment||!c.loadout[EQUIPMENT[r.equipment].slot]||I.bagUsed(c)<I.bagCapacity(c))&&(r.equipment||!r.upgrade||r.repeat||(c.gear[r.upgrade]||0)<r.tier);}
-export function craft(s,c,id){const r=RECIPES.find(x=>x.id===id);if(!r||!canCraft(s,c,r))return false;if(r.station==='foundry')return P.enqueue(s,c,id,1);s.metrics.crafted++;if(r.unique)s.worldCompletionCrafted=true;spend(s,craftCost(c,r),c);s.coins-=craftFee(c,r);const specialist=c.class&&CLASSES[c.class].skill===r.skill;if(r.equipment){if(r.upgrade)c.gear[r.upgrade]=r.tier;const def=EQUIPMENT[r.equipment];P.createEquipment(s,r.equipment,!c.loadout[def.slot]&&(!def.class||c.class===def.class)?c:null,c);}else if(r.output){I.give(c,r.output,r.count*(specialist&&!r.unique&&EXPANSIONS[r.output]?.target!=='chest'?2:1));if(r.skill==='alchemy')s.alchemy.liquid=Math.min(P.liquidCap(s),s.alchemy.liquid+2);}else c.gear[r.upgrade]=r.repeat?(c.gear[r.upgrade]||0)+1:r.tier;skillXp(c,r.skill,6);gainXp(c,3);note(s,`${c.name}: ${r.name}${specialist&&r.output?' (double yield)':''}.`);return true;}
+export function canCraft(s,c,r){return !(r.unique&&s.worldCompletionCrafted)&&!(EXPANSIONS[r.output]?.target==='chest'&&s.usedChestExpansions.includes(r.output))&&P.recipeOpen(s,r)&&S.serviceAccess(s,c,r.station,'upgrade')&&s.coins>=craftFee(c,r)&&hasCost(s,craftCost(c,r),c)&&(!r.equipment||!c.loadout[EQUIPMENT[r.equipment].slot]||I.bagUsed(c)<I.bagCapacity(c))&&(r.equipment||!r.upgrade||r.repeat||(c.gear[r.upgrade]||0)<r.tier);}
+export function craft(s,c,id){const r=RECIPES.find(x=>x.id===id);if(!r||!canCraft(s,c,r))return false;if(r.station==='foundry')return P.enqueue(s,c,id,1);s.metrics.crafted++;if(r.unique)s.worldCompletionCrafted=true;spend(s,craftCost(c,r),c);s.coins-=craftFee(c,r);const specialist=c.class&&CLASSES[c.class].skill===r.skill;if(r.equipment){if(r.upgrade)c.gear[r.upgrade]=r.tier;const def=EQUIPMENT[r.equipment];P.createEquipment(s,r.equipment,!c.loadout[def.slot]&&(!def.class||c.class===def.class)?c:null,c);}else if(r.output){I.give(c,r.output,r.count*(specialist&&!r.unique&&!r.id.startsWith('anvil-expansion-')&&EXPANSIONS[r.output]?.target!=='chest'?2:1));if(r.skill==='alchemy')s.alchemy.liquid=Math.min(P.liquidCap(s),s.alchemy.liquid+2);}else c.gear[r.upgrade]=r.repeat?(c.gear[r.upgrade]||0)+1:r.tier;skillXp(c,r.skill,6);gainXp(c,3);note(s,`${c.name}: ${r.name}${specialist&&r.output?' (double yield)':''}.`);return true;}
 export function offer(s,id){if(!OFFERINGS.includes(id))return false;const level=s.archive[id]||0,cost=ITEMS[id].rarity==='common'?10*(level+1):level+1;if(level>=20||!spend(s,{[id]:cost}))return false;s.archive[id]=level+1;P.syncAccount(s);note(s,`Studied ${ITEMS[id].name}: ${P.studyType(id)} improved.`);return true;}
 export function heal(s,c){if(c.hp>=maxHp(c)||(c.bag.tonic||0)<1)return false;c.bag.tonic--;c.hp=Math.min(maxHp(c),c.hp+40);return true;}
 export function restoreSave(raw,now=Date.now()){
- if(!raw||raw.version!==SAVE_VERSION||!Array.isArray(raw.characters)||!raw.characters.length||raw.characters.length>MAX_CHARACTERS)throw Error('This is not a supported Wildroot save.');const s=freshSave(now);Object.assign(s,raw);const finite=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
+ if(!raw||raw.version!==SAVE_VERSION||!Array.isArray(raw.characters)||!raw.characters.length||raw.characters.length>MAX_CHARACTERS)throw Error('This is not a supported Wildroot save.');const s=freshSave(now);Object.assign(s,raw);if(!Object.hasOwn(raw,'workshop'))delete s.workshop;const finite=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
  if(!finite(s.coins)||!finite(s.savedAt)||!s.inventory||!s.archive||!s.kills||!Array.isArray(s.unlockedClasses)||new Set(s.unlockedClasses).size!==s.unlockedClasses.length||s.unlockedClasses.some(id=>!CLASSES[id]))throw Error('Invalid account data.');for(const bag of [s.inventory,s.archive,s.kills])for(const n of Object.values(bag))if(!finite(n))throw Error('Invalid resource data.');
  s.characters=s.characters.map(c=>{if(!Number.isInteger(c.id)||!c.id||typeof c.name!=='string'||c.name.length>24||!finite(c.level)||c.level<1||!finite(c.xp)||!finite(c.hp)||!finite(c.progress)||!finite(c.kills)||!(c.class===null||CLASSES[c.class])||!areaById(c.area)||!Number.isInteger(c.zone)||c.zone<0||c.zone>=areaById(c.area).zones.length||!['rest','fight','gather','boss','trial'].includes(c.activity))throw Error('Invalid character data.');const copy={...makeCharacter(c.id,c.name),...c};if(!copy.skills||!copy.gear)throw Error('Invalid character stats.');P.initializeCharacter(copy,s,true);if(Object.values(copy.talents).some(n=>!Number.isInteger(n)||n<0)||Object.values(copy.talents).reduce((a,b)=>a+b,0)>(copy.level-1)*3)throw Error('Invalid talent points.');for(const k of Object.keys(SKILLS))if(!finite(copy.skills[k]))throw Error('Invalid skills.');for(const k of Object.keys(makeCharacter(0,'').gear))if(!finite(copy.gear[k]))throw Error('Invalid equipment.');if(!copy.quests||Object.values(copy.quests).some(n=>!Number.isInteger(n)||n<0||n>3))throw Error('Invalid quest data.');if(copy.activity==='gather'&&!areaById(copy.area).resources[copy.zone].includes(copy.resource))throw Error('Invalid gathering task.');if(copy.activity==='fight'&&!zoneEnemy(copy.area,copy.zone)&&!copy.secret||copy.activity==='boss'&&(copy.area!=='jungle-town'||copy.zone!==2))throw Error('Invalid combat task.');return copy;});
  if(new Set(s.characters.map(c=>c.id)).size!==s.characters.length)throw Error('Duplicate characters.');s.nextId=Math.max(...s.characters.map(c=>c.id))+1;s.active=selected(s).id;s.log=Array.isArray(s.log)?s.log.filter(t=>typeof t==='string').slice(0,30):[];P.initialize(s,true);P.validate(s);for(const c of s.characters)if(c.trial){c.trial=null;c.activity='rest';c.position={x:2280,y:644,facing:1};}for(const c of s.characters)c.hp=Math.min(c.hp,maxHp(c));return s;

@@ -3,10 +3,19 @@
 A side-view mining sandbox with an endless world. Dig down through biomes, strata and caves,
 light the dark with torches, and build with what you break.
 
-Open `index.html`. `E` opens the backpack. Left click digs a block, or the wall behind it if
-the tile is empty; right click places whatever the selected hotbar slot holds. `1`-`0` or the
-scroll wheel pick a slot, `A`/`D` or the arrow keys move, `W`/`Space` jumps, `[` and `]` zoom,
-`P` pauses. `?seed=anything` loads a specific world; without one a seed is drawn once and kept.
+Open `index.html`. You pick a character, then a world, and the two are kept apart: a
+character carries its inventory, equipment and stats into any world it enters, so the hole
+you dug stays in the world you dug it in while the gold stays with you.
+
+A world is a name and a seed. The seed can be words or a number — words are hashed and the
+resolved number is shown, so `deepwood` always builds the same world and can be written down
+or passed on. Leave it blank for a random one. There is no world size to choose and no evil
+biome to pick: the world is endless, so size means nothing and both evils can simply exist
+somewhere out along the axis.
+
+`E` opens the backpack. Left click digs a block, or the wall behind it if the tile is empty;
+right click places whatever the selected hotbar slot holds. `1`-`0` or the scroll wheel pick
+a slot, `A`/`D` or the arrow keys move, `W`/`Space` jumps, `[` and `]` zoom, `P` pauses.
 
 In the backpack, left click picks up a stack and drops it, right click takes half or places
 one at a time, and shift-click sends a stack between the hotbar and the backpack. Equipment
@@ -76,8 +85,12 @@ the cost of one small canvas.
 | `js/autotile.js` | eight-neighbour masks to edges and inner corners |
 | `js/texture.js` | procedural tile atlas |
 | `js/light.js` | coloured sun and emitter propagation, day cycle |
+| `js/mining.js` | Pickaxe power, per-tile toughness, the tier gate |
+| `js/craft.js` | Recipes, the bar and tool registry, station reach |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/render.js` | sky, parallax, walls, tiles, lighting, bloom, particles |
+| `js/profile.js` | characters and worlds, kept apart, and seed parsing |
+| `js/menu.js` | title, character select and creation, world select and creation |
 | `js/inventory.js` | slots, stacking, splitting, equipment restrictions |
 | `js/stats.js` | health, mana, regeneration, death and respawn |
 | `js/ui.js` | hearts and stars, hotbar, backpack and equipment screen |

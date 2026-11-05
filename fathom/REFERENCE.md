@@ -84,3 +84,53 @@ not checked.
 - Fathom has no NPCs yet, so the safe/unsafe wall distinction currently affects only whether a
   wall reads as natural or built. It is modelled now because retrofitting it later would mean
   rewriting every generated wall.
+
+## Pickaxe power and mining
+
+Fetched from terraria.wiki.gg, 2026-11-05 (1.4.4+).
+
+- Every tile starts at 0 damage and is destroyed once it reaches **100**.
+- Each hit adds a `damageIncrease`: **100** for background objects (plants, vines, torches,
+  mushrooms, ropes), so they come away in one swing; **power x 2** for Dirt, Clay and Sand;
+  **power x 1** for everything else.
+- The gate: the increase is **0** when the pickaxe's power is below the tile's threshold.
+  No amount of swinging helps. Published thresholds: Meteorite 50, Obsidian 55,
+  Demonite/Crimtane 55, Hellstone/Ebonstone 65, Cobalt/Palladium 100,
+  Mythril/Orichalcum 110, Adamantite/Titanium 150, Chlorophyte 200, Lihzahrd 210.
+- Maximum power in the game is 230% (Laser Drill).
+- The pickaxe must be the held item.
+
+### Where Fathom departs
+
+Terraria breaks every tile at 100 damage and separates its tiers by power and swing speed
+alone. That works because it has dozens of tile types spread across many thresholds; with
+six ores it collapses, because any power above 100 one-shots the entire world and the late
+tiers become indistinguishable. So in Fathom **each tile carries its own toughness**
+(`toughness` in `js/tiles.js`, defaulting to Terraria's 100), rising from sand at 80 to
+emberite ore at 330. Depth then costs time as well as permission, and every tier is
+strictly faster than the one below it — which `tools/mining-test.js` checks rather than
+assumes, across all 7 tiers and every tile.
+
+The thresholds themselves are Fathom's own, scaled to its seven pickaxes: basalt 45,
+slate 65, crystal 45, silver ore 35, gold ore 45, cobalt ore 65, emberite ore 100.
+
+## Crafting
+
+Fetched from terraria.wiki.gg, 2026-11-05 (1.4.4+).
+
+- A recipe appears in the list **only when every ingredient is already held**. The list is
+  therefore a description of what you can do now, not a catalogue to study.
+- Crafting stations are furniture placed in the world, not menu tabs.
+- **Station reach is 5 tiles left/right and 3 tiles up/down** (a 13x9 box around the
+  player), the same reach as tools and chests. Walk out of the box and the station's
+  recipes disappear.
+
+### Where Fathom departs
+
+- Terraria's stations are multi-tile furniture. Fathom's occupy **one tile each** and are
+  non-solid, so a bench never blocks the tunnel you put it in.
+- The chain is Fathom's own: wood by hand gives a bench; the bench gives a furnace and an
+  anvil; the furnace smelts the six ores into bars; the anvil turns bars into the six
+  pickaxes above wood. `tools/craft-test.js` proves the graph closes, so a player holding
+  nothing but raw ore can reach the best pickaxe, and every gated tile has a craftable
+  pickaxe that opens it.
