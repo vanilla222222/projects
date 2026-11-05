@@ -90,6 +90,7 @@ const scripts = [
   'molecule-quality-test.js',
   'tautomer-artefact-test.js',
   'library-escaping-test.js',
+  'tautomer-normalize-test.js',
   'research-zip-external-test.js'
 ];
 const started = new Date().toISOString();

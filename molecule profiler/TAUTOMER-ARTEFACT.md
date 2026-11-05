@@ -120,7 +120,57 @@ is why the query is `[OX2H1]` and the ring carbon is constrained by `[$(c:n)]`. 
 asserts the descriptor consequence in the project's own code, `CC(=N)O` scoring 44.08 against
 acetamide's 43.09.
 
-Recommendations 1 to 3 remain open. The gate makes the artefact a standing measurement; it
-does not change any descriptor.
+## Normalization (recommendation 1, implemented alongside rather than in place)
+
+`js/tautomer.js` implements the restricted transform and nothing wider: an acyclic imidic acid
+`[CX3](=[NX2])[OX2H1]` becomes the amide, an aromatic lactim `[$(c:n)][OX2H1]` becomes the lactam.
+It works on the graph, flipping the two bond orders and letting the implicit hydrogen counts
+follow valence, so composition cannot drift.
+
+It is exposed **alongside** the stored values, through `tautomerView(mol, descriptors)`, which
+returns `normalized`, the site counts, and the TPSA and donor counts of the normalized form. The
+stored descriptors are untouched.
+
+Two separate reasons kept it out of `describe()`, and the second only surfaced on trying.
+`tools/descriptor-conformance-test.js` checks the house descriptors against RDKit fixtures, and
+RDKit computes TPSA on the molecule **as given**, so normalizing inside `describe()` would diverge
+from RDKit by design. More decisively, **the sha256 of `js/descriptors.js` is pinned in thirteen
+files** — `validation/pk-model-evaluation.json`, `validation/independent-benchmarks.js`,
+`data/pk-models.js` and nine `*-regression.json` records among them, twenty occurrences in all —
+and `tools/pharmacology-test.js` asserts it as `Stale model input`. Adding one key to `describe()`
+broke that assertion and the ship aborted on it.
+
+Most of those thirteen are records of validation runs that already happened. Rewriting their
+hashes so they matched new code would make them claim they were produced against code that did not
+exist when they ran, which is falsifying provenance, not updating a pin. So `js/descriptors.js` is
+left byte-identical and the normalized view is a separate call. `tools/tautomer-normalize-test.js`
+asserts both that `describe()` carries no `tautomer` key and that the file still hashes to the
+value its regression records pin.
+
+Measured over all 22,137 rows:
+
+| measurement | value |
+|---|---|
+| rows the transform converts | 2,019 |
+| acyclic imidic-acid sites converted | 3,306 |
+| aromatic lactim sites converted | 405 |
+| rows whose composition changes | **0** |
+| rows whose TPSA rises or stays equal | **0** |
+
+Two restrictions were forced by measurement rather than foreseen. **A ring nitrogen can accept
+only one hydrogen**: seven rows have two hydroxyls flanking the same nitrogen, and converting both
+lost a hydrogen from the formula — `pyridine-2,6-diol` went `C5H5NO2` to `C5H4NO2`. At most one
+lactim per nitrogen is now converted, which gives the 2-pyridone rather than an impossible double
+lactam. And **one row the artefact queries flag cannot be converted**: `2-hydroxytryptophan`,
+`NC(Cc1c(O)[nH]c2ccccc12)C(=O)O`, is a 2-hydroxyindole whose ring nitrogen already carries its
+hydrogen. Reaching the oxindole would need a ring carbon to become sp3, which is not a bond flip
+and is outside this transform. That is why the artefact gate counts 2,020 rows and the normalizer
+converts 2,019.
+
+`tools/tautomer-normalize-test.js` asserts all of it on every validation run, including the
+negative controls and the pyridine-2,6-diol case.
+
+Recommendations 2 and 3 remain open: the `Canonicalize`-equality gate stays rejected, and the
+stereo-aware duplicate rule still has to run on the original molecule.
 
 The library itself is immutable by design, so none of the 2,020 rows is rewritten. Where a stored structure contradicts its own name, the correction belongs in the identity-correction overlay described in `IDENTITY-CORRECTIONS.md`, with a reviewed witness per correction.
