@@ -6,7 +6,7 @@ An original side-view browser idle RPG for Vanilla and friends, hosted in the ex
 
 Click/tap the ground to walk, enemies to fight, nodes to gather, and NPCs, stations, storage or portals to interact. Characters navigate ladders between three platforms. A/D or arrow keys move, W/S climb, Space jumps, F attacks, 1/2/3 use class abilities, E interacts, I opens inventory and M opens the map. Touch movement and ability controls support portrait and landscape. Sound effects are original Web Audio synthesis and can be enabled/muted in Save & help with a volume control.
 
-World One keeps the user's six-area plan: Caves (3 zones/copper), Deep Caverns (4/iron and gold), Forest (5/oak and birch), Jungle (4/jungle wood), Hearthstead (3/anvil and foundry), Verdant Outpost or Jungle Town (3/enchanting, alchemy and boss entrance). There are 16 regular enemy species and 22 regular zones. Two secret rooms branch from existing zones, rather than creating another world or main area.
+World One keeps the user's six-area plan: Caves (3 zones/copper), Deep Caverns (4/iron and gold), Forest (5/oak and birch), Jungle (4/jungle wood), Hearthstead (4/anvil, foundry and Legacy Square), Verdant Outpost or Jungle Town (3/enchanting, alchemy and boss entrance). There are 16 regular enemy species and 23 regular zones. Two secret rooms branch from existing zones, rather than creating another world or main area.
 
 ## Character inventories and universal storage
 
@@ -31,7 +31,7 @@ Warrior/Mining, Mage/Logging, Blacksmith/Smithing, Enchanter/Enchanting and Alch
 - Anvil blueprints unlock through story progression. Equipment and capacity items connect metals, logs, enemy materials, dust and medicine.
 - Enchanting applies guaranteed Force, Fortitude, Insight, Fleet or Living runes to two slots on equipped items. Replacing a rune spends new materials and replaces the old effect. No chance-based destruction.
 - Alchemy produces potions/resin and bounded liquid for five account research lines. Brewing adds liquid; passive liquid stops at capacity. Potions last 20 minutes and expire correctly inside offline claims. Ability buffs do not erase longer potion buffs.
-- Guild projects replace the old universal damage sink with distinct defense, logging, production, liquid, movement, health, crit and attack projects. Older material studies retain their levels and now improve matching disciplines.
+- The Guild menu has been removed. Previously earned project bonuses remain in old saves. Material research is available at the Stamp Registry and improves matching disciplines.
 
 ## Story, secrets and combat
 
@@ -54,7 +54,7 @@ The controlled character uses World physics. Other characters use idle rules. Fo
 Run:
 
 ```
-node --test wildroot/engine.test.mjs wildroot/world.test.mjs wildroot/progression.test.mjs wildroot/inventory.test.mjs
+node --test wildroot/engine.test.mjs wildroot/world.test.mjs wildroot/progression.test.mjs wildroot/inventory.test.mjs wildroot/town.test.mjs
 node wildroot/world1-sim.mjs
 ```
 
@@ -93,3 +93,20 @@ Reference research: IdleOn’s developer quality update notes describe persisten
 Every portal stores its destination room and a specific entrance ID. Left, right and branch entrances have distinct arrival positions; returning puts the character beside the same doorway, facing into the room. Portal labels name the actual destination. Echo Chamber has a separate elevated doorway for the deep-cavern loop, with the existing unlock gates intact. Secret rooms and the Rootwarden chamber each have one return exit to the exact parent entrance. Portal transitions immediately save destination coordinates, retain platform height across reloads, and use the arrival point for knockout recovery. Killing boss adds no longer ends the encounter while the Rootwarden is alive.
 
 Regression coverage traverses every normal-room portal in both directions, verifies unique destinations/arrivals, checks secret/boss returns and gated branch entrances, and tests save/reload on elevated arrivals.
+
+
+## Town progression, talents and quest completion
+
+Legacy Square is a branch of Village Green, reached through a separate upper doorway. It has a real Stamp Registry, Statue Keeper, universal chest and dormant World Gate. World Two has no enabled destination. Both towns have separate shop stalls in their first zone, with roster-shared daily stock, purchases, protected inventory-slot selling and daily restocking. Stock and daily map charges use the local save’s clock. Coins retain their old copper-unit balance, displayed as copper/silver/gold/platinum at 100:1 denomination boundaries. No paid purchases exist. Milestone gems unlock purely visual halos, shared across the roster and worn per character.
+
+Map teleports cost one daily charge, require discovery and an unlocked route, and regenerate three per 24 hours up to thirty. Walking remains free. Bottled Town Returns consume a carried bottle instead of charges. Teleport convenience links follow the same charge/discovery rules. Fresh and older accounts retain access to the initial forest and main town. Existing rooms’ indices are preserved.
+
+Stamps are one-time physical discoveries registered for account-wide bonuses. Coins increase levels; every fifth level requires carried materials to lift the cap. Seven stamps cover combat, mining, logging, carry capacity and coins. Quest-given stamps are migrated once for older completed quests. Six statue types drop from combat and gathering; a shop chisel enables each character’s deposits. Bronze statue levels belong to the depositing character. Later-world gilding is not enabled.
+
+Beginner and class talent pages each earn three points per class level gained; class points are available after choosing a class and count earlier levels. Profession points remain earned from skill levels. Batch spending, separate budgets, learned secondary/utility techniques, swappable action-bar slots, two saved presets and consumable resets are implemented. Cooldowns follow the actual technique when slots swap. Old spent points and builds are preserved. Reset potions are assembled from five shop fragments at alchemy. Basic class techniques remain available without investing a point; secondary/utility require their class talent and levels six/ten.
+
+Mentors appear once each: Willow in Mossy Clearing, Brann in Lantern Mouth, Flint in Hammer Lane, Mira in Canopy Market and Fern in Alchemists’ Terrace. Hesta remains on Village Green. Class initiation now requires the correct mentor room. Journal initiations appear only after meeting their mentor, and story quests appear only after acceptance in NPC dialogue. Six quest givers each have three quests, eighteen in total. Finishing all three grants that giver’s physical token once per account. All six combine at the anvil into one Greenreach Completion Token; Blacksmith output bonuses cannot duplicate it, and shops cannot buy these completion tokens. NPC completion tokens and story-restoration progress remain distinct.
+
+Validation includes 84 engine/world/inventory/town regressions, the complete existing World One story run, every paired portal, quest acceptance visibility, token conservation, exact mentor locations, shop transactions/restocks, safe selling, stamp/cap consumption and migration, statue ownership/locked slots, talent budgets/hotbar cooldowns/presets, limited teleports and one-time gem claims. Physical mobile-device playtesting remains outstanding.
+
+Research references: DigitalTQ’s original guides for [stamps](https://www.digitaltq.com/wiki/idleon/stamps), [statues](https://www.digitaltq.com/wiki/idleon/statues), [talents and teleportation](https://www.digitaltq.com/wiki/idleon/beginner-guide), and [World One shops](https://www.digitaltq.com/wiki/idleon/world-1-guide-blunder-hills). All Wildroot art, quest text, item names and economy values are original.

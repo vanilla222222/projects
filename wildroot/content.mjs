@@ -62,7 +62,7 @@ export const OFFERINGS=Object.keys(ITEMS).filter(id=>!['copper','iron','gold','o
 export function purposes(id){
  const uses=RECIPES.filter(r=>r.cost[id]).map(r=>r.name);
  for(const c of Object.values(CLASSES))if(c.needs[id])uses.push(`${c.name} initiation`);
- if(OFFERINGS.includes(id))uses.push('Guild studies: a specific account bonus');
+ if(OFFERINGS.includes(id))uses.push('Material research at the Stamp Registry');
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
  for(const r of Object.values(RUNES))if(r.cost[id])uses.push(r.name+' enchantment');
  for(const r of Object.values(ALCHEMY))if(r.cost[id])uses.push(r.name+' research');
@@ -72,7 +72,14 @@ export function purposes(id){
  if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
  if(POTIONS[id])uses.push('Drink: 20 minute profession or combat boost');
  if(id==='rootbound-key')uses.push('Permanent access to the Rootwarden');
+ if(id==='world-one-completion')uses.push('World One completion keepsake; recognised by the dormant World Gate');
  if(id==='tonic')uses.push('Recover health');
+ if(id.startsWith('stamp-'))uses.push('Register at Legacy Square; account-wide stamp upgrades');
+ if(id.startsWith('statue-'))uses.push('Deposit at Legacy Square for permanent character bonuses');
+ if(id==='town-teleport')uses.push('Consume to return to a discovered town');
+ if(id==='reset-fragment')uses.push('Assemble 5 fragments into a Talent Reset Potion');
+ if(id==='reset-potion')uses.push('Reset the current talent build in town');
+ if(id==='sculpting-tool')uses.push('Unlock statues for this character at Legacy Square');
  return [...new Set(uses)];
 }
 export function areaById(id){return AREAS.find(a=>a.id===id);}
@@ -185,3 +192,54 @@ for(const[type,label,small,medium,large]of [
  const id=`${tier}-${type}-bag`,name=`${tier[0].toUpperCase()+tier.slice(1)} ${label} Pouch`;
  CAPACITY_BAGS[id]={name,type,bonus};item(id,name,'rare','▣');RECIPES.push({id,name,skill:'smithing',station:'anvil',cost,output:id,count:1,unlock});
 }
+
+// World One town district and long-term progression.
+AREAS[0].zones.push('Legacy Square');AREAS[0].resources.push([]);
+export const STAMPS={
+ blade:{name:'Blade Stamp',group:'Combat',effect:'attack',amount:.01,material:'moss-slime',source:'Hearthstead shop'},
+ shield:{name:'Bulwark Stamp',group:'Combat',effect:'defense',amount:.25,material:'iron',source:'Hearthstead shop'},
+ heart:{name:'Heart Stamp',group:'Combat',effect:'health',amount:.01,material:'oak',source:'Under the Roots quest'},
+ pick:{name:'Miner’s Stamp',group:'Skills',effect:'mining',amount:.02,material:'copper',source:'First Roots quest'},
+ hatchet:{name:'Forester’s Stamp',group:'Skills',effect:'logging',amount:.02,material:'birch',source:'Tools of the Trade quest'},
+ pack:{name:'Pack Stamp',group:'Misc',effect:'carry',amount:.03,material:'vine-fiber',source:'Outpost Supplies quest'},
+ mint:{name:'Mint Stamp',group:'Misc',effect:'coins',amount:.03,material:'gold',source:'Verdant Outpost shop'}
+};
+export const STATUES={
+ power:{name:'Power Statue',effect:'attack',amount:.015,source:'Forest enemies'},
+ guard:{name:'Guard Statue',effect:'defense',amount:.3,source:'Cave enemies'},
+ heart:{name:'Vitality Statue',effect:'health',amount:.015,source:'Jungle enemies'},
+ miner:{name:'Miner Statue',effect:'mining',amount:.03,source:'Mining and deep-cavern enemies'},
+ forester:{name:'Forester Statue',effect:'logging',amount:.03,source:'Logging'},
+ pace:{name:'Pace Statue',effect:'speed',amount:.005,source:'Deep-cavern enemies'}
+};
+for(const[id,d]of Object.entries(STAMPS))item('stamp-'+id,d.name,'rare','▧');
+for(const[id,d]of Object.entries(STATUES))item('statue-'+id,d.name,'rare','♜');
+for(const[id,name,icon]of [['town-teleport','Bottled Town Return','⌂'],['reset-fragment','Talent Reset Fragment','◈'],['reset-potion','Talent Reset Potion','⚗'],['sculpting-tool','Sculptor’s Chisel','⚒']])item(id,name,'rare',icon);
+EXPANSIONS['merchant-bag']={name:'Merchant’s Bag',target:'bag',slots:2};EXPANSIONS['merchant-chest']={name:'Merchant’s Chest',target:'chest',slots:4};for(const[id,d]of Object.entries(EXPANSIONS))if(!ITEMS[id])item(id,d.name,'rare','▣');
+RECIPES.push({id:'reset-potion',name:'Assemble Talent Reset Potion',skill:'alchemy',station:'alchemy',cost:{'reset-fragment':5},output:'reset-potion',count:1});
+for(const[quest,stamp]of [['first-roots','pick'],['tools','hatchet'],['under-roots','heart'],['outpost','pack']]){const q=STORY.find(q=>q.id===quest);q.reward.items??={};q.reward.items['stamp-'+stamp]=1;}
+export const TOWN_SHOPS={
+ town:{name:'Pip’s General Store',stock:[['tonic',3,20],['town-teleport',15,10],['reset-fragment',20,3],['statue-power',30,3],['sculpting-tool',60,1],['stamp-blade',75,1],['stamp-shield',100,1],['merchant-bag',70,1],['merchant-chest',100,1]]},
+ 'jungle-town':{name:'Nori’s Supply Stall',stock:[['tonic',3,30],['town-teleport',15,15],['reset-fragment',20,3],['statue-heart',35,3],['stamp-mint',200,1],['mining-tonic',40,3],['logging-tonic',40,3],['battle-tonic',60,2],['ward-tonic',60,2]]}
+};
+export const COSMETICS={amber:{name:'Amber Halo',cost:10,color:'#ffd77c'},frost:{name:'Frost Halo',cost:15,color:'#8be5ff'},violet:{name:'Violet Halo',cost:20,color:'#d5a2ff'}};
+export const CLASS_TALENTS={primary:{name:'Signature Technique',description:'+8% signature ability damage per point',max:30},secondary:{name:'Second Technique',description:'Learn the level 6 class attack; +5% damage per extra point',max:20,level:6},utility:{name:'Survival Technique',description:'Learn the level 10 utility skill; longer ability buffs per extra point',max:20,level:10},force:{name:'Focused Power',description:'+1% total attack per point',max:30},fortitude:{name:'Resolute Spirit',description:'+1% maximum health per point',max:30},specialist:{name:'Profession Specialist',description:'+3% specialist efficiency (makers: profession XP) per point',max:30},fortune:{name:'Treasure Sense',description:'+2% monster coins per point',max:20}};
+
+for(const[id,town,zone,x]of [['warrior','caves',0,270],['mage','forest',0,270],['blacksmith','town',1,355],['enchanter','jungle-town',0,355],['alchemist','jungle-town',1,355]])Object.assign(CLASSES[id],{town,zone,x});
+
+export const NPC_TOKEN_GIVERS=['steward','warrior','mage','blacksmith','enchanter','alchemist'];
+const lateQuests=[
+ ['village-memory','A Village Remembered','steward',['heart'],{plank:20,'statue-power':5},'Help Hesta preserve the restored village for the next generation.'],
+ ['seam-work','Read the Seams','warrior',['under-roots'],{iron:40,copper:30},'Brann wants samples from the deeper seams before teaching his final lesson.'],
+ ['stone-oath','The Stone Oath','warrior',['seam-work','heart'],{gold:30,'crawler-shell':10},'Bring proof that the mountain’s richest seams are safe again.'],
+ ['elder-grove','The Elder Grove','mage',['spring','heart'],{birch:40,'jungle-wood':40},'Willow is ready to plant a grove that will outlive the blackened roots.'],
+ ['masterwork','A Maker’s Masterwork','blacksmith',['vault','heart'],{'iron-bar':10,'tempered-bar':3},'Flint needs a final set of worthy materials to finish his masterwork.'],
+ ['light-threads','Threads of Light','enchanter',['seal'],{dust:15,'moth-wing':10},'Mira traces the broken seal’s last threads of woodland light.'],
+ ['binding-oath','The Binding Oath','enchanter',['light-threads','heart'],{'binding-resin':8,'root-crystal':2},'Help Mira bind the restored gate without repeating the old mistakes.'],
+ ['bottled-rain','Bottled Rain','alchemist',['outpost'],{tonic:12,'frog-dew':10},'Fern needs rainwater medicine for the outpost’s recovering inhabitants.'],
+ ['panacea','A Greenreach Panacea','alchemist',['bottled-rain','heart'],{'mining-tonic':1,'logging-tonic':1,'battle-tonic':1,'ward-tonic':1},'A complete set of brews will preserve everything Fern has learned.']
+];
+for(const[id,name,giver,requires,deliver,text]of lateQuests)STORY.push({id,name,giver,requires,deliver,text,reward:{coins:100}});
+for(const id of NPC_TOKEN_GIVERS){const name=id==='steward'?'Hesta':CLASSES[id].trainer;item('world-token-'+id,name+'’s Token','legendary','✺');}
+item('world-one-completion','Greenreach Completion Token','legendary','✹');
+RECIPES.push({id:'world-one-completion',name:'Combine World One Tokens',skill:'smithing',station:'anvil',cost:Object.fromEntries(NPC_TOKEN_GIVERS.map(id=>['world-token-'+id,1])),output:'world-one-completion',count:1,unique:true});

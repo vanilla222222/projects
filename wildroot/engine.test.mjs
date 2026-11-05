@@ -4,16 +4,16 @@ import * as E from './engine.mjs';
 import {AREAS,CLASSES,ENEMIES,ITEMS,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,purposes} from './content.mjs';
 function rng(seed=123456){return()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};}
 function rich(s){s.coins=10000;for(const id of Object.keys(ITEMS))s.inventory[id]=1000;}
-function train(s,c,id){c.level=3;c.skills[CLASSES[id].skill]=12;c.area=CLASSES[id].town;for(let i=0;i<3;i++)assert.equal(E.progressClass(s,c,id),true);}
+function train(s,c,id){c.level=3;c.skills[CLASSES[id].skill]=12;c.area=CLASSES[id].town;c.zone=CLASSES[id].zone;for(let i=0;i<3;i++)assert.equal(E.progressClass(s,c,id),true);}
 test('World 1 matches the six-area plan and every item has an implemented purpose',()=>{
- assert.equal(AREAS.length,6);assert.equal(AREAS.reduce((n,a)=>n+a.zones.length,0),22);assert.equal(Object.keys(ENEMIES).filter(id=>/^(forest|caves|jungle|deep)-/.test(id)).length,16);
+ assert.equal(AREAS.length,6);assert.equal(AREAS.reduce((n,a)=>n+a.zones.length,0),23);assert.equal(Object.keys(ENEMIES).filter(id=>/^(forest|caves|jungle|deep)-/.test(id)).length,16);
  assert.equal(WORLD_LOOT.length,5);assert.equal(WORLD_LOOT.filter(d=>ITEMS[d.id].rarity==='rare').length,3);assert.equal(GLOBAL_LOOT.length,5);
  for(const id of Object.keys(ITEMS))assert.ok(purposes(id).length>=1,id);
  for(const e of Object.values(ENEMIES).filter(e=>/^(forest|caves|jungle|deep)-/.test(e.id))){assert.equal(e.loot.length,3);assert.ok(e.loot[0].chance>=.5&&e.loot[0].chance<=1);assert.ok(e.loot[1].chance>=.02&&e.loot[1].chance<=.1);assert.ok(e.loot[2].chance>=.0000001&&e.loot[2].chance<=.001);}
 });
 test('Class quests enforce individual steps, trainer location, materials and first-unlock slots',()=>{
  const s=E.freshSave(),c=E.selected(s);assert.equal(E.slots(s),1);assert.equal(E.createCharacter(s,'Second'),false);assert.equal(E.progressClass(s,c,'warrior'),false);
- c.level=3;assert.equal(E.progressClass(s,c,'warrior'),false);E.travel(s,c,'town',0);assert.equal(E.progressClass(s,c,'warrior'),true);assert.equal(E.progressClass(s,c,'warrior'),false);
+ c.level=3;assert.equal(E.progressClass(s,c,'warrior'),false);E.travel(s,c,'caves',0);assert.equal(E.progressClass(s,c,'warrior'),true);assert.equal(E.progressClass(s,c,'warrior'),false);
  c.skills.mining=12;assert.equal(E.progressClass(s,c,'warrior'),true);assert.equal(E.progressClass(s,c,'warrior'),false);
  s.inventory.copper=20;s.inventory['moss-slime']=10;assert.equal(E.progressClass(s,c,'warrior'),true);assert.equal(c.class,'warrior');assert.equal(s.inventory.copper,0);assert.equal(E.slots(s),2);
  assert.equal(E.progressClass(s,c,'mage'),false);assert.equal(E.createCharacter(s,'Second'),true);assert.equal(E.availableClass(s,'warrior'),false);
@@ -56,6 +56,6 @@ test('Rare drop sampler is statistically plausible and retains guaranteed drops'
  const random=rng(789),n=100000,count=E.successes(n,.05,random);assert.ok(count>4600&&count<5400,count);assert.equal(E.successes(20,1),20);assert.equal(E.successes(20,0),0);assert.equal(E.successes(0,.5),0);
 });
 test('A new account can earn its first class entirely through playable actions',()=>{
- const s=E.freshSave(),c=E.selected(s),random=rng();E.start(s,c,'fight');E.advance(s,300,random);assert.ok(c.level>=3);assert.ok(c.bag['moss-slime']>=10);E.travel(s,c,'town',0);assert.ok(E.progressClass(s,c,'warrior'));
- E.travel(s,c,'caves',0);E.start(s,c,'gather','copper');E.advance(s,90,random);E.travel(s,c,'town',0);assert.ok(E.progressClass(s,c,'warrior'));assert.ok(E.progressClass(s,c,'warrior'));assert.equal(c.class,'warrior');assert.ok(E.createCharacter(s,'Mage next'));
+ const s=E.freshSave(),c=E.selected(s),random=rng();E.start(s,c,'fight');E.advance(s,300,random);assert.ok(c.level>=3);assert.ok(c.bag['moss-slime']>=10);E.travel(s,c,'caves',0);assert.ok(E.progressClass(s,c,'warrior'));
+ E.travel(s,c,'caves',0);E.start(s,c,'gather','copper');E.advance(s,90,random);E.travel(s,c,'caves',0);assert.ok(E.progressClass(s,c,'warrior'));assert.ok(E.progressClass(s,c,'warrior'));assert.equal(c.class,'warrior');assert.ok(E.createCharacter(s,'Mage next'));
 });

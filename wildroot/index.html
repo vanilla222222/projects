@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1c273a"><title>Wildroot · World One</title><meta name="description" content="A side-view idle RPG. Walk, fight, gather, and grow a whole roster of adventurers."><link rel="stylesheet" href="style.css?v=7"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1c273a"><title>Wildroot · World One</title><meta name="description" content="A side-view idle RPG. Walk, fight, gather, and grow a whole roster of adventurers."><link rel="stylesheet" href="style.css?v=9"></head>
 <body>
 <header class="game-header"><a href="../index.html" class="brand">♧ WILDROOT <small>WORLD ONE</small></a><div id="roster" class="roster" aria-label="Your characters"></div><button id="manage-roster" class="manage-roster" aria-label="Manage roster">☷</button><button id="new-character" class="new-character" title="Create another character">＋</button><button id="open-settings" class="settings-button">⚙ <span>Save & help</span></button></header>
 <main class="game-shell">
@@ -13,14 +13,14 @@
 <div id="knockout" class="knockout" hidden>Recovering…</div>
 </section>
 <section class="hud" aria-label="Character controls">
-<div class="player-status"><div class="status-name"><strong id="player-name">Adventurer</strong><span id="player-class">Beginner · Lv. 1</span></div><div class="meter health"><span id="health-bar"></span><b id="health-label">40 / 40 HP</b></div><div class="meter experience"><span id="xp-bar"></span><b id="xp-label">0 / 20 XP</b></div><div class="status-meta"><span id="coin-count">◈ 0</span><span id="bag-count">Backpack 0/16</span><span id="save-state">Saved locally</span></div></div>
+<div class="player-status"><div class="status-name"><strong id="player-name">Adventurer</strong><span id="player-class">Beginner · Lv. 1</span></div><div class="meter health"><span id="health-bar"></span><b id="health-label">40 / 40 HP</b></div><div class="meter experience"><span id="xp-bar"></span><b id="xp-label">0 / 20 XP</b></div><div class="status-meta"><span id="coin-count">0c</span><button id="gem-count" data-panel="gems" class="gem-wallet" aria-label="Gems and cosmetics">◇ 0</button><span id="bag-count">Backpack 0/16</span><span id="save-state">Saved locally</span></div></div>
 <div class="movement-pad" aria-label="Touch movement"><button data-hold="left" aria-label="Move left">◀</button><div><button data-hold="up" aria-label="Climb up">▲</button><button data-hold="down" aria-label="Climb down">▼</button></div><button data-hold="right" aria-label="Move right">▶</button><button id="jump-button" aria-label="Jump">↥</button></div>
 <div class="combat-controls"><button id="attack-button" class="skill-button"><kbd>F</kbd><span>⚔</span><small>ATTACK</small></button><button id="skill-button" class="skill-button special"><kbd>1</kbd><span>✧</span><small>POWER STRIKE</small><b id="skill-cooldown"></b></button><button id="secondary-button" class="skill-button special"><kbd>2</kbd><span>⌑</span><small>LEVEL 6</small><b></b></button><button id="utility-button" class="skill-button special"><kbd>3</kbd><span>⌑</span><small>LEVEL 10</small><b></b></button><button id="interact-button" class="skill-button"><kbd>E</kbd><span>☝</span><small>INTERACT</small></button><button id="auto-button" class="auto-button" aria-pressed="false">AUTO <i>OFF</i></button></div>
 </section>
-<nav class="game-menu" aria-label="Game menus"><button data-panel="inventory"><span>▣</span>Inventory</button><button data-panel="quests"><span>!</span>Quests</button><button data-panel="skills"><span>✦</span>Talents & skills</button><button data-panel="craft"><span>⚒</span>Professions</button><button data-panel="map"><span>⌖</span>World map</button><button data-panel="archive"><span>▤</span>Guild</button></nav>
+<nav class="game-menu" aria-label="Game menus"><button data-panel="inventory"><span>▣</span>Inventory</button><button data-panel="quests"><span>!</span>Quests</button><button data-panel="skills"><span>✦</span>Talents & skills</button><button data-panel="craft"><span>⚒</span>Professions</button><button data-panel="map"><span>⌖</span>World map</button><button data-panel="town"><span>⌂</span>Town</button></nav>
 </main>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <dialog id="panel"><header class="panel-header"><div><small id="panel-eyebrow">ADVENTURER'S JOURNAL</small><h2 id="panel-title">Inventory</h2></div><button id="close-panel" aria-label="Close menu">✕</button></header><div id="panel-content"></div></dialog>
 <input id="import-file" type="file" accept="application/json,.json" hidden>
-<script type="module" src="app.mjs?v=8"></script>
+<script type="module" src="app.mjs?v=9"></script>
 </body></html>

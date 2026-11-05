@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=8';
-import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=8';
+import * as E from './engine.mjs?v=9';
+import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=9';
 function tick(world,seconds,input={}){for(let i=0;i<seconds*50;i++)world.step(.02,typeof input==='function'?input(i):input);}
 function setup(options={}){const state=E.freshSave(),events=[];return{state,events,world:new World(state,{rng:()=>.5,onIntent:e=>events.push(e),onEvent:e=>events.push(e),...options})};}
 test('Maps have multiple actual enemy entities, platforms, ladders, resources and portals',()=>{
- const m=createMap('forest',0);assert.equal(m.monsters.length,5);assert.equal(m.resources[0].resource,'oak');assert.equal(m.portals.length,2);assert.equal(PLATFORMS.length,3);assert.equal(LADDERS.length,2);assert.ok(m.monsters.some(e=>e.y<GROUND));assert.equal(createMap('town',0).npcs.length,4);assert.equal(createMap('town',1).stations[0].station,'anvil');assert.equal(createMap('jungle-town',1).stations[0].station,'alchemy');
+ const m=createMap('forest',0);assert.equal(m.monsters.length,5);assert.equal(m.resources[0].resource,'oak');assert.equal(m.portals.length,2);assert.equal(PLATFORMS.length,3);assert.equal(LADDERS.length,2);assert.ok(m.monsters.some(e=>e.y<GROUND));assert.equal(createMap('town',0).npcs.length,1);assert.equal(createMap('town',1).stations[0].station,'anvil');assert.equal(createMap('jungle-town',1).stations[0].station,'alchemy');
 });
 test('Walking, jumping and landing change actual character position',()=>{
  const {world}=setup(),x=world.player.x;tick(world,1,{horizontal:1});assert.ok(world.player.x>x+200);assert.equal(world.player.y,GROUND);world.step(.02,{jump:true});assert.ok(world.player.y<GROUND);tick(world,1.5);assert.equal(world.player.y,GROUND);assert.equal(world.player.grounded,true);
@@ -26,7 +26,7 @@ test('Auto combat finds new targets, navigates and earns kills; manual movement 
  const {world}=setup();world.c.level=10;world.c.hp=E.maxHp(world.c);assert.equal(world.toggleAuto(),true);tick(world,40);assert.ok(world.c.kills>3,world.c.kills);const x=world.player.x;tick(world,.2,{horizontal:-1});assert.equal(world.auto,false);assert.equal(world.target,null);assert.ok(world.player.x<x);
 });
 test('NPC interaction opens dialogue only after walking into range',()=>{
- const {world,events}=setup();world.travel('town',0);world.select('npc-warrior');assert.equal(events.filter(e=>e.type==='npc').length,0);tick(world,2);assert.equal(events.filter(e=>e.type==='npc').length,1);assert.ok(Math.abs(world.player.x-300)<80);
+ const {world,events}=setup();world.travel('caves',0);world.select('npc-warrior');assert.equal(events.filter(e=>e.type==='npc').length,0);tick(world,2);assert.equal(events.filter(e=>e.type==='npc').length,1);assert.ok(Math.abs(world.player.x-270)<80);
 });
 test('Portals use progression gates and connect adjacent areas',()=>{
  assert.deepEqual(nextRoute('forest',0,-1),{area:'town',zone:0});assert.deepEqual(nextRoute('forest',4,1),{area:'jungle',zone:0});assert.deepEqual(nextRoute('jungle-town',2,1),{boss:true});
@@ -36,7 +36,7 @@ test('Knockouts recover without awarding enemy loot',()=>{
  const {world}=setup();world.c.hp=1;world.player.x=695;const e=world.map.monsters[0];e.attack=0;world.select(e.id);tick(world,1.2);assert.ok(world.player.respawn>0);tick(world,4);assert.equal(world.player.respawn<=0,true);assert.equal(world.c.hp,E.maxHp(world.c));assert.equal(world.c.kills,0);assert.equal(world.c.activity,'rest');
 });
 test('Individual talent points are limited by level and survive old save migration',()=>{
- const state=E.freshSave(),c=E.selected(state);assert.equal(E.trainTalent(c,'power'),false);c.level=4;const power=E.power(state,c),hp=E.maxHp(c);assert.ok(E.trainTalent(c,'power'));assert.ok(E.power(state,c)>power);assert.ok(E.trainTalent(c,'vitality'));assert.equal(E.maxHp(c),hp+10);assert.ok(E.trainTalent(c,'industry'));assert.equal(E.talentPoints(c),0);assert.equal(E.trainTalent(c,'power'),false);assert.equal(E.trainTalent(c,'madeup'),false);
+ const state=E.freshSave(),c=E.selected(state);assert.equal(E.trainTalent(c,'power'),false);c.level=4;const power=E.power(state,c),hp=E.maxHp(c);assert.ok(E.trainTalent(c,'power'));assert.ok(E.power(state,c)>power);assert.ok(E.trainTalent(c,'vitality'));assert.equal(E.maxHp(c),hp+10);assert.ok(E.trainTalent(c,'industry'));assert.equal(E.talentPoints(c),6);assert.ok(E.trainTalent(c,'power',6));assert.equal(E.trainTalent(c,'power'),false);assert.equal(E.trainTalent(c,'madeup'),false);
  const saved=JSON.parse(JSON.stringify(state));delete saved.characters[0].talents;const restored=E.restoreSave(saved);assert.deepEqual(restored.characters[0].talents,{power:0,vitality:0,industry:0,precision:0,haste:0,signature:0});
 });
 test('Switching character resumes its own assignment and leaves the other character intact',()=>{
@@ -55,10 +55,10 @@ test('Auto in town cannot create an invalid combat assignment or break the save'
 });
 
 test('All room doorways have unique, reciprocal destinations and arrival points',async()=>{
- const {AREAS,SECRETS}=await import('./content.mjs?v=8');
+ const {AREAS,SECRETS}=await import('./content.mjs?v=9');
  for(const area of AREAS)for(let zone=0;zone<area.zones.length;zone++){
   const map=createMap(area.id,zone),targets=map.portals.map(p=>JSON.stringify([p.destination.area,p.destination.zone,p.destination.boss||false,p.destination.secret||null]));assert.equal(new Set(targets).size,targets.length);
-  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=8');arrivals.push(JSON.stringify(entrancePoint(portal.id)));}assert.equal(new Set(arrivals).size,arrivals.length);
+  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=9');arrivals.push(JSON.stringify(entrancePoint(portal.id)));}assert.equal(new Set(arrivals).size,arrivals.length);
  }
  for(const[id,d]of Object.entries(SECRETS)){const room=createMap(d.area,d.zone,false,id);assert.equal(room.portals.length,1);assert.equal(room.portals[0].destination.entrance,'secret-'+id);assert.ok(createMap(d.area,d.zone).discoveries.some(e=>e.id===room.portals[0].destination.entrance));}
 });
