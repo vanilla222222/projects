@@ -1,6 +1,7 @@
 // Each project folder in this directory that contains an index.html.
 // icon: one of the keys in ICONS below. accent: the card's highlight color.
 const PROJECTS = [
+    { folder: "polyomino-tetris", name: "Polyfall", tag: "Game", description: "Falling blocks that grow with your score. Start with dominoes and evolve into larger polyominoes.", icon: "cells", accent: "#75b88d" },
     { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
     { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#4f9a8a" },
     { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8a6fb8" },
