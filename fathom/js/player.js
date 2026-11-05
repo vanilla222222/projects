@@ -13,6 +13,15 @@ const FRICTION = 0.78;
 const COYOTE = 0.1;
 const REACH = 6.2;
 
+// Water. Static water would be a wall of blue you fall through, so these three numbers are
+// what make an ocean somewhere you can actually go: you sink slowly, you move slower, and
+// holding jump swims you upward. Breath is tracked in stats; this file only does motion.
+const SWIM_GRAVITY = 11;
+const SWIM_MAX_FALL = 5.4;
+const SWIM_SPEED = 0.62;
+const SWIM_RISE = 6.4;
+const WATER_DRAG = 0.86;
+
 function makePlayer(x, y) {
   return {
     x, y, vx: 0, vy: 0,
@@ -62,25 +71,49 @@ function unstick(player, world, tiles, limit) {
   return -1;
 }
 
+// Whether the tile at the player's chest is liquid. Chest rather than feet, so standing
+// in a puddle does not make you swim and wading does not stop you walking.
+function inLiquid(player, world, tiles) {
+  const spec = tiles.tile(world.get(Math.floor(player.x + player.width / 2),
+    Math.floor(player.y + player.height * 0.35)));
+  return !!(spec && spec.liquid);
+}
+
+function submerged(player, world, tiles) {
+  const spec = tiles.tile(world.get(Math.floor(player.x + player.width / 2),
+    Math.floor(player.y + 0.2)));
+  return !!(spec && spec.liquid);
+}
+
 function step(player, world, tiles, input, dt) {
   unstick(player, world, tiles, 4);
+  const swimming = inLiquid(player, world, tiles);
+  player.swimming = swimming;
+  player.submerged = swimming && submerged(player, world, tiles);
+  const speed = swimming ? MOVE_SPEED * SWIM_SPEED : MOVE_SPEED;
   const accel = player.onGround ? 1 : AIR_CONTROL;
-  if (input.left) player.vx -= MOVE_SPEED * accel * dt * 9;
-  if (input.right) player.vx += MOVE_SPEED * accel * dt * 9;
+  if (input.left) player.vx -= speed * accel * dt * 9;
+  if (input.right) player.vx += speed * accel * dt * 9;
   if (!input.left && !input.right) player.vx *= Math.pow(FRICTION, dt * 60);
-  player.vx = Math.max(-MOVE_SPEED, Math.min(MOVE_SPEED, player.vx));
+  if (swimming) player.vx *= Math.pow(WATER_DRAG, dt * 60);
+  player.vx = Math.max(-speed, Math.min(speed, player.vx));
   if (Math.abs(player.vx) < 0.02) player.vx = 0;
   if (player.vx > 0) player.facing = 1;
   else if (player.vx < 0) player.facing = -1;
 
   player.coyote = player.onGround ? COYOTE : Math.max(0, player.coyote - dt);
-  if (input.jump && player.coyote > 0) {
-    player.vy = -JUMP_SPEED;
-    player.coyote = 0;
-    player.onGround = false;
+  if (swimming) {
+    // In water, jump is a continuous swim stroke rather than a one-shot impulse.
+    if (input.jump) player.vy = Math.max(player.vy - SWIM_RISE * dt * 9, -SWIM_RISE);
+    player.vy = Math.min(SWIM_MAX_FALL, player.vy + SWIM_GRAVITY * dt);
+  } else {
+    if (input.jump && player.coyote > 0) {
+      player.vy = -JUMP_SPEED;
+      player.coyote = 0;
+      player.onGround = false;
+    }
+    player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
   }
-
-  player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
 
   let dx = player.vx * dt;
   const stepX = Math.sign(dx) * Math.min(Math.abs(dx), 0.25);
@@ -136,6 +169,6 @@ function aimTile(player, pointer) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makePlayer, step, overlapsSolid, unstick, aimTile,
+  module.exports = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
 }

@@ -201,6 +201,26 @@ function paintGlass(ctx, spec, variant, ox, oy) {
 
 // The three stations. Each is drawn as a recognisable silhouette rather than a tinted
 // square, because a bench you cannot pick out of a wall of dirt is a bench you lose.
+// Water is painted with alpha so the wall behind a flooded tunnel still reads through it.
+// The bands shift with the variant, which gives a large body of water some movement when
+// the per-tile variant hash scatters them.
+function paintWater(ctx, spec, variant, ox, oy) {
+  ctx.save();
+  ctx.globalAlpha = 0.62;
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox, oy, 16, 16);
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#bfe6ff';
+  for (let i = 0; i < 3; i += 1) {
+    const y = ((variant * 5 + i * 6) % 16);
+    ctx.fillRect(ox, oy + y, 16, 1);
+  }
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#06203a';
+  ctx.fillRect(ox, oy + 12, 16, 4);
+  ctx.restore();
+}
+
 function paintStation(ctx, spec, variant, ox, oy) {
   const base = spec.colour;
   if (spec.key === 'workbench') {
@@ -281,6 +301,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);
       else if (spec.key === 'brick') paintBrick(ctx, spec, v, ox, oy);
+      else if (spec.liquid) paintWater(ctx, spec, v, ox, oy);
       else if (spec.station) paintStation(ctx, spec, v, ox, oy);
       else if (!spec.solid) paintSmall(ctx, spec, v, ox, oy);
       else {

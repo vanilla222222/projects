@@ -184,7 +184,79 @@ for (let x = -500; x <= 500; x += 97) {
     || !tiles.isSolid(gen.baseTileAt(SEED, x, surface - 1)), 'column ' + x + ' has no headroom');
 }
 
+// 10. Every biome must actually generate. The climate fields are summed octaves, which
+// pile up around the middle: before the fields were stretched, measurement showed desert,
+// badlands and marsh never appearing at all. This is the check that would have caught it.
+const seen = {};
+const SURVEY_SEEDS = [SEED, 4242, -98765, 777];
+for (const s of SURVEY_SEEDS) {
+  for (let x = -30000; x < 30000; x += 3) {
+    const key = gen.biomeAt(s, x).key;
+    seen[key] = (seen[key] || 0) + 1;
+  }
+}
+const surveyed = Object.values(seen).reduce((a, b) => a + b, 0);
+for (const biome of gen.BIOMES) {
+  check(seen[biome.key] > 0, 'biome ' + biome.key + ' never generates');
+  // And none may swallow the world: an ocean everywhere is the failure mode this catches.
+  check((seen[biome.key] || 0) / surveyed < 0.45,
+    'biome ' + biome.key + ' covers more than 45% of the world');
+}
+
+// 11. Water is contained. It fills a basin exactly to sea level and appears nowhere else:
+// never above sea level, never inside solid ground, and never on a column the generator
+// does not call ocean. The ocean is one rule, so this is the test of that rule.
+const WATER = tiles.idOf('water');
+let waterCells = 0;
+for (const s of SURVEY_SEEDS) {
+  for (let x = -4000; x < 4000; x += 7) {
+    const surface = gen.surfaceHeight(s, x);
+    const isOcean = gen.biomeAt(s, x).key === 'ocean';
+    check((gen.baseTileAt(s, x, gen.SEA_LEVEL) === WATER) === isOcean,
+      'column ' + x + ' wetness at sea level disagrees with its ocean label');
+    for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 40); y += 1) {
+      if (gen.baseTileAt(s, x, y) !== WATER) continue;
+      waterCells += 1;
+      check(y >= gen.SEA_LEVEL, 'water above sea level at ' + x + ',' + y);
+      check(y < surface, 'water inside solid ground at ' + x + ',' + y);
+    }
+  }
+}
+check(waterCells > 0, 'no water generated anywhere');
+check(!tiles.isSolid(WATER), 'water must not be solid');
+
+// 12. The two blights never overlap, and neither sits in the sea.
+for (const s of SURVEY_SEEDS) {
+  for (let x = -20000; x < 20000; x += 11) {
+    const blight = gen.blightAt(s, x);
+    if (!blight) continue;
+    check(blight === 'blight' || blight === 'crimson', 'unknown blight ' + blight);
+    const biome = gen.biomeAt(s, x);
+    // A blight either took the column or the sea did; it can never be both at once.
+    check(biome.key === blight || biome.key === 'ocean' || biome.key === 'beach',
+      'a blighted column at ' + x + ' became ' + biome.key);
+  }
+}
+
+// 13. Climate placement is coherent: the biome a column reports really is the one whose
+// climate weight is highest, so identity and the blended height bias cannot disagree.
+for (let x = -9000; x < 9000; x += 29) {
+  const column = gen.columnOf(SEED, x);
+  const weights = gen.climateWeights(SEED, x);
+  let best = 0;
+  for (let i = 0; i < weights.length; i += 1) if (weights[i] > weights[best]) best = i;
+  check(gen.CLIMATE_BIOMES[best].key === column.climate.key,
+    'column ' + x + ' climate disagrees with its own weights');
+}
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
-  + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles');
+  + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles; all '
+  + gen.BIOMES.length + ' biomes generate; ' + waterCells.toLocaleString()
+  + ' water cells all inside their basins');
+
+console.log('biome share across ' + SURVEY_SEEDS.length + ' seeds:');
+for (const [key, n] of Object.entries(seen).sort((a, b) => b[1] - a[1])) {
+  console.log('  ' + key.padEnd(11) + (100 * n / surveyed).toFixed(2) + '%');
+}
