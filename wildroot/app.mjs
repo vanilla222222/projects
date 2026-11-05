@@ -1,10 +1,10 @@
-import * as T from './town-panels.mjs?v=9';
-import * as U from './panels.mjs?v=9';
-import {GameAudio} from './audio.mjs?v=9';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=9';
-import * as E from './engine.mjs?v=9';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=9';
-import {drawWorld,viewFor} from './scene.mjs?v=9';
+import * as T from './town-panels.mjs?v=10';
+import * as U from './panels.mjs?v=10';
+import {GameAudio} from './audio.mjs?v=10';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=10';
+import * as E from './engine.mjs?v=10';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=10';
+import {drawWorld,viewFor} from './scene.mjs?v=10';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -36,7 +36,7 @@ function renderPanel(){
  const c=world.c,kind=panelKind;let title='',eyebrow='ADVENTURER’S JOURNAL',body='';
  if(kind==='welcome'){title='Welcome to the Greenreach';body=`<p class="intro">This is your world to explore. Walk across the map, climb ladders, and click enemies to fight them. Meet Willow beside the first oak tree, or Brann by the first copper seam. Other mentors work near their specialty stations.</p><div class="welcome-controls"><span>A / D · Move</span><span>W / S · Climb</span><span>Space · Jump</span><span>F · Attack</span><span>1 · Class skill</span><span>E · Interact</span></div><p class="intro">On mobile, tap the map to walk and tap enemies, trees, ore, NPCs, or portals to interact. Movement buttons and combat skills are below the world.</p><p class="intro">Your first goal: reach level 3, learn a profession, and complete a mentor’s initiation. Each first class adds another character slot. Other characters keep working while you explore.</p><button class="primary" data-close="">Enter the world</button>`;}
  if(kind==='inventory'){title='Backpack & universal storage';body=U.inventory(state,c,itemCard,inventoryView);}
- if(kind==='quests'){title='World One journal';body=U.story(state)+'<h3 class="section-title">Individual class initiations</h3><div class="grid">'+Object.keys(CLASSES).filter(id=>c.metMentors.includes(id)).map(id=>classCard(id,c)).join('')+'</div>';}
+ if(kind==='quests'){title='World One journal';body=U.story(state)+(c.metMentors.length?'<h3 class="section-title">Individual class initiations</h3><div class="grid">'+Object.keys(CLASSES).filter(id=>c.metMentors.includes(id)).map(id=>classCard(id,c)).join('')+'</div>':'');}
  if(kind==='npc'&&npc?.classId){
   const def=CLASSES[npc.classId],q=E.classQuest(state,c,npc.classId);title=def.trainer;eyebrow=`${def.name.toUpperCase()} MENTOR`;
   let speech=c.class?`You have chosen the ${CLASSES[c.class].name} path. Keep growing your roster; another adventurer can learn from me.`:!E.availableClass(state,npc.classId)?`You already have a ${def.name}. Discover the other classes before taking a duplicate.`:q.stage===0?`Every adventurer needs a calling. Reach level 3, then I’ll begin teaching you ${SKILLS[def.skill].toLowerCase()}.`:q.stage===1?`Practise ${SKILLS[def.skill].toLowerCase()} until you reach skill level 2. ${['mining','logging'].includes(def.skill)?'Click a resource node in the wild to begin gathering.':'Use the crafting station to practise your profession.'}`:`You’re ready for the last step. Bring these materials, and I’ll welcome you as a ${def.name}.`;

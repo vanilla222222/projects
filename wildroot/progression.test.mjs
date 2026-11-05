@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=9';
-import * as D from './content.mjs?v=9';
-import {World,createMap,GROUND,abilitySet} from './world.mjs?v=9';
+import * as E from './engine.mjs?v=10';
+import * as D from './content.mjs?v=10';
+import {World,createMap,GROUND,abilitySet} from './world.mjs?v=10';
 function rich(s){s.coins=10000;for(const id of Object.keys(D.ITEMS))s.inventory[id]=1000;for(const id of ['ironworking','gilding','brewing','verdant-steel','sunwell','heartwood'])E.unlock(s,id);}
 function tick(w,n,input={}){for(let i=0;i<n*50;i++)w.step(.02,typeof input==='function'?input(i):input);}
 test('Every town zone has an actual universal storage chest',()=>{for(const a of D.AREAS.filter(a=>['town','jungle-town'].includes(a.id)))for(let i=0;i<a.zones.length;i++){const map=createMap(a.id,i);assert.equal(map.storage.length,1);assert.equal(map.storage[0].kind,'storage');assert.ok(map.entities.includes(map.storage[0]));}});
