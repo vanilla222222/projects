@@ -1,60 +1,73 @@
 # Wildroot — World One
 
-An original side-view browser idle RPG for Vanilla and friends. Hosted under `wildroot/` in the Projects website. Serve over HTTP; JavaScript modules cannot run through `file://`.
+An original side-view browser idle RPG for Vanilla and friends, hosted in the existing Projects website. World One is the only playable world. This release develops its progression, professions, inventory, exploration and combat; it does not enable World Two.
 
-## The playable world
+## Controls and world
 
-The main screen is a controllable platform map, not a production dashboard. Click the ground to walk, click enemies to approach and attack, click trees or ore to gather, and click NPCs, stations or portals to interact. Characters walk between platforms using ladders. Keyboard movement supports jumps; mobile has touch controls and a camera that follows the character.
+Click/tap the ground to walk, enemies to fight, nodes to gather, and NPCs, stations, storage or portals to interact. Characters navigate ladders between three platforms. A/D or arrow keys move, W/S climb, Space jumps, F attacks, 1/2/3 use class abilities, E interacts, I opens inventory and M opens the map. Touch movement and ability controls support portrait and landscape. Sound effects are original Web Audio synthesis and can be enabled/muted in Save & help with a volume control.
 
-Regular combat maps contain five individual monsters of the zone's species across three platforms. Enemies patrol, approach during fights, take individual hits, retaliate, drop loot and respawn. The player has health, attack and class-skill cooldowns, and recovers at the entrance after a knockout. Floor loot can be collected by walking near it or tapping it. Pending loot is saved and collected before leaving a map or switching characters.
+World One keeps the user's six-area plan: Caves (3 zones/copper), Deep Caverns (4/iron and gold), Forest (5/oak and birch), Jungle (4/jungle wood), Hearthstead (3/anvil and foundry), Verdant Outpost or Jungle Town (3/enchanting, alchemy and boss entrance). There are 16 regular enemy species and 22 regular zones. Two secret rooms branch from existing zones, rather than creating another world or main area.
 
-AUTO searches for enemies, navigates ladders and uses the character's ability. Manual movement takes control back. Inventory, quests, professions, talents, crafting and world travel are game overlays. Class progression requires talking to the actual mentor; crafting requires reaching the station.
+## Character inventories and universal storage
 
-## Controls
+Each character has their own carried materials, unequipped equipment, equipped loadout, capacity history and pending overflow. Loot, gathering, quest rewards, crafted materials and finished foundry batches go to the character who earned or produced them. Another character cannot spend those carried materials.
 
-- Click / tap the ground: walk to that point, using a ladder if needed.
-- Click / tap an enemy: approach and attack. A skill button deals a stronger class-specific hit.
-- Click / tap a tree or ore: approach and gather.
-- Click / tap NPCs, crafting stations or portals: walk over and interact.
-- A / D or left / right arrows: walk. W / S or up / down arrows: climb.
-- Space: jump. F: basic attack. 1: class ability. E: interact. I: inventory. M: map.
-- Touch movement buttons, jump, attack, class skill and AUTO are below the world.
+Every zone in both towns has an actual on-map storage chest. All of them access the same account inventory and equipment storage. Deposit/withdraw actions require standing near a chest. Materials stack to 99 in backpacks and 999 in the chest; each unequipped equipment instance uses one slot. Equipped gear does not consume backpack slots. Crafting and deliveries use the acting character's materials plus materials deposited in the universal chest, never another character's backpack. Potions must be carried to drink them.
 
-## World One specification
+Backpacks start at 16 slots. Woven Pouch (+4), Reinforced Pack (+6) and Runic Satchel (+8) can each be consumed once **per character**. The universal chest starts at 24 slots. Wooden Crate (+8), Iron Lockbox (+12) and Runed Cabinet (+16) can each be consumed once **per account**. Consumption removes one item and records its exact identifier. An unused backpack expansion can be transferred through storage to another character. Duplicate chest expansions do not consume on failure.
 
-Six areas, 22 zones, 16 regular enemy species and one boss:
+Full active gathering pauses. Full bags leave combat loot on the ground and stop AUTO. Unclaimed floor materials are retained as character-specific pending overflow when leaving/switching, and offline overflow is retained too. Pending resources cannot be spent until claimed into a backpack with room. There is no silent item deletion. Old over-capacity chest contents remain intact after migration; new deposits obey capacity.
 
-- Caves (3): copper. Deep Caverns (4): iron and gold.
-- Forest (5): oak and birch. Jungle (4): jungle wood.
-- Hearthstead Town (3): class mentors, anvil and foundry.
-- Verdant Outpost / Jungle Town (3): enchanting, alchemy and boss entrance.
+## Equipment and class builds
 
-One initial unclassed character. Each character completes a three-step initiation (level, profession practice, material delivery) to choose a class: Warrior / Mining, Mage / Logging, Blacksmith / Smithing, Enchanter / Enchanting, Alchemist / Alchemy. Each first class unlock adds one slot. All five unique classes unlock duplicates; World One has six slots.
+Seven equipment slots: weapon, head, body, feet, pickaxe, hatchet and accessory. Every piece is an individual transferable instance with attack, defense, health, gathering, critical chance, speed or ability bonuses. Class weapons have class restrictions. The first crafted piece for an empty valid slot auto-equips; further pieces go into the crafter's backpack. Inventory shows comparisons, two rune slots, swaps and storage transfers.
 
-Each class has an active combat ability: Warrior Cleave, Mage Arc Bolt, Blacksmith Hammerfall, Enchanter Rune Burst, Alchemist Acid Flask. Beginners have Power Strike. Level-ups grant individual talent points for attack, health or gathering. Professions also retain their existing specialisations: faster mining/logging or double production output.
+Warrior/Mining, Mage/Logging, Blacksmith/Smithing, Enchanter/Enchanting and Alchemist/Alchemy still require individual three-step class initiations. Each first class grants a slot; all five are required before duplicates; World One allows six characters. Combat talents and profession talents have separate point budgets. Two builds can be saved per character and loaded/reset for free in town. Each class has three active abilities, with the second at character level 6 and the third at level 10.
 
-Storage, route unlocks and the Archive are account-wide. Equipment, talents, quests and skills belong to each character. Eighteen recipes cover bars, planks, dust, tonics, weapons, armour, tools and rune/vitality upgrades. Coins fund crafting fees. Every item has at least one implemented purpose, visible in inventory.
+## Connected professions
 
-Three independent loot layers remain: each enemy has one common, one rare and one legendary entry; World One has three rare and two legendary entries; global loot has five mythical entries. No rare drop is required for basic advancement. The Archive converts materials into permanent account damage.
+- Mining/logging require appropriate skill levels and tools for higher resources. Specialists gather faster, profession talents improve speed/yield/XP, and equipment and potions feed into the same rates.
+- Foundry queues reserve all materials/coins in advance and run during exploration or offline time. Oak burns into charcoal; charcoal fuels copper, iron and gold. Verdant steel connects iron/gold, jungle wood and fuel. Blacksmith owners double material output. Cancelling refunds only unfinished reserved batches, once.
+- Anvil blueprints unlock through story progression. Equipment and capacity items connect metals, logs, enemy materials, dust and medicine.
+- Enchanting applies guaranteed Force, Fortitude, Insight, Fleet or Living runes to two slots on equipped items. Replacing a rune spends new materials and replaces the old effect. No chance-based destruction.
+- Alchemy produces potions/resin and bounded liquid for five account research lines. Brewing adds liquid; passive liquid stops at capacity. Potions last 20 minutes and expire correctly inside offline claims. Ability buffs do not erase longer potion buffs.
+- Guild projects replace the old universal damage sink with distinct defense, logging, production, liquid, movement, health, crit and attack projects. Older material studies retain their levels and now improve matching disciplines.
 
-## Simulation and saves
+## Story, secrets and combat
 
-The selected character uses position-based hit-by-hit combat and proximity-based gathering. Other characters keep working through the idle model. Both feed the same loot, XP, skills and economy functions. The selected character is excluded from background simulation to prevent duplicate rewards. Opening a menu does not run both simulations on the same character.
+Hesta's village well begins a seven-quest main chain: A Foot in the Greenreach → Tools for Tomorrow → Under the Roots, with Letters from the Canopy as its forest branch → Outpost Supplies → An Unquiet Seal → Heart of the Wild. These quests unlock blueprints and require common-material deliveries. The seal requires all five classes and opens the Rootwarden. Returning its guaranteed heart completes World One's story. Two side quests develop the Hidden Sunwell and Forge Vault; their keepers supply guaranteed crafting materials.
 
-Up to eight hours are simulated on return. Existing `wildroot-v1` saves are retained, with default talent fields added to older characters. Local autosave, import/export and multi-tab protection remain. This private prototype trusts local saves/device time and has no account server, multiplayer, trading or purchases. Friends play independent rosters.
+Monster families have distinct tells: charges, bolts, slams, hopping attacks and guarding windows. Position, jumping, stuns, damage-over-time and healing affect active fights. The Rootwarden uses telegraphed ground waves, a second projectile lane and summoned rootlings as health falls. Bosses require active play and cannot be cleared by closing the page. AUTO helps with regular combat but does not guarantee survival against a boss.
 
-Working title, enemy names, recipes and balance remain provisional. World 2's ten branches, World 3's future professions and World 4's ten upgrades are planned, not playable.
+Sprites have walking frames, class silhouettes, weapon shapes, visible armour/headgear, attack effects, guard rings, warnings and projectile/root-wave effects. Artwork and audio are original code assets; nothing is copied from IdleOn.
 
-## Development and validation
+## Roster, offline progress and saves
 
-- `content.mjs`: World One data and recipe/loot dependencies.
-- `engine.mjs`: progression, crafting, idle simulation, saves and talent rules.
-- `world.mjs`: movement, ladders, target navigation, active combat, abilities, loot and map interaction.
-- `scene.mjs`: original procedural pixel scenery and sprites.
-- `app.mjs`: game HUD, controls, overlays and save coordination.
+Roster management shows assignments, locations, carried capacity, pending gains, estimated materials/XP/coins/kills per hour, available points and equipment bottlenecks. Assign other characters without taking control away from the current one. Idle rates are estimates including recovery; active skills and dodging can perform differently.
 
-Run `node --test wildroot/engine.test.mjs wildroot/world.test.mjs` from the repository root. Checks cover progression, roster rules, crafting, old-save compatibility, idle claims, movement/jumping, ladder navigation, actual resource proximity, per-hit combat, cooldowns, auto control, NPC proximity, portal gates, knockouts, floor loot persistence and prevention of active/background duplicate rewards.
+The controlled character uses World physics. Other characters use idle rules. Foundry and liquid generation advance once per real elapsed interval. The selected character is excluded from background rewards, avoiding duplicate simulation. Up to eight hours are claimed on return.
 
-Responsive controls are implemented for portrait and landscape. Actual phone hardware testing remains necessary. Artwork is original canvas code, with no copied IdleOn assets.
+`wildroot-v1` saves are retained. Old numeric equipment migrates to actual pieces; universal materials remain in the chest; class unlocks, skills, quests and study levels are kept. Legacy rune/vitality bonuses remain. Existing boss clears retain access. Import validates equipment identity, queues, talents, expansions and timed effects before replacing data. Export backups are available. Friends play independent local rosters; accounts, networking, trading, microtransactions and server anti-cheat are outside this build.
 
-Live browser checks verified the retained Warrior save, proximity-based mentor dialogue, portal travel into Forest, a ground fight awarding XP/coins/materials, and ladder navigation into an upper-platform fight. Phone hardware testing is still outstanding.
+## Validation and balance limits
+
+Run:
+
+```
+node --test wildroot/engine.test.mjs wildroot/world.test.mjs wildroot/progression.test.mjs
+node wildroot/world1-sim.mjs
+```
+
+The automated progression model uses actual gathering, tool gates, crafting costs, timed queues, deposits/withdrawals, character class quests, blueprint deliveries, expansions, potions and an active boss. It completes all five classes and the main story without requiring random rare drops. Its reference runs finish around 69–70 simulated minutes. This is an optimized sequential strategy, excludes walking/menu time, and is **not a measured playtest duration or a promise of final pacing**. Real players, idle sessions, spending choices and simultaneous workers change timing. Secret rooms, side quests, guild levels, research and build development add further World One progression.
+
+The regression suite covers inventory isolation, all town chests, stacking/capacity/overflow, one-time use per scope, equipment transfers, foundry transactions/refunds, save migration, potion expiry, class/build rules, story gates, telegraphs/dodges, roster simulation and the complete main path. Browser checks and actual phone playtesting remain separate from model checks. World One should continue receiving playtest fixes; this release is not a claim of perfection.
+
+## Files
+
+- `content.mjs`: items, recipes, equipment, talents, guild/alchemy research, stories and secret-room data.
+- `inventory.mjs`: character backpacks, universal storage, capacity items, transfers and pending overflow.
+- `progression.mjs`: equipment, builds, production queues, research, quests, account bonuses and migration helpers.
+- `engine.mjs`: combat/gathering stats, idle simulation, class rules, save validation and idle estimates.
+- `world.mjs`: navigation, active combat/abilities, monster behavior, portals, storage/NPC interaction and loot.
+- `panels.mjs` / `app.mjs`: player-facing overlays, controls and save coordination.
+- `scene.mjs` / `audio.mjs`: original rendering and synthesized effects.
