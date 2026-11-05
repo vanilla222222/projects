@@ -59,3 +59,19 @@ test('A new account can earn its first class entirely through playable actions',
  const s=E.freshSave(),c=E.selected(s),random=rng();E.start(s,c,'fight');E.advance(s,300,random);assert.ok(c.level>=3);assert.ok(s.inventory['moss-slime']>=10);E.travel(s,c,'town',0);assert.ok(E.progressClass(s,c,'warrior'));
  E.travel(s,c,'caves',0);E.start(s,c,'gather','copper');E.advance(s,90,random);E.travel(s,c,'town',0);assert.ok(E.progressClass(s,c,'warrior'));assert.ok(E.progressClass(s,c,'warrior'));assert.equal(c.class,'warrior');assert.ok(E.createCharacter(s,'Mage next'));
 });
+test('Playable actions can open every area and complete all five professions without rare drops',()=>{
+ const s=E.freshSave(),random=rng(42);let simulated=0;
+ const tick=n=>{E.advance(s,n,random);simulated+=n;};
+ const gather=(c,area,zone,id,n)=>{assert.ok(E.travel(s,c,area,zone));assert.ok(E.start(s,c,'gather',id));const target=(s.inventory[id]||0)+n;let guard=0;while((s.inventory[id]||0)<target&&guard++<500)tick(10);assert.ok(s.inventory[id]>=target);E.start(s,c,'rest');};
+ const fight=(c,area,zone,n)=>{assert.ok(E.travel(s,c,area,zone));assert.ok(E.start(s,c,'fight'));const enemy=`${area}-${zone}`;let guard=0;while((s.kills[enemy]||0)<n&&guard++<500)tick(30);assert.ok(s.kills[enemy]>=n,enemy);E.start(s,c,'rest');};
+ const fighter=E.selected(s);fight(fighter,'forest',0,50);E.travel(s,fighter,'town',0);assert.ok(E.progressClass(s,fighter,'warrior'));gather(fighter,'caves',0,'copper',30);E.travel(s,fighter,'town',0);assert.ok(E.progressClass(s,fighter,'warrior'));assert.ok(E.progressClass(s,fighter,'warrior'));
+ for(const area of ['forest','caves','jungle','deep'])for(let zone=0;zone<AREAS.find(a=>a.id===area).zones.length;zone++)fight(fighter,area,zone,40);
+ assert.ok(E.areaUnlocked(s,'jungle-town'));gather(fighter,'forest',2,'birch',50);gather(fighter,'forest',0,'oak',60);gather(fighter,'caves',0,'copper',60);
+ for(const id of ['mage','blacksmith','enchanter','alchemist']){
+  assert.ok(E.createCharacter(s,id));const c=E.selected(s);fight(c,'forest',0,100+(c.kills||0)+(s.kills['forest-0']||0));assert.ok(c.level>=3);assert.ok(E.travel(s,c,CLASSES[id].town,0));assert.ok(E.progressClass(s,c,id));
+  if(id==='mage')gather(c,'forest',0,'oak',30);
+  else{const recipe=id==='blacksmith'?'copper-bar':id==='enchanter'?'dust':'tonic';const station=id==='blacksmith'?['town',2]:id==='enchanter'?['jungle-town',0]:['jungle-town',1];assert.ok(E.travel(s,c,...station));for(let i=0;i<(id==='blacksmith'?6:4);i++)assert.ok(E.craft(s,c,recipe));}
+  E.travel(s,c,CLASSES[id].town,0);assert.ok(E.progressClass(s,c,id));assert.ok(E.progressClass(s,c,id),id);
+ }
+ assert.deepEqual(new Set(s.unlockedClasses),new Set(Object.keys(CLASSES)));assert.equal(E.slots(s),6);assert.ok(simulated<8*3600);
+});
