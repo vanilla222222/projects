@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vanilla Incremental</title>
-<link rel="stylesheet" href="style.css?v=20">
+<link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 <header class="top">
@@ -19,6 +19,7 @@
 <div class="wallet" id="wallet"></div>
 <main>
   <section class="tab" data-tab="mines">
+    <div class="next-goal" id="nextGoal"><div><small>NEXT MAJOR STAGE</small><b id="goalTitle"></b><span id="goalDetail"></span><span id="goalTools"></span></div><div class="goal-meter"><progress id="goalProgress" max="100" value="0" aria-label="Progress to next milestone"></progress><small id="goalAmount"></small></div></div>
     <div class="mine">
       <div class="minehead">
         <span>Layer <b id="layer">1</b></span>
@@ -26,7 +27,8 @@
         <span id="vein" class="veintag" hidden>✨ Vein ×2: <b id="veinLeft">0</b> digs</span>
       </div>
       <div class="grid" id="grid"></div>
-      <p class="hint">Click a tile to dig it up. Clear all 100 to reach the next layer.</p>
+      <div class="mine-tools"><p class="hint">Dig all 100 tiles to reach the next layer.</p><button id="dragMine" type="button" aria-pressed="false">Drag to mine: off</button></div>
+      <p class="hint touch-hint">Turn on drag mining to sweep across tiles. Turn it off to scroll through the mine normally.</p>
       <p class="hint" id="spHint" hidden>Special tiles: 🎁 Chest gives 10× every ore you've found · 🧨 TNT digs the 3x3 around it · ✨ Vein doubles your next 5 digs.</p>
       <div class="auto" id="pick" hidden>
         <div class="autohead"><b>Pickaxe</b><span id="pickName"></span></div>
@@ -76,6 +78,7 @@
       <div class="slots" id="slots"></div>
       <div class="recipepick" id="recipePick" hidden></div>
     </div>
+    <div class="masterybox"><h2>Workshop blueprint</h2><p class="hint">Your next major stage: turn ingots and planks into permanent research. Build up this Smeltery before moving on.</p><button class="upg" id="buildWorkshopBtn" type="button"><span>Build the Workshop</span><small></small></button></div>
     <div class="masterybox" id="smeltExtra" hidden>
       <h2>Smelting upgrades</h2>
       <p class="hint">One-time upgrades bought with ore. Kept on rebirth.</p>
@@ -88,6 +91,8 @@
     <div class="smeltcol">
     <div class="masterybox">
       <h2>Forest</h2>
+      <p class="hint">Steel is now available in the Smeltery: 1,000 Iron + 5 Charcoal. Its forged axe head doubles chopping damage, and steel saw teeth improve the next stage.</p>
+      <p class="hint">Tougher species enter the forest as chopping damage improves. Upgrade damage to expand the tree pool.</p>
       <p class="hint">Click a tree to chop it. Felled trees give logs and regrow as a random new tree. Burn a tree to clear it for Charcoal instead of logs: tougher trees give more Charcoal. Logs and forest upgrades are kept on rebirth.</p>
       <p class="hint" id="forestInfo"></p>
       <div class="slots trees" id="trees"></div>
@@ -128,6 +133,10 @@
       <div id="oreStats"></div>
     </div>
   </section>
+  <section class="tab" data-tab="workshop" hidden>
+    <div class="workshop-intro masterybox"><h2>Workshop</h2><p class="hint">Turn ingots and planks into permanent research. All 42 levels survive rebirth. Research buys one level at a time, regardless of the Buy setting.</p><p class="research-summary" id="workshopSummary"></p></div>
+    <div class="research-list" id="workshopList"></div>
+  </section>
 </main>
 <div class="toast" id="toast" hidden></div>
 <div class="modal" id="offline" hidden>
@@ -138,6 +147,7 @@
     <button type="button" class="rbbtn" id="offOk"><b>Collect</b></button>
   </div>
 </div>
-<script src="game.js?v=20"></script>
+<script src="game.js?v=21"></script>
 </body>
 </html>
+

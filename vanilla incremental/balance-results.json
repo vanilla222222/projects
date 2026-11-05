@@ -1,0 +1,182 @@
+[
+  {
+    "clicks": 1,
+    "seed": 42,
+    "stages": [
+      {
+        "id": "dirt",
+        "atMinutes": 72.4,
+        "stageMinutes": 72.4
+      },
+      {
+        "id": "copper",
+        "atMinutes": 145.2,
+        "stageMinutes": 72.8
+      },
+      {
+        "id": "iron",
+        "atMinutes": 215.3,
+        "stageMinutes": 70.1
+      },
+      {
+        "id": "workshop",
+        "atMinutes": 269.8,
+        "stageMinutes": 54.6
+      },
+      {
+        "id": "forest",
+        "atMinutes": 326.1,
+        "stageMinutes": 56.3
+      },
+      {
+        "id": "mill",
+        "atMinutes": 394.4,
+        "stageMinutes": 68.3
+      }
+    ]
+  },
+  {
+    "clicks": 2,
+    "seed": 42,
+    "stages": [
+      {
+        "id": "dirt",
+        "atMinutes": 57.3,
+        "stageMinutes": 57.3
+      },
+      {
+        "id": "copper",
+        "atMinutes": 118.4,
+        "stageMinutes": 61.2
+      },
+      {
+        "id": "iron",
+        "atMinutes": 177,
+        "stageMinutes": 58.6
+      },
+      {
+        "id": "workshop",
+        "atMinutes": 231.8,
+        "stageMinutes": 54.8
+      },
+      {
+        "id": "forest",
+        "atMinutes": 287.1,
+        "stageMinutes": 55.3
+      },
+      {
+        "id": "mill",
+        "atMinutes": 344.5,
+        "stageMinutes": 57.4
+      }
+    ]
+  },
+  {
+    "clicks": 3,
+    "seed": 42,
+    "stages": [
+      {
+        "id": "dirt",
+        "atMinutes": 48.6,
+        "stageMinutes": 48.6
+      },
+      {
+        "id": "copper",
+        "atMinutes": 101.5,
+        "stageMinutes": 52.9
+      },
+      {
+        "id": "iron",
+        "atMinutes": 152.1,
+        "stageMinutes": 50.6
+      },
+      {
+        "id": "workshop",
+        "atMinutes": 206.8,
+        "stageMinutes": 54.8
+      },
+      {
+        "id": "forest",
+        "atMinutes": 262.2,
+        "stageMinutes": 55.3
+      },
+      {
+        "id": "mill",
+        "atMinutes": 315.3,
+        "stageMinutes": 53.1
+      }
+    ]
+  },
+  {
+    "clicks": 2,
+    "seed": 7,
+    "stages": [
+      {
+        "id": "dirt",
+        "atMinutes": 57.3,
+        "stageMinutes": 57.3
+      },
+      {
+        "id": "copper",
+        "atMinutes": 118.4,
+        "stageMinutes": 61.2
+      },
+      {
+        "id": "iron",
+        "atMinutes": 177,
+        "stageMinutes": 58.6
+      },
+      {
+        "id": "workshop",
+        "atMinutes": 231.8,
+        "stageMinutes": 54.8
+      },
+      {
+        "id": "forest",
+        "atMinutes": 287.1,
+        "stageMinutes": 55.3
+      },
+      {
+        "id": "mill",
+        "atMinutes": 343.8,
+        "stageMinutes": 56.7
+      }
+    ]
+  },
+  {
+    "clicks": 2,
+    "seed": 99,
+    "stages": [
+      {
+        "id": "dirt",
+        "atMinutes": 57.3,
+        "stageMinutes": 57.3
+      },
+      {
+        "id": "copper",
+        "atMinutes": 118.4,
+        "stageMinutes": 61.2
+      },
+      {
+        "id": "iron",
+        "atMinutes": 177,
+        "stageMinutes": 58.6
+      },
+      {
+        "id": "workshop",
+        "atMinutes": 231.8,
+        "stageMinutes": 54.8
+      },
+      {
+        "id": "forest",
+        "atMinutes": 287.1,
+        "stageMinutes": 55.3
+      },
+      {
+        "id": "mill",
+        "atMinutes": 343.8,
+        "stageMinutes": 56.7
+      }
+    ]
+  }
+]
