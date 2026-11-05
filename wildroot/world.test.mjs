@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=6';
-import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=6';
+import * as E from './engine.mjs?v=7';
+import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=7';
 function tick(world,seconds,input={}){for(let i=0;i<seconds*50;i++)world.step(.02,typeof input==='function'?input(i):input);}
 function setup(options={}){const state=E.freshSave(),events=[];return{state,events,world:new World(state,{rng:()=>.5,onIntent:e=>events.push(e),onEvent:e=>events.push(e),...options})};}
 test('Maps have multiple actual enemy entities, platforms, ladders, resources and portals',()=>{

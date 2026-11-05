@@ -69,6 +69,7 @@ export function purposes(id){
  for(const r of Object.values(GUILD))if(r.cost[id])uses.push(r.name+' guild upgrade');
  for(const q of STORY)if(q.deliver?.[id])uses.push(q.name+' quest');
  if(EXPANSIONS[id])uses.push('Consume once '+(EXPANSIONS[id].target==='bag'?'per character':'per account')+': +'+EXPANSIONS[id].slots+' slots');
+ if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
  if(POTIONS[id])uses.push('Drink: 20 minute profession or combat boost');
  if(id==='rootbound-key')uses.push('Permanent access to the Rootwarden');
  if(id==='tonic')uses.push('Recover health');
@@ -172,3 +173,15 @@ for(const[id,cost,unlock]of [['woven-pouch',{'boar-hide':6,plank:2},null],['rein
 STORY[0].reward.items['woven-pouch']=1;
 
 OFFERINGS.push('sap-essence','vault-seal');
+
+// Stack capacity pouches are separate from inventory-slot expansions.
+export const CAPACITY_BAGS={};
+for(const[type,label,small,medium,large]of [
+ ['materials','Materials',{'moss-slime':8,plank:2},{'boar-hide':12,'iron-bar':2},{'sentinel-core':8,'gold-bar':2,dust:8}],
+ ['mining','Mining',{copper:15,plank:2},{iron:25,'crawler-shell':8},{gold:35,'iron-shell':8,dust:8}],
+ ['logging','Logging',{oak:15,'moss-slime':5},{birch:25,'boar-hide':8},{'jungle-wood':35,'vine-fiber':12,dust:8}],
+ ['food','Food',{tonic:3,'boar-hide':5},{tonic:6,'frog-dew':8},{tonic:10,'orchid-petal':8,dust:8}]
+])for(const[tier,bonus,cost,unlock]of [['woven',100,small,null],['reinforced',300,medium,'ironworking'],['runic',600,large,'gilding']]){
+ const id=`${tier}-${type}-bag`,name=`${tier[0].toUpperCase()+tier.slice(1)} ${label} Pouch`;
+ CAPACITY_BAGS[id]={name,type,bonus};item(id,name,'rare','▣');RECIPES.push({id,name,skill:'smithing',station:'anvil',cost,output:id,count:1,unlock});
+}

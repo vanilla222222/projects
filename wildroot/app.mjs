@@ -1,13 +1,14 @@
-import * as U from './panels.mjs?v=6';
-import {GameAudio} from './audio.mjs?v=6';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=6';
-import * as E from './engine.mjs?v=6';
-import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=6';
-import {drawWorld,viewFor} from './scene.mjs?v=6';
+import * as U from './panels.mjs?v=7';
+import {GameAudio} from './audio.mjs?v=7';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=7';
+import * as E from './engine.mjs?v=7';
+import {World,ABILITIES,GROUND,abilitySet} from './world.mjs?v=7';
+import {drawWorld,viewFor} from './scene.mjs?v=7';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
 let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null;
+let inventoryView={tab:"equipment",page:0,chestPage:0,source:"bag",index:null};
 const audio=new GameAudio();
 try{raw=localStorage.getItem(KEY);}catch{}
 try{state=raw?E.restoreSave(JSON.parse(raw)):E.freshSave();if(raw)offline=E.claimOffline(state);}catch(err){state=E.freshSave();loadError=err.message;}
@@ -30,7 +31,7 @@ function classCard(id,c){const def=CLASSES[id],q=E.classQuest(state,c,id),owned=
 function renderPanel(){
  const c=world.c,kind=panelKind;let title='',eyebrow='ADVENTURER’S JOURNAL',body='';
  if(kind==='welcome'){title='Welcome to the Greenreach';body=`<p class="intro">This is your world to explore. Walk across the map, climb ladders, and click enemies to fight them. Head through the left portal to meet the class mentors in Hearthstead.</p><div class="welcome-controls"><span>A / D · Move</span><span>W / S · Climb</span><span>Space · Jump</span><span>F · Attack</span><span>1 · Class skill</span><span>E · Interact</span></div><p class="intro">On mobile, tap the map to walk and tap enemies, trees, ore, NPCs, or portals to interact. Movement buttons and combat skills are below the world.</p><p class="intro">Your first goal: reach level 3, learn a profession, and complete a mentor’s initiation. Each first class adds another character slot. Other characters keep working while you explore.</p><button class="primary" data-close="">Enter the world</button>`;}
- if(kind==='inventory'){title='Backpack & universal storage';body=U.inventory(state,c,itemCard);}
+ if(kind==='inventory'){title='Backpack & universal storage';body=U.inventory(state,c,itemCard,inventoryView);}
  if(kind==='quests'){title='World One journal';body=U.story(state)+'<h3 class="section-title">Individual class initiations</h3><div class="grid">'+Object.keys(CLASSES).map(id=>classCard(id,c)).join('')+'</div>';}
  if(kind==='npc'&&npc?.classId){
   const def=CLASSES[npc.classId],q=E.classQuest(state,c,npc.classId);title=def.trainer;eyebrow=`${def.name.toUpperCase()} MENTOR`;
@@ -87,7 +88,7 @@ function refresh(){
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p>${esc(l.text)}</p>`).join(''));
  $('knockout').hidden=world.player.respawn<=0;
- buildTargets();if($('panel').open&&!panelInteraction&&performance.now()-lastPanelRefresh>1000&&!['new','welcome','offline','settings','load-error','paused','victory','assignment','chapter-complete'].includes(panelKind)){renderPanel();lastPanelRefresh=performance.now();}
+ buildTargets();if($('panel').open&&!panelInteraction&&!document.activeElement?.matches('#panel input,#panel select')&&performance.now()-lastPanelRefresh>1000&&!['new','welcome','offline','settings','load-error','paused','victory','assignment','chapter-complete'].includes(panelKind)){renderPanel();lastPanelRefresh=performance.now();}
 }
 document.addEventListener('click',event=>{
  const b=event.target.closest('button');if(!b||b.disabled)return;const d=b.dataset,c=world.c;
@@ -101,6 +102,17 @@ document.addEventListener('click',event=>{
  if(d.findNpc){findNpc(d.findNpc);return;}
  if(d.findStation){findStation(d.findStation);return;}
  if(d.findStorage!==undefined){if(!['town','jungle-town'].includes(c.area))travel('town',0);else closePanel();world.select('storage');return;}
+ if(d.invTab){inventoryView.tab=d.invTab;inventoryView.worn=null;renderPanel();return;}
+ if(d.invPage!==undefined){inventoryView[d.source==='chest'?'chestPage':'page']=Number(d.invPage);renderPanel();return;}
+ if(d.invLockMode!==undefined){inventoryView.lockMode=!inventoryView.lockMode;inventoryView.moving=false;renderPanel();return;}
+ if(d.invSort!==undefined){E.sortBag(c);inventoryView.index=null;save();renderPanel();return;}
+ if(d.invWorn){inventoryView.worn=d.invWorn;inventoryView.index=null;renderPanel();return;}
+ if(d.invSlot!==undefined){const index=Number(d.invSlot);if(inventoryView.lockMode&&d.source==='bag')E.toggleSlotLock(c,index);else if(inventoryView.moving&&d.source===inventoryView.source){toast((d.source==='bag'?E.moveSlot(c,inventoryView.index,index,inventoryView.quantity):E.storageAccess(c)&&E.moveChestSlot(state,inventoryView.index,index,inventoryView.quantity))?'Items moved.':'Cannot move into that slot. Unlock it or choose another.');inventoryView.moving=false;}else{inventoryView.index=index;inventoryView.source=d.source;inventoryView.worn=null;inventoryView.quantity=null;inventoryView.confirmDrop=false;}save();renderPanel();return;}
+ if(d.invLock!==undefined){E.toggleSlotLock(c,Number(d.invLock));inventoryView.moving=false;save();renderPanel();return;}
+ if(d.invMove!==undefined){if(!inventoryView.quantity){const g=inventoryView.source==='bag'?E.bagSlots(c):E.chestSlots(state);inventoryView.quantity=g[inventoryView.index]?.qty||1;}inventoryView.moving=!inventoryView.moving;inventoryView.confirmDrop=false;renderPanel();return;}
+ if(d.capacityBag){toast(E.useCapacityBag(c,d.capacityBag)?'Pouch consumed. This character can carry larger stacks.':'This pouch was already used or is not in the backpack.');save();renderPanel();refresh();return;}
+ if(d.invTransfer!==undefined){toast('Transferred '+fmt(E.transferSlot(state,c,inventoryView.index,inventoryView.quantity||Infinity,inventoryView.source))+' items.');inventoryView.confirmDrop=false;save();renderPanel();return;}
+ if(d.invDrop!==undefined){if(!inventoryView.confirmDrop){const t=E.bagSlots(c)[inventoryView.index];inventoryView.dropKey=t?.uid||t?.id;inventoryView.confirmDrop=true;renderPanel();return;}const t=E.bagSlots(c)[inventoryView.index];const dropped=(t?.uid||t?.id)===inventoryView.dropKey&&world.dropInventory(inventoryView.index,inventoryView.quantity||Infinity);toast(dropped?'Item dropped beside your character.':'Unlock this slot before dropping.');inventoryView.confirmDrop=false;save();renderPanel();buildTargets();return;}
  if(d.expand){toast(E.useExpansion(state,c,d.expand)?'Expansion consumed. Capacity increased.':'That expansion was already used, or is not in this backpack.');save();renderPanel();refresh();return;}
  if(d.deposit){toast('Deposited '+fmt(E.deposit(state,c,d.deposit))+' items.');save();renderPanel();return;}
  if(d.withdraw){toast('Withdrew '+fmt(E.withdraw(state,c,d.withdraw))+' items.');save();renderPanel();return;}
@@ -172,3 +184,11 @@ function frame(time){const delta=Math.max(0,(time-last)/1000);last=time;
 }
 refresh();requestAnimationFrame(frame);
 if(loadError)openPanel('load-error');else if(offline?.seconds>60)openPanel('offline');else if(!state.worldViewIntro){state.worldViewIntro=true;openPanel('welcome');}
+
+// Tap-to-move is the primary touch interaction; native dragging is a PC shortcut.
+document.addEventListener('input',event=>{if(event.target.id==='inventory-quantity'){const value=Number(event.target.value);inventoryView.quantity=Number.isFinite(value)&&value>0?Math.floor(value):1;inventoryView.confirmDrop=false;}});
+let draggedInventory=null;
+document.addEventListener('dragstart',event=>{const slot=event.target.closest('[data-inv-slot]');if(!slot||slot.draggable!==true)return;draggedInventory={source:slot.dataset.source,index:Number(slot.dataset.invSlot)};event.dataTransfer.setData('text/plain','wildroot-item');event.dataTransfer.effectAllowed='move';});
+document.addEventListener('dragover',event=>{if(draggedInventory&&event.target.closest('[data-inv-slot]'))event.preventDefault();});
+document.addEventListener('drop',event=>{const slot=event.target.closest('[data-inv-slot]');if(!draggedInventory||!slot)return;event.preventDefault();const from=draggedInventory;draggedInventory=null;const dest=slot.dataset.source;if(from.source==='bag'&&dest==='bag')E.moveSlot(world.c,from.index,Number(slot.dataset.invSlot));else if(from.source==='chest'&&dest==='chest'&&E.storageAccess(world.c))E.moveChestSlot(state,from.index,Number(slot.dataset.invSlot));else if(from.source!==dest)E.transferSlot(state,world.c,from.index,Infinity,from.source);save();renderPanel();});
+document.addEventListener('dragend',()=>{draggedInventory=null;});
