@@ -1,4 +1,4 @@
-import {ITEMS,EXPANSIONS} from './content.mjs?v=5';
+import {ITEMS,EXPANSIONS} from './content.mjs?v=6';
 export const BAG_STACK=99,CHEST_STACK=999;
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.overflow??={};return c;}
 export function bagCapacity(c){return 16+(c.usedExpansions||[]).reduce((n,id)=>n+(EXPANSIONS[id]?.target==='bag'?EXPANSIONS[id].slots:0),0);}

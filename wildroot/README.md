@@ -71,3 +71,5 @@ The regression suite covers inventory isolation, all town chests, stacking/capac
 - `world.mjs`: navigation, active combat/abilities, monster behavior, portals, storage/NPC interaction and loot.
 - `panels.mjs` / `app.mjs`: player-facing overlays, controls and save coordination.
 - `scene.mjs` / `audio.mjs`: original rendering and synthesized effects.
+
+Live browser checks on the deployed build confirmed old-save loading, separate carried/stored quantities, a storage chest opening in Hearthstead, a real deposit, Hesta’s quest reward entering the backpack, Woven Pouch consumption from 16 to 20 slots surviving reload, and a foundry batch reserving its inputs. The final patch prevents Blacksmith bonuses from duplicating account-only chest expansions and makes quest item rewards and queue-start messages explicit.

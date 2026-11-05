@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=5';
-import * as D from './content.mjs?v=5';
-import {World,createMap,GROUND,abilitySet} from './world.mjs?v=5';
+import * as E from './engine.mjs?v=6';
+import * as D from './content.mjs?v=6';
+import {World,createMap,GROUND,abilitySet} from './world.mjs?v=6';
 function rich(s){s.coins=10000;for(const id of Object.keys(D.ITEMS))s.inventory[id]=1000;for(const id of ['ironworking','gilding','brewing','verdant-steel','sunwell','heartwood'])E.unlock(s,id);}
 function tick(w,n,input={}){for(let i=0;i<n*50;i++)w.step(.02,typeof input==='function'?input(i):input);}
 test('Every town zone has an actual universal storage chest',()=>{for(const a of D.AREAS.filter(a=>['town','jungle-town'].includes(a.id)))for(let i=0;i<a.zones.length;i++){const map=createMap(a.id,i);assert.equal(map.storage.length,1);assert.equal(map.storage[0].kind,'storage');assert.ok(map.entities.includes(map.storage[0]));}});
@@ -62,4 +62,7 @@ test('World One migration retains old chest contents, equipment tiers and study 
 });
 test('World One completes through actual common-material actions with five classes, banking, queues and an active boss',async()=>{
  const {runWorldOne}=await import('./world1-sim.mjs');const result=runWorldOne();assert.equal(result.storyComplete,true);assert.equal(result.characters.length,5);assert.ok(result.events.some(e=>e.event==='seal'));assert.ok(result.state.story.heart.done);assert.equal(result.chestCapacity,60);assert.ok(result.minutes>20&&result.minutes<180);assert.equal(result.state.characters[0].loadout.weapon.runes.length,2);
+});
+test('Blacksmiths make one account chest expansion, while backpack expansions can be shared',()=>{
+ const s=E.freshSave(),c=E.selected(s);rich(s);c.class='blacksmith';E.travel(s,c,'town',1);assert.ok(E.craft(s,c,'wooden-crate'));assert.equal(c.bag['wooden-crate'],1);assert.ok(E.useExpansion(s,c,'wooden-crate'));assert.equal(E.craft(s,c,'wooden-crate'),false);assert.ok(E.craft(s,c,'woven-pouch'));assert.equal(c.bag['woven-pouch'],2);
 });
