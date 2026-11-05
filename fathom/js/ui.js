@@ -5,7 +5,7 @@
 // uses, so a slot shows the block it will place.
 
 function makeUI(root, deps) {
-  const { tiles, texture, inventory, atlas } = deps;
+  const { tiles, texture, inventory, atlas, mining } = deps;
   const els = {};
   let open = false;
 
@@ -35,6 +35,21 @@ function makeUI(root, deps) {
       ctx.strokeStyle = 'rgba(255,255,255,0.18)';
       ctx.lineWidth = Math.max(1, size / 12);
       ctx.strokeRect(size * 0.16, size * 0.16, size * 0.68, size * 0.68);
+      return canvas;
+    }
+    if (mining && mining.isTool(item)) {
+      const u = size / 16;
+      ctx.fillStyle = '#6b4a2c';
+      ctx.fillRect(7 * u, 4 * u, 2 * u, 10 * u);
+      ctx.fillStyle = '#4e351e';
+      ctx.fillRect(7 * u, 4 * u, 1 * u, 10 * u);
+      const head = mining.tierColour(item);
+      ctx.fillStyle = head;
+      ctx.fillRect(3 * u, 3 * u, 10 * u, 2 * u);
+      ctx.fillRect(2 * u, 4 * u, 2 * u, 2 * u);
+      ctx.fillRect(12 * u, 4 * u, 2 * u, 2 * u);
+      ctx.fillStyle = 'rgba(255,255,255,0.32)';
+      ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
       return canvas;
     }
     ctx.fillStyle = '#8894a8';

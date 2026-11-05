@@ -21,6 +21,7 @@
 <script src="js/texture.js"></script>
 <script src="js/light.js"></script>
 <script src="js/player.js"></script>
+<script src="js/mining.js"></script>
 <script src="js/profile.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/stats.js"></script>
@@ -40,6 +41,8 @@
     texture: { TILE, VARIANTS, bakeAtlas, variantFor, shade },
     light: { makeLightField, sunTint, sunStrength, solarElevation, EMIT_TINTS },
     player: { makePlayer, step, overlapsSolid, unstick, aimTile, REACH },
+    mining: { TOOLS, TIER_COLOURS, BREAK_AT, toolSpec, isTool, tierColour, powerOf,
+      useTimeOf, requirementOf, toughnessOf, canMine, damagePerHit, hitsFor, secondsFor, requirementName },
     noise: { fbm1, fbm2, ridged2, value1, value2, smooth },
     render: { makeRenderer },
     inventory: { makeInventory, LAYOUT, STACK_MAX },

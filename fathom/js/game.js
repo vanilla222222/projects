@@ -8,7 +8,7 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    noise, autotile, mining, inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
@@ -136,15 +136,45 @@ function makeGame(canvas, deps) {
       state.player.mining = null;
       return;
     }
-    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
-    const hardness = diggingWall ? 0.45 : spec.hardness;
-    const current = state.player.mining;
-    if (!current || current.x !== aim.x || current.y !== aim.y || current.wall !== diggingWall) {
-      state.player.mining = { x: aim.x, y: aim.y, progress: 0, id, wall: diggingWall };
+
+    // You have to be holding the pickaxe, as in Terraria. That is what makes the hotbar
+    // a decision rather than a shelf.
+    const held = selectedItem();
+    const tool = mining.isTool(held) ? held : null;
+    if (!tool) {
+      state.player.mining = null;
+      say('Hold a pickaxe to mine', 0.9);
       return;
     }
-    current.progress += dt;
-    if (current.progress < hardness) return;
+
+    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
+    const power = mining.powerOf(tool);
+    // Walls come away like soft ground: they are a backing, not a seam of rock.
+    const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
+    if (perHit <= 0) {
+      state.player.mining = null;
+      say(spec.name + ' needs a ' + mining.requirementName(spec), 1.6);
+      return;
+    }
+
+    const current = state.player.mining;
+    if (!current || current.x !== aim.x || current.y !== aim.y || current.wall !== diggingWall) {
+      // A fresh tile starts undamaged and swings at once, so the first click always bites.
+      const toughness = diggingWall ? mining.BREAK_AT : mining.toughnessOf(spec);
+      state.player.mining = { x: aim.x, y: aim.y, damage: perHit, swing: 0,
+        id, wall: diggingWall, perHit, toughness };
+      spawnParticles(aim.x, aim.y, spec.colour, 2);
+      if (perHit < toughness) return;
+    } else {
+      current.perHit = perHit;
+      current.swing += dt;
+      if (current.swing < mining.useTimeOf(tool)) return;
+      current.swing -= mining.useTimeOf(tool);
+      current.damage += perHit;
+      spawnParticles(aim.x, aim.y, spec.colour, 2);
+      if (current.damage < current.toughness) return;
+    }
+
     if (diggingWall) {
       world.setWall(aim.x, aim.y, 0);
       spawnParticles(aim.x, aim.y, spec.colour, 6);
@@ -264,12 +294,12 @@ function makeGame(canvas, deps) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = aim.inReach ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.18)';
     ctx.strokeRect(sx + 1, sy + 1, size - 2, size - 2);
-    const mining = state.player.mining;
-    if (mining) {
-      const spec = mining.wall ? tiles.wall(mining.id) : tiles.tile(mining.id);
-      const hardness = mining.wall ? 0.45 : spec.hardness;
+    const dig = state.player.mining;
+    if (dig) {
+      const spec = dig.wall ? tiles.wall(dig.id) : tiles.tile(dig.id);
+
       ctx.fillStyle = 'rgba(255,255,255,0.32)';
-      ctx.fillRect(sx + 2, sy + size - 6, (size - 4) * Math.min(1, mining.progress / hardness), 4);
+      ctx.fillRect(sx + 2, sy + size - 6, (size - 4) * Math.min(1, dig.damage / dig.toughness), 4);
     }
     ctx.restore();
   }
@@ -386,10 +416,11 @@ function makeGame(canvas, deps) {
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
-      { tiles, texture, inventory, atlas: renderer.atlas });
+      { tiles, texture, inventory, atlas: renderer.atlas, mining });
 
     if (characterRecord.inventory) inventory.restore(characterRecord.inventory);
     else {
+      inventory.add({ key: 'wood-pick', kind: 'tool' }, 1, 'hotbar');
       inventory.add({ key: 'torch', kind: 'block' }, 40, 'hotbar');
       inventory.add({ key: 'plankwall', kind: 'wall' }, 60, 'hotbar');
     }
@@ -427,7 +458,15 @@ function makeGame(canvas, deps) {
     menu.open().then(boot);
   }
 
-  return { state, start,
+  // A narrow seam for the browser checks: aim the cursor at a tile and swing once. It
+  // drives the same mine() the mouse does, so a wiring mistake shows up here too.
+  function swingAt(x, y, dt) {
+    pointer.x = x + 0.5;
+    pointer.y = y + 0.5;
+    mine(dt);
+  }
+
+  return { state, start, deps, swingAt, selectedItem,
     get inventory() { return inventory; },
     get stats() { return stats; },
     get seed() { return seed; },

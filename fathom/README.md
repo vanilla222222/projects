@@ -85,6 +85,7 @@ the cost of one small canvas.
 | `js/autotile.js` | eight-neighbour masks to edges and inner corners |
 | `js/texture.js` | procedural tile atlas |
 | `js/light.js` | coloured sun and emitter propagation, day cycle |
+| `js/mining.js` | Pickaxe power, per-tile toughness, the tier gate |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/render.js` | sky, parallax, walls, tiles, lighting, bloom, particles |
 | `js/profile.js` | characters and worlds, kept apart, and seed parsing |
