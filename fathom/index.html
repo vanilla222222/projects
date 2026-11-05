@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fathom</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<div id="hud">
+  <div class="panel readout">
+    <div class="row"><span class="label">Time</span><span data-field="clock">--:--</span></div>
+    <div class="row"><span class="label">Biome</span><span data-field="biome">—</span></div>
+    <div class="row"><span class="label">Depth</span><span data-field="depth">—</span></div>
+    <div class="row"><span class="label">At</span><span data-field="coords">—</span></div>
+    <div class="row dim"><span class="label">Seed</span><span data-field="seed">—</span></div>
+    <div class="row dim"><span class="label">Edits</span><span data-field="edits">0</span></div>
+  </div>
+
+  <p class="message" data-field="message"></p>
+
+  <div class="hotbar">
+    <button class="slot" data-slot="0"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="1"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="2"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="3"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="4"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="5"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="6"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+    <button class="slot" data-slot="7"><span class="chip"></span><span class="name"></span><span class="count"></span></button>
+  </div>
+</div>
+
+<script src="js/rng.js"></script>
+<script src="js/noise.js"></script>
+<script src="js/tiles.js"></script>
+<script src="js/worldgen.js"></script>
+<script src="js/chunks.js"></script>
+<script src="js/autotile.js"></script>
+<script src="js/texture.js"></script>
+<script src="js/light.js"></script>
+<script src="js/player.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+<script>
+(function boot() {
+  const deps = {
+    tiles: { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf },
+    worldgen: { CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, ORE_BANDS,
+      biomeAt, surfaceHeight, baseTileAt, treeAt, generateChunk },
+    chunks: { makeWorld },
+    autotile: { maskAt, edges, exposure, isBuried },
+    texture: { TILE, VARIANTS, bakeAtlas, variantFor, shade },
+    light: { makeLightField, sunTint, sunStrength, solarElevation, EMIT_TINTS },
+    player: { makePlayer, step, overlapsSolid, unstick, aimTile, REACH },
+    noise: { fbm1, fbm2, ridged2, value1, value2, smooth },
+    render: { makeRenderer }
+  };
+  const game = makeGame(document.getElementById('stage'), deps);
+  game.start();
+  window.fathom = game;
+})();
+</script>
+</body>
+</html>
