@@ -1,0 +1,146 @@
+[
+  {
+    "seed": 42,
+    "clicks": 2,
+    "expansions": [
+      {
+        "id": "mines",
+        "minutes": 18.67,
+        "startMinutes": 231.75,
+        "finishMinutes": 250.42
+      },
+      {
+        "id": "mastery",
+        "minutes": 19.08,
+        "startMinutes": 250.42,
+        "finishMinutes": 269.5
+      },
+      {
+        "id": "rebirth",
+        "minutes": 20.58,
+        "startMinutes": 269.5,
+        "finishMinutes": 290.08
+      },
+      {
+        "id": "smelt",
+        "minutes": 18.75,
+        "startMinutes": 290.08,
+        "finishMinutes": 308.83
+      },
+      {
+        "id": "forest",
+        "minutes": 17.67,
+        "startMinutes": 308.83,
+        "finishMinutes": 326.5
+      },
+      {
+        "id": "mill",
+        "minutes": 18.17,
+        "startMinutes": 326.5,
+        "finishMinutes": 344.67
+      },
+      {
+        "id": "workshop",
+        "minutes": 20.92,
+        "startMinutes": 344.67,
+        "finishMinutes": 365.58
+      }
+    ]
+  },
+  {
+    "seed": 7,
+    "clicks": 2,
+    "expansions": [
+      {
+        "id": "mines",
+        "minutes": 18.67,
+        "startMinutes": 231.75,
+        "finishMinutes": 250.42
+      },
+      {
+        "id": "mastery",
+        "minutes": 19.08,
+        "startMinutes": 250.42,
+        "finishMinutes": 269.5
+      },
+      {
+        "id": "rebirth",
+        "minutes": 20.58,
+        "startMinutes": 269.5,
+        "finishMinutes": 290.08
+      },
+      {
+        "id": "smelt",
+        "minutes": 18.75,
+        "startMinutes": 290.08,
+        "finishMinutes": 308.83
+      },
+      {
+        "id": "forest",
+        "minutes": 17.67,
+        "startMinutes": 308.83,
+        "finishMinutes": 326.5
+      },
+      {
+        "id": "mill",
+        "minutes": 19.08,
+        "startMinutes": 326.5,
+        "finishMinutes": 345.58
+      },
+      {
+        "id": "workshop",
+        "minutes": 20.67,
+        "startMinutes": 345.58,
+        "finishMinutes": 366.25
+      }
+    ]
+  },
+  {
+    "seed": 99,
+    "clicks": 2,
+    "expansions": [
+      {
+        "id": "mines",
+        "minutes": 18.67,
+        "startMinutes": 231.75,
+        "finishMinutes": 250.42
+      },
+      {
+        "id": "mastery",
+        "minutes": 19.08,
+        "startMinutes": 250.42,
+        "finishMinutes": 269.5
+      },
+      {
+        "id": "rebirth",
+        "minutes": 20.58,
+        "startMinutes": 269.5,
+        "finishMinutes": 290.08
+      },
+      {
+        "id": "smelt",
+        "minutes": 18.75,
+        "startMinutes": 290.08,
+        "finishMinutes": 308.83
+      },
+      {
+        "id": "forest",
+        "minutes": 17.42,
+        "startMinutes": 308.83,
+        "finishMinutes": 326.25
+      },
+      {
+        "id": "mill",
+        "minutes": 17,
+        "startMinutes": 326.25,
+        "finishMinutes": 343.25
+      },
+      {
+        "id": "workshop",
+        "minutes": 21.17,
+        "startMinutes": 343.25,
+        "finishMinutes": 364.42
+      }
+    ]
+  }
+]
