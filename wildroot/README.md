@@ -54,7 +54,7 @@ The controlled character uses World physics. Other characters use idle rules. Fo
 Run:
 
 ```
-node --test wildroot/engine.test.mjs wildroot/world.test.mjs wildroot/progression.test.mjs
+node --test wildroot/engine.test.mjs wildroot/world.test.mjs wildroot/progression.test.mjs wildroot/inventory.test.mjs
 node wildroot/world1-sim.mjs
 ```
 
@@ -73,3 +73,16 @@ The regression suite covers inventory isolation, all town chests, stacking/capac
 - `scene.mjs` / `audio.mjs`: original rendering and synthesized effects.
 
 Live browser checks on the deployed build confirmed old-save loading, separate carried/stored quantities, a storage chest opening in Hearthstead, a real deposit, Hesta’s quest reward entering the backpack, Woven Pouch consumption from 16 to 20 slots surviving reload, and a foundry batch reserving its inputs. The final patch prevents Blacksmith bonuses from duplicating account-only chest expansions and makes quest item rewards and queue-start messages explicit.
+
+
+## Positional inventory and viewport dock
+
+Backpacks now have persistent 4 × 4 pages. Selecting a stack exposes quantity, move/split, lock, use/equip, chest transfer and confirmed ground-drop actions. Dragging is a desktop shortcut; every action also works by tapping buttons. Locks belong to slots, including empty reserved slots, survive save/export, and prevent movement, sorting, deposit and dropping. Crafting and deliberate consumable use may still spend locked materials. Sort merges unlocked stacks while retaining locked positions. Legacy quantities and equipment remain intact, including over-capacity old storage.
+
+The Equipment and Tools tabs separate worn combat gear from the pickaxe and hatchet. Storage Info tracks consumed slot expansions and capacity pouches. Four World One capacity categories—Materials, Mining (ores), Logging (logs), and Food/potions—each have woven (+100), reinforced (+300), and runic (+600) pouch recipes at the anvil. Each exact pouch is consumed once per character, adding to that category’s base 99 stack limit. They neither add grid slots nor affect the shared chest’s 999 stack limit. Capacity upgrades do not discard items or automatically rearrange existing stacks; Sort compacts them. Slot expansion rules remain once per character for backpacks and once per account for chests.
+
+Ground drops retain equipment instance IDs and runes. Reloading preserves dropped items. Leaving the map recovers remaining drops rather than deleting them, including equipment when a backpack is full. Universal chest transfers remain available only near a real town chest; selecting a stack allows partial transfers.
+
+The game is now a single dynamic-viewport frame with the map above an integrated controls/menu dock. Both desktop and touch layouts keep movement, combat and menu buttons on screen without document scrolling; only open menus scroll. Safe-area insets are respected. Actual phone hardware testing remains outstanding.
+
+Reference research: IdleOn’s developer quality update notes describe persistent inventory locks; DigitalTQ’s beginner guide distinguishes once-per-character bag-space items from anvil-crafted category capacity pouches. Wildroot uses original item names, progression costs and artwork rather than copying IdleOn assets.
