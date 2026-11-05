@@ -60,7 +60,7 @@ export const RECIPES = [
 // Every material has a real sink. Rare discoveries create permanent account growth.
 export const OFFERINGS=Object.keys(ITEMS).filter(id=>!['copper','iron','gold','oak','birch','jungle-wood','copper-bar','iron-bar','gold-bar','plank','dust','tonic'].includes(id));
 export function purposes(id){
- const uses=RECIPES.filter(r=>r.cost[id]).map(r=>r.name);
+ const uses=[];if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>r.cost[id]).map(r=>r.name));
  for(const c of Object.values(CLASSES))if(c.needs[id])uses.push(`${c.name} initiation`);
  if(OFFERINGS.includes(id))uses.push('Material research at the Stamp Registry');
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
@@ -242,3 +242,19 @@ for(const[id,name,giver,requires,deliver,text]of lateQuests)STORY.push({id,name,
 for(const id of NPC_TOKEN_GIVERS){const name=id==='steward'?'Hesta':CLASSES[id].trainer;item('world-token-'+id,name+'’s Token','legendary','✺');}
 item('world-one-completion','Greenreach Completion Token','legendary','✹');
 RECIPES.push({id:'world-one-completion',name:'Combine World One Tokens',skill:'smithing',station:'anvil',cost:Object.fromEntries(NPC_TOKEN_GIVERS.map(id=>['world-token-'+id,1])),output:'world-one-completion',count:1,unique:true});
+
+// World One combat supplies, collection and production.
+export const FOODS={bread:{name:'Trail Bread',heal:35,cooldown:20},stew:{name:'Forest Stew',heal:85,cooldown:25},feast:{name:'Canopy Feast',heal:150,cooldown:30}};
+for(const[id,d]of Object.entries(FOODS))item(id,d.name,'common','◒');
+TOWN_SHOPS.town.stock.push(['bread',4,30]);TOWN_SHOPS['jungle-town'].stock.push(['stew',12,25],['feast',25,10]);
+RECIPES.push({id:'bread',name:'Bake Trail Bread',skill:'alchemy',station:'alchemy',cost:{oak:3,'moss-slime':2},output:'bread',count:4},{id:'stew',name:'Cook Forest Stew',skill:'alchemy',station:'alchemy',cost:{'boar-hide':3,'frog-dew':2},output:'stew',count:3,unlock:'brewing'},{id:'feast',name:'Cook Canopy Feast',skill:'alchemy',station:'alchemy',cost:{'jungle-wood':4,'orchid-petal':3,tonic:1},output:'feast',count:3,unlock:'gilding'});
+export const ANVIL_PRODUCTS={thread:{name:'Woven Thread',seconds:25,xp:1},nails:{name:'Copper Nails',seconds:45,xp:2},brick:{name:'Kiln Brick',seconds:80,xp:3}};
+for(const[id,d]of Object.entries(ANVIL_PRODUCTS))item(id,d.name,'common','▱');
+export const STONES={edge:{name:'Edge Stone',stats:{attack:2},slots:['weapon']},guard:{name:'Guard Stone',stats:{defense:1,health:5},slots:['head','body','feet','charm']},craft:{name:'Craft Stone',stats:{mining:.04,logging:.04},slots:['pick','axe']}};
+for(const[id,d]of Object.entries(STONES)){item('stone-'+id,d.name,'rare','◆');RECIPES.push({id:'stone-'+id,name:d.name,skill:'smithing',station:'anvil',cost:id==='edge'?{thread:5,'copper-bar':2}:id==='guard'?{nails:5,'iron-bar':1}:{brick:3,'copper-bar':2},output:'stone-'+id,count:1,unlock:id==='guard'?'ironworking':null});}
+export const CARDS={};
+for(const e of Object.values(ENEMIES)){const effect=e.id==='boss'?'skill':e.area==='forest'?'attack':e.area==='caves'?'accuracy':e.area==='jungle'?'health':e.area==='deep'?'crit':'speed';CARDS[e.id]={name:e.name+' Card',effect,amount:effect==='crit'?.003:effect==='accuracy'?.03:.015,kind:'monster'};}
+for(const id of ['copper','iron','gold','oak','birch','jungle-wood'])CARDS[id]={name:ITEMS[id].name+' Card',effect:['copper','iron','gold'].includes(id)?'mining':'logging',amount:.025,kind:'resource'};
+export const MERITS={pockets:{name:'Card Pockets',max:2,cost:3,text:'+1 card slot'},forge:{name:'Extra Furnaces',max:2,cost:3,text:'+1 continuous furnace'},stores:{name:'Anvil Stores',max:3,cost:2,text:'+20 passive product storage'},afk:{name:'Patient Adventuring',max:5,cost:3,text:'+5% AFK combat and gathering progress'},capacity:{name:'Pack Discipline',max:3,cost:2,text:'+5% carry capacity'}};
+export const WORLD_TASKS=[{id:'kills',name:'First Clearing',type:'kills',goal:25,reward:2},{id:'oak',name:'A Stack of Timber',type:'gather',key:'oak',goal:100,reward:2},{id:'copper',name:'Copper Country',type:'gather',key:'copper',goal:100,reward:2},{id:'cards',name:'Card Collector',type:'cards',goal:5,reward:3},{id:'stamps',name:'A Growing Stamp Book',type:'stamps',goal:3,reward:2},{id:'anvil',name:'Made While Adventuring',type:'anvil',goal:50,reward:2},{id:'forge',name:'The Forge Never Sleeps',type:'forge',goal:25,reward:3},{id:'classes',name:'Five Callings',type:'classes',goal:5,reward:3},{id:'rooms',name:'Greenreach Explorer',type:'rooms',goal:18,reward:3},{id:'boss',name:'Rootwarden Vanquisher',type:'boss',goal:1,reward:4},{id:'completion',name:'A World Remembered',type:'completion',goal:1,reward:5}];
+export const DAILY_TASKS=[{id:'hunt',name:'Daily Hunt',type:'kills',goal:20,reward:1},{id:'harvest',name:'Daily Harvest',type:'harvest',goal:50,reward:1},{id:'production',name:'Daily Production',type:'anvil',goal:10,reward:1}];
