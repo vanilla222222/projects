@@ -64,7 +64,8 @@ function makeRenderer(canvas, deps) {
     ctx.save();
     ctx.globalAlpha = (1 - vacuum) * (night > 0.3 ? 0.5 : 1);
     for (const band of CLOUD_BANDS) {
-      const originX = state.camera.x * band.depth + state.time * band.drift;
+      const gust = (state.weather && state.weather.wind) || 0;
+      const originX = state.camera.x * band.depth + state.time * (band.drift + gust * 26);
       const baseY = canvas.height * band.y;
       for (let px = -band.size; px <= canvas.width + band.size; px += band.size * 0.7) {
         const wx = (originX + px) * band.scale;
@@ -226,6 +227,7 @@ function makeRenderer(canvas, deps) {
   function drawTiles(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
+    const wind = (state.weather && state.weather.wind) || 0;
     ctx.imageSmoothingEnabled = false;
     for (let ty = 0; ty < rows; ty += 1) {
       for (let tx = 0; tx < cols; tx += 1) {
@@ -270,6 +272,17 @@ function makeRenderer(canvas, deps) {
           continue;
         }
 
+        // Foliage bends in the wind. Drawn as two halves - the root half where it is,
+        // the top half pushed sideways - because one drawImage cannot shear, and two
+        // halves offset against each other read as a bend at this size.
+        if (spec.decor && wind !== 0) {
+          const sway = Math.sin(state.time * 2.1 + wx * 0.7) * wind * size * 0.18;
+          ctx.drawImage(atlas, variant * TILE, id * TILE + TILE / 2, TILE, TILE / 2,
+            sx, sy + size / 2, size, size / 2);
+          ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE / 2,
+            sx + sway, sy, size, size / 2);
+          continue;
+        }
         ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
         if (!spec.solid) continue;
         const mask = autotile.maskAt((nx, ny) => tiles.isSolid(state.world.get(nx, ny)), wx, wy);
@@ -295,10 +308,11 @@ function makeRenderer(canvas, deps) {
         if (e.top && spec.key === 'grass') {
           ctx.fillStyle = '#5f9440';
           ctx.fillRect(sx, sy - lip, size, lip);
+          const bend = Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom * 1.6;
           for (let i = 0; i < 3; i += 1) {
             const gx = sx + (i * 5 + (texture.variantFor(wx, wy + i) * 3)) % (size - 2);
             const h = lip * (2 + ((wx + i) % 3));
-            ctx.fillRect(gx, sy - h, Math.max(1, Math.round(zoom)), h);
+            ctx.fillRect(gx + bend, sy - h, Math.max(1, Math.round(zoom)), h);
           }
         }
       }
@@ -594,6 +608,33 @@ function makeRenderer(canvas, deps) {
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
       ctx.shadowBlur = size * 0.2;
+      // A heart is not an item, so it is not in the atlas: it is drawn here, pulsing,
+      // because the one thing it has to do is catch the eye of somebody losing a fight.
+      if (d.kind === 'pickup') {
+        const pulse = 1 + Math.sin(state.time * 6 + d.x) * 0.1;
+        const r = half * 0.34 * pulse;
+        const cxp = sx + half / 2;
+        const cyp = sy + half / 2;
+        ctx.shadowColor = 'rgba(224,64,92,0.9)';
+        ctx.shadowBlur = size * 0.5;
+        ctx.fillStyle = '#e0405c';
+        ctx.beginPath();
+        ctx.arc(cxp - r * 0.55, cyp - r * 0.35, r * 0.62, 0, Math.PI * 2);
+        ctx.arc(cxp + r * 0.55, cyp - r * 0.35, r * 0.62, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cxp - r * 1.1, cyp - r * 0.12);
+        ctx.lineTo(cxp, cyp + r * 1.15);
+        ctx.lineTo(cxp + r * 1.1, cyp - r * 0.12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,220,230,0.75)';
+        ctx.beginPath();
+        ctx.arc(cxp - r * 0.5, cyp - r * 0.45, r * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        continue;
+      }
       if (spec && spec.colour) {
         ctx.drawImage(atlas, 0, spec.id * TILE, TILE, TILE, sx, sy, half, half);
       } else {
@@ -623,6 +664,65 @@ function makeRenderer(canvas, deps) {
   // Water was briefly given an `emit` so a flooded cavern would be visible in the dark,
   // but every tile of an ocean is then an emitter and the bloom pass turned the whole
   // body into a lamp. A tint says the same thing and costs one rectangle.
+  // --- weather -------------------------------------------------------------------------
+  // Rain and snow are drawn as a fixed pool of drops recycled forever rather than as
+  // spawned particles, so a downpour costs the same as a drizzle and nothing accumulates.
+  // Each drop is placed in world coordinates and skipped where the sky is not visible,
+  // which is why rain does not fall inside caves.
+  const DROPS = [];
+  for (let i = 0; i < 520; i += 1) {
+    DROPS.push({ x: Math.random(), y: Math.random(), speed: 0.8 + Math.random() * 0.5,
+      len: 0.5 + Math.random() * 0.8 });
+  }
+
+  function drawWeather(state, view) {
+    const w = state.weather;
+    if (!w || w.rain <= 0.02) return;
+    if (spaceFactor(state) >= 1) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const snow = w.snow > 0.5;
+    // A storm takes the colour out of the sky. Drawn before the drops so the drops stay
+    // bright against it.
+    ctx.save();
+    // Enough to take the colour out of the sky: at a quarter of this a downpour still
+    // happened under a bright blue noon, which reads as sun shower rather than as storm.
+    ctx.fillStyle = 'rgba(86,96,114,' + (0.44 * Math.min(1, w.rain)).toFixed(3) + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    const count = Math.round(DROPS.length * Math.min(1, w.rain));
+    const fall = snow ? 7 : 42;
+    const slant = w.wind * (snow ? 5 : 11);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(190,214,236,' + (0.5 * Math.min(1, w.rain)).toFixed(2) + ')';
+    ctx.fillStyle = 'rgba(236,244,252,' + (0.8 * Math.min(1, w.rain)).toFixed(2) + ')';
+    ctx.lineWidth = Math.max(1, zoom * 0.7);
+    const spanX = (canvas.width / size) + 4;
+    const spanY = (canvas.height / size) + 4;
+    for (let i = 0; i < count; i += 1) {
+      const d = DROPS[i];
+      // World position, so the rain belongs to the world rather than to the screen and
+      // does not slide when the camera moves.
+      const wy = y0 - 2 + ((d.y * spanY + state.time * fall * d.speed) % spanY);
+      const wx = x0 - 2 + ((d.x * spanX + wy * slant * 0.02) % spanX + spanX) % spanX;
+      // Nothing falls where there is rock overhead.
+      if (wy > worldgen.surfaceHeight(state.world.seed, Math.floor(wx))) continue;
+      const sx = (wx - x0) * size - offsetX;
+      const sy = (wy - y0) * size - offsetY;
+      if (snow) {
+        ctx.beginPath();
+        ctx.arc(sx, sy, Math.max(1, zoom * 0.8), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - slant * zoom * 0.5, sy + d.len * size);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawUnderwater(state) {
     const player = state.player;
     if (!player || !player.swimming) return;
@@ -678,6 +778,7 @@ function makeRenderer(canvas, deps) {
     drawCarriedLight(state, view);
     drawBloom(state, view);
     drawParticles(state, view);
+    drawWeather(state, view);
     drawUnderwater(state);
     drawVignette();
     return view;

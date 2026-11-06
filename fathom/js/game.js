@@ -53,6 +53,7 @@ function makeGame(canvas, deps) {
     particles: [],
     drops: [],
     paused: false,
+    weather: { rain: 0, wind: 0, snow: 0 },
     // Animation state the renderer reads. `anim` is the player's gait phase, advanced by
     // distance walked rather than by the clock so the legs match the ground; `swingArm`
     // is where in its arc the swing currently is, or null when the arms are at rest.
@@ -115,6 +116,9 @@ function makeGame(canvas, deps) {
 
   // Mined blocks become items on the ground that fly to the player, rather than appearing in
   // the backpack from nowhere. A full backpack therefore leaves them lying there.
+  // What a heart restores when you walk over it.
+  const HEART_HEAL = 20;
+
   function dropItem(x, y, key, kind, count) {
     state.drops.push({ x: x + 0.5, y: y + 0.5, vx: (Math.random() - 0.5) * 2, vy: -3,
       key, kind: kind || 'block', count: count || 1, age: 0 });
@@ -146,6 +150,14 @@ function makeGame(canvas, deps) {
         d.y += (py - d.y) * Math.min(1, pull);
       }
       if (dist < 0.55) {
+        // A heart is used where it is picked up rather than carried: Terraria's rule,
+        // and the reason a fight you are losing can still be turned around by pushing
+        // forward into what you just killed.
+        if (d.kind === 'pickup') {
+          if (d.key === 'heart') statsModule.heal(stats, HEART_HEAL);
+          state.drops.splice(i, 1);
+          continue;
+        }
         const left = inventory.add({ key: d.key, kind: d.kind }, d.count);
         if (left === 0) state.drops.splice(i, 1);
         else if (left < d.count) d.count = left;
@@ -230,6 +242,14 @@ function makeGame(canvas, deps) {
           dropItem(origin.x, origin.y, item.key, item.kind, item.count);
         }
         world.setContainer(origin.x, origin.y, []);
+      }
+      // A pot spills what it holds. Which items those are is a function of where the
+      // pot is, so a pot is a place rather than a dice roll, and the same pot broken in
+      // two different sessions gives the same things.
+      if (spec.pot) {
+        for (const item of worldgen.potContents(seed, aim.x, aim.y)) {
+          dropItem(aim.x, aim.y, item.key, craft.kindOf(item.key), item.count);
+        }
       }
       if (origin) breakMulti(origin);
       else world.set(aim.x, aim.y, tiles.AIR);
@@ -381,6 +401,15 @@ function makeGame(canvas, deps) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
       }
       spawnParticles(target.x, target.y, target.spec.colour, 14);
+      // Roughly one kill in five leaves a heart behind, and a hurt player sees them
+      // more often: the drop is there to keep a fight going, so it arrives when the
+      // fight is going badly.
+      const need = 1 - stats.health / Math.max(1, stats.maxHealth);
+      if (Math.random() < 0.16 + need * 0.3) {
+        state.drops.push({ x: target.x + 0.5, y: target.y + 0.5,
+          vx: (Math.random() - 0.5) * 3, vy: -5, key: 'heart', kind: 'pickup',
+          count: 1, age: 0 });
+      }
       say(target.spec.name + ' died', 1.0);
     }
     return true;
@@ -396,6 +425,24 @@ function makeGame(canvas, deps) {
     state.player.vy = 0;
     if (swarm) swarm.clear();
     say('You died', 2.2);
+  }
+
+  // A life crystal is used where it stands rather than carried away: it is the one
+  // thing in the world that makes the player permanently stronger, and consuming it on
+  // the spot is what makes finding one an event rather than an inventory entry.
+  function useCrystal(aim) {
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (spec.crystal !== 'life') return false;
+    const origin = tiles.originOf(spec, aim.x, aim.y);
+    if (!origin) return false;
+    if (!statsModule.raiseMaxHealth(stats)) {
+      say('You are as strong as a heart can make you', 1.8);
+      return true;
+    }
+    breakMulti(origin);
+    spawnParticles(origin.x + 0.5, origin.y + 0.5, '#e0405c', 20);
+    say('Maximum health is now ' + stats.maxHealth, 2.2);
+    return true;
   }
 
   // A door swings when you use it, whatever you are holding. Checked before anything the
@@ -617,6 +664,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     if (talkTo()) return;
+    if (aim0.inReach && useCrystal(aim0)) return;
     if (aim0.inReach && useBed(aim0)) return;
     if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
@@ -738,6 +786,12 @@ function makeGame(canvas, deps) {
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
     if (depth > state.progress.deepest) state.progress.deepest = depth;
     state.progress.coins = inventory.countOf('coin');
+
+    // Weather lives in worldgen because it is a property of the world, pure in seed and
+    // clock. Keeping one definition matters more here than usual: a copy of this rule in
+    // the test would make the test agree with the copy rather than with the game.
+    state.weather = worldgen.weatherAt(seed, state.time,
+      worldgen.biomeAt(seed, Math.floor(state.player.x)).key);
 
     const gear = currentEffects();
     state.gear = gear;

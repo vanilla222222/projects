@@ -613,6 +613,70 @@ function paintChest(ctx, spec, variant, ox, oy) {
   if (!top && !left) ctx.fillRect(ox, oy, 3, 3);
 }
 
+// A life crystal: a faceted red gem on a small pedestal, spanning all four cells. Drawn
+// bright at the core and dark at the edges so it reads as something that glows in a cave
+// you have just opened, which is how you are meant to notice it.
+function paintLifeCrystal(ctx, spec, variant, ox, oy) {
+  const top = spec.part.dy === 0;
+  const left = spec.part.dx === 0;
+  const c = spec.colour;
+  // The gem is a diamond centred on the join of the four cells; each cell draws its own
+  // quarter of it.
+  const cx = left ? 16 : 0;
+  const cy = top ? 16 : 0;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(ox + cx, oy + cy - 14);
+  ctx.lineTo(ox + cx + 8, oy + cy);
+  ctx.lineTo(ox + cx, oy + cy + 12);
+  ctx.lineTo(ox + cx - 8, oy + cy);
+  ctx.closePath();
+  const g = ctx.createRadialGradient(ox + cx, oy + cy - 3, 1, ox + cx, oy + cy, 15);
+  // Kept well short of white at the core: the tile also emits light, and bloom on top of
+  // a near-white centre washed the gem out into a pale blob with pink corners.
+  g.addColorStop(0, shade(c, 0.28));
+  g.addColorStop(0.5, c);
+  g.addColorStop(1, shade(c, -0.52));
+  ctx.fillStyle = g;
+  ctx.fill();
+  // Facet lines, so it is a cut gem rather than a red lozenge.
+  ctx.strokeStyle = 'rgba(255,220,230,0.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ox + cx - 8, oy + cy);
+  ctx.lineTo(ox + cx + 8, oy + cy);
+  ctx.moveTo(ox + cx, oy + cy - 14);
+  ctx.lineTo(ox + cx, oy + cy + 12);
+  ctx.stroke();
+  ctx.restore();
+  // A stone base under the bottom two cells.
+  if (!top) {
+    ctx.fillStyle = '#6a6470';
+    ctx.fillRect(ox + (left ? 2 : 0), oy + 13, 14, 3);
+    ctx.fillStyle = '#857f8c';
+    ctx.fillRect(ox + (left ? 2 : 0), oy + 13, 14, 1);
+  }
+}
+
+// A pot: a bellied jar with a rim and a shoulder highlight.
+function paintPot(ctx, spec, variant, ox, oy) {
+  const c = spec.colour;
+  ctx.fillStyle = c;
+  ctx.beginPath();
+  ctx.ellipse(ox + 8, oy + 10, 5.5, 5.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(ox + 5, oy + 4, 6, 6);
+  ctx.fillStyle = shade(c, -0.35);
+  ctx.fillRect(ox + 4, oy + 3, 8, 2);          // rim
+  ctx.fillStyle = shade(c, 0.28);
+  ctx.fillRect(ox + 5, oy + 7, 2, 5);          // highlight down the belly
+  ctx.fillStyle = shade(c, -0.3);
+  ctx.fillRect(ox + 3, oy + 11, 10, 1);        // banding
+  // Which pot this is, so a row of them is not a row of clones.
+  ctx.fillStyle = shade(c, variant % 2 ? 0.14 : -0.14);
+  ctx.fillRect(ox + 8 + (variant % 3), oy + 9, 1, 2);
+}
+
 // Chairs, tables and benches: small silhouettes, because a tile of flat colour in a room
 // is indistinguishable from a tile of wall.
 function paintFurniture(ctx, spec, variant, ox, oy) {
@@ -732,6 +796,8 @@ function bakeAtlas(document, tiles) {
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
       else if (spec.bed) paintBed(ctx, spec, v, ox, oy);
       else if (spec.chest) paintChest(ctx, spec, v, ox, oy);
+      else if (spec.crystal === 'life') paintLifeCrystal(ctx, spec, v, ox, oy);
+      else if (spec.pot) paintPot(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'
