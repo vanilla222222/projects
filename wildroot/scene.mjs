@@ -64,7 +64,7 @@ export function drawWorld(canvas,world,t,reduced=false){
   g.globalAlpha=world.state.options?.reducedMotion ? .45 : .25+.2*Math.sin(time*10)**2;
   if(['charge','slam','hop','pounce','rootburst'].includes(tell.kind)){R(tell.left,tell.y-10,tell.right-tell.left,12,'#f48b61',g);g.strokeStyle='#ffe1a1';g.lineWidth=3;g.strokeRect(tell.left,tell.y-15,tell.right-tell.left,17);}
   else{R(e.x-18,e.y-65,36,20,'#f48b61',g);g.strokeStyle='#ffe1a1';g.lineWidth=3;g.beginPath();g.moveTo(e.x,e.y-65);g.lineTo(e.x+tell.direction*150,e.y-65);g.stroke();}
-  g.globalAlpha=1;label(g,d.name.toUpperCase(),e.x,e.y-(map.boss?255:145),'#ffe0b4',15);label(g,d.hint,e.x,e.y-(map.boss?235:125),'#fff0cf',11);
+  g.globalAlpha=1;label(g,d.name.toUpperCase(),e.x,e.y-(map.boss?255:180),'#ffe0b4',15);label(g,d.hint,e.x,e.y-(map.boss?235:160),'#fff0cf',11);
   R(e.x-35,e.y-116,70,5,'#552c39',g);R(e.x-35,e.y-116,70*progress,5,'#f4b07d',g);}
 
  g.save();if(e.flash>0)g.globalAlpha=.6;g.translate(e.x,e.y);g.scale(e.facing||-1,1);enemy(g,0,e.enemy.behavior==='hop'?-Math.abs(Math.sin(time*3+e.phase))*5:0,e.enemy,time,map.boss&&e.enemy.id==='boss');g.restore();
