@@ -77,10 +77,12 @@ function unstick(player, world, tiles, limit) {
 // only a tile that is mostly full should take your feet off the ground.
 const SWIM_DEPTH = 0.45;
 
+// How wet a tile is, 0 to 1. Driven by the water level rather than by the block id,
+// because a waterlogged shell or frond is every bit as swimmable as open water and
+// checking for a water tile would have left dry pockets to fall through.
 function liquidFraction(world, tiles, x, y) {
-  const id = world.get(x, y);
-  if (!tiles.tile(id).liquid) return 0;
-  if (!world.getLevel) return 1;
+  if (tiles.isSolid(world.get(x, y))) return 0;
+  if (!world.getLevel) return tiles.tile(world.get(x, y)).liquid ? 1 : 0;
   return world.getLevel(x, y) / (world.LEVEL_FULL || 255);
 }
 
