@@ -1,4 +1,4 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=26';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=27';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs';

@@ -1,8 +1,8 @@
-import * as EconomyUI from './economy-panels.mjs?v=26';
-import * as E from './engine.mjs?v=26';
-import * as D from './content.mjs?v=26';
-import * as UI from './ui-panels.mjs?v=26';
-import {icon,itemArt,esc,tabs,section,fmt} from './ui-art.mjs?v=26';
+import * as EconomyUI from './economy-panels.mjs?v=27';
+import * as E from './engine.mjs?v=27';
+import * as D from './content.mjs?v=27';
+import * as UI from './ui-panels.mjs?v=27';
+import {icon,itemArt,esc,tabs,section,fmt} from './ui-art.mjs?v=27';
 const button=(text,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
 const costs=cost=>Object.entries(cost).map(([id,n])=>`${n} ${D.ITEMS[id].name}`).join(' · ');
@@ -15,7 +15,7 @@ export function anvil(s,c,v={}){
  const nav=tabs([['craft','CRAFT'],['produce','PRODUCE'],['points','POINTS'],['stones','UPGRADE STONES']],tab,'data-anvil-tab');
  if(tab==='craft')return nav+`<div class="inventory-topline"><strong>RECIPE PAGES ${s.workshop.pages}/3</strong><span>${s.workshop.tokens} blueprint tokens</span></div>`+tabs([['1','PAGE 1'],['2','PAGE 2'],['3','PAGE 3']],String(v.recipePage||1),'data-recipe-page')+UI.crafting(s,c,true,{...v,stationOnly:'anvil',recipePage:v.recipePage||1})+section('Recipe Page Expansions',`<div class="save-actions">${[2,3].map(n=>button(s.workshop.pages>=n?'PAGE '+n+' UNLOCKED':'USE EXPANSION '+n,`data-anvil-expansion="${n}"`,s.workshop.pages!==n-1||!E.unlockedAmount(c,'anvil-expansion-'+n))).join('')}</div>${note('Craft the expansion on page 1 after its story quest, then consume it here. One expansion unlocks the page for the whole roster. Existing learned recipes are preserved.')}`);
  if(tab==='stones')return nav+UI.industry(s,c,true,{...v,industryTab:'stones'});
- if(tab==='produce')return nav+`<div class="inventory-topline"><strong>${esc(c.name)}’s production</strong><span>${Object.values(a.stored).reduce((x,n)=>x+n,0)}/${E.anvilCapacity(s,c)} stored · Smithing ${E.skillLevel(c,'smithing')}</span></div><div class="product-grid">${Object.entries(D.ANVIL_PRODUCTS).map(([id,d])=>section(d.name,`${itemArt(id)}<strong>${a.stored[id]||0} stored</strong><p>${(d.seconds/(1+a.upgrades.speed*.1)).toFixed(1)}s each · ${(d.xp*(1+a.upgrades.xp*.05)).toFixed(1)} XP on claim</p><p>${E.productOpen(c,id)?'Learned product':'Requires Smithing '+E.PRODUCT_LEVELS[id]}</p><div class="save-actions">${button(a.product===id?'✓ PRODUCING':'PRODUCE',`data-product="${id}"`,a.product===id||!E.productOpen(c,id))}${button('CLAIM',`data-claim-product="${id}"`,!a.stored[id])}</div>`)).join('')}</div>${note('One product runs per character, including offline. Claim here before the shared product capacity fills. Materials feed upgrade-stone recipes.')}`;
+ if(tab==='produce')return nav+`<div class="inventory-topline"><strong>${esc(c.name)}’s production</strong><span>${Object.values(a.stored).reduce((x,n)=>x+n,0)}/${E.anvilCapacity(s,c)} stored · Smithing ${E.skillLevel(c,'smithing')}</span></div><div class="product-grid">${Object.entries(D.ANVIL_PRODUCTS).map(([id,d])=>section(d.name,`${itemArt(id)}<strong>${a.stored[id]||0} stored</strong><p>${(d.seconds/(1+a.upgrades.speed*.1+(c.accountBonuses?.crafting||0))).toFixed(1)}s each · ${(d.xp*(1+a.upgrades.xp*.05)).toFixed(1)} XP on claim</p><p>${E.productOpen(c,id)?'Learned product':'Requires Smithing '+E.PRODUCT_LEVELS[id]}</p><div class="save-actions">${button(a.product===id?'✓ PRODUCING':'PRODUCE',`data-product="${id}"`,a.product===id||!E.productOpen(c,id))}${button('CLAIM',`data-claim-product="${id}"`,!a.stored[id])}</div>`)).join('')}</div>${note('One product runs per character, including offline. Claim here before the shared product capacity fills. Materials feed upgrade-stone recipes.')}`;
  return nav+section('Personal Anvil Points',`<strong>${E.anvilPoints(c)} points available</strong><p>Gain a point with each Smithing level, or buy extra points with account coins.</p><div class="profession-grid">${[['speed','Speed','+10% production speed'],['capacity','Capacity','+20 stored products'],['xp','Experience','+5% XP on claim']].map(([id,name,text])=>`<article><h3>${name} · ${a.upgrades[id]}</h3><p>${text} per point</p>${button('INVEST POINT',`data-anvil-upgrade="${id}"`,E.anvilPoints(c)<1)}</article>`).join('')}</div>${button('BUY POINT · '+E.money(Math.ceil(15*1.25**a.purchased)),'data-anvil-point=""',a.purchased>=40||s.coins<Math.ceil(15*1.25**a.purchased))}`);
 }
 export function enchanting(s,c,v={}){

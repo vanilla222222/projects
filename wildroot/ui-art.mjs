@@ -1,4 +1,4 @@
-import {ITEMS,EQUIPMENT,CLASSES} from './content.mjs?v=26';
+import {ITEMS,EQUIPMENT,CLASSES} from './content.mjs?v=27';
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n||0).toLocaleString();
 export const percent=n=>(n!==0&&Math.abs(n)<.001?Number((n*100).toPrecision(2)):Number((n*100).toFixed(1)))+'%';

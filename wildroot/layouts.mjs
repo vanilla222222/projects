@@ -1,4 +1,4 @@
-import {ROOM_DESIGNS} from './room-designs.mjs?v=26';
+import {ROOM_DESIGNS} from './room-designs.mjs?v=27';
 // Authored room profiles. Upper platforms connect directly to the ground for reliable tap navigation.
 export const GROUND=644;
 const D={

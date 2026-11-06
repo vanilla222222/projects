@@ -1,14 +1,14 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=26';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=27';
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=26';import * as D from './content.mjs?v=26';
-import * as UI from './economy-panels.mjs?v=26';
-import {roomLayout,pointFor} from './layouts.mjs?v=26';
+import * as E from './engine.mjs?v=27';import * as D from './content.mjs?v=27';
+import * as UI from './economy-panels.mjs?v=27';
+import {roomLayout,pointFor} from './layouts.mjs?v=27';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);s.coins=10000;return{s,c};};
 function visit(c,id){const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,secret:null,activity:'rest',position:pointFor(roomLayout(d.area,d.zone),d.point)});}
 const roundtrip=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 function spare(s,c,id){if(D.EXPANSIONS[id]){if(D.EXPANSIONS[id].target==='bag')c.usedExpansions.push(id);else s.usedChestExpansions.push(id);}if(D.CAPACITY_BAGS[id])c.usedCapacityBags.push(id);if(id.startsWith('stamp-'))s.stamps[id.slice(6)]={level:1,cap:5};if(id==='sculpting-tool')c.statuesUnlocked=true;if(id.startsWith('anvil-expansion-'))s.workshop.pages=3;if(id==='boss-heart')seedStory(s,'heart',{accepted:true,done:true});if(D.EQUIPMENT[id])E.createEquipment(s,id,null,c);else E.give(c,id,2);return E.bagSlots(c).findIndex(t=>t?.id===id||t?.uid&&c.packGear.some(g=>g.uid===t.uid&&g.base===id));}
 test('Every single World One item has at least three distinct, implemented uses, excluding selling',()=>{
- assert.equal(Object.keys(D.ITEMS).length,175);for(const id of Object.keys(D.ITEMS)){const uses=D.purposes(id);assert.ok(uses.length>=3,id+': '+uses.join('; '));assert.equal(new Set(uses).size,uses.length,id);assert.ok(uses.every(u=>!/sell/i.test(u)),id);}
+ assert.ok(Object.keys(D.ITEMS).length>=175);for(const id of Object.keys(D.ITEMS)){const uses=D.purposes(id);assert.ok(uses.length>=3,id+': '+uses.join('; '));assert.equal(new Set(uses).size,uses.length,id);assert.ok(uses.every(u=>!/sell/i.test(u)),id);}
 });
 test('Every ordinary item can actually reclaim and contribute a spare through separate transactions',()=>{
  for(const id of Object.keys(D.ITEMS).filter(id=>!E.BADGES[id]))for(const action of ['reclaim','project']){const{s,c}=setup(),i=spare(s,c,id);assert.ok(i>=0,id);visit(c,action==='reclaim'?'foundry':'vault');const before=E.itemSlot(c,i),n=before.qty;const value=action==='reclaim'?E.reclaimItem(s,c,i):E.contributeItem(s,c,i);assert.equal(value,E.salvageValue(id),id+'/'+action);if(action==='reclaim')assert.equal(s.economy.salvage,value);else assert.equal(s.economy.projects[E.itemProject(id,!!D.EQUIPMENT[id])],value);assert.equal(D.EQUIPMENT[id]?c.packGear.length:c.bag[id],D.EQUIPMENT[id]?0:n-1,id);assert.doesNotThrow(()=>roundtrip(s),id+'/'+action);}

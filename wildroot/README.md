@@ -196,3 +196,14 @@ The 18 personal quests keep their IDs, deliveries, rewards and token chains. New
 Every world species has a hand-authored pixel texture with a distinct silhouette, anatomy, palette and surface details. There are 27 unique designs: 22 world enemies, one rootling and four dungeon creatures. Canvas monsters, bestiary portraits and monster cards use the same art. Difficulty marks distinguish stronger Rootwarden encounters. Unknown IDs do not silently inherit generic art.
 
 Validation includes 196 tests and the full common-material campaign simulation (approximately 126 model minutes). The unlinked development page [responsive checks](tests/responsive.html) embeds the real game at phone, landscape and desktop viewport dimensions for repeatable layout checks; it uses the normal browser save, so export a backup before importing test rosters.
+
+
+## Quest storage and stamp progression
+
+World One now has eight personal slot bags, seven shared-chest expansions, twelve crafted category pouches and fourteen stamps. The four introductory category pouches also come from the matching early quest chains. Bags add spaces; category pouches add stack capacity; chest upgrades expand the same universal town storage. Consume each exact upgrade once in its proper character/account scope.
+
+Quest milestones add Grovekeeper’s Bag (canopy letter), Seamrunner’s Bag (Read the Seams), Spellweaver’s Bag (Threads of Light), Warden’s Backpack (Heart of the Wild), Village Supply Chest (A Village Remembered), Cavern Strongbox (The Stone Oath) and Makers’ Storage Chest (The Forgotten Makers). New stamps cover accuracy, anvil/foundry production speed, enchanting XP, cauldron brewing speed and mining/logging/food carrying capacity.
+
+Already earned permanent quest upgrades become 35 bonus coins per item; the dialogue preview shows the actual reward before hand-in. Character bags and pouches are personal; chest rewards and stamp rewards are account-wide. Existing completed quests backfill newly added permanent items once, using overflow when necessary; consumed, banked, dropped or registered shared upgrades are recognised. Migration does not pay repeat compensation. Storage Info tracks consumed and owned upgrades, reveals quest sources after accepting their quests, and retains anvil/shop sources.
+
+The reward pass audits all 189 items for three implemented uses. New spare bags, chests and stamps keep the existing reclamation and town-project uses. Early pouch recipe costs remain below their category’s starting stack limit, and bigger tiers unlock with ironworking/gilding; bag upgrades do not replace those crafting milestones.

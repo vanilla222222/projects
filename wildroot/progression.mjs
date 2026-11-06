@@ -1,20 +1,21 @@
-import {roomLayout} from './layouts.mjs?v=26';
-import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=26';
-import * as J from './journey.mjs?v=26';
-import * as Builds from './class-builds.mjs?v=26';
-import * as Books from './special-talents.mjs?v=26';
-import * as Hunts from './boss-hunts.mjs?v=26';
-import * as Dungeon from './dungeon.mjs?v=26';
-import {validateSurveys} from './exploration.mjs?v=26';
-import * as X from './item-economy.mjs?v=26';
-import * as S from './services.mjs?v=26';
-import * as B from './workshop.mjs?v=26';
-import * as H from './alchemy.mjs?v=26';
-import * as C from './chronicle.mjs?v=26';
-import * as A from './adventure.mjs?v=26';
-import * as L from './legacy.mjs?v=26';
-import * as I from './inventory.mjs?v=26';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=26';
+import * as Rewards from './reward-progression.mjs?v=27';
+import {roomLayout} from './layouts.mjs?v=27';
+import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=27';
+import * as J from './journey.mjs?v=27';
+import * as Builds from './class-builds.mjs?v=27';
+import * as Books from './special-talents.mjs?v=27';
+import * as Hunts from './boss-hunts.mjs?v=27';
+import * as Dungeon from './dungeon.mjs?v=27';
+import {validateSurveys} from './exploration.mjs?v=27';
+import * as X from './item-economy.mjs?v=27';
+import * as S from './services.mjs?v=27';
+import * as B from './workshop.mjs?v=27';
+import * as H from './alchemy.mjs?v=27';
+import * as C from './chronicle.mjs?v=27';
+import * as A from './adventure.mjs?v=27';
+import * as L from './legacy.mjs?v=27';
+import * as I from './inventory.mjs?v=27';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=27';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;if(c.dungeon)c.dungeon.home.hp+=6;else c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
@@ -23,7 +24,7 @@ export const canPay=I.canPay;
 export const pay=I.pay;
 export function log(s,message){s.log.unshift(message);s.log=s.log.slice(0,30);}
 export function initializeCharacter(c,s,migrate=false){
- J.initJourney(c);Builds.initBuild(c);c.bossTier??=0;c.encounter??=null;c.dungeon??=null;c.lifetimeXp??=0;c.earnedCoins??=0;c.metMentors??=Object.keys(c.quests||{});c.classTalents??=Object.fromEntries(Object.keys(Builds.classTalentDefs(c)).map(id=>[id,0]));c.hotbar??=[0,1,2];c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;
+ c.upgradeRewardClaims??=[];J.initJourney(c);Builds.initBuild(c);c.bossTier??=0;c.encounter??=null;c.dungeon??=null;c.lifetimeXp??=0;c.earnedCoins??=0;c.metMentors??=Object.keys(c.quests||{});c.classTalents??=Object.fromEntries(Object.keys(Builds.classTalentDefs(c)).map(id=>[id,0]));c.hotbar??=[0,1,2];c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;
  c.loadout??={};c.profTalents??={efficiency:0,prosperity:0,mastery:0,workmanship:0};c.builds??=[null,null];c.buffs??=[];
  c.talents={power:0,vitality:0,industry:0,precision:0,haste:0,signature:0,...c.talents};
  if(migrate){for(const[slot,ids]of Object.entries({weapon:['copper-sword','iron-sword','gold-sword'],body:['copper-mail','iron-mail','gold-mail'],pick:['copper-pick','iron-pick'],axe:['copper-axe','iron-axe']})){const tier=c.gear[slot==='body'?'armor':slot]||0;if(tier&&!c.loadout[slot])c.loadout[slot]={uid:s.nextEquipmentId++,base:ids[Math.min(ids.length,tier)-1],runes:[]};}}
@@ -34,7 +35,7 @@ export function initialize(s,migrate=false){
  s.guild??={};s.story??={};s.storyFlags??={bossPermit:false,complete:false};s.recipeUnlocks??=[];s.secretUnlocks??=[];s.visited??={};
  for(const c of s.characters)initializeCharacter(c,s,migrate);
  if(migrate){if(s.characters.some(c=>(c.gear.weapon||0)>=2||(c.gear.pick||0)>=2))unlock(s,'ironworking');if(s.characters.some(c=>(c.gear.weapon||0)>=3))unlock(s,'gilding');if(s.bossDefeated||s.characters.some(c=>c.activity==='boss'))s.storyFlags.bossPermit=true;}
- L.initializeTown(s);A.initialize(s);C.initialize(s);S.initializeAccess(s);B.initializeWorkshop(s);H.initializeAlchemy(s);X.initializeEconomy(s);J.initializeJourneys(s,migrate);Books.initBooks(s);Hunts.initBossHunts(s);Dungeon.initDungeons(s);s.afkReport??=null;const ids=[...s.armory,...s.characters.flatMap(c=>[...Object.values(c.loadout),...c.packGear,...(c.groundLoot||[]).filter(d=>d.gear).map(d=>d.gear)])].filter(Boolean).map(e=>e.uid);s.nextEquipmentId=Math.max(s.nextEquipmentId,1,...ids.map(n=>n+1));syncAccount(s);I.validateBags(s);return s;
+ L.initializeTown(s);A.initialize(s);C.initialize(s);S.initializeAccess(s);B.initializeWorkshop(s);H.initializeAlchemy(s);X.initializeEconomy(s);J.initializeJourneys(s,migrate);Rewards.initializeUpgradeRewards(s);Books.initBooks(s);Hunts.initBossHunts(s);Dungeon.initDungeons(s);s.afkReport??=null;const ids=[...s.armory,...s.characters.flatMap(c=>[...Object.values(c.loadout),...c.packGear,...(c.groundLoot||[]).filter(d=>d.gear).map(d=>d.gear)])].filter(Boolean).map(e=>e.uid);s.nextEquipmentId=Math.max(s.nextEquipmentId,1,...ids.map(n=>n+1));syncAccount(s);I.validateBags(s);return s;
 }
 export function unlock(s,id){if(!s.recipeUnlocks.includes(id))s.recipeUnlocks.push(id);}
 export function recipeOpen(s,r){return (r.bossTier===undefined||s.bossHunt.tiers[r.bossTier]>0)&&!r.retired&&B.blueprintOpen(s,r)&&(!r.unlock||s.recipeUnlocks.includes(r.unlock))&&(!r.requiresCompletion||s.worldCompletionCrafted);}
@@ -47,7 +48,7 @@ export function syncAccount(s){const b=accountBonuses(s);for(const c of s.charac
 export function createEquipment(s,base,autoCharacter=null,owner=s.characters.find(c=>c.id===s.active)||s.characters[0]){if(!EQUIPMENT[base])return null;const def=EQUIPMENT[base];if(!autoCharacter&&I.bagUsed(owner)>=I.bagCapacity(owner))return null;const item={uid:s.nextEquipmentId++,base,runes:[]};if(autoCharacter){autoCharacter.loadout[def.slot]=item;}else owner.packGear.push(item);return item;}
 export function equip(s,c,uid,targetSlot=null){if(c.dungeon)return false;const index=c.packGear.findIndex(i=>i.uid===Number(uid));if(index<0||I.gearLocked(c,uid))return false;const item=c.packGear[index],def=EQUIPMENT[item.base];if(!def||def.class&&c.class!==def.class)return false;const slot=targetSlot|| (def.slot==='ring'&&c.loadout.ring&&!c.loadout.ring2?'ring2':def.slot);if(slot!==def.slot&&!(def.slot==='ring'&&slot==='ring2'))return false;const old=c.loadout[slot];c.packGear.splice(index,1);if(old)c.packGear.push(old);c.loadout[slot]=item;return true;}
 export function unequip(s,c,slot){if(c.dungeon)return false;if(!GEAR_SLOTS[slot]||!c.loadout[slot]||I.bagUsed(c)>=I.bagCapacity(c))return false;c.packGear.push(c.loadout[slot]);delete c.loadout[slot];const legacy=slot==='body'?'armor':slot;if(legacy in c.gear)c.gear[legacy]=0;return true;}
-export function enchant(s,c,slot,runeId,index=0,replace=false){const item=c.loadout[slot],rune=RUNES[runeId];if(!S.serviceAccess(s,c,'enchanting','upgrade')||!item||!rune||![0,1].includes(index)||index>(item.runes?.length||0)||rune.unlock&&!s.recipeUnlocks.includes(rune.unlock)||item.runes?.[index]&&!replace||!pay(s,rune.cost,c))return false;item.runes??=[];item.runes[index]=runeId;recordQuestAction(c,'enchant:gear');c.skills.enchanting+=6;addXp(c,3);log(s,`${c.name} etched ${rune.name} into ${EQUIPMENT[item.base].name}.`);return true;}
+export function enchant(s,c,slot,runeId,index=0,replace=false){const item=c.loadout[slot],rune=RUNES[runeId];if(!S.serviceAccess(s,c,'enchanting','upgrade')||!item||!rune||![0,1].includes(index)||index>(item.runes?.length||0)||rune.unlock&&!s.recipeUnlocks.includes(rune.unlock)||item.runes?.[index]&&!replace||!pay(s,rune.cost,c))return false;item.runes??=[];item.runes[index]=runeId;recordQuestAction(c,'enchant:gear');c.skills.enchanting+=6*(1+(c.accountBonuses?.enchantXP||0));addXp(c,3);log(s,`${c.name} etched ${rune.name} into ${EQUIPMENT[item.base].name}.`);return true;}
 export function potionValue(c,type){return(c.buffs||[]).filter(b=>b.type===type&&b.remaining>0).reduce((n,b)=>Math.max(n,b.value*(b.source==='ability'?1:1+(Books.specialBonuses(c).potionPower||0))),0);}
 export function drink(s,c,id){if(c.dungeon)return false;const def=POTIONS[id];if(!def||(c.bag[id]||0)<1)return false;c.bag[id]--;c.buffs=c.buffs.filter(b=>b.type!==def.type||b.source==='ability');c.buffs.push({...def,source:'potion',remaining:def.duration});log(s,`${c.name} drank ${ITEMS[id].name}: 20 minutes.`);return true;}
 export function advanceBuffs(c,seconds){for(const buff of c.buffs)buff.remaining-=seconds;c.buffs=c.buffs.filter(b=>b.remaining>0);}
@@ -72,7 +73,7 @@ export function jobDuration(s,job){const r=RECIPES.find(r=>r.id===job.recipe),c=
 export function advanceProduction(s,seconds){if(!Number.isFinite(seconds)||seconds<=0)return;A.advanceIndustry(s,seconds);H.advanceAlchemy(s,seconds);for(const job of [...s.jobs]){job.progress+=seconds;let duration=jobDuration(s,job);while(job.remaining>0&&job.progress>=duration){job.progress-=duration;job.remaining--;const r=RECIPES.find(r=>r.id===job.recipe),owner=s.characters.find(c=>c.id===job.owner);if(r&&owner)I.give(owner,r.output,job.yield);if(owner){recordQuestAction(owner,'craft:'+r.id);owner.skills.smithing+=6*(1+(owner.profTalents.mastery||0)*.05+(owner.accountBonuses?.skillXP||0));addXp(owner,3);}duration=jobDuration(s,job);}if(!job.remaining)s.jobs.splice(s.jobs.indexOf(job),1);}}
 export function questStatus(s,id,c=s.characters.find(c=>c.id===s.active)||s.characters[0]){const history=c.journey.story;const q=STORY.find(q=>q.id===id);if(!q)return null;const done=!!history[id]?.done,accepted=!!history[id]?.accepted,available=q.requires.every(id=>history[id]?.done);const tasks=[];for(const[k,n]of Object.entries(q.kills||{}))tasks.push({text:`Defeat ${n} ${ENEMIES[k].name}`,have:c.journey.kills[k]||0,need:n,done:(c.journey.kills[k]||0)>=n});for(const[k,n]of Object.entries(q.deliver||{}))tasks.push({text:`Deliver ${n} ${ITEMS[k].name}`,have:I.amount(s,k,c),need:n,done:I.amount(s,k,c)>=n});const preserved=accepted&&!history[id].extrasVersion;for(const[key,n]of Object.entries(q.actions||{})){const have=preserved?n:c.journey.events[key]||0;tasks.push({text:QUEST_ACTIONS[key]+(preserved?' (existing quest preserved)':''),have,need:n,done:have>=n});}for(const room of q.visits||[]){const have=preserved||c.journey.visited[room]?1:0;tasks.push({text:'Visit '+roomLayout(room.slice(0,room.lastIndexOf('-')),Number(room.split('-').at(-1))).title,have,need:1,done:have===1});}if(q.minigame){const have=preserved?q.minigame.score:c.minigames.best[q.minigame.skill]||0;tasks.push({text:'Score in a '+q.minigame.skill+' challenge',have,need:q.minigame.score,done:have>=q.minigame.score});}if(q.classes)tasks.push({text:`Discover all ${q.classes} classes`,have:s.unlockedClasses.length,need:q.classes,done:s.unlockedClasses.length>=q.classes});return{q,done,accepted,available,tasks,ready:available&&accepted&&!done&&tasks.every(t=>t.done)};}
 export function acceptQuest(s,id,c=s.characters.find(c=>c.id===s.active)||s.characters[0]){const status=questStatus(s,id,c);if(!status?.available||status.done||status.accepted)return false;c.journey.story[id]={accepted:true,done:false,extrasVersion:1};return true;}
-export function claimQuest(s,c,id,giver){const st=questStatus(s,id,c);if(!st?.ready||st.q.giver!==giver||!pay(s,st.q.deliver||{},c))return false;c.journey.story[id]={...c.journey.story[id],accepted:true,done:true};s.story[id]={accepted:true,done:true};const r=st.q.reward;s.coins+=r.coins||0;for(const[k,n]of Object.entries(r.items||{}))I.give(c,k,n);if(Object.keys(r.items||{}).some(item=>item.startsWith('stamp-'))&&!s.stampRewardClaims.includes(id))s.stampRewardClaims.push(id);for(const id of r.recipes||[])unlock(s,id);for(const id of r.secrets||[])if(!s.secretUnlocks.includes(id))s.secretUnlocks.push(id);if(r.liquid)s.alchemy.liquid=Math.min(liquidCap(s),s.alchemy.liquid+r.liquid);if(r.permit)s.storyFlags.bossPermit=true;if(r.complete)s.storyFlags.complete=true;if(r.guild)s.guild[r.guild]=Math.min(GUILD[r.guild].max,(s.guild[r.guild]||0)+1);L.awardNpcTokens(s,c);syncAccount(s);addXp(c,20);log(s,`Quest complete: ${st.q.name}.`);return true;}
+export function claimQuest(s,c,id,giver){const st=questStatus(s,id,c);if(!st?.ready||st.q.giver!==giver||!pay(s,st.q.deliver||{},c))return false;c.journey.story[id]={...c.journey.story[id],accepted:true,done:true};s.story[id]={accepted:true,done:true};const r=st.q.reward;Rewards.grantQuestItems(s,c,st.q);if(Object.keys(r.items||{}).some(item=>item.startsWith('stamp-'))&&!s.stampRewardClaims.includes(id))s.stampRewardClaims.push(id);for(const id of r.recipes||[])unlock(s,id);for(const id of r.secrets||[])if(!s.secretUnlocks.includes(id))s.secretUnlocks.push(id);if(r.liquid)s.alchemy.liquid=Math.min(liquidCap(s),s.alchemy.liquid+r.liquid);if(r.permit)s.storyFlags.bossPermit=true;if(r.complete)s.storyFlags.complete=true;if(r.guild)s.guild[r.guild]=Math.min(GUILD[r.guild].max,(s.guild[r.guild]||0)+1);L.awardNpcTokens(s,c);syncAccount(s);addXp(c,20);log(s,`Quest complete: ${st.q.name}.`);return true;}
 export function secretOpen(s,id){if(id==='sunwell')return s.secretUnlocks.includes('sunwell');if(id==='vault')return s.story.outpost?.done&&Object.keys(CLASSES).every(id=>s.characters.some(c=>c.class===id&&skillLevel(c,CLASSES[id].skill)>=2));return false;}
 export function validate(s){
  const finite=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
@@ -83,5 +84,5 @@ export function validate(s){
  for(const job of s.jobs){const r=RECIPES.find(r=>r.id===job.recipe);if(!r||r.station!=='foundry'||!s.characters.some(c=>c.id===job.owner)||!Number.isInteger(job.remaining)||job.remaining<1||job.remaining>20||!finite(job.progress)||!finite(job.yield)||job.yield>r.count*2||!job.reserved||Object.entries(r.cost).some(([k,n])=>job.reserved[k]!==n)||job.fee!==2)throw Error('Invalid production queue.');}
  for(const[id,n]of Object.entries(s.guild))if(!GUILD[id]||!Number.isInteger(n)||n<0||n>GUILD[id].max)throw Error('Invalid guild upgrade.');for(const[id,n]of Object.entries(s.alchemy.research))if(!ALCHEMY[id]||!Number.isInteger(n)||n<0||n>5)throw Error('Invalid alchemy research.');
  for(const c of s.characters){if(!Array.isArray(c.metMentors)||c.metMentors.some(id=>!CLASSES[id]))throw Error('Invalid mentor journal.');if(!c.classTalents||Object.entries(c.classTalents).some(([id,n])=>!Builds.classTalentDefs(c)[id]||!Number.isInteger(n)||n<0||n>Builds.classTalentDefs(c)[id].max||n>0&&c.level<(Builds.classTalentDefs(c)[id].level||1))||Object.values(c.classTalents).reduce((a,b)=>a+b,0)>(c.class?(c.level-1)*3:0)||!Array.isArray(c.hotbar)||c.hotbar.length!==3||new Set(c.hotbar).size!==3||c.hotbar.some(n=>![0,1,2].includes(n)))throw Error('Invalid class talents or hotbar.');}
- L.validateTown(s);I.validateBags(s);A.validate(s);C.validate(s);S.validateAccess(s);B.validateWorkshop(s);H.validateAlchemy(s);X.validateEconomy(s);validateSurveys(s);J.validateJourneys(s);J.validateOfflineReport(s);Builds.validateBuilds(s);Books.validateBooks(s);Hunts.validateHunts(s);Dungeon.validateDungeons(s);return s;
+ Rewards.validateUpgradeRewards(s);L.validateTown(s);I.validateBags(s);A.validate(s);C.validate(s);S.validateAccess(s);B.validateWorkshop(s);H.validateAlchemy(s);X.validateEconomy(s);validateSurveys(s);J.validateJourneys(s);J.validateOfflineReport(s);Builds.validateBuilds(s);Books.validateBooks(s);Hunts.validateHunts(s);Dungeon.validateDungeons(s);return s;
 }
