@@ -319,6 +319,31 @@ function makeRenderer(canvas, deps) {
     ctx.globalAlpha = 1;
   }
 
+  // Being underwater is told by tinting the whole view, not by making the water glow.
+  // Water was briefly given an `emit` so a flooded cavern would be visible in the dark,
+  // but every tile of an ocean is then an emitter and the bloom pass turned the whole
+  // body into a lamp. A tint says the same thing and costs one rectangle.
+  function drawUnderwater(state) {
+    const player = state.player;
+    if (!player || !player.swimming) return;
+    const deep = player.submerged;
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = deep ? 'rgba(28, 86, 140, 0.34)' : 'rgba(28, 86, 140, 0.16)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (deep) {
+      // A soft inward darkening, so submerged reads as submerged and not as a colour grade.
+      const grad = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.2,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.62);
+      grad.addColorStop(0, 'rgba(10, 40, 70, 0)');
+      grad.addColorStop(1, 'rgba(6, 26, 48, 0.55)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.restore();
+  }
+
   function drawVignette() {
     const g = ctx.createRadialGradient(
       canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.34,
@@ -350,6 +375,7 @@ function makeRenderer(canvas, deps) {
     drawLighting(state, view);
     drawBloom(state, view);
     drawParticles(state, view);
+    drawUnderwater(state);
     drawVignette();
     return view;
   }
@@ -357,6 +383,13 @@ function makeRenderer(canvas, deps) {
   return { draw, atlas, field };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_render = { makeRenderer };
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeRenderer };
+  module.exports = EXPORTS_render;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.render = EXPORTS_render;
 }

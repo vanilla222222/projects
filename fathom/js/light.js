@@ -156,6 +156,13 @@ function makeLightField(tiles) {
     get width() { return width; }, get height() { return height; } };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_light = { makeLightField, sunTint, sunStrength, solarElevation, CHANNELS, EMIT_TINTS, SUN_TINTS };
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeLightField, sunTint, sunStrength, solarElevation, CHANNELS, EMIT_TINTS, SUN_TINTS };
+  module.exports = EXPORTS_light;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.light = EXPORTS_light;
 }

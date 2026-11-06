@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=19';import * as D from './content.mjs?v=19';
-import * as UI from './economy-panels.mjs?v=19';
-import {roomLayout,pointFor} from './layouts.mjs?v=19';
+import * as E from './engine.mjs?v=20';import * as D from './content.mjs?v=20';
+import * as UI from './economy-panels.mjs?v=20';
+import {roomLayout,pointFor} from './layouts.mjs?v=20';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);s.coins=10000;return{s,c};};
 function visit(c,id){const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,secret:null,activity:'rest',position:pointFor(roomLayout(d.area,d.zone),d.point)});}
 const roundtrip=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

@@ -134,3 +134,25 @@ Fetched from terraria.wiki.gg, 2026-11-05 (1.4.4+).
   pickaxes above wood. `tools/craft-test.js` proves the graph closes, so a player holding
   nothing but raw ore can reach the best pickaxe, and every gated tile has a craftable
   pickaxe that opens it.
+
+## Biomes, caves and water
+
+Terraria's world is finite and hand-shaped: two oceans at fixed edges, one jungle, and
+exactly one of corruption or crimson chosen at creation. Fathom is endless, so none of
+those scarcity decisions apply and the generator is its own design rather than a copy.
+
+- Biomes are placed by **two climate fields**, temperature and moisture, not by a single
+  ordered list. Each biome owns a region of that 2-D space, so tundra can border desert.
+- Height bias is the **weighted average of the same weights** that choose identity, which
+  is what keeps terrain continuous across a border while the surface material changes
+  abruptly. Worst measured surface step is 2 tiles.
+- Both blights generate. An endless world never has to choose between them.
+- Each biome has its own **cave profile** - passage width, how readily caves open into
+  rooms, and whether the field favours vertical shafts or flat-roofed halls. Measured over
+  three seeds, jungle caverns run about 25% open with a mean cavity 25 tiles tall; tundra
+  tunnels about 11% open with a mean cavity under 7.
+- **Underground oceans**, which Terraria does not have: beneath an ocean the sea soaks
+  into the rock, so caves within roughly 110-230 tiles of the sea bed are flooded rather
+  than empty. A mire has a shallower water table for the same reason.
+- Water is static, non-solid and translucent. Swimming is three numbers in the physics
+  step; being underwater is shown by tinting the view, not by lighting the water.

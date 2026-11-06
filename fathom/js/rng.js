@@ -44,6 +44,13 @@ function streamFrom(seed, x, y, salt) {
   };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_rng = { hash32, hash2, unit, signed, pick, streamFrom };
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { hash32, hash2, unit, signed, pick, streamFrom };
+  module.exports = EXPORTS_rng;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.rng = EXPORTS_rng;
 }

@@ -168,7 +168,14 @@ function aimTile(player, pointer) {
   return { x: Math.floor(pointer.x), y: Math.floor(pointer.y), inReach: true, dist };
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_player = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_player;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.player = EXPORTS_player;
 }

@@ -1,7 +1,7 @@
-import {food} from './adventure-panels.mjs?v=19';
-import * as D from './content.mjs?v=19';
-import * as E from './engine.mjs?v=19';
-import {abilitySet,abilityAvailable} from './world.mjs?v=19';
+import {food} from './adventure-panels.mjs?v=20';
+import * as D from './content.mjs?v=20';
+import * as E from './engine.mjs?v=20';
+import {abilitySet,abilityAvailable} from './world.mjs?v=20';
 export const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n).toLocaleString();
 export function costs(s,cost){return`<div class="costs">${Object.entries(cost).map(([id,n])=>`<span class="${E.amount(s,id)<n?'missing':''}">${esc(D.ITEMS[id]?.name||id)} ${fmt(E.amount(s,id))}/${n}</span>`).join('')}</div>`;}

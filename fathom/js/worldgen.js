@@ -21,36 +21,36 @@ const STRUCTURE_MARGIN = 14;
 // `bias` is how high the biome sits. `sub` is what lies under the filler. `wall` is the
 // background it leaves behind. `tree` names a species in TREES, or 'none'.
 const BIOMES = [
-  { key: 'tundra', name: 'Tundra', temp: 0.08, moist: 0.35, bias: -8,
+  { key: 'tundra', name: 'Tundra', temp: 0.08, moist: 0.35, bias: -8, rock: 'ice', rockMix: 0.34, cave: 'narrow',
     surface: 'snow', filler: 'snow', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
-  { key: 'taiga', name: 'Taiga', temp: 0.2, moist: 0.72, bias: 2,
+  { key: 'taiga', name: 'Taiga', temp: 0.2, moist: 0.72, bias: 2, rock: 'ice', rockMix: 0.18, cave: 'narrow',
     surface: 'snow', filler: 'dirt', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
-  { key: 'highlands', name: 'Highlands', temp: 0.3, moist: 0.18, bias: -26,
+  { key: 'highlands', name: 'Highlands', temp: 0.3, moist: 0.18, bias: -26, rock: 'granite', rockMix: 0.42, cave: 'shafts',
     surface: 'stone', filler: 'stone', sub: 'stone', wall: 'stonewall', tree: 'none', grass: false },
-  { key: 'plains', name: 'Plains', temp: 0.5, moist: 0.42, bias: 0,
+  { key: 'plains', name: 'Plains', temp: 0.5, moist: 0.42, bias: 0, cave: 'normal',
     surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
-  { key: 'forest', name: 'Deepwood', temp: 0.46, moist: 0.68, bias: 4,
+  { key: 'forest', name: 'Deepwood', temp: 0.46, moist: 0.68, bias: 4, cave: 'normal',
     surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
-  { key: 'marsh', name: 'Mire', temp: 0.55, moist: 0.93, bias: 18,
+  { key: 'marsh', name: 'Mire', temp: 0.55, moist: 0.93, bias: 18, rock: 'mud', rockMix: 0.3, cave: 'rooms', aquifer: true,
     surface: 'peat', filler: 'peat', sub: 'mud', wall: 'mudwall', tree: 'oak', grass: true },
-  { key: 'savanna', name: 'Savanna', temp: 0.8, moist: 0.45, bias: 2,
+  { key: 'savanna', name: 'Savanna', temp: 0.8, moist: 0.45, bias: 2, rock: 'redclay', rockMix: 0.2, cave: 'normal',
     surface: 'grass', filler: 'dirt', sub: 'redclay', wall: 'dirtwall', tree: 'acacia', grass: true },
-  { key: 'jungle', name: 'Jungle', temp: 0.85, moist: 0.86, bias: 8,
+  { key: 'jungle', name: 'Jungle', temp: 0.85, moist: 0.86, bias: 8, rock: 'mud', rockMix: 0.46, cave: 'caverns', aquifer: true,
     surface: 'junglegrass', filler: 'mud', sub: 'mud', wall: 'mudwall', tree: 'jungle', grass: true },
-  { key: 'badlands', name: 'Badlands', temp: 0.66, moist: 0.08, bias: -14,
+  { key: 'badlands', name: 'Badlands', temp: 0.66, moist: 0.08, bias: -14, rock: 'sandstone', rockMix: 0.5, cave: 'shafts',
     surface: 'redclay', filler: 'redclay', sub: 'sandstone', wall: 'redclaywall', tree: 'none', grass: false },
-  { key: 'desert', name: 'Dunes', temp: 0.94, moist: 0.13, bias: 14,
+  { key: 'desert', name: 'Dunes', temp: 0.94, moist: 0.13, bias: 14, rock: 'sandstone', rockMix: 0.58, cave: 'halls',
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false },
 
   // Overlays. These are never selected by climate; they replace whatever climate chose,
   // so they are listed after it and carry their own bias handling.
   { key: 'beach', name: 'Shore', temp: -1, moist: -1, bias: 0,
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
-  { key: 'ocean', name: 'Ocean', temp: -1, moist: -1, bias: 0,
+  { key: 'ocean', name: 'Ocean', temp: -1, moist: -1, bias: 0, cave: 'caverns', drowned: true,
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
-  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0,
+  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0, cave: 'chasms',
     surface: 'blightgrass', filler: 'dirt', sub: 'blight', wall: 'blightwall', tree: 'blighted', grass: false, overlay: true },
-  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0,
+  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0, cave: 'chasms',
     surface: 'fleshgrass', filler: 'dirt', sub: 'flesh', wall: 'fleshwall', tree: 'blighted', grass: false, overlay: true }
 ];
 
@@ -208,11 +208,62 @@ function surfaceHeight(seed, x) {
   return columnOf(seed, x).height;
 }
 
-function caveDensity(seed, x, y, depth) {
-  const tunnels = ridged2(seed, x * 0.028, y * 0.028, 601, 4);
-  const rooms = fbm2(seed, x * 0.016, y * 0.022, 727, 3, 2, 0.5);
+// Caves are not one shape everywhere. Each profile tunes three things: how wide the
+// passages are, how readily they open into rooms, and how much the vertical ridged field
+// dominates, which is what turns a cave system into shafts or into chasms. This is where
+// an underground actually gets its character; the materials alone are just a palette.
+const CAVE_PROFILES = {
+  normal:  { scale: 0.028, rooms: 0.38, threshold: 0.605, vertical: 0, roomScale: 0.016 },
+  // Tundra: tight, winding, little open space.
+  narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 },
+  // Desert: broad flat halls carved along the bedding planes of the sandstone.
+  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 },
+  // Jungle: enormous chambers, the largest in the world.
+  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 },
+  // Highlands and badlands: vertical shafts punched through the rock.
+  shafts:  { scale: 0.03, rooms: 0.24, threshold: 0.6, vertical: 0.42, roomScale: 0.018 },
+  // The blights: narrow vertical chasms that run a long way down.
+  chasms:  { scale: 0.026, rooms: 0.2, threshold: 0.58, vertical: 0.66, roomScale: 0.017 },
+  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 }
+};
+
+function caveProfile(column) {
+  const key = (column.biome.cave) || (column.climate && column.climate.cave) || 'normal';
+  return CAVE_PROFILES[key] || CAVE_PROFILES.normal;
+}
+
+function caveDensity(seed, x, y, depth, column) {
+  const p = column ? caveProfile(column) : CAVE_PROFILES.normal;
+  const tunnels = ridged2(seed, x * p.scale, y * p.scale, 601, 4);
+  const rooms = fbm2(seed, x * p.roomScale, y * (p.roomScale * 1.35), 727, 3, 2, 0.5);
   const squeeze = Math.min(1, depth / 90);
-  return tunnels * 0.62 + rooms * 0.38 * squeeze;
+  let d = tunnels * (1 - p.rooms) + rooms * p.rooms * squeeze;
+  // A positive vertical term rewards columns that line up, which reads as a shaft; a
+  // negative one rewards rows, which reads as a flat-roofed hall.
+  if (p.vertical !== 0) {
+    const grain = ridged2(seed, x * p.scale * 2.6, y * p.scale * 0.34, 883, 3);
+    d += (grain - 0.5) * p.vertical;
+  }
+  return d;
+}
+
+function caveThreshold(column) {
+  return (column ? caveProfile(column) : CAVE_PROFILES.normal).threshold;
+}
+
+// How far down standing water reaches. Beneath an ocean the sea soaks into the rock, so
+// the caverns under it are flooded: an underground ocean, which is the one piece of this
+// Terraria does not have. A mire has a shallow water table for the same reason.
+function floodFloor(seed, x, column) {
+  if (column.biome.drowned) {
+    const reach = 110 + fbm1(seed, x * 0.004, 3407, 2, 2, 0.5) * 120;
+    return column.height + reach;
+  }
+  if (column.climate && column.climate.aquifer) {
+    const reach = 10 + fbm1(seed, x * 0.006, 3413, 2, 2, 0.5) * 34;
+    return column.height + reach;
+  }
+  return -1;
 }
 
 function stratum(seed, x, y, depth, column) {
@@ -257,9 +308,14 @@ function baseTileAt(seed, x, y) {
   const depth = y - surface;
   const biome = column.biome;
 
-  if (depth > 4 && caveDensity(seed, x, y, depth) > 0.605) {
+  if (depth > 4 && caveDensity(seed, x, y, depth, column) > caveThreshold(column)) {
     const glow = fbm2(seed, x * 0.09, y * 0.09, 1901, 2, 2, 0.5);
     if (depth > 120 && glow > 0.895) return idOf('crystal');
+    // A cave below the water table is not a cave, it is a flooded one. Everything above
+    // sea level stays dry, so a cavern that breaches the surface drains rather than
+    // holding an impossible column of water.
+    const flood = floodFloor(seed, x, column);
+    if (flood > 0 && y <= flood && y >= SEA_LEVEL) return idOf('water');
     return AIR;
   }
 
@@ -284,8 +340,15 @@ function baseTileAt(seed, x, y) {
   const ore = oreAt(seed, x, y, depth);
   if (ore) return idOf(ore);
   if (layer === 'stone') {
+    // Each biome stains its own stone layer with its own rock, mixed by a noise field so
+    // the boundary is a gradient of veins rather than a line.
+    const climate = column.climate;
+    if (climate.rock) {
+      const mix = fbm2(seed, x * 0.034, y * 0.034, 1973, 3, 2, 0.5);
+      if (mix > 1 - climate.rockMix) return idOf(climate.rock);
+    }
     const vein = fbm2(seed, x * 0.05, y * 0.05, 1951, 2, 2, 0.5);
-    if (vein > 0.88) return idOf(column.climate.key === 'jungle' ? 'mud' : 'clay');
+    if (vein > 0.88) return idOf(climate.key === 'jungle' ? 'mud' : 'clay');
     return idOf('stone');
   }
   return idOf(layer);
@@ -427,7 +490,20 @@ function generateChunk(seed, cx, cy) {
   return { tiles, walls };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_worldgen = {
+    CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
+    SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
+    temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
+    CAVE_PROFILES, caveProfile, caveThreshold, floodFloor,
+    biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
+    baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
+  };
+
 if (typeof module !== 'undefined' && module.exports) {
+
   const rng = require('./rng.js');
   const noise = require('./noise.js');
   const tiles = require('./tiles.js');
@@ -439,11 +515,7 @@ if (typeof module !== 'undefined' && module.exports) {
   global.AIR = tiles.AIR;
   global.idOf = tiles.idOf;
   global.wallIdOf = tiles.wallIdOf;
-  module.exports = {
-    CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
-    temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
-    biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
-    baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
-  };
+  module.exports = EXPORTS_worldgen;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.worldgen = EXPORTS_worldgen;
 }

@@ -231,6 +231,13 @@ function makeMenu(root, deps) {
   return { open };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_menu = { makeMenu };
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeMenu };
+  module.exports = EXPORTS_menu;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.menu = EXPORTS_menu;
 }

@@ -176,7 +176,14 @@ function makeProfiles(storage) {
     removeCharacter, removeWorld, rememberLast, lastPlayed, pickColours };
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeProfiles, parseSeed, FORMAT,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_profile = { makeProfiles, parseSeed, FORMAT,
     SKIN_TONES, HAIR_COLOURS, SHIRT_COLOURS, PANTS_COLOURS };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_profile;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.profile = EXPORTS_profile;
 }

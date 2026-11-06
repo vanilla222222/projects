@@ -80,8 +80,16 @@ function warped2(seed, x, y, salt, strength) {
   return fbm2(seed, wx, wy, salt, 4, 2, 0.5);
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_noise = { smooth, value1, value2, fbm1, fbm2, ridged2, warped2 };
+
 if (typeof module !== 'undefined' && module.exports) {
+
   const rng = require('./rng.js');
   global.unit = rng.unit;
-  module.exports = { smooth, value1, value2, fbm1, fbm2, ridged2, warped2 };
+  module.exports = EXPORTS_noise;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.noise = EXPORTS_noise;
 }
