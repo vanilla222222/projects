@@ -45,6 +45,39 @@ function overlapsSolid(world, tiles, x, y, w, h) {
   return false;
 }
 
+// A platform stops you only from above, and only when you are falling onto it. The test
+// needs the body's position before the move as well as after, because "landing on it" is
+// the condition that the feet were above the deck and are now below: a platform you are
+// already inside, or one you are rising through, has to let you pass.
+//
+// Without the previous position this cannot be decided at all. A platform checked on
+// position alone either blocks you the instant you jump up into it, or never catches you.
+function landsOnPlatform(world, tiles, x, prevY, nextY, w, h) {
+  if (nextY <= prevY) return false;                 // rising or level: pass through
+  const feetBefore = prevY + h;
+  const feetAfter = nextY + h;
+  const deck = Math.floor(feetAfter);
+  if (Math.floor(feetBefore - 1e-6) >= deck) return false;   // already below the deck
+  const x0 = Math.floor(x);
+  const x1 = Math.floor(x + w - 1e-6);
+  for (let tx = x0; tx <= x1; tx += 1) {
+    if (tiles.tile(world.get(tx, deck)).platform) return true;
+  }
+  return false;
+}
+
+// Whether the player is standing on a platform deck right now, which is what lets the
+// down key drop them through one.
+function onPlatform(world, tiles, x, y, w, h) {
+  const deck = Math.floor(y + h + 1e-4);
+  const x0 = Math.floor(x);
+  const x1 = Math.floor(x + w - 1e-6);
+  for (let tx = x0; tx <= x1; tx += 1) {
+    if (tiles.tile(world.get(tx, deck)).platform) return true;
+  }
+  return false;
+}
+
 // If the player is already inside a solid tile — a block placed on them, a spawn in a tree
 // trunk — no amount of axis resolution frees them, because every candidate position also
 // overlaps. Lift them out first, upward, which is the direction that is open in practice.
@@ -152,6 +185,10 @@ function step(player, world, tiles, input, dt) {
   let remainingY = player.vy * dt;
   const stepY = Math.sign(remainingY) * Math.min(Math.abs(remainingY), 0.25);
   player.onGround = false;
+  // Holding down drops you through a platform you are standing on, so a platform is a
+  // floor you can choose to ignore rather than one you have to break.
+  const dropping = input.down && onPlatform(world, tiles, player.x, player.y,
+    player.width, player.height);
   while (Math.abs(remainingY) > 1e-9) {
     const move = Math.abs(remainingY) > 0.25 ? stepY : remainingY;
     const nextY = player.y + move;
@@ -160,9 +197,18 @@ function step(player, world, tiles, input, dt) {
       player.vy = 0;
       break;
     }
+    if (!dropping && landsOnPlatform(world, tiles, player.x, player.y, nextY,
+      player.width, player.height)) {
+      // Settle exactly on the deck rather than a fraction into it.
+      player.y = Math.floor(nextY + player.height) - player.height;
+      player.onGround = true;
+      player.vy = 0;
+      break;
+    }
     player.y = nextY;
     remainingY -= move;
   }
+  player.onPlatform = onPlatform(world, tiles, player.x, player.y, player.width, player.height);
   return player;
 }
 
@@ -183,6 +229,7 @@ function aimTile(player, pointer) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_player = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, liquidFraction, SWIM_DEPTH,
+  landsOnPlatform, onPlatform,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
 
 if (typeof module !== 'undefined' && module.exports) {

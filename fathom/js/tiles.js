@@ -4,6 +4,17 @@
 // base pickaxe. Colours are the base used to bake procedural textures, so the game needs
 // no image assets at all.
 
+// A local copy of the shading helper. tiles.js is loaded before texture.js and must not
+// depend on it; the duplication is four lines and the alternative is a load-order rule.
+function shadeHex(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
+    const v = amount >= 0 ? c + (255 - c) * amount : c * (1 + amount);
+    return Math.max(0, Math.min(255, Math.round(v)));
+  });
+  return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
 const AIR = 0;
 const TILES = [
   { id: 0, key: 'air', name: 'Air', solid: false, opacity: 0, emit: 0, hardness: 0, colour: null },
@@ -99,7 +110,8 @@ const TILES = [
   // Sky and space.
   { id: 63, key: 'skystone', name: 'Skystone', solid: true, opacity: 56, emit: 0, hardness: 1.1, colour: '#8d93a8', grain: 0.1, toughness: 140 },
   { id: 64, key: 'starrock', name: 'Starrock', solid: true, opacity: 58, emit: 2, hardness: 1.6, colour: '#4b4a63', grain: 0.12, require: 45, toughness: 200 },
-  { id: 65, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 }
+  { id: 65, key: 'tin', name: 'Tin Ore', solid: true, opacity: 56, emit: 0, hardness: 1, colour: '#a9a79c', grain: 0.2, ore: true, toughness: 105 },
+  { id: 66, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is
@@ -128,7 +140,65 @@ const WALLS = [
   { id: 18, key: 'skywall', name: 'Sky Wall', colour: '#4c5266', opacity: 6, natural: true }
 ];
 
+// --- wood species ---------------------------------------------------------------------
+// Every tree species yields its own lumber, and every lumber has its own building set:
+// a block, a background, a platform, a door, a chair, a table and a work bench. Tools and
+// armour are deliberately not on this list - they take any wood, because a progression
+// gated on finding the right tree would be tedious rather than interesting.
+//
+// The set is generated rather than written out, because six species times eight tiles is
+// forty-eight entries that must all agree with each other, and a hand-written table of
+// that size is a list of chances to make one of them different by accident.
+const WOODS = [
+  { key: 'oak', name: 'Oak', colour: '#7a5330', tree: 'oak' },
+  { key: 'pine', name: 'Pine', colour: '#6a5440', tree: 'pine' },
+  { key: 'mahogany', name: 'Mahogany', colour: '#8a4f2e', tree: 'jungle' },
+  { key: 'acacia', name: 'Acacia', colour: '#a2763f', tree: 'acacia' },
+  { key: 'shade', name: 'Shadewood', colour: '#564770', tree: 'blight' },
+  { key: 'crim', name: 'Crimwood', colour: '#6d3338', tree: 'crimson' }
+];
+
+const WOOD_BY_TREE = {};
+for (const w of WOODS) WOOD_BY_TREE[w.tree] = w;
+
+function pushTile(spec) {
+  spec.id = TILES.length;
+  TILES.push(spec);
+  return spec;
+}
+
+for (const w of WOODS) {
+  const dark = shadeHex(w.colour, -0.22);
+  // The standing trunk. Non-solid, so a forest is never a wall, and it drops its lumber.
+  pushTile({ key: w.key + 'log', name: w.name + ' Log', solid: false, opacity: 26, emit: 0,
+    hardness: 0.5, colour: w.colour, grain: 0.1, toughness: 90, wood: w.key,
+    drops: w.key + 'wood', trunkOf: w.key });
+  pushTile({ key: w.key + 'wood', name: w.name + ' Wood', solid: true, opacity: 40, emit: 0,
+    hardness: 0.5, colour: w.colour, grain: 0.1, toughness: 90, wood: w.key });
+  // A platform: you stand on it from above and walk up through it from below.
+  pushTile({ key: w.key + 'platform', name: w.name + ' Platform', solid: false, opacity: 6,
+    emit: 0, hardness: 0.3, colour: w.colour, grain: 0.08, toughness: 60, wood: w.key,
+    platform: true });
+  pushTile({ key: w.key + 'door', name: w.name + ' Door', solid: true, opacity: 34, emit: 0,
+    hardness: 0.5, colour: dark, grain: 0.07, toughness: 80, wood: w.key,
+    door: 'closed', swings: w.key + 'dooropen', drops: w.key + 'door' });
+  pushTile({ key: w.key + 'dooropen', name: w.name + ' Door', solid: false, opacity: 4,
+    emit: 0, hardness: 0.5, colour: dark, grain: 0.07, toughness: 80, wood: w.key,
+    door: 'open', swings: w.key + 'door', drops: w.key + 'door' });
+  pushTile({ key: w.key + 'chair', name: w.name + ' Chair', solid: false, opacity: 4, emit: 0,
+    hardness: 0.2, colour: w.colour, grain: 0.06, toughness: 40, wood: w.key, furniture: 'chair' });
+  pushTile({ key: w.key + 'table', name: w.name + ' Table', solid: false, opacity: 8, emit: 0,
+    hardness: 0.25, colour: w.colour, grain: 0.06, toughness: 50, wood: w.key, furniture: 'table' });
+  pushTile({ key: w.key + 'bench', name: w.name + ' Work Bench', solid: false, opacity: 8,
+    emit: 0, hardness: 0.25, colour: w.colour, grain: 0.1, toughness: 60, wood: w.key,
+    station: 'workbench', furniture: 'bench' });
+}
+
 const WALL_BY_KEY = {};
+for (const w of WOODS) {
+  WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
+    colour: shadeHex(w.colour, -0.45), opacity: 7, wood: w.key });
+}
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
@@ -173,7 +243,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WOOD_BY_TREE, shadeHex, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 
 if (typeof module !== 'undefined' && module.exports) {

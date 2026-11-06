@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=23';
-import * as D from './content.mjs?v=23';
-import {World} from './world.mjs?v=23';
+import * as E from './engine.mjs?v=24';
+import * as D from './content.mjs?v=24';
+import {World} from './world.mjs?v=24';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -32,7 +32,8 @@ export function runWorldOne({rng=()=>.5}={}){
  function ensurePage(r){const page=E.recipePage(r);while(s.workshop.pages<page){const next=s.workshop.pages+1,id='anvil-expansion-'+next;material(id,1);const crafter=worker('smithing');bank(crafter);E.withdraw(s,crafter,id,1);use(crafter);E.travel(s,crafter,'town',1);crafter.position={x:1390,y:644};assert.ok(E.useAnvilExpansion(s,crafter,next));bank(crafter);}}
  function gear(base,target){const def=D.EQUIPMENT[base],r=D.RECIPES.find(r=>r.equipment===base);assert.ok(r);ensurePage(r);assert.ok(E.recipeOpen(s,r),`gear unlock ${base}`);ensureCosts(r.cost);const crafter=worker('smithing');use(crafter);E.travel(s,crafter,'town',1);crafter.position={x:1390,y:644};const uid=s.nextEquipmentId;assert.ok(E.craft(s,crafter,r.id),'gear '+base);if(crafter.loadout[def.slot]?.uid===uid){if(crafter===target)return;assert.ok(E.unequip(s,crafter,def.slot));}bank(crafter);assert.ok(E.depositGear(s,crafter,uid));bank(target);assert.ok(E.withdrawGear(s,target,uid));assert.ok(E.equip(s,target,uid));}
  function expand(id,c=hero){material(id,1);bank(c);assert.ok(E.withdraw(s,c,id,1));assert.ok(E.useExpansion(s,c,id));bank(c);}
- function story(id){const q=D.STORY.find(q=>q.id===id);for(const[k,n]of Object.entries(q.deliver||{}))material(k,n);bankAll();use(hero);const giver=q.giver==='steward'?{town:'town'}:D.CLASSES[q.giver];E.travel(s,hero,giver.town,giver.zone||0);assert.ok(E.acceptQuest(s,id),'accept '+id);assert.ok(E.questStatus(s,id).ready,`quest ${id}: ${JSON.stringify(E.questStatus(s,id).tasks)}`);assert.ok(E.claimQuest(s,hero,id,q.giver),'claim '+id);events.push({event:id,minutes:+(seconds/60).toFixed(2)});bank(hero);}
+ function questActions(q){for(const[key,n]of Object.entries(q.actions||{})){let missing=n-(hero.journey.events[key]||0);if(missing<=0)continue;if(key.startsWith('gather:'))gather(hero,key.slice(7),missing);else if(key==='craft:equipment'){while((hero.journey.events[key]||0)<n)gear('copper-sword',hero);}else if(key==='craft:charcoal'){const r=D.RECIPES.find(r=>r.id==='charcoal');ensureCosts(Object.fromEntries(Object.entries(r.cost).map(([id,v])=>[id,v*missing])));use(hero);E.travel(s,hero,'town',2);hero.position={x:1520,y:644};assert.ok(E.enqueue(s,hero,'charcoal',missing));while(s.jobs.length)tick(5);bank(hero);}else if(key==='enchant:gear'){ensureCosts(D.RUNES.force.cost);use(hero);E.travel(s,hero,'jungle-town',0);hero.position={x:1700,y:644};assert.ok(E.enchant(s,hero,'weapon','force',0));bank(hero);}else throw Error('Unhandled campaign quest action '+key);}}
+ function story(id){const q=D.STORY.find(q=>q.id===id);questActions(q);for(const[k,n]of Object.entries(q.deliver||{}))material(k,n);bankAll();use(hero);const giver=q.giver==='steward'?{town:'town'}:D.CLASSES[q.giver];E.travel(s,hero,giver.town,giver.zone||0);assert.ok(E.acceptQuest(s,id),'accept '+id);assert.ok(E.questStatus(s,id).ready,`quest ${id}: ${JSON.stringify(E.questStatus(s,id).tasks)}`);assert.ok(E.claimQuest(s,hero,id,q.giver),'claim '+id);events.push({event:id,minutes:+(seconds/60).toFixed(2)});bank(hero);}
  function initiation(c,id){use(c);while(c.level<3)fight(c,'forest',0,8);const def=D.CLASSES[id];E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'first step '+id);
   if(['mining','logging'].includes(def.skill)){gather(c,def.skill==='mining'?'copper':'oak',Math.max(30,Math.ceil((12-c.skills[def.skill])/2)));}
   else if(def.skill==='smithing'){material('oak',6);use(c);E.travel(s,c,'town',2);c.position={x:1520,y:644};assert.ok(E.enqueue(s,c,'charcoal',2));while(s.jobs.length)tick(5);bank(c);}

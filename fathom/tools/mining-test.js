@@ -13,7 +13,14 @@ function ok(cond, label) {
   if (!cond) { failures += 1; console.log('FAIL: ' + label); }
 }
 
-const TIERS = Object.keys(m.TOOLS).sort((a, b) => m.TOOLS[a].power - m.TOOLS[b].power);
+// Tools are grouped by job now: a pickaxe, an axe and a hammer do different work, so
+// comparing a hammer against the pickaxe "below" it in power compares nothing.
+const JOBS = {};
+for (const [key, spec] of Object.entries(m.TOOLS)) {
+  (JOBS[spec.job] = JOBS[spec.job] || []).push(key);
+}
+for (const list of Object.values(JOBS)) list.sort((a, b) => m.TOOLS[a].power - m.TOOLS[b].power);
+const TIERS = JOBS.pick;
 
 // --- the gate -------------------------------------------------------------------------
 for (const spec of tiles.TILES) {
@@ -47,20 +54,38 @@ for (const spec of tiles.TILES) {
 }
 
 // --- monotonic progression ------------------------------------------------------------
+// Within a job, every tier must be at least as fast as the one below it on every tile.
+for (const job of Object.keys(JOBS)) {
 for (const spec of tiles.TILES) {
   if (spec.id === tiles.AIR) continue;
   let prev = Infinity;
-  for (const key of TIERS) {
+  for (const key of JOBS[job]) {
     const t = m.secondsFor({ key, kind: 'tool' }, spec);
     if (!Number.isFinite(t)) continue;
     ok(t <= prev + 1e-9, key + ' is not slower than the tier below on ' + spec.key);
     prev = t;
   }
-  // Every tile is reachable by the top pickaxe: no dead ends in the world.
+}
+}
+// Every tile is reachable by the top pickaxe: no dead ends in the world.
+for (const spec of tiles.TILES) {
+  if (spec.id === tiles.AIR) continue;
   const top = TIERS[TIERS.length - 1];
   ok(Number.isFinite(m.secondsFor({ key: top, kind: 'tool' }, spec)),
     'the best pickaxe can mine ' + spec.key);
 }
+
+// Each job has a full ladder, and a tool always knows its own job.
+for (const job of ['pick', 'axe', 'hammer']) {
+  ok((JOBS[job] || []).length >= 3, 'job ' + job + ' has too few tiers');
+}
+for (const [key, spec] of Object.entries(m.TOOLS)) {
+  ok(['pick', 'axe', 'hammer'].includes(spec.job), key + ' has unknown job ' + spec.job);
+}
+// The right tool is chosen for the right target.
+ok(m.jobFor(tiles.BY_KEY.stone, false) === 'pick', 'stone is not pickaxe work');
+ok(m.jobFor(tiles.BY_KEY.oaklog, false) === 'axe', 'a log is not axe work');
+ok(m.jobFor(null, true) === 'hammer', 'a wall is not hammer work');
 
 // --- soft ground and scenery ----------------------------------------------------------
 for (const key of m.SOFT) {

@@ -58,10 +58,67 @@ function makeUI(root, deps) {
       ctx.fillRect(4 * u, 6 * u, 1 * u, 7 * u);
       return canvas;
     }
+    if (craft && craft.ARMOUR[item.key]) {
+      // Armour: a silhouette per slot, so four brown pieces are not four brown squares.
+      const u = size / 16;
+      const piece = craft.ARMOUR[item.key];
+      ctx.fillStyle = piece.colour;
+      if (piece.slot === 'head') {
+        ctx.fillRect(3 * u, 3 * u, 10 * u, 7 * u);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(5 * u, 6 * u, 6 * u, 2 * u);
+      } else if (piece.slot === 'chest') {
+        ctx.fillRect(3 * u, 3 * u, 10 * u, 9 * u);
+        ctx.fillRect(1 * u, 4 * u, 2 * u, 5 * u);
+        ctx.fillRect(13 * u, 4 * u, 2 * u, 5 * u);
+      } else if (piece.slot === 'legs') {
+        ctx.fillRect(3 * u, 2 * u, 10 * u, 5 * u);
+        ctx.fillRect(3 * u, 7 * u, 4 * u, 7 * u);
+        ctx.fillRect(9 * u, 7 * u, 4 * u, 7 * u);
+      } else {
+        ctx.fillRect(2 * u, 8 * u, 5 * u, 6 * u);
+        ctx.fillRect(9 * u, 8 * u, 5 * u, 6 * u);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillRect(2 * u, 12 * u, 12 * u, 2 * u);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
+      return canvas;
+    }
+    if (craft && item.key === 'arrow') {
+      const u = size / 16;
+      ctx.strokeStyle = '#b9a271';
+      ctx.lineWidth = Math.max(1, u);
+      ctx.beginPath();
+      ctx.moveTo(3 * u, 13 * u);
+      ctx.lineTo(12 * u, 4 * u);
+      ctx.stroke();
+      ctx.fillStyle = '#d8d2c2';
+      ctx.fillRect(11 * u, 3 * u, 3 * u, 3 * u);
+      ctx.fillStyle = '#8a7a52';
+      ctx.fillRect(2 * u, 12 * u, 3 * u, 3 * u);
+      return canvas;
+    }
+    if (craft && craft.WEAPONS[item.key] && craft.WEAPONS[item.key].ranged) {
+      const u = size / 16;
+      ctx.strokeStyle = '#8a6038';
+      ctx.lineWidth = Math.max(1.5, u * 1.4);
+      ctx.beginPath();
+      ctx.arc(5 * u, 8 * u, 6 * u, -Math.PI / 2.2, Math.PI / 2.2);
+      ctx.stroke();
+      ctx.strokeStyle = '#ded6c2';
+      ctx.lineWidth = Math.max(1, u * 0.7);
+      ctx.beginPath();
+      ctx.moveTo(6 * u, 2.6 * u);
+      ctx.lineTo(6 * u, 13.4 * u);
+      ctx.stroke();
+      return canvas;
+    }
     if (craft && craft.WEAPONS[item.key]) {
       // A sword: blade, crossguard, grip. Tier shows in the blade colour.
       const u = size / 16;
-      const tier = Object.keys(craft.WEAPONS).indexOf(item.key);
+      const tier = Math.max(0, Object.keys(craft.WEAPONS)
+        .filter(k => !craft.WEAPONS[k].ranged).indexOf(item.key));
       const blades = ['#8a6a42', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
       ctx.fillStyle = blades[tier] || '#aab';
       ctx.beginPath();

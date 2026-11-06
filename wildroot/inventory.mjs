@@ -1,4 +1,5 @@
-import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=23';
+import {recordQuestAction} from './quest-content.mjs?v=24';
+import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=24';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}
@@ -30,11 +31,11 @@ export function reclaim(c){initBag(c);let total=0;for(const[id,n]of Object.entri
 export function storageAccess(c){return['town','jungle-town'].includes(c.area)&&Math.abs((c.position?.x??190)-160)<115&&Math.abs((c.position?.y??644)-644)<55;}
 export function unlockedAmount(c,id){return bagSlots(c).reduce((n,t,i)=>n+(t?.id===id&&!c.lockedSlots.includes(i)?t.qty:0),0);}
 function removeMaterial(c,id,n){const grid=bagSlots(c);for(let i=grid.length-1;i>=0&&n>0;i--)if(grid[i]?.id===id&&!c.lockedSlots.includes(i)){const take=Math.min(n,grid[i].qty);grid[i].qty-=take;c.bag[id]-=take;n-=take;if(!grid[i].qty)grid[i]=null;}}
-export function deposit(s,c,id,n=Infinity){if(!storageAccess(c)||!ITEMS[id])return 0;const amount=Math.max(0,Math.floor(Math.min(unlockedAmount(c,id),n,chestRoom(s,id))));if(amount>0){removeMaterial(c,id,amount);s.inventory[id]=(s.inventory[id]||0)+amount;chestSlots(s);}return amount;}
+export function deposit(s,c,id,n=Infinity){if(!storageAccess(c)||!ITEMS[id])return 0;const amount=Math.max(0,Math.floor(Math.min(unlockedAmount(c,id),n,chestRoom(s,id))));if(amount>0){recordQuestAction(c,'bank:deposit');removeMaterial(c,id,amount);s.inventory[id]=(s.inventory[id]||0)+amount;chestSlots(s);}return amount;}
 export function withdraw(s,c,id,n=Infinity){if(!storageAccess(c)||!ITEMS[id])return 0;const amount=Math.max(0,Math.floor(Math.min(s.inventory[id]||0,n,carryRoom(c,id))));if(amount>0){s.inventory[id]-=amount;carry(c,id,amount);chestSlots(s);}return amount;}
 export function depositAll(s,c){let total=0;for(const id of Object.keys(c.bag))total+=deposit(s,c,id);return total;}
 export function gearLocked(c,uid){return bagSlots(c).some((t,i)=>t?.uid===Number(uid)&&c.lockedSlots.includes(i));}
-export function depositGear(s,c,uid){if(!storageAccess(c)||gearLocked(c,uid)||chestUsed(s)>=chestCapacity(s))return false;const i=c.packGear.findIndex(e=>e.uid===Number(uid));if(i<0)return false;s.armory.push(c.packGear.splice(i,1)[0]);bagSlots(c);chestSlots(s);return true;}
+export function depositGear(s,c,uid){if(!storageAccess(c)||gearLocked(c,uid)||chestUsed(s)>=chestCapacity(s))return false;const i=c.packGear.findIndex(e=>e.uid===Number(uid));if(i<0)return false;recordQuestAction(c,'bank:deposit');s.armory.push(c.packGear.splice(i,1)[0]);bagSlots(c);chestSlots(s);return true;}
 export function withdrawGear(s,c,uid){if(!storageAccess(c)||bagUsed(c)>=bagCapacity(c))return false;const i=s.armory.findIndex(e=>e.uid===Number(uid));if(i<0)return false;c.packGear.push(s.armory.splice(i,1)[0]);bagSlots(c);chestSlots(s);return true;}
 export function useExpansion(s,c,id){const d=EXPANSIONS[id],used=d?.target==='bag'?c.usedExpansions:s.usedChestExpansions;if(!d||!used||(c.bag[id]||0)<1||used.includes(id))return false;c.bag[id]--;used.push(id);bagSlots(c);return true;}
 export function useCapacityBag(c,id){const d=CAPACITY_BAGS[id];initBag(c);if(!d||!c.bag[id]||c.usedCapacityBags.includes(id))return false;c.bag[id]--;c.usedCapacityBags.push(id);bagSlots(c);return true;}

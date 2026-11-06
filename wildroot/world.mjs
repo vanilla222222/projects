@@ -1,7 +1,7 @@
-import {surveyPoint} from './exploration.mjs?v=23';
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=23';
-import {roomLayout,pointFor} from './layouts.mjs?v=23';
-import * as E from './engine.mjs?v=23';
+import {surveyPoint} from './exploration.mjs?v=24';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=24';
+import {roomLayout,pointFor} from './layouts.mjs?v=24';
+import * as E from './engine.mjs?v=24';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -36,9 +36,10 @@ export function createMap(area,index,boss=false,secret=null,trial=false){
  const storage=town&&!secret?[{id:'storage',kind:'storage',name:'Storage Chest',x:160,y:GROUND}]:[];
  const discoveries=!secret&&!boss?Object.entries(SECRETS).filter(([id,d])=>d.area===area&&d.zone===index).map(([id,d])=>({id:'secret-'+id,kind:'discovery',secret:id,name:d.name,...pointFor(layout,'secret-'+id)})):[];
  if(trial){facilities.length=0;npcs.length=0;stations.length=0;resources.length=0;storage.length=0;discoveries.length=0;monsters.length=0;portals.splice(0,portals.length,{id:'portal-left',kind:'portal',x:65,y:GROUND,direction:-1,destination:{area,zone:index,entrance:'arena'},name:'Leave solo trial'});}
+ for(const npc of npcs){npc.area=area;npc.zone=index;}
  return{area,index,boss,secret,town,trial,layout,height:layout.height,minY:layout.minY,width:layout.width,platforms:layout.platforms,ladders:layout.ladders,facilities,monsters,resources:secret?[]:resources,npcs:secret?[]:npcs,stations:secret?[]:stations,portals,discoveries,storage,entities:[...facilities,...storage,...monsters,...(secret?[]:resources),...(secret?[]:npcs),...(secret?[]:stations),...portals,...discoveries]};
 }
-export function createDungeonMap(c){const r=c.dungeon,d=E.DUNGEON_ROOMS[r.room],map=createMap(d.area,d.zone,false,d.secret||null);const spots=map.layout.spawns;const monsters=Array.from({length:d.count},(_,i)=>{const p=spots[i%spots.length],f=map.platforms.find(f=>f.y===p.y&&p.x>=f.x&&p.x<=f.x+f.w),enemy={...ENEMIES[d.enemy],id:'dungeon-'+r.room+'-'+i,hp:d.hp,attack:d.attack,xp:0,coins:0};return{...p,id:enemy.id,kind:'enemy',enemy,hp:enemy.hp,dead:0,home:p.x,ledgeMin:f.x+25,ledgeMax:f.x+f.w-25,attack:2,phase:i};});return{...map,town:false,boss:false,secret:null,dungeon:true,title:d.name,monsters,resources:[],npcs:[],stations:[],facilities:[],portals:[],discoveries:[],storage:[],entities:monsters};}
+export function createDungeonMap(c){const r=c.dungeon,d=E.DUNGEON_ROOMS[r.room],map=createMap(d.area,d.zone,false,d.secret||null);const spots=map.layout.spawns;const monsters=Array.from({length:d.count},(_,i)=>{const p=spots[i%spots.length],f=map.platforms.find(f=>f.y===p.y&&p.x>=f.x&&p.x<=f.x+f.w),enemy={...ENEMIES[d.enemy],artId:['ruin-bat','ruin-creeper','archive-golem','ruin-heart'][r.room],id:'dungeon-'+r.room+'-'+i,hp:d.hp,attack:d.attack,xp:0,coins:0};return{...p,id:enemy.id,kind:'enemy',enemy,hp:enemy.hp,dead:0,home:p.x,ledgeMin:f.x+25,ledgeMax:f.x+f.w-25,attack:2,phase:i};});return{...map,town:false,boss:false,secret:null,dungeon:true,title:d.name,monsters,resources:[],npcs:[],stations:[],facilities:[],portals:[],discoveries:[],storage:[],entities:monsters};}
 export function nextRoute(area,index,direction){
  const zones=area==='town'?3:areaById(area).zones.length;
  if(area==='tree'){if(direction<0)return index?{area,zone:index-1}:{area:'forest',zone:4};return index<2?{area,zone:index+1}:{area:'forest',zone:4};}

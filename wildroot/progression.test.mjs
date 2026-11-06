@@ -1,9 +1,9 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=23';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=24';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=23';
-import * as D from './content.mjs?v=23';
-import {World,createMap,GROUND,abilitySet} from './world.mjs?v=23';
+import * as E from './engine.mjs?v=24';
+import * as D from './content.mjs?v=24';
+import {World,createMap,GROUND,abilitySet} from './world.mjs?v=24';
 function rich(s){s.coins=10000;for(const id of Object.keys(D.ITEMS))s.inventory[id]=1000;for(const id of ['ironworking','gilding','brewing','verdant-steel','sunwell','heartwood'])E.unlock(s,id);}
 function tick(w,n,input={}){for(let i=0;i<n*50;i++)w.step(.02,typeof input==='function'?input(i):input);}
 test('Every town zone has an actual universal storage chest',()=>{for(const a of D.AREAS.filter(a=>['town','jungle-town'].includes(a.id)))for(let i=0;i<a.zones.length;i++){const map=createMap(a.id,i);assert.equal(map.storage.length,1);assert.equal(map.storage[0].kind,'storage');assert.ok(map.entities.includes(map.storage[0]));}});
@@ -47,7 +47,7 @@ test('Saved combat/profession builds validate point budgets and can only be chan
  const s=E.freshSave(),c=E.selected(s);c.level=8;c.skills.mining=120;assert.ok(E.train(c,'precision'));assert.ok(E.train(c,'efficiency','profession'));assert.ok(E.saveBuild(c,0));assert.equal(E.resetBuild(c),false);E.travel(s,c,'town',0);E.give(c,'reset-potion',1);assert.ok(E.resetBuild(c));assert.equal(c.talents.precision,0);assert.ok(E.loadBuild(c,0));assert.equal(c.talents.precision,1);assert.equal(c.profTalents.efficiency,1);c.builds[1]={talents:{power:99},profTalents:{}};assert.equal(E.loadBuild(c,1),false);
 });
 test('Story quests enforce prerequisite chains, consume deliveries once and cannot unlock boss early',()=>{
- const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.acceptQuest(s,'seal'),false);assert.equal(s.storyFlags.bossPermit,false);assert.ok(E.acceptQuest(s,'first-roots'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);seedKill(s,'forest-0',8);assert.ok(E.claimQuest(s,c,'first-roots','steward'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);assert.ok(c.bag['woven-pouch']);assert.ok(E.acceptQuest(s,'tools'));const bars=s.inventory['copper-bar'];assert.equal(E.claimQuest(s,c,'tools','mage'),false);assert.equal(s.inventory['copper-bar'],bars);assert.ok(E.claimQuest(s,c,'tools','blacksmith'));assert.equal(s.inventory['copper-bar'],bars-4);
+ const s=E.freshSave(),c=E.selected(s);rich(s);assert.equal(E.acceptQuest(s,'seal'),false);assert.equal(s.storyFlags.bossPermit,false);assert.ok(E.acceptQuest(s,'first-roots'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);seedKill(s,'forest-0',8);assert.ok(E.claimQuest(s,c,'first-roots','steward'));assert.equal(E.claimQuest(s,c,'first-roots','steward'),false);assert.ok(c.bag['woven-pouch']);assert.ok(E.acceptQuest(s,'tools'));assert.equal(E.questStatus(s,'tools').ready,false);E.travel(s,c,'town',2);c.position={x:1520,y:644};assert.ok(E.enqueue(s,c,'charcoal',1));E.advanceProduction(s,20);E.travel(s,c,'town',1);c.position={x:1390,y:644};assert.ok(E.craft(s,c,'blade'));const bars=s.inventory['copper-bar'];assert.equal(E.claimQuest(s,c,'tools','mage'),false);assert.equal(s.inventory['copper-bar'],bars);assert.ok(E.claimQuest(s,c,'tools','blacksmith'));assert.equal(s.inventory['copper-bar'],bars-4);
 });
 test('Secret passages and boss entrance obey their quest gates',()=>{
  const s=E.freshSave(),w=new World(s,{rng:()=>.5});seedKill(s,'jungle-3',12);w.travel('jungle-town',2);w.player.x=w.map.portals.find(p=>p.id==='portal-right').x-20;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,false);s.storyFlags.bossPermit=true;w.select('portal-right');tick(w,.2);assert.equal(w.map.boss,true);assert.equal(E.secretOpen(s,'sunwell'),false);s.secretUnlocks.push('sunwell');assert.ok(E.secretOpen(s,'sunwell'));

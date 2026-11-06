@@ -9,9 +9,10 @@ const STACK_MAX = 999;
 const LAYOUT = [
   { key: 'hotbar', label: 'Hotbar', size: 10 },
   { key: 'main', label: 'Backpack', size: 40 },
-  { key: 'armor', label: 'Armour', size: 3, accepts: 'armor' },
+  // Four, not Terraria's three: boots are a piece here, so head, chest, legs and feet.
+  { key: 'armor', label: 'Armour', size: 4, accepts: 'armor' },
   { key: 'accessory', label: 'Accessories', size: 6, accepts: 'accessory' },
-  { key: 'vanity', label: 'Vanity', size: 3, accepts: 'armor' },
+  { key: 'vanity', label: 'Vanity', size: 4, accepts: 'armor' },
   { key: 'trash', label: 'Trash', size: 1 }
 ];
 

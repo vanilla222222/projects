@@ -16,7 +16,7 @@ const charm = (key) => ({ key, kind: 'accessory' });
 let inv = makeInventory();
 check(inv.section('hotbar').size === 10, 'hotbar should be 10 slots');
 check(inv.section('main').size === 40, 'backpack should be 40 slots');
-check(inv.section('armor').size === 3, 'armour should be 3 slots');
+check(inv.section('armor').size === 4, 'armour should be 4 slots');
 check(inv.section('accessory').size === 6, 'accessories should be 6 slots');
 
 // Stacking fills partial stacks before opening new slots.

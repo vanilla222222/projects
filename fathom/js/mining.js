@@ -11,20 +11,45 @@
 // costs time as well as permission. REFERENCE.md lists this as a departure.
 const BREAK_AT = 100;
 
+// Tools come in three jobs, as in Terraria: a pickaxe breaks blocks, an axe fells trees,
+// a hammer takes down background walls. Holding the wrong one does nothing, which is what
+// makes the starting set of four a set rather than four copies of the same thing.
 const TOOLS = {
-  'wood-pick': { name: 'Wooden Pickaxe', power: 35, useTime: 0.3, tier: 0 },
-  'copper-pick': { name: 'Copper Pickaxe', power: 45, useTime: 0.27, tier: 1 },
-  'iron-pick': { name: 'Iron Pickaxe', power: 55, useTime: 0.24, tier: 2 },
-  'silver-pick': { name: 'Silver Pickaxe', power: 65, useTime: 0.22, tier: 3 },
-  'gold-pick': { name: 'Gold Pickaxe', power: 75, useTime: 0.2, tier: 4 },
-  'cobalt-pick': { name: 'Cobalt Pickaxe', power: 100, useTime: 0.17, tier: 5 },
-  'emberite-pick': { name: 'Emberite Pickaxe', power: 125, useTime: 0.14, tier: 6 }
+  'wood-pick': { name: 'Wooden Pickaxe', job: 'pick', power: 30, useTime: 0.32, tier: 0 },
+  'wood-axe': { name: 'Wooden Axe', job: 'axe', power: 32, useTime: 0.34, tier: 0 },
+  'wood-hammer': { name: 'Wooden Hammer', job: 'hammer', power: 30, useTime: 0.38, tier: 0 },
+
+  'tin-pick': { name: 'Tin Pickaxe', job: 'pick', power: 38, useTime: 0.29, tier: 1 },
+  'tin-axe': { name: 'Tin Axe', job: 'axe', power: 42, useTime: 0.3, tier: 1 },
+  'tin-hammer': { name: 'Tin Hammer', job: 'hammer', power: 40, useTime: 0.34, tier: 1 },
+
+  'copper-pick': { name: 'Copper Pickaxe', job: 'pick', power: 45, useTime: 0.27, tier: 2 },
+  'copper-axe': { name: 'Copper Axe', job: 'axe', power: 50, useTime: 0.28, tier: 2 },
+  'copper-hammer': { name: 'Copper Hammer', job: 'hammer', power: 48, useTime: 0.32, tier: 2 },
+
+  'iron-pick': { name: 'Iron Pickaxe', job: 'pick', power: 55, useTime: 0.24, tier: 3 },
+  'iron-axe': { name: 'Iron Axe', job: 'axe', power: 62, useTime: 0.25, tier: 3 },
+  'iron-hammer': { name: 'Iron Hammer', job: 'hammer', power: 60, useTime: 0.28, tier: 3 },
+
+  'silver-pick': { name: 'Silver Pickaxe', job: 'pick', power: 65, useTime: 0.22, tier: 4 },
+  'gold-pick': { name: 'Gold Pickaxe', job: 'pick', power: 75, useTime: 0.2, tier: 5 },
+  'cobalt-pick': { name: 'Cobalt Pickaxe', job: 'pick', power: 100, useTime: 0.17, tier: 6 },
+  'emberite-pick': { name: 'Emberite Pickaxe', job: 'pick', power: 125, useTime: 0.14, tier: 7 }
 };
+
+// Which tool a given tile answers to. Anything with a background wall is hammer work,
+// a standing trunk is axe work, and the rest is for a pickaxe.
+function jobFor(spec, isWall) {
+  if (isWall) return 'hammer';
+  if (spec && spec.trunkOf) return 'axe';
+  return 'pick';
+}
+
 
 // Doubled power, as Terraria does for dirt, clay and sand: the soft ground you move through
 // rather than the rock you work at.
 // Head colour per tier, so a glance at the hotbar says which pickaxe you are holding.
-const TIER_COLOURS = ['#8a6a42', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
+const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
 
 const SOFT = new Set(['dirt', 'grass', 'sand', 'snow', 'clay', 'mud']);
 
@@ -105,7 +130,7 @@ function requirementName(tileSpec) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_mining = { TOOLS, TIER_COLOURS, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
+const EXPORTS_mining = { TOOLS, TIER_COLOURS, jobFor, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
     requirementOf, toughnessOf, canMine, tierColour, isTool, damagePerHit, hitsFor, secondsFor, requirementName };
 
 if (typeof module !== 'undefined' && module.exports) {

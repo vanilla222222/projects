@@ -294,3 +294,90 @@ surface shaft with two tiles of soil. Every door was generated and then sealed.
   field decides per patch which wins, so a border becomes interleaved tongues of each.
   The kernels had to be narrowed first: at their original width the blend fired on 86% of
   all columns, because no biome had a core where it was clearly dominant.
+
+## Three fixes that the tests had been hiding
+
+All three of these were reported from play while the test suite was green. Each one was a
+case of the test measuring something adjacent to the thing that mattered.
+
+**Caves did not connect to the surface.** The reachability test seeded its flood fill
+from the top two rows of a fixed window. Surface height varies by a couple of hundred
+tiles, so for most columns those rows were already underground: the fill started *inside*
+the cave system and proved only that it reached itself. It reported 93-96% while the
+world had three cave mouths in 800 columns. The fill now seeds only from tiles strictly
+above their own column's surface, and the count of distinct surface openings is checked
+too, because connectivity without a door is not a cave system anybody will see. Shafts
+are also funnels now rather than flares: widening the mouth had made each entrance
+fifteen tiles across and turned 21.9% of the surface into holes, so the shaft pinches at
+the top and opens below - many more entrances for a quarter of the missing ground.
+
+**The biome blend did nothing visible.** Two separate reasons. The second-place search
+ran inside the same pass as the first, which left it equal to the winner whenever the
+strongest biome was index 0 - so the blend fired, computed a share of exactly one half,
+and swapped the biome for itself. And once that was fixed it still fired mostly between
+neighbours that share a surface material, taiga against tundra, both snow. Identity is
+now decided by weights jostled per column, with the jostle scaled by how contested the
+column is: full at a border, zero in a core. Measured on surface material rather than on
+biome name, 69% of visible borders interleave against 6.5% before, and only 10.6% of the
+world sits in runs under 20 tiles, so the cores survived.
+
+**The ocean still had air pockets.** Water reached only a table 110 to 230 tiles below
+the sea bed; everything carved below that stayed dry, which left 89,309 dry air tiles
+under the ocean in one sampled stretch, and the new cave shafts then punched 5% of sea
+beds open into them. Anything open below sea level under an ocean is now water, down to
+hell where lava takes over.
+
+## Underground structures
+
+Four kinds, placed on a grid and computed from (x, y) like the sky islands, so a room
+wider than a chunk cannot disagree with itself at a seam.
+
+- **Cabins** - a wooden shell with a collapsed doorway, torches, and a crafting station
+  inside, so finding one is worth something.
+- **Ruins** - brick, partly fallen in, with rubble on the floor.
+- **Grottos** - large eroded natural chambers, which is also where the big caves are.
+- **Mineshafts** - long timbered corridors.
+
+Three rules kept them honest, and each came from a failure: never in hell, never under
+the sea, and never poking out of a hillside. A structure is anchored to its own column's
+surface, so over a neighbouring valley it could reach above the ground there and carve a
+hole in the open hillside; it has to stay buried at every column it spans.
+
+## Wood species, tools and armour
+
+**Six wood species**, one per tree: oak, pine, mahogany, acacia, shadewood and crimwood.
+Each has its own log, block, background, platform, door, chair, table and work bench -
+forty-eight tiles, generated from a table rather than written out, because six times
+eight near-identical entries is forty-eight chances to make one of them different by
+accident.
+
+Tools and armour deliberately do **not** depend on species. A recipe ingredient beginning
+with `#` is a tag: `#wood` matches any species' lumber, so a pickaxe can be made from
+whichever tree happened to be nearest. Gating a pickaxe on finding one particular tree
+would be tedious rather than interesting.
+
+**Three tool jobs**, as in Terraria: a pickaxe breaks blocks, an axe fells trees, a hammer
+takes down background walls. Holding the wrong one does nothing. That is what makes the
+starting set - tin pickaxe, axe, hammer and sword - a set rather than four copies of the
+same thing, and it finally implements the wall rule this file recorded long ago.
+
+**Tin** sits below copper: a shallow ore and the metal the player begins with.
+
+**Platforms** are one-way. The collision test needs the body's position before the move as
+well as after, because landing on a platform is the condition that the feet were above the
+deck and are now below. Checked on position alone, a platform either blocks you the moment
+you jump into it or never catches you at all. Holding down drops you through one.
+
+**Doors** swing when used, whatever you are holding - checked before anything the held item
+would do, because reaching for a door with a block in hand is the common case and walling
+the doorway up instead would be infuriating. A door only closes into empty space, so it
+can never shut on the player.
+
+**Armour** has four slots rather than Terraria's three, because boots were asked for. Every
+two points of defence take one off an incoming hit, with a floor of one, so armour is
+always worth wearing and never makes you untouchable. Defence is read off the worn pieces
+each step rather than cached, so taking a piece off matters immediately.
+
+**The bow** is a weapon that spends ammunition and fires where you point rather than at
+something under the cursor. An arrow is a small body that flies, falls, and stops at the
+first thing it meets.

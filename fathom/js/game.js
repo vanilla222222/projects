@@ -37,6 +37,7 @@ function makeGame(canvas, deps) {
   const state = {
     world: null,
     stations: new Set(),
+    arrows: [],
     stats: null,
     player: null,
     colours: null,
@@ -54,13 +55,20 @@ function makeGame(canvas, deps) {
   const pointer = { x: 0, y: 0 };
   let lastView = null;
 
+  // Somewhere to stand, not merely somewhere that is not solid. Cave mouths now break the
+  // surface often enough that spawning on the first clear column dropped the player down
+  // a shaft at the start of the game; it has to be clear AND have ground under it.
   function spawnPlayer() {
-    for (let probe = 0; probe < 256; probe += 1) {
-      const column = probe * 7;
+    for (let probe = 0; probe < 400; probe += 1) {
+      const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
       const surface = worldgen.surfaceHeight(seed, column);
+      if (!tiles.isSolid(world.get(column, surface))) continue;
       const candidate = physics.makePlayer(column + 0.1, surface - 3);
-      if (!physics.overlapsSolid(world, tiles, candidate.x, candidate.y,
-        candidate.width, candidate.height)) return candidate;
+      if (physics.overlapsSolid(world, tiles, candidate.x, candidate.y,
+        candidate.width, candidate.height)) continue;
+      // And not standing in the sea.
+      if (world.getLevel(column, surface - 1) > 0) continue;
+      return candidate;
     }
     return physics.makePlayer(0, worldgen.SKY_H);
   }
@@ -142,17 +150,25 @@ function makeGame(canvas, deps) {
       return;
     }
 
-    // You have to be holding the pickaxe, as in Terraria. That is what makes the hotbar
-    // a decision rather than a shelf.
+    // You have to be holding the right tool, as in Terraria: a pickaxe for blocks, an axe
+    // for trees, a hammer for the background walls. That is what makes the starting four
+    // a set rather than four copies of the same thing.
     const held = selectedItem();
     const tool = mining.isTool(held) ? held : null;
+    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
+    const wanted = mining.jobFor(diggingWall ? null : spec, diggingWall);
     if (!tool) {
       state.player.mining = null;
-      say('Hold a pickaxe to mine', 0.9);
+      say('Hold a ' + wanted + ' to break that', 0.9);
+      return;
+    }
+    const job = mining.toolSpec(tool.key).job;
+    if (job !== wanted) {
+      state.player.mining = null;
+      say(spec.name + ' needs a ' + wanted, 1.1);
       return;
     }
 
-    const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const power = mining.powerOf(tool);
     // Walls come away like soft ground: they are a backing, not a seam of rock.
     const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
@@ -232,12 +248,77 @@ function makeGame(canvas, deps) {
     return true;
   }
 
+  function wornDefense() {
+    const section = inventory.section('armor');
+    let total = 0;
+    for (let i = section.from; i < section.to; i += 1) {
+      const item = inventory.slots[i];
+      if (!item) continue;
+      const piece = craft.ARMOUR[item.key];
+      if (piece) total += piece.defense;
+    }
+    return total;
+  }
+
+  // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
+  // it meets; spending the ammunition is what distinguishes it from a sword swing.
+  function shoot(weapon) {
+    if (!inventory.countOf(weapon.ammo)) {
+      say('Out of ' + craft.nameOf(weapon.ammo, tiles), 1.0);
+      return false;
+    }
+    inventory.take(weapon.ammo, 1);
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height * 0.4;
+    const dx = pointer.x - cx;
+    const dy = pointer.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * 42, vy: (dy / len) * 42,
+      damage: weapon.damage, life: 2.6 });
+    return true;
+  }
+
+  function updateArrows(dt) {
+    for (let i = state.arrows.length - 1; i >= 0; i -= 1) {
+      const a = state.arrows[i];
+      a.life -= dt;
+      a.vy += 26 * dt;
+      const steps = Math.ceil(Math.hypot(a.vx, a.vy) * dt / 0.3) || 1;
+      let hit = false;
+      for (let s2 = 0; s2 < steps && !hit; s2 += 1) {
+        a.x += (a.vx * dt) / steps;
+        a.y += (a.vy * dt) / steps;
+        if (tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) hit = true;
+        else if (swarm) {
+          const target = swarm.at(a.x, a.y);
+          if (target) {
+            hit = true;
+            spawnParticles(a.x, a.y, target.spec.colour, 5);
+            if (swarm.damage(target, a.damage)) {
+              for (const [key, count] of target.spec.drops || []) {
+                dropItem(target.x, target.y, key, craft.kindOf(key), count);
+              }
+            }
+          }
+        }
+      }
+      if (hit || a.life <= 0) state.arrows.splice(i, 1);
+    }
+  }
+
   // Swing at an enemy under the cursor. Returns true if something was struck, so mining
   // does not also happen in the same frame.
   function attack() {
-    if (!swarm || swingCooldown > 0) return false;
+    if (swingCooldown > 0) return false;
     const item = selectedItem();
     const weapon = item ? craft.WEAPONS[item.key] : null;
+    // A bow does not need something under the cursor: it fires where you point.
+    if (weapon && weapon.ranged) {
+      if (!shoot(weapon)) return true;
+      swingCooldown = weapon.useTime;
+      return true;
+    }
+    if (!swarm) return false;
     const reach = weapon ? weapon.reach : 2.2;
     const target = swarm.at(pointer.x, pointer.y);
     if (!target) return false;
@@ -280,7 +361,32 @@ function makeGame(canvas, deps) {
     say('You died', 2.2);
   }
 
+  // A door swings when you use it, whatever you are holding. Checked before anything the
+  // held item would do, because reaching for a door with a block in hand is the common
+  // case and walling the doorway up instead would be infuriating.
+  function useDoor(aim) {
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.door) return false;
+    const other = tiles.BY_KEY[spec.swings];
+    if (!other) return false;
+    // A door only closes into empty space, so it can never shut on the player.
+    if (spec.door === 'open') {
+      const p = state.player;
+      const overlaps = aim.x + 1 > p.x && aim.x < p.x + p.width
+        && aim.y + 1 > p.y && aim.y < p.y + p.height;
+      if (overlaps) {
+        say('Something is in the way', 0.9);
+        return true;
+      }
+    }
+    world.set(aim.x, aim.y, other.id);
+    if (liquid) liquid.activateAround(aim.x, aim.y);
+    return true;
+  }
+
   function place() {
+    const aim0 = physics.aimTile(state.player, pointer);
+    if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
     if (!item) return;
     const aim = physics.aimTile(state.player, pointer);
@@ -335,6 +441,10 @@ function makeGame(canvas, deps) {
     else if (input.dig && !ui.isOpen) mine(dt);
     else state.player.mining = null;
 
+    // Defence is read off the worn armour each step rather than cached, so taking a
+    // piece off in the inventory screen matters immediately.
+    stats.defense = wornDefense();
+
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase);
       const hit = swarm.touching(state.player);
@@ -360,6 +470,7 @@ function makeGame(canvas, deps) {
 
     if (stats.dead) respawnPlayer();
     updateDrops(dt);
+    updateArrows(dt);
 
     for (let i = state.particles.length - 1; i >= 0; i -= 1) {
       const p = state.particles[i];
@@ -562,9 +673,13 @@ function makeGame(canvas, deps) {
 
     if (characterRecord.inventory) inventory.restore(characterRecord.inventory);
     else {
-      inventory.add({ key: 'wood-pick', kind: 'tool' }, 1, 'hotbar');
+      // The starting four: one of each job, so every kind of thing in the world can be
+      // taken apart from the first minute without a crafting station.
+      inventory.add({ key: 'tin-pick', kind: 'tool' }, 1, 'hotbar');
+      inventory.add({ key: 'tin-axe', kind: 'tool' }, 1, 'hotbar');
+      inventory.add({ key: 'tin-hammer', kind: 'tool' }, 1, 'hotbar');
+      inventory.add({ key: 'tin-sword', kind: 'tool' }, 1, 'hotbar');
       inventory.add({ key: 'torch', kind: 'block' }, 40, 'hotbar');
-      inventory.add({ key: 'plankwall', kind: 'wall' }, 60, 'hotbar');
     }
     if (characterRecord.stats) Object.assign(stats, characterRecord.stats);
 
@@ -649,7 +764,12 @@ function makeGame(canvas, deps) {
     }
   }
 
+  function useDoorAt(x, y) {
+    return useDoor({ x, y, inReach: true });
+  }
+
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
+    useDoorAt,
     swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },
