@@ -1,5 +1,5 @@
-import {AREAS} from './content.mjs?v=36';
-import {serviceAccess} from './services.mjs?v=36';
+import {AREAS} from './content.mjs?v=38';
+import {serviceAccess} from './services.mjs?v=38';
 export const DUNGEON_BOONS={fang:{name:'Fang of the Ruin',text:'+25% run damage',effect:'damage',amount:.25},bark:{name:'Living Bark',text:'+30 run maximum HP and heal 30',effect:'health',amount:30},edge:{name:'Keen Edge',text:'+10% run critical chance',effect:'crit',amount:.1},spring:{name:'Springstep',text:'+15% run attack and movement speed',effect:'speed',amount:.15},ward:{name:'Old Ward',text:'+2 run defense',effect:'defense',amount:2},font:{name:'Restoring Font',text:'Heal 4 run HP per enemy defeated',effect:'killHeal',amount:4}};
 export const DUNGEON_UPGRADES={blade:{name:'Ruins Weapon Training',cost:20,max:10,text:'+1 starting run attack per level'},vitality:{name:'Ruins Endurance',cost:20,max:10,text:'+5 starting run HP per level'}};
 export const RELIC_REWARDS={power:{name:'Relic of Strength',cost:6,max:10,effect:'attack',amount:.005,text:'+0.5% roster damage per level'},study:{name:'Relic of Learning',cost:6,max:10,effect:'skillXP',amount:.01,text:'+1% profession XP per level'}};

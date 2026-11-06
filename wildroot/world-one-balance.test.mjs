@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=36';
-import * as D from './content.mjs?v=36';
-import * as UI from './ui-panels.mjs?v=36';
-import * as Parity from './parity-panels.mjs?v=36';
-import * as R from './roster.mjs?v=36';
-import {roomPreparation,bossCraftProgress} from './route-preparation.mjs?v=36';
+import * as E from './engine.mjs?v=38';
+import * as D from './content.mjs?v=38';
+import * as UI from './ui-panels.mjs?v=38';
+import * as Parity from './parity-panels.mjs?v=38';
+import * as R from './roster.mjs?v=38';
+import {roomPreparation,bossCraftProgress} from './route-preparation.mjs?v=38';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};
 function lateBuild(s,c,calling){c.class=calling;c.level=20;E.investAttribute(c,E.CLASS_DESIGNS[calling].accuracy,20);E.investAttribute(c,E.CLASS_DESIGNS[calling].primary,18);for(const t of ['precision','power','vitality','haste'])for(let i=0;i<8;i++)E.train(c,t);for(const id of [D.VERDANT_WEAPONS[calling],'tempered-mail','iron-helm','birch-boots'])E.createEquipment(s,id,c);E.syncAccount(s);c.hp=E.maxHp(c);}
 test('All five callings can sustain the last cavern with a common-material World One build',()=>{

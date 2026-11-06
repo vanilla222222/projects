@@ -1,21 +1,21 @@
-import * as Rewards from './reward-progression.mjs?v=36';
-import {roomLayout} from './layouts.mjs?v=36';
-import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=36';
-import * as J from './journey.mjs?v=36';
-import * as Builds from './class-builds.mjs?v=36';
-import * as Books from './special-talents.mjs?v=36';
-import * as Hunts from './boss-hunts.mjs?v=36';
-import * as Dungeon from './dungeon.mjs?v=36';
-import {validateSurveys} from './exploration.mjs?v=36';
-import * as X from './item-economy.mjs?v=36';
-import * as S from './services.mjs?v=36';
-import * as B from './workshop.mjs?v=36';
-import * as H from './alchemy.mjs?v=36';
-import * as C from './chronicle.mjs?v=36';
-import * as A from './adventure.mjs?v=36';
-import * as L from './legacy.mjs?v=36';
-import * as I from './inventory.mjs?v=36';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=36';
+import * as Rewards from './reward-progression.mjs?v=38';
+import {roomLayout} from './layouts.mjs?v=38';
+import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=38';
+import * as J from './journey.mjs?v=38';
+import * as Builds from './class-builds.mjs?v=38';
+import * as Books from './special-talents.mjs?v=38';
+import * as Hunts from './boss-hunts.mjs?v=38';
+import * as Dungeon from './dungeon.mjs?v=38';
+import {validateSurveys} from './exploration.mjs?v=38';
+import * as X from './item-economy.mjs?v=38';
+import * as S from './services.mjs?v=38';
+import * as B from './workshop.mjs?v=38';
+import * as H from './alchemy.mjs?v=38';
+import * as C from './chronicle.mjs?v=38';
+import * as A from './adventure.mjs?v=38';
+import * as L from './legacy.mjs?v=38';
+import * as I from './inventory.mjs?v=38';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=38';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;if(c.dungeon)c.dungeon.home.hp+=6;else c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
@@ -71,7 +71,7 @@ export function enqueue(s,c,id,count=1){const r=RECIPES.find(r=>r.id===id);if(!r
 export function cancelJob(s,id,c=s.characters.find(c=>c.id===s.active)){if(!S.serviceAccess(s,c,'foundry','upgrade'))return false;const i=s.jobs.findIndex(j=>j.id===Number(id));if(i<0)return false;const job=s.jobs[i];const owner=s.characters.find(c=>c.id===job.owner);for(const[k,n]of Object.entries(job.reserved))I.give(owner,k,n*job.remaining);s.coins+=job.fee*job.remaining;s.jobs.splice(i,1);return true;}
 export function jobDuration(s,job){const r=RECIPES.find(r=>r.id===job.recipe),c=s.characters.find(c=>c.id===job.owner);return(r?.duration||8)/(1+(stats(c||{}).crafting||0)+(c?.profTalents?.workmanship||0)*.05+(c?bonusesFor(s,c).crafting||0:accountBonuses(s).crafting||0));}
 export function advanceProduction(s,seconds){if(!Number.isFinite(seconds)||seconds<=0)return;A.advanceIndustry(s,seconds);H.advanceAlchemy(s,seconds);for(const job of [...s.jobs]){job.progress+=seconds;let duration=jobDuration(s,job);while(job.remaining>0&&job.progress>=duration){job.progress-=duration;job.remaining--;const r=RECIPES.find(r=>r.id===job.recipe),owner=s.characters.find(c=>c.id===job.owner);if(r&&owner)I.give(owner,r.output,job.yield);if(owner){recordQuestAction(owner,'craft:'+r.id);owner.skills.smithing+=6*(1+(owner.profTalents.mastery||0)*.05+(owner.accountBonuses?.skillXP||0));addXp(owner,3);}duration=jobDuration(s,job);}if(!job.remaining)s.jobs.splice(s.jobs.indexOf(job),1);}}
-export function questStatus(s,id,c=s.characters.find(c=>c.id===s.active)||s.characters[0]){const history=c.journey.story;const q=STORY.find(q=>q.id===id);if(!q)return null;const done=!!history[id]?.done,accepted=!!history[id]?.accepted,available=q.requires.every(id=>history[id]?.done);const tasks=[];for(const[k,n]of Object.entries(q.kills||{}))tasks.push({text:`Defeat ${n} ${ENEMIES[k].name}`,have:c.journey.kills[k]||0,need:n,done:(c.journey.kills[k]||0)>=n});for(const[k,n]of Object.entries(q.deliver||{}))tasks.push({text:`Deliver ${n} ${ITEMS[k].name}`,have:I.amount(s,k,c),need:n,done:I.amount(s,k,c)>=n});const preserved=accepted&&!history[id].extrasVersion;for(const[key,n]of Object.entries(q.actions||{})){const have=preserved?n:c.journey.events[key]||0;tasks.push({text:QUEST_ACTIONS[key]+(preserved?' (existing quest preserved)':''),have,need:n,done:have>=n});}for(const room of q.visits||[]){const have=preserved||c.journey.visited[room]?1:0;tasks.push({text:'Visit '+roomLayout(room.slice(0,room.lastIndexOf('-')),Number(room.split('-').at(-1))).title,have,need:1,done:have===1});}if(q.minigame){const have=preserved?q.minigame.score:c.minigames.best[q.minigame.skill]||0;tasks.push({text:'Score in a '+q.minigame.skill+' challenge',have,need:q.minigame.score,done:have>=q.minigame.score});}if(q.classes)tasks.push({text:`Discover all ${q.classes} classes`,have:s.unlockedClasses.length,need:q.classes,done:s.unlockedClasses.length>=q.classes});return{q,done,accepted,available,tasks,ready:available&&accepted&&!done&&tasks.every(t=>t.done)};}
+export function questStatus(s,id,c=s.characters.find(c=>c.id===s.active)||s.characters[0]){const history=c.journey.story;const q=STORY.find(q=>q.id===id);if(!q)return null;const done=!!history[id]?.done,accepted=!!history[id]?.accepted,available=q.requires.every(id=>history[id]?.done);const tasks=[];for(const[k,n]of Object.entries(q.kills||{}))tasks.push({text:`Defeat ${n} ${ENEMIES[k].name}`,have:c.journey.kills[k]||0,need:n,done:(c.journey.kills[k]||0)>=n});for(const[k,n]of Object.entries(q.deliver||{}))tasks.push({item:k,text:`Deliver ${n} ${ITEMS[k].name}`,have:I.amount(s,k,c),need:n,done:I.amount(s,k,c)>=n});const preserved=accepted&&!history[id].extrasVersion;for(const[key,n]of Object.entries(q.actions||{})){const have=preserved?n:c.journey.events[key]||0;tasks.push({text:QUEST_ACTIONS[key]+(preserved?' (existing quest preserved)':''),have,need:n,done:have>=n});}for(const room of q.visits||[]){const have=preserved||c.journey.visited[room]?1:0;tasks.push({text:'Visit '+roomLayout(room.slice(0,room.lastIndexOf('-')),Number(room.split('-').at(-1))).title,have,need:1,done:have===1});}if(q.minigame){const have=preserved?q.minigame.score:c.minigames.best[q.minigame.skill]||0;tasks.push({text:'Score in a '+q.minigame.skill+' challenge',have,need:q.minigame.score,done:have>=q.minigame.score});}if(q.classes)tasks.push({text:`Discover all ${q.classes} classes`,have:s.unlockedClasses.length,need:q.classes,done:s.unlockedClasses.length>=q.classes});return{q,done,accepted,available,tasks,ready:available&&accepted&&!done&&tasks.every(t=>t.done)};}
 export function acceptQuest(s,id,c=s.characters.find(c=>c.id===s.active)||s.characters[0]){const status=questStatus(s,id,c);if(!status?.available||status.done||status.accepted)return false;c.journey.story[id]={accepted:true,done:false,extrasVersion:1};return true;}
 export function claimQuest(s,c,id,giver){const st=questStatus(s,id,c);if(!st?.ready||st.q.giver!==giver||!pay(s,st.q.deliver||{},c))return false;c.journey.story[id]={...c.journey.story[id],accepted:true,done:true};s.story[id]={accepted:true,done:true};const r=st.q.reward;Rewards.grantQuestItems(s,c,st.q);if(Object.keys(r.items||{}).some(item=>item.startsWith('stamp-'))&&!s.stampRewardClaims.includes(id))s.stampRewardClaims.push(id);for(const id of r.recipes||[])unlock(s,id);for(const id of r.secrets||[])if(!s.secretUnlocks.includes(id))s.secretUnlocks.push(id);if(r.liquid)s.alchemy.liquid=Math.min(liquidCap(s),s.alchemy.liquid+r.liquid);if(r.permit)s.storyFlags.bossPermit=true;if(r.complete)s.storyFlags.complete=true;if(r.guild)s.guild[r.guild]=Math.min(GUILD[r.guild].max,(s.guild[r.guild]||0)+1);L.awardNpcTokens(s,c);syncAccount(s);addXp(c,20);log(s,`Quest complete: ${st.q.name}.`);return true;}
 export function secretOpen(s,id){if(id==='sunwell')return s.secretUnlocks.includes('sunwell');if(id==='vault')return s.story.outpost?.done&&Object.keys(CLASSES).every(id=>s.characters.some(c=>c.class===id&&skillLevel(c,CLASSES[id].skill)>=2));return false;}

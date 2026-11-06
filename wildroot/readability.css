@@ -113,3 +113,10 @@
 
 .world-screen[data-boss="true"] .quest-tracker{display:none}
 @media(max-width:700px){.world-screen[data-boss="true"] .map-title h1{font-size:17px}}
+
+#panel-content .gear-comparison{margin:12px 0;padding:10px;background:#f2e5c4;border:1px solid #a68c62;overflow-wrap:anywhere}
+#panel-content .gear-comparison table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+#panel-content .gear-comparison th,#panel-content .gear-comparison td{padding:6px 3px;text-align:right;overflow-wrap:anywhere;border-bottom:1px solid #c5af86}
+#panel-content .gear-comparison th:first-child{text-align:left}
+#panel-content .stat-gain td:last-child{color:#285832;font-weight:bold}#panel-content .stat-loss td:last-child{color:#873e32;font-weight:bold}
+#panel-content .bank-characters p{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.loot-feed .loot-rare{color:#b8d4ff}.loot-feed .loot-legendary{color:#f8ce7d}.loot-feed .loot-mythical{color:#e5b5ff}

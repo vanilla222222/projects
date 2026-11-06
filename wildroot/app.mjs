@@ -1,19 +1,20 @@
-import * as Roster from './roster.mjs?v=36';
-import * as Talk from './conversations.mjs?v=36';
-import {npcDialogue} from './dialogue-panels.mjs?v=36';
-import * as Parity from './parity-panels.mjs?v=36';
-import * as EconomyUI from './economy-panels.mjs?v=36';
-import * as Prof from './profession-panels.mjs?v=36';
-import * as UI from './ui-panels.mjs?v=36';
-import {icon,portrait} from './ui-art.mjs?v=36';
-import * as AUI from './adventure-panels.mjs?v=36';
-import * as T from './town-panels.mjs?v=36';
-import * as U from './panels.mjs?v=36';
-import {GameAudio} from './audio.mjs?v=36';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=36';
-import * as E from './engine.mjs?v=36';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=36';
-import {drawWorld,viewFor} from './scene.mjs?v=37';
+import * as InventoryGuide from './inventory-guidance.mjs?v=38';
+import * as Roster from './roster.mjs?v=38';
+import * as Talk from './conversations.mjs?v=38';
+import {npcDialogue} from './dialogue-panels.mjs?v=38';
+import * as Parity from './parity-panels.mjs?v=38';
+import * as EconomyUI from './economy-panels.mjs?v=38';
+import * as Prof from './profession-panels.mjs?v=38';
+import * as UI from './ui-panels.mjs?v=38';
+import {icon,portrait} from './ui-art.mjs?v=38';
+import * as AUI from './adventure-panels.mjs?v=38';
+import * as T from './town-panels.mjs?v=38';
+import * as U from './panels.mjs?v=38';
+import {GameAudio} from './audio.mjs?v=38';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=38';
+import * as E from './engine.mjs?v=38';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=38';
+import {drawWorld,viewFor} from './scene.mjs?v=38';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -27,7 +28,7 @@ try{raw=localStorage.getItem(KEY);}catch{}
 try{state=raw?E.restoreSave(JSON.parse(raw)):E.freshSave();if(raw)offline=(E.claimOffline(state),state.afkReport);}catch(err){state=E.freshSave();loadError=err.message;}
 function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4000);}
 function save(){if(paused||loadError)return;state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));$('save-state').textContent='Saved locally';}catch{$('save-state').textContent='Export a backup';}}
-const world=new World(state,{onIntent:handleIntent,onEvent:event=>{audio.play(event.type);if(event.type==='notice')toast(event.text);if(event.type==='loot'){loot.unshift({text:`+${event.count} ${ITEMS[event.id].name}`,until:Date.now()+5500});loot=loot.slice(0,4);}}});
+const world=new World(state,{onIntent:handleIntent,onEvent:event=>{audio.play(event.type);if(event.type==='notice')toast(event.text);if(event.type==='loot'&&event.count>0){loot.unshift({text:`+${event.count} ${ITEMS[event.id].name}`,rarity:ITEMS[event.id].rarity,until:Date.now()+5500});loot=loot.slice(0,4);}}});
 function handleIntent(event){
  if(event.type==='survey'){world.c.position={x:world.player.x,y:world.player.y};const r=E.claimSurvey(state,world.c);toast(r?'Route surveyed: +'+r.count+' '+ITEMS[r.id].name+' and '+r.coins+' coins.':'This route was already surveyed.');save();return;}
  world.c.position={x:world.player.x,y:world.player.y,facing:world.player.facing};
@@ -138,7 +139,7 @@ function refresh(){
  const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
  if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
- loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p>${esc(l.text)}</p>`).join(''));
+ loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p class="loot-${l.rarity||'common'}">${esc(l.text)}</p>`).join(''));const bagStatus=InventoryGuide.lootStatus(c);$('bag-count').textContent='Bag '+bagStatus.used+'/'+bagStatus.capacity+(bagStatus.pending||bagStatus.floor?' · !':'');$('bag-count').title=bagStatus.pending+' pending items · '+bagStatus.floor+' items on the ground · '+bagStatus.locked+' locked slots';$('bag-count').setAttribute('aria-label','Open inventory. '+$('bag-count').title);
  $('knockout').hidden=world.player.respawn<=0;
  if(panelKind==='npc'&&conversation?.revealed&&performance.now()-lastPanelRefresh>1000){const focus=document.activeElement?.id;renderPanel();if(focus==='npc-speech')$('npc-speech')?.focus();lastPanelRefresh=performance.now();}
  buildTargets();if($('panel').open&&!panelInteraction&&!document.activeElement?.matches('#panel input,#panel select')&&performance.now()-lastPanelRefresh>1000&&!['new','welcome','offline','settings','load-error','paused','victory','assignment','chapter-complete','minigame','trial-result','npc'].includes(panelKind)){renderPanel();lastPanelRefresh=performance.now();}
@@ -253,16 +254,19 @@ document.addEventListener('click',event=>{
  if(d.invLock!==undefined){E.toggleSlotLock(c,Number(d.invLock));inventoryView.moving=false;save();renderPanel();return;}
  if(d.invMove!==undefined){if(!inventoryView.quantity){const g=inventoryView.source==='bag'?E.bagSlots(c):E.chestSlots(state);inventoryView.quantity=g[inventoryView.index]?.qty||1;}inventoryView.moving=!inventoryView.moving;inventoryView.confirmDrop=false;renderPanel();return;}
  if(d.capacityBag){toast(E.useCapacityBag(c,d.capacityBag)?'Pouch consumed. This character can carry larger stacks.':'This pouch was already used or is not in the backpack.');save();renderPanel();refresh();return;}
- if(d.invTransfer!==undefined){toast('Transferred '+fmt(E.transferSlot(state,c,inventoryView.index,inventoryView.quantity||Infinity,inventoryView.source))+' items.');inventoryView.confirmDrop=false;save();renderPanel();return;}
+ if(d.invTransfer!==undefined){const source=inventoryView.source||'bag',slot=(source==='chest'?E.chestSlots(state):E.bagSlots(c))[inventoryView.index];if(!slot){toast('Select an inventory slot first.');return;}if(!E.storageAccess(c)){toast('Walk to a town chest to transfer supplies.');return;}if(source==='bag'&&c.lockedSlots.includes(inventoryView.index)){toast('Unlock this slot before transferring it.');return;}const gear=slot.uid?(source==='chest'?state.armory:c.packGear).find(g=>g.uid===slot.uid):null,name=ITEMS[gear?.base||slot.id].name,requested=Math.min(slot.qty||1,inventoryView.quantity||Infinity),n=E.transferSlot(state,c,inventoryView.index,requested,source);toast((source==='chest'?'Withdrew ':'Deposited ')+fmt(n)+' '+name+'.'+(n<requested?' '+fmt(requested-n)+' stayed in '+(source==='chest'?'storage':'your backpack')+' because the destination is full.':''));inventoryView.confirmDrop=false;save();renderPanel();refresh();return;}
  if(d.invDrop!==undefined){if(!inventoryView.confirmDrop){const t=E.bagSlots(c)[inventoryView.index];inventoryView.dropKey=t?.uid||t?.id;inventoryView.confirmDrop=true;renderPanel();return;}const t=E.bagSlots(c)[inventoryView.index];const dropped=(t?.uid||t?.id)===inventoryView.dropKey&&world.dropInventory(inventoryView.index,inventoryView.quantity||Infinity);toast(dropped?'Item dropped beside your character.':'Unlock this slot before dropping.');inventoryView.confirmDrop=false;save();renderPanel();buildTargets();return;}
  if(d.expand){toast(E.useExpansion(state,c,d.expand)?'Expansion consumed. Capacity increased.':'That expansion was already used, or is not in this backpack.');save();renderPanel();refresh();return;}
  if(d.deposit){toast('Deposited '+fmt(E.deposit(state,c,d.deposit))+' items.');save();renderPanel();return;}
  if(d.withdraw){toast('Withdrew '+fmt(E.withdraw(state,c,d.withdraw))+' items.');save();renderPanel();return;}
- if(d.depositAll!==undefined){toast('Deposited '+fmt(E.depositAll(state,c))+' items.');save();renderPanel();return;}
+ if(d.bankCharacter){const next=state.characters.find(w=>w.id===Number(d.bankCharacter));if(!E.storageAccess(c)||!next||!E.storageAccess(next)||!world.switchCharacter(next.id)){toast('Both characters must be at a town chest and outside an encounter.');return;}input={};targetKey='';inventoryView={tab:'equipment',source:'bag',storage:true};save();refresh();openPanel('inventory');return;}
+ if(d.storeClear!==undefined){const r=InventoryGuide.storeAndClear(state,c);toast('Stored '+fmt(r.deposited)+' materials; claimed '+fmt(r.claimed)+' overflow. '+fmt(r.pending)+' still pending. Locks and chest capacity are respected.');save();renderPanel();refresh();return;}
+ if(d.storeGear!==undefined){toast('Stored '+InventoryGuide.storeGear(state,c)+' spare equipment pieces. Worn and locked gear stay with this character.');save();renderPanel();refresh();return;}
+ if(d.depositAll!==undefined){const n=E.depositAll(state,c),left=Object.values(c.bag).reduce((a,n)=>a+n,0);toast('Deposited '+fmt(n)+' materials. '+fmt(left)+' remain carried (locked or chest full).');save();renderPanel();refresh();return;}
  if(d.reclaim!==undefined){toast('Claimed '+fmt(E.reclaim(c))+' pending items.');save();renderPanel();return;}
  if(d.depositGear){E.depositGear(state,c,d.depositGear);save();renderPanel();return;}
  if(d.withdrawGear){E.withdrawGear(state,c,d.withdrawGear);save();renderPanel();return;}
- if(d.equip){toast(E.equip(state,c,d.equip)?'Equipment changed.':'That item cannot be equipped.');c.hp=Math.min(c.hp,E.maxHp(c));save();renderPanel();refresh();return;}
+ if(d.equip){toast(E.equip(state,c,d.equip,d.equipSlot||null)?'Equipment changed.':'That item cannot be equipped.');c.hp=Math.min(c.hp,E.maxHp(c));save();renderPanel();refresh();return;}
  if(d.unequip){toast(E.unequip(state,c,d.unequip)?'Item placed in backpack.':'Make room in the backpack first.');c.hp=Math.min(c.hp,E.maxHp(c));save();renderPanel();refresh();return;}
  if(d.drink){if(E.drink(state,c,d.drink))toast('Potion active for 20 minutes.');save();renderPanel();return;}
  if(d.profTalent){E.train(c,d.profTalent,'profession',talentView.count);save();renderPanel();refresh();return;}
