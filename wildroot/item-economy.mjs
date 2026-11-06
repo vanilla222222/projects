@@ -1,7 +1,7 @@
-import * as D from './content.mjs?v=28';
-import * as I from './inventory.mjs?v=28';
-import {BADGES,PROJECTS,itemProject} from './item-roles.mjs?v=28';
-import {serviceAccess} from './services.mjs?v=28';
+import * as D from './content.mjs?v=30';
+import * as I from './inventory.mjs?v=30';
+import {BADGES,PROJECTS,itemProject} from './item-roles.mjs?v=30';
+import {serviceAccess} from './services.mjs?v=30';
 export {BADGES,PROJECTS,itemProject};
 export const SALVAGE_GOODS={charcoal:{cost:12,count:1},dust:{cost:20,count:1},'binding-resin':{cost:30,count:1},'copper-bar':{cost:40,count:1},'iron-bar':{cost:65,count:1,unlock:'ironworking'},'tempered-bar':{cost:120,count:1,unlock:'verdant-steel'}};
 export const salvageValue=id=>D.EQUIPMENT[id]?Math.max(8,Math.floor(Object.values(D.RECIPES.find(r=>r.equipment===id)?.cost||{}).reduce((a,n)=>a+n,0)*.5)):{common:1,rare:6,legendary:25,mythical:100}[D.ITEMS[id]?.rarity]||0;

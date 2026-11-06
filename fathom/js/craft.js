@@ -48,18 +48,114 @@ const ITEMS = {
   finleather: { name: 'Shark Fin', kind: 'loot', colour: '#7b8792' },
   cinder: { name: 'Cinder', kind: 'loot', colour: '#d2622f' },
   stardust: { name: 'Stardust', kind: 'loot', colour: '#aab4f0' },
-  arrow: { name: 'Arrow', kind: 'ammo', colour: '#b9a271' }
+  arrow: { name: 'Arrow', kind: 'ammo', colour: '#b9a271' },
+  coin: { name: 'Coin', kind: 'coin', colour: '#d8b43c' }
 };
 
-// Armour. Four pieces rather than Terraria's three, because boots were asked for, and
-// each contributes defence: every two points of defence takes one point off an incoming
-// hit, to a floor of one, so armour never makes you untouchable.
-const ARMOUR = {
-  'wood-helmet': { name: 'Wooden Helmet', slot: 'head', defense: 2, colour: '#8a6038' },
-  'wood-chest': { name: 'Wooden Breastplate', slot: 'chest', defense: 3, colour: '#8a6038' },
-  'wood-legs': { name: 'Wooden Greaves', slot: 'legs', defense: 2, colour: '#8a6038' },
-  'wood-boots': { name: 'Wooden Boots', slot: 'feet', defense: 1, colour: '#8a6038' }
+// Armour. Four pieces rather than Terraria's three, because boots were asked for. Every
+// two points of defence take one off an incoming hit, to a floor of one, so armour never
+// makes you untouchable.
+//
+// Generated per metal rather than written out, for the same reason the wood sets are: six
+// tiers times four pieces is twenty-four entries that must all agree.
+const ARMOUR_TIERS = [
+  { key: 'wood', name: 'Wooden', colour: '#8a6038', base: 2, bar: null, cost: null,
+    bonus: { key: 'scavenger', name: 'Scavenger', text: 'Dropped items fly to you from further away', pickup: 2.4 } },
+  { key: 'tin', name: 'Tin', colour: '#b3b1a6', base: 3, bar: 'tin-bar', cost: 16,
+    bonus: { key: 'tinker', name: 'Tinker', text: 'Tools swing 10% faster', swing: 0.9 } },
+  { key: 'copper', name: 'Copper', colour: '#c07a42', base: 4, bar: 'copper-bar', cost: 20,
+    bonus: { key: 'prospector', name: 'Prospector', text: 'Mining power +10%', power: 1.1 } },
+  { key: 'iron', name: 'Iron', colour: '#a8a29b', base: 6, bar: 'iron-bar', cost: 24,
+    bonus: { key: 'ironclad', name: 'Ironclad', text: 'Defence +4', defense: 4 } },
+  { key: 'silver', name: 'Silver', colour: '#cdd2dc', base: 8, bar: 'silver-bar', cost: 26,
+    bonus: { key: 'quicksilver', name: 'Quicksilver', text: 'Move 15% faster', speed: 1.15 } },
+  { key: 'gold', name: 'Gold', colour: '#e0c054', base: 10, bar: 'gold-bar', cost: 28,
+    bonus: { key: 'gilded', name: 'Gilded', text: 'Health regenerates twice as fast', regen: 2 } },
+  { key: 'cobalt', name: 'Cobalt', colour: '#3f7fb5', base: 13, bar: 'cobalt-bar', cost: 30,
+    bonus: { key: 'deepdiver', name: 'Deep Diver', text: 'Breathe underwater indefinitely', breath: true } },
+  { key: 'emberite', name: 'Emberite', colour: '#d4663a', base: 17, bar: 'emberite-bar', cost: 34,
+    bonus: { key: 'emberheart', name: 'Emberheart', text: 'Lava does not burn you', fireproof: true } }
+];
+
+// Each piece carries a share of the tier's defence: the breastplate most, the boots least.
+const ARMOUR_PIECES = [
+  { slot: 'head', suffix: 'helmet', label: 'Helm', share: 0.9, woodCost: 20 },
+  { slot: 'chest', suffix: 'chest', label: 'Mail', share: 1.3, woodCost: 30 },
+  { slot: 'legs', suffix: 'legs', label: 'Greaves', share: 1.0, woodCost: 25 },
+  { slot: 'feet', suffix: 'boots', label: 'Boots', share: 0.6, woodCost: 15 }
+];
+
+const ARMOUR = {};
+for (const tier of ARMOUR_TIERS) {
+  for (const piece of ARMOUR_PIECES) {
+    ARMOUR[tier.key + '-' + piece.suffix] = {
+      name: tier.name + ' ' + piece.label,
+      slot: piece.slot,
+      defense: Math.max(1, Math.round(tier.base * piece.share)),
+      colour: tier.colour,
+      tier: tier.key
+    };
+  }
+}
+
+// Wearing all four pieces of one metal grants that metal's bonus. A set bonus is what
+// makes a complete suit worth the detour rather than four separate upgrades.
+function setBonusFor(worn) {
+  const tiers = worn.filter(Boolean).map(key => ARMOUR[key] && ARMOUR[key].tier);
+  if (tiers.length !== 4 || tiers.some(t => !t || t !== tiers[0])) return null;
+  const tier = ARMOUR_TIERS.find(t => t.key === tiers[0]);
+  return tier ? tier.bonus : null;
+}
+
+// Accessories. The slots have been there since the inventory was built and nothing has
+// ever filled them; each of these changes one number the player can feel.
+const ACCESSORIES = {
+  'cloud-charm': { name: 'Cloud Charm', colour: '#dfe7f2', text: 'Jump a second time in mid-air', doubleJump: true },
+  'diving-gear': { name: 'Diving Gear', colour: '#4f9fd8', text: 'Breath lasts three times as long', breathMul: 3 },
+  'feather-fall': { name: 'Feather Charm', colour: '#d8d2c2', text: 'Falls hurt far less', fallMul: 0.25 },
+  'miners-charm': { name: "Miner's Charm", colour: '#c9a542', text: 'Mining power +15%', power: 1.15 },
+  'swift-boots': { name: 'Swift Boots', colour: '#b5733c', text: 'Move 20% faster', speed: 1.2 },
+  'shellguard': { name: 'Shellguard', colour: '#e8d8c6', text: 'Defence +5', defense: 5 },
+  'ember-ward': { name: 'Ember Ward', colour: '#d2622f', text: 'Lava does not burn you', fireproof: true },
+  'lantern-charm': { name: 'Glowstone Charm', colour: '#ffd79a', text: 'You give off light', glow: 9 }
 };
+
+// Every effect the worn equipment adds up to. One function, so the game never has to
+// remember which piece grants what.
+function equipEffects(wornArmour, wornAccessories) {
+  const out = { defense: 0, speed: 1, power: 1, swing: 1, regen: 1, pickup: 1,
+    breathMul: 1, fallMul: 1, doubleJump: false, fireproof: false, glow: 0, bonus: null };
+  for (const key of wornArmour) {
+    const piece = key && ARMOUR[key];
+    if (piece) out.defense += piece.defense;
+  }
+  for (const key of wornAccessories) {
+    const acc = key && ACCESSORIES[key];
+    if (!acc) continue;
+    if (acc.defense) out.defense += acc.defense;
+    if (acc.speed) out.speed *= acc.speed;
+    if (acc.power) out.power *= acc.power;
+    if (acc.breathMul) out.breathMul *= acc.breathMul;
+    if (acc.fallMul) out.fallMul *= acc.fallMul;
+    if (acc.doubleJump) out.doubleJump = true;
+    if (acc.fireproof) out.fireproof = true;
+    if (acc.glow) out.glow = Math.max(out.glow, acc.glow);
+  }
+  const bonus = setBonusFor(wornArmour);
+  if (bonus) {
+    out.bonus = bonus;
+    if (bonus.defense) out.defense += bonus.defense;
+    if (bonus.speed) out.speed *= bonus.speed;
+    if (bonus.power) out.power *= bonus.power;
+    if (bonus.swing) out.swing *= bonus.swing;
+    if (bonus.regen) out.regen *= bonus.regen;
+    if (bonus.pickup) out.pickup *= bonus.pickup;
+    if (bonus.breath) out.breathMul = Infinity;
+    if (bonus.fireproof) out.fireproof = true;
+  }
+  return out;
+}
+
 
 // Weapons. Separate from pickaxes: a pickaxe can be swung at an enemy and will hurt it,
 // but badly, which is the whole reason to make a sword.
@@ -96,10 +192,6 @@ const RECIPES = [
   { out: { key: 'wood-sword', kind: 'tool', count: 1 }, need: [['#wood', 14]], station: 'workbench' },
   { out: { key: 'wood-bow', kind: 'tool', count: 1 }, need: [['#wood', 16]], station: 'workbench' },
   { out: { key: 'arrow', kind: 'ammo', count: 12 }, need: [['#wood', 2], ['stone', 1]], station: 'workbench' },
-  { out: { key: 'wood-helmet', kind: 'armor', count: 1 }, need: [['#wood', 20]], station: 'workbench' },
-  { out: { key: 'wood-chest', kind: 'armor', count: 1 }, need: [['#wood', 30]], station: 'workbench' },
-  { out: { key: 'wood-legs', kind: 'armor', count: 1 }, need: [['#wood', 25]], station: 'workbench' },
-  { out: { key: 'wood-boots', kind: 'armor', count: 1 }, need: [['#wood', 15]], station: 'workbench' },
 
   // Furnace: ore into bars, and sand into glass. Smelting is the whole point of depth.
   { out: { key: 'tin-bar', kind: 'bar', count: 1 }, need: [['tin', 3]], station: 'furnace' },
@@ -135,6 +227,35 @@ const RECIPES = [
   { out: { key: 'emberite-sword', kind: 'tool', count: 1 }, need: [['emberite-bar', 16], ['#wood', 6]], station: 'anvil' }
 ];
 
+// Armour, every tier and piece. Wooden mail is made from any lumber at a bench; metal
+// mail is made from bars at an anvil, because beating sheet takes an anvil.
+for (const tier of ARMOUR_TIERS) {
+  for (const piece of ARMOUR_PIECES) {
+    const key = tier.key + '-' + piece.suffix;
+    if (!tier.bar) {
+      RECIPES.push({ out: { key, kind: 'armor', count: 1 },
+        need: [['#wood', piece.woodCost]], station: 'workbench' });
+      continue;
+    }
+    const bars = Math.max(4, Math.round(tier.cost * piece.share / 2));
+    RECIPES.push({ out: { key, kind: 'armor', count: 1 },
+      need: [[tier.bar, bars]], station: 'anvil' });
+  }
+}
+
+// Accessories. Each one is a detour worth making, so each costs something you only have
+// after going somewhere particular.
+RECIPES.push(
+  { out: { key: 'cloud-charm', kind: 'accessory', count: 1 }, need: [['feather', 12], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'diving-gear', kind: 'accessory', count: 1 }, need: [['finleather', 2], ['glass', 10], ['copper-bar', 8]], station: 'anvil' },
+  { out: { key: 'feather-fall', kind: 'accessory', count: 1 }, need: [['feather', 20], ['tin-bar', 8]], station: 'anvil' },
+  { out: { key: 'miners-charm', kind: 'accessory', count: 1 }, need: [['gold-bar', 8], ['crystal', 6]], station: 'anvil' },
+  { out: { key: 'swift-boots', kind: 'accessory', count: 1 }, need: [['leather', 8], ['iron-bar', 10]], station: 'anvil' },
+  { out: { key: 'shellguard', kind: 'accessory', count: 1 }, need: [['shell', 12], ['chitin', 8], ['iron-bar', 6]], station: 'anvil' },
+  { out: { key: 'ember-ward', kind: 'accessory', count: 1 }, need: [['cinder', 15], ['obsidian', 10], ['emberite-bar', 4]], station: 'anvil' },
+  { out: { key: 'lantern-charm', kind: 'accessory', count: 1 }, need: [['crystal', 8], ['glowmoss', 12], ['gold-bar', 4]], station: 'anvil' }
+);
+
 // Every species gets the same building set, by hand and from its own lumber. Written as
 // a loop rather than six copies: thirty-six near-identical recipe lines is thirty-six
 // chances to give one species the wrong cost by accident.
@@ -147,7 +268,8 @@ for (const w of CRAFT_TILES.WOODS) {
     { out: { key: w.key + 'door', kind: 'block', count: 1 }, need: [[wood, 6]], station: null },
     { out: { key: w.key + 'chair', kind: 'block', count: 1 }, need: [[wood, 4]], station: null },
     { out: { key: w.key + 'table', kind: 'block', count: 1 }, need: [[wood, 8]], station: null },
-    { out: { key: w.key + 'bench', kind: 'block', count: 1 }, need: [[wood, 10]], station: null }
+    { out: { key: w.key + 'bench', kind: 'block', count: 1 }, need: [[wood, 10]], station: null },
+    { out: { key: w.key + 'bed', kind: 'block', count: 1 }, need: [[wood, 15], ['gel', 5]], station: 'workbench' }
   );
 }
 
@@ -253,6 +375,7 @@ function craft(inventory, recipe) {
 // A key's kind, so refunds and drops rebuild the same item they came from.
 function kindOf(key) {
   if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return 'block';
+  if (ACCESSORIES[key]) return 'accessory';
   if (ARMOUR[key]) return 'armor';
   if (WEAPONS[key]) return 'tool';
   if (ITEMS[key]) return ITEMS[key].kind;
@@ -266,6 +389,7 @@ function kindOf(key) {
 function nameOf(key, tiles) {
   if (key === '#wood') return 'Wood';
   if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return CRAFT_TILES.MULTI[key].name;
+  if (ACCESSORIES[key]) return ACCESSORIES[key].name;
   if (ARMOUR[key]) return ARMOUR[key].name;
   if (WEAPONS[key]) return WEAPONS[key].name;
   if (ITEMS[key]) return ITEMS[key].name;
@@ -281,7 +405,8 @@ function nameOf(key, tiles) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
+const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
+  ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf };
 
 if (typeof module !== 'undefined' && module.exports) {

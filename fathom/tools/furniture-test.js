@@ -18,7 +18,7 @@ function ok(cond, label) {
 function makeBox(rows) {
   const h = rows.length;
   const w = rows[0].length;
-  const grid = new Uint8Array(w * h);
+  const grid = new Uint16Array(w * h);
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {
       const ch = rows[y][x];
@@ -212,6 +212,52 @@ for (const w of tiles.WOODS) {
   ok(player.onPlatform, 'the player did not land on the short platform to begin with');
   run(world, player, { ...NONE, right: true }, 300);
   ok(player.y + player.height > 5, 'the player could not walk off the end of a platform');
+}
+
+// --- 8. beds, falls and breath ----------------------------------------------------------
+const stats = require('../js/stats.js');
+
+for (const w of tiles.WOODS) {
+  const bed = tiles.MULTI[w.key + 'bed'];
+  ok(!!bed, w.name + ' has no bed');
+  if (!bed) continue;
+  ok(bed.w === 4 && bed.h === 2, w.key + ' bed is not four by two');
+  ok(bed.cells.length === 8, w.key + ' bed does not have eight cells');
+  for (const cell of bed.cells) {
+    ok(!cell.solid, w.key + ' bed is solid, so you could not walk onto it');
+    ok(cell.bed === true, w.key + ' bed cell is not marked as a bed');
+    ok(cell.drops === w.key + 'bed', w.key + ' bed cell drops the wrong thing');
+  }
+  // From every cell the origin must be the same corner.
+  for (const cell of bed.cells) {
+    const o = tiles.originOf(cell, 50 + cell.part.dx, 90 + cell.part.dy);
+    ok(o.x === 50 && o.y === 90, w.key + ' bed cell does not resolve to its own origin');
+  }
+}
+
+// A short fall is free; past the safe distance every tile costs, and the cost rises.
+ok(stats.fallDamage(0) === 0, 'standing still hurt');
+ok(stats.fallDamage(stats.SAFE_FALL) === 0, 'a fall at exactly the safe distance hurt');
+ok(stats.fallDamage(stats.SAFE_FALL + 1) > 0, 'a fall past the safe distance was free');
+let prevFall = -1;
+for (let d = 0; d <= 120; d += 1) {
+  const dmg = stats.fallDamage(d);
+  ok(dmg >= prevFall, 'fall damage went down between ' + (d - 1) + ' and ' + d + ' tiles');
+  prevFall = dmg;
+}
+ok(stats.fallDamage(200) > 100, 'a two hundred tile fall is survivable at full health');
+
+// Breath runs out in a bounded time and refills in air.
+{
+  const st = stats.makeStats();
+  let t = 0;
+  while (st.breath > 0 && t < 120) { stats.stepBreath(st, 0.05, true); t += 0.05; }
+  ok(t > 5 && t < 40, 'breath lasts ' + t.toFixed(1) + ' seconds, which is not a sane window');
+  ok(stats.stepBreath(st, 0.05, true) > 0, 'running out of air did no damage');
+  // And surfacing refills it.
+  for (let i = 0; i < 200; i += 1) stats.stepBreath(st, 0.05, false);
+  ok(st.breath === 1, 'breath did not refill on the surface');
+  ok(stats.stepBreath(st, 0.05, false) === 0, 'breathing air hurt');
 }
 
 console.log('\n' + tiles.WOODS.length + ' wood species, '

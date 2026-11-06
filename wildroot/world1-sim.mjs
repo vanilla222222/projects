@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=28';
-import * as D from './content.mjs?v=28';
-import {World} from './world.mjs?v=28';
+import * as E from './engine.mjs?v=30';
+import * as D from './content.mjs?v=30';
+import {World} from './world.mjs?v=30';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -12,7 +12,7 @@ export function runWorldOne({rng=()=>.5}={}){
  const stock=id=>(s.inventory[id]||0);
  const available=(id,c)=>E.amount(s,id,c);
  const worker=skill=>s.characters.find(c=>c.class&&D.CLASSES[c.class].skill===skill)||hero;
- function openRoute(c,area,zone){const req=E.routeRequirement(area,zone);if(!req||E.zoneUnlocked(s,area,zone,c))return;openRoute(c,req.area,req.index);const missing=req.goal-(c.journey.kills[req.id]||0);if(missing>0)fight(c,req.area,req.index,missing);}
+ function openRoute(c,area,zone){const req=E.routeRequirement(area,zone);if(!req||E.zoneUnlocked(s,area,zone,c))return;const fighter=req.shared?hero:c;openRoute(fighter,req.area,req.index);const missing=req.goal-((req.shared?s.kills:c.journey.kills)[req.id]||0);if(missing>0)fight(fighter,req.area,req.index,missing);}
  function trainBuild(c){if(c.class){E.investAttribute(c,E.CLASS_DESIGNS[c.class].accuracy,Math.ceil(E.attributePoints(c)/2)||1);E.investAttribute(c,E.CLASS_DESIGNS[c.class].primary,E.attributePoints(c)||1);}E.syncAccount(s);for(const id of ['precision','vitality','haste'])while(E.combatPoints(c)&&c.talents[id]<5)E.train(c,id);for(const id of ['power','precision','vitality','haste','signature','industry'])while(E.combatPoints(c)&&E.train(c,id)){}}
  function fight(c,area,zone,count){openRoute(c,area,zone);trainBuild(c);use(c);assert.ok(E.travel(s,c,area,zone),`route ${area}:${zone}`);assert.ok(E.start(s,c,'fight'));const id=`${area}-${zone}`,target=(s.kills[id]||0)+count;let guard=0;while((s.kills[id]||0)<target&&guard++<2000){tick(10);if(c.activity==='rest')throw Error(`Combat stall at ${id}; attack=${E.power(s,c)}, hp=${E.maxHp(c)}`);}assert.ok((s.kills[id]||0)>=target,id);E.start(s,c,'rest');bank(c);}
  function ensureTool(c,resource){const need=E.gatherRequirement(c,resource);if(!need)return;const skill=E.gatherSkill(resource),level={birch:2,iron:3,'jungle-wood':3,gold:5}[resource]||1;if(E.skillLevel(c,skill)<level){const raw=skill==='mining'?'copper':'oak',required=Math.max(1,Math.ceil((12*(level-1)**2-c.skills[skill])/2));gather(c,raw,required);}
@@ -34,7 +34,7 @@ export function runWorldOne({rng=()=>.5}={}){
  function expand(id,c=hero){material(id,1);bank(c);assert.ok(E.withdraw(s,c,id,1));assert.ok(E.useExpansion(s,c,id));bank(c);}
  function questActions(q){for(const[key,n]of Object.entries(q.actions||{})){let missing=n-(hero.journey.events[key]||0);if(missing<=0)continue;if(key.startsWith('gather:'))gather(hero,key.slice(7),missing);else if(key==='craft:equipment'){while((hero.journey.events[key]||0)<n)gear('copper-sword',hero);}else if(key==='craft:charcoal'){const r=D.RECIPES.find(r=>r.id==='charcoal');ensureCosts(Object.fromEntries(Object.entries(r.cost).map(([id,v])=>[id,v*missing])));use(hero);E.travel(s,hero,'town',2);hero.position={x:1520,y:644};assert.ok(E.enqueue(s,hero,'charcoal',missing));while(s.jobs.length)tick(5);bank(hero);}else if(key==='enchant:gear'){ensureCosts(D.RUNES.force.cost);use(hero);E.travel(s,hero,'jungle-town',0);hero.position={x:1700,y:644};assert.ok(E.enchant(s,hero,'weapon','force',0));bank(hero);}else throw Error('Unhandled campaign quest action '+key);}}
  function story(id){const q=D.STORY.find(q=>q.id===id);questActions(q);for(const[k,n]of Object.entries(q.deliver||{}))material(k,n);bankAll();use(hero);const giver=q.giver==='steward'?{town:'town'}:D.CLASSES[q.giver];E.travel(s,hero,giver.town,giver.zone||0);assert.ok(E.acceptQuest(s,id),'accept '+id);assert.ok(E.questStatus(s,id).ready,`quest ${id}: ${JSON.stringify(E.questStatus(s,id).tasks)}`);assert.ok(E.claimQuest(s,hero,id,q.giver),'claim '+id);events.push({event:id,minutes:+(seconds/60).toFixed(2)});bank(hero);}
- function initiation(c,id){use(c);while(c.level<3)fight(c,'forest',0,8);const def=D.CLASSES[id];E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'first step '+id);
+ function initiation(c,id){use(c);while(c.level<3)fight(c,'forest',0,8);const def=D.CLASSES[id];openRoute(c,def.town,def.zone);E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'first step '+id);
   if(['mining','logging'].includes(def.skill)){gather(c,def.skill==='mining'?'copper':'oak',Math.max(30,Math.ceil((12-c.skills[def.skill])/2)));}
   else if(def.skill==='smithing'){material('oak',6);use(c);E.travel(s,c,'town',2);c.position={x:1520,y:644};assert.ok(E.enqueue(s,c,'charcoal',2));while(s.jobs.length)tick(5);bank(c);}
   else{const r=D.RECIPES.find(r=>r.id===(id==='enchanter'?'dust':'tonic'));for(const[k,n]of Object.entries(r.cost))material(k,n*2);use(c);E.travel(s,c,def.town,def.zone);c.position={x:id==='enchanter'?1700:1510,y:644};assert.ok(E.craft(s,c,r.id));assert.ok(E.craft(s,c,r.id));bank(c);}

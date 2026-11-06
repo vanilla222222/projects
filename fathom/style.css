@@ -477,3 +477,57 @@ html, body {
   font-size: 11px;
   color: #7f8da0;
 }
+
+/* Breath, shown only while it is running out. */
+.meter.breath { display: none; }
+.meter.breath.visible { display: flex; }
+.meter.breath .pip.bubble {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #bfe6ff, #4f9fd8 var(--fill, 100%), rgba(20,40,60,0.45) var(--fill, 100%));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+}
+.meter.breath .pip.bubble.empty { opacity: 0.25; }
+
+/* What the worn equipment is doing, under the equipment slots. */
+.gear-note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #9fb0c4;
+  max-width: 260px;
+}
+
+/* The map. A corner panel that is always there, and the same canvas blown up to fill the
+   screen on M. */
+#minimap {
+  position: fixed;
+  top: 92px;
+  right: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: #0b0e16;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 5;
+}
+#minimap.large {
+  top: 50%;
+  right: 50%;
+  transform: translate(50%, -50%);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.75);
+}
+@media (max-width: 900px) {
+  #minimap { display: none; }
+  #minimap.large { display: block; }
+}
+
+/* A villager's stock, shown while you are talking to them. */
+.shop-panel { padding: 14px; pointer-events: auto; width: 260px; display: none; }
+.shop-panel.visible { display: block; }
+.shop-panel .craft-list { max-height: 320px; }
+.craft-row.unaffordable { opacity: 0.45; }
+.craft-row.unaffordable .craft-cost { color: #c2695f; }

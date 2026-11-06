@@ -9,6 +9,7 @@ const PICKUP_RANGE = 2.2;
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
+    minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
@@ -26,6 +27,9 @@ function makeGame(canvas, deps) {
   let ui = null;
   let liquid = null;
   let swarm = null;
+  let minimap = null;
+  let village = null;
+  let talking = null;
   let swingCooldown = 0;
   let openChest = null;
   let characterId = null;
@@ -59,6 +63,13 @@ function makeGame(canvas, deps) {
   // Somewhere to stand, not merely somewhere that is not solid. Cave mouths now break the
   // surface often enough that spawning on the first clear column dropped the player down
   // a shaft at the start of the game; it has to be clear AND have ground under it.
+  // Where a character with no bed comes back to: the same search that places them at the
+  // start of a new world, so it is always somewhere standable rather than world origin.
+  function defaultSpawn() {
+    const p = spawnPlayer();
+    return { x: p.x, y: p.y };
+  }
+
   function spawnPlayer() {
     for (let probe = 0; probe < 400; probe += 1) {
       const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
@@ -122,7 +133,7 @@ function makeGame(canvas, deps) {
       else d.vx = 0;
       if (d.age < 0.35) continue;
       const dist = Math.hypot(px - d.x, py - d.y);
-      if (dist < PICKUP_RANGE) {
+      if (dist < PICKUP_RANGE * ((state.gear && state.gear.pickup) || 1)) {
         const pull = 26 * dt;
         d.x += (px - d.x) * Math.min(1, pull);
         d.y += (py - d.y) * Math.min(1, pull);
@@ -170,7 +181,8 @@ function makeGame(canvas, deps) {
       return;
     }
 
-    const power = mining.powerOf(tool);
+    const gear = state.gear || { power: 1, swing: 1 };
+    const power = mining.powerOf(tool) * gear.power;
     // Walls come away like soft ground: they are a backing, not a seam of rock.
     const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
     if (perHit <= 0) {
@@ -190,8 +202,9 @@ function makeGame(canvas, deps) {
     } else {
       current.perHit = perHit;
       current.swing += dt;
-      if (current.swing < mining.useTimeOf(tool)) return;
-      current.swing -= mining.useTimeOf(tool);
+      const swingTime = mining.useTimeOf(tool) * gear.swing;
+      if (current.swing < swingTime) return;
+      current.swing -= swingTime;
       current.damage += perHit;
       spawnParticles(aim.x, aim.y, spec.colour, 2);
       if (current.damage < current.toughness) return;
@@ -259,16 +272,19 @@ function makeGame(canvas, deps) {
     return true;
   }
 
-  function wornDefense() {
-    const section = inventory.section('armor');
-    let total = 0;
-    for (let i = section.from; i < section.to; i += 1) {
-      const item = inventory.slots[i];
-      if (!item) continue;
-      const piece = craft.ARMOUR[item.key];
-      if (piece) total += piece.defense;
+  // Everything the worn equipment adds up to, recomputed each step rather than cached,
+  // so taking a piece off in the inventory screen matters immediately.
+  function wornKeys(section) {
+    const range = inventory.section(section);
+    const out = [];
+    for (let i = range.from; i < range.to; i += 1) {
+      out.push(inventory.slots[i] ? inventory.slots[i].key : null);
     }
-    return total;
+    return out;
+  }
+
+  function currentEffects() {
+    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'));
   }
 
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
@@ -362,8 +378,9 @@ function makeGame(canvas, deps) {
   }
 
   function respawnPlayer() {
+    state.progress.deaths += 1;
     statsModule.respawn(stats);
-    const spot = state.spawn || { x: 0, y: worldgen.surfaceHeight(seed, 0) - 3 };
+    const spot = state.spawn || defaultSpawn();
     state.player.x = spot.x;
     state.player.y = spot.y;
     state.player.vx = 0;
@@ -436,6 +453,93 @@ function makeGame(canvas, deps) {
     ui.sync(state);
   }
 
+  // Sleeping sets where you come back. In an infinite world this is the difference
+  // between dying and losing an afternoon's walk.
+  // Talk to whoever is standing nearby. Checked before the tile under the cursor,
+  // because walking up to somebody and clicking is how a player expects to start a
+  // conversation, not aiming at their feet.
+  function talkTo() {
+    if (!village) return false;
+    const who = village.nearest(state.player.x + state.player.width / 2,
+      state.player.y + state.player.height / 2);
+    if (!who) return false;
+    if (talking && talking.key === who.key) {
+      talking = null;
+      ui.closeShop();
+      return true;
+    }
+    talking = who;
+    ui.openShop(who, { coins: inventory.countOf('coin') });
+    ui.setOpen(true);
+    say(who.spec.greeting, 4);
+    return true;
+  }
+
+  function buyFrom(index) {
+    if (!talking) return;
+    const entry = talking.spec.stock[index];
+    if (!entry) return;
+    if (inventory.countOf('coin') < entry.price) {
+      say('Not enough coin', 1.2);
+      return;
+    }
+    const left = inventory.add({ key: entry.key, kind: craft.kindOf(entry.key) }, entry.count);
+    if (left > 0) {
+      inventory.take(entry.key, entry.count - left);
+      say('No room for that', 1.2);
+      return;
+    }
+    inventory.take('coin', entry.price);
+    say('Bought ' + craft.nameOf(entry.key, tiles), 1.2);
+    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    ui.sync(state);
+  }
+
+  function healFrom() {
+    if (!talking || !talking.spec.heals) return;
+    if (stats.health >= stats.maxHealth) {
+      say('You are unhurt', 1.2);
+      return;
+    }
+    if (inventory.countOf('coin') < talking.spec.healPrice) {
+      say('Not enough coin', 1.2);
+      return;
+    }
+    inventory.take('coin', talking.spec.healPrice);
+    statsModule.heal(stats, stats.maxHealth);
+    say('Patched up', 1.4);
+    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    ui.sync(state);
+  }
+
+  // Ask whether the room the player is standing in is a house, and move somebody in if
+  // it is. The answer is a list of what is missing, which is the useful form.
+  function checkHousing() {
+    if (!village) return;
+    const result = village.settle(state.progress,
+      state.player.x + state.player.width / 2, state.player.y);
+    if (result.moved) {
+      say(result.moved.spec.name + ' has moved in', 3);
+      return;
+    }
+    if (!result.room.valid) {
+      say('Not a home: ' + result.room.problems[0], 3.5);
+      return;
+    }
+    say('A fine room, but nobody new wants it yet', 3);
+  }
+
+  function useBed(aim) {
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.bed) return false;
+    const origin = tiles.originOf(spec, aim.x, aim.y);
+    if (!origin) return false;
+    // Stand the player beside the bed when they wake, not inside it.
+    state.spawn = { x: origin.x + 1, y: origin.y - 1 };
+    say('Spawn point set', 1.6);
+    return true;
+  }
+
   function useDoor(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.door) return false;
@@ -503,6 +607,8 @@ function makeGame(canvas, deps) {
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    if (talkTo()) return;
+    if (aim0.inReach && useBed(aim0)) return;
     if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
@@ -560,7 +666,7 @@ function makeGame(canvas, deps) {
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
-    statsModule.step(stats, dt, moving);
+    statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving);
     // A swing at something alive takes priority over a swing at the rock behind it.
     if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
     else if (input.dig && !ui.isOpen) mine(dt);
@@ -575,10 +681,23 @@ function makeGame(canvas, deps) {
       const dy = openChest.y - state.player.y;
       if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
     }
+    if (talking && !ui.isOpen) { talking = null; ui.closeShop(); }
 
-    // Defence is read off the worn armour each step rather than cached, so taking a
-    // piece off in the inventory screen matters immediately.
-    stats.defense = wornDefense();
+    // Revealed from the simulation rather than the draw, so the map fills in whether or
+    // not the player is looking at it.
+    if (minimap) minimap.reveal(world, state.player.x, state.player.y);
+
+    if (village) village.step(dt);
+    // What the player has done, which is what decides who is willing to move in.
+    const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
+    if (depth > state.progress.deepest) state.progress.deepest = depth;
+    state.progress.coins = inventory.countOf('coin');
+
+    const gear = currentEffects();
+    state.gear = gear;
+    stats.defense = gear.defense;
+    state.player.speedScale = gear.speed;
+    state.player.canDoubleJump = gear.doubleJump;
 
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase);
@@ -595,10 +714,34 @@ function makeGame(canvas, deps) {
       }
     }
 
+    // Landing hard. `landed` is the distance of the fall that just ended, set by the
+    // physics step on the frame the feet touch down.
+    if (state.player.landed > 0) {
+      const hurt = Math.round(statsModule.fallDamage(state.player.landed) * gear.fallMul);
+      state.player.landed = 0;
+      if (hurt > 0) {
+        // Armour does not soften a fall, so the mitigation is explicitly skipped.
+        const dealt = statsModule.damage(stats, hurt, 0);
+        if (dealt > 0) {
+          say('Hard landing', 1.2);
+          spawnParticles(state.player.x, state.player.y + state.player.height, '#9a8878', 8);
+        }
+      }
+    }
+
+    // Air. Running out of it costs health every second until you surface.
+    const drowning = statsModule.stepBreath(stats, dt / gear.breathMul,
+      state.player.submerged && gear.breathMul !== Infinity);
+    if (drowning > 0) {
+      stats.invulnerable = 0;
+      const dealt = statsModule.damage(stats, drowning, 0);
+      if (dealt > 0 && Math.random() < 0.08) say('Drowning!', 0.8);
+    }
+
     // Standing in lava burns. It is the only tile in the world that hurts by itself.
     const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
       Math.floor(state.player.y + state.player.height * 0.6)));
-    if (feet.hot) {
+    if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24);
       if (burnt > 0) say('Burning!', 0.9);
     }
@@ -652,6 +795,7 @@ function makeGame(canvas, deps) {
       }
     }
     lastView = renderer.draw(state);
+    if (minimap) minimap.draw(state, dt);
     drawAim();
     syncUI();
     requestAnimationFrame(frame);
@@ -718,6 +862,25 @@ function makeGame(canvas, deps) {
         ev.preventDefault();
         return;
       }
+      if (ev.code === 'KeyH') {
+        checkHousing();
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'KeyM' && minimap) {
+        minimap.setLarge(!minimap.isLarge);
+        ev.preventDefault();
+        return;
+      }
+      if ((ev.code === 'BracketLeft' || ev.code === 'BracketRight') && minimap) {
+        minimap.zoomBy(ev.code === 'BracketRight' ? 1 : -1);
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'Escape' && minimap && minimap.isLarge) {
+        minimap.setLarge(false);
+        return;
+      }
       if (ev.code === 'Escape' && ui.isOpen) {
         closeChest();
         ui.setOpen(false);
@@ -772,6 +935,8 @@ function makeGame(canvas, deps) {
     profiles.saveWorld(worldId, {
       world: world.serialize(),
       dayPhase: state.dayPhase,
+      spawn: state.spawn || null,
+      villagers: village ? village.serialize() : [],
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
     });
@@ -796,12 +961,21 @@ function makeGame(canvas, deps) {
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
+    minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
+      { tiles, worldgen });
+    village = villagerModule.makeVillage(world, tiles, { housing });
+    if (worldRecord.villagers) village.restore(worldRecord.villagers);
+    state.villagers = village.list;
+    state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
+      characterRecord.progress || {});
     state.enemies = swarm.list;
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
       { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
     ui.onChestMove = chestMove;
+    ui.onBuy = buyFrom;
+    ui.onHeal = healFrom;
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
@@ -831,6 +1005,7 @@ function makeGame(canvas, deps) {
     state.stats = stats;
     state.colours = characterRecord.colours || choice.character.colours;
     state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
+    state.spawn = worldRecord.spawn || null;
     state.player = spawnPlayer();
     if (worldRecord.spawn
       && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
@@ -904,6 +1079,10 @@ function makeGame(canvas, deps) {
     }
   }
 
+  function useBedAt(x, y) {
+    return useBed({ x, y, inReach: true });
+  }
+
   function useChestAt(x, y) {
     return useChest({ x, y, inReach: true });
   }
@@ -913,7 +1092,8 @@ function makeGame(canvas, deps) {
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, chestMove, get openChest() { return openChest; },
+    useDoorAt, useChestAt, useBedAt, chestMove, checkHousing, talkTo, buyFrom,
+    get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },

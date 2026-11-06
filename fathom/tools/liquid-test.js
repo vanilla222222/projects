@@ -22,7 +22,7 @@ const STONE = tiles.idOf('stone');
 function makeBox(rows) {
   const h = rows.length;
   const w = rows[0].length;
-  const grid = new Uint8Array(w * h);
+  const grid = new Uint16Array(w * h);
   const level = new Uint8Array(w * h);
   for (let y = 0; y < h; y += 1) {
     for (let x = 0; x < w; x += 1) {

@@ -82,8 +82,8 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
   const h = hChunks * CHUNK;
   const x0 = cx0 * CHUNK;
   const y0 = cy0 * CHUNK;
-  const out = new Uint8Array(w * h);
-  const outWalls = new Uint8Array(w * h);
+  const out = new Uint16Array(w * h);
+  const outWalls = new Uint16Array(w * h);
   for (let ty = 0; ty < h; ty += 1) {
     for (let tx = 0; tx < w; tx += 1) {
       out[ty * w + tx] = gen.baseTileAt(seed, x0 + tx, y0 + ty);

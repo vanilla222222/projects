@@ -415,3 +415,109 @@ the next layer deeper down, and a rare gilded chest with what you hope for.
 An open chest is shut by walking away from it and by the backpack closing for any reason
 at all, as an invariant checked every step rather than something each exit path has to
 remember. That is what stops a chest being left open and its contents never written back.
+
+## Consequences, and recovering from them
+
+Three gaps that together meant the world had no stakes and no way back from them.
+
+**Beds set where you come back.** Dying used to return you to world origin; in an endless
+world that is close to a bug, because dying 3,000 tiles out and 800 down cost you the
+walk as well as the loot. A bed is a four-by-two object per wood species, and using one
+sets the spawn point, which is saved with the world. With no bed, the fallback is the
+same search that places a character at the start of a new world, so it is always
+somewhere standable rather than coordinate zero.
+
+**Falls hurt** past 16 tiles, at 5.5 health per further tile. Water arrests a fall
+entirely, which is both how it works and what makes diving into a pool a way down.
+Armour does not soften a landing - that is what the Feather Charm is for.
+
+**Breath** was a field on the player that nothing ever read. It now runs down over 14
+seconds submerged and costs health every second after that. The HUD shows it only while
+it is running out.
+
+Testing the fall needed the player actually dropped down a shaft: setting `landed`
+directly does nothing, because the physics step recomputes it from the body's own motion
+before the damage check reads it.
+
+## Armour tiers, set bonuses and accessories
+
+Eight tiers times four pieces, generated from a table. The six-ore ladder previously paid
+off in pickaxes and swords but had exactly one armour tier.
+
+Wearing all four pieces of one metal grants that metal's **set bonus**, which is what
+makes a complete suit worth the detour rather than four separate upgrades: tin swings
+tools faster, copper mines harder, iron adds defence, silver moves faster, gold
+regenerates, cobalt breathes water, emberite ignores lava.
+
+**Accessories** fill slots that had existed since the inventory was built and had never
+held anything. Each changes one number the player can feel: a second jump in mid-air,
+triple breath, quartered fall damage, more mining power, more speed, more defence,
+fireproofing, or a light you carry with you.
+
+Every effect is summed by one function and recomputed each step rather than cached, so
+taking a piece off matters immediately, and the equipment screen says in words what the
+worn set is doing. Armour that silently changes a number is armour the player cannot
+reason about.
+
+## A note on tile ids
+
+Chunks store sixteen bits per tile, not eight. Six wood species with a full furniture set
+each had the registry at 151 of a possible 255, and beds alone would have added 48 more;
+the ceiling was close enough to start shaping what could be built. A chunk is 48x48, so
+the change costs 4.6KB per layer per chunk and removes the limit.
+
+## The map
+
+An endless world with fourteen biomes and seven vertical layers and no way to find your
+way back is a world you stop exploring, because every trip out is one you might not be
+able to undo.
+
+Two sizes of the same thing: a corner panel that is always there, and the same chart
+blown up to fill the screen on **M**, with **[** and **]** to zoom. Both draw one pixel
+per tile into a small canvas which is then scaled up - the same trick the lighting uses,
+so the cost is the number of tiles sampled rather than the number of screen pixels
+painted. It redraws about ten times a second, because a map does not need sixty.
+
+Colours come from the tile registry, so the map never needs its own palette kept in step
+with the world. Open space shows its background wall rather than nothing, which is what
+makes a dug tunnel legible against solid rock, and water shows as water.
+
+**What the player has seen** is stored as one bit per tile, a bitset per chunk: 288 bytes
+where a byte per tile would be 2,304. Walking 3,200 tiles reveals 165,767 tiles and costs
+52KB, measured - about 2.6 bits per tile once base64 is counted. It is revealed from the
+simulation rather than the draw, so the map fills in whether or not it is being looked at,
+and a corrupt entry costs a patch of revealed map rather than refusing to load the world.
+
+`revealAround` is a free function rather than a method on the map, because it is pure
+logic with no canvas in it and the alternative is a test that needs a DOM to check the
+shape of a disc.
+
+## Housing and villagers
+
+A room is a sealed pocket of air with a background behind it and the right furniture in
+it, and finding one is a flood fill that is allowed to fail. The important property is
+that the fill is **bounded**: started in an open cave, a naive version walks the whole
+world, so it stops at a tile budget and reports "not sealed", which is both the correct
+answer and the cheap one. Validating open ground takes under a millisecond.
+
+Requirements follow Terraria's - an enclosed area between 50 and 750 tiles, a background
+on every tile of it, a door or platform to get in by, a light, a flat surface and
+something to sit on - and each is reported **separately**, because a house that fails is
+a house the player wants to be told how to fix. Press **H** inside a room to be told.
+
+An open door still seals a room. That is what lets a house have a way in without leaking
+into the world, and it falls out of treating doors as walls for the purposes of the fill
+rather than as a special case.
+
+**Who moves in** is a question about progress; **where they live** is a question about
+buildings. Keeping those apart keeps both testable. The Guide comes as soon as there is a
+room; the Merchant wants 250 coins carried; the Smith wants 40 bars smelted; the Nurse
+arrives after you have died once; the Delver after you have been 700 tiles down. So the
+roster arrives in an order that follows what the player has actually done.
+
+Villagers are deliberately not enemies with the sign flipped: they have a home, stay near
+it, walk rather than chase, turn back at drops, and cannot be hit.
+
+**Coins** come from everything that dies, scaled to what it was - a slime is pocket
+change, an obsidian husk is a day's wages - and from chests. What you kill is what pays
+for what you buy.

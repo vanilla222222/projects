@@ -1,8 +1,8 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=28';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=30';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=28';
-import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=28';
+import * as E from './engine.mjs?v=30';
+import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=30';
 function tick(world,seconds,input={}){for(let i=0;i<seconds*50;i++)world.step(.02,typeof input==='function'?input(i):input);}
 function setup(options={}){const state=E.freshSave(),events=[];return{state,events,world:new World(state,{rng:()=>.5,onIntent:e=>events.push(e),onEvent:e=>events.push(e),...options})};}
 test('Maps have multiple actual enemy entities, platforms, ladders, resources and portals',()=>{
@@ -48,7 +48,7 @@ test('Ranged kills leave collectible floor loot, retained across save/reload',()
  const restored=E.restoreSave(JSON.parse(JSON.stringify(state))),reloaded=new World(restored,{rng:()=>.5});assert.ok(reloaded.groundLoot.length>0);assert.ok(reloaded.pickLoot(reloaded.groundLoot[0].id));tick(reloaded,3);assert.ok(restored.coins>0);assert.ok(reloaded.c.bag['moss-slime']>0);assert.equal(reloaded.groundLoot.length,0);assert.equal(reloaded.c.kills,1);
 });
 test('Background simulation preserves account rewards without double-counting the controlled character',()=>{
- const state=E.freshSave(),hero=E.selected(state);state.unlockedClasses=['warrior'];E.start(state,hero,'gather','oak');E.createCharacter(state,'Miner');const miner=E.selected(state);E.travel(state,miner,'caves',0);E.start(state,miner,'gather','copper');state.active=hero.id;E.advanceBackground(state,60,hero.id,()=>.5);assert.equal(state.inventory.oak,undefined);assert.equal(miner.bag.copper,20);
+ const state=E.freshSave(),hero=E.selected(state);state.unlockedClasses=['warrior'];E.start(state,hero,'gather','oak');E.createCharacter(state,'Miner');const miner=E.selected(state);E.travel(state,miner,'caves',0);E.start(state,miner,'gather','copper');state.active=hero.id;E.advanceBackground(state,60,hero.id,()=>.5);assert.equal(state.inventory.oak,undefined);assert.equal(miner.bag.copper,30);
  E.travel(state,miner,'forest',0);E.start(state,miner,'fight');E.advanceBackground(state,60,hero.id,()=>.5);assert.ok(state.coins>0);assert.ok(miner.bag['moss-slime']>0);assert.equal(hero.kills,0);
 });
 test('Auto in town cannot create an invalid combat assignment or break the save',()=>{
@@ -56,10 +56,10 @@ test('Auto in town cannot create an invalid combat assignment or break the save'
 });
 
 test('All room doorways have unique, reciprocal destinations and arrival points',async()=>{
- const {AREAS,SECRETS}=await import('./content.mjs?v=28');
+ const {AREAS,SECRETS}=await import('./content.mjs?v=30');
  for(const area of AREAS)for(let zone=0;zone<area.zones.length;zone++){
   const map=createMap(area.id,zone),targets=map.portals.map(p=>JSON.stringify([p.destination.area,p.destination.zone,p.destination.boss||false,p.destination.secret||null]));assert.equal(new Set(targets).size,targets.length);
-  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=28');arrivals.push(JSON.stringify(entrancePoint(portal.id,area.id,zone)));}assert.equal(new Set(arrivals).size,arrivals.length);
+  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=30');arrivals.push(JSON.stringify(entrancePoint(portal.id,area.id,zone)));}assert.equal(new Set(arrivals).size,arrivals.length);
  }
  for(const[id,d]of Object.entries(SECRETS)){const room=createMap(d.area,d.zone,false,id);assert.equal(room.portals.length,1);assert.equal(room.portals[0].destination.entrance,'secret-'+id);assert.ok(createMap(d.area,d.zone).discoveries.some(e=>e.id===room.portals[0].destination.entrance));}
 });

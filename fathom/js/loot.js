@@ -13,7 +13,7 @@ const TABLES = {
   // A cabin in the upper caves: survival kit, a weapon if you are lucky.
   caves: {
     rolls: 4,
-    guaranteed: [['torch', 8, 20]],
+    guaranteed: [['torch', 8, 20], ['coin', 25, 90]],
     entries: [
       { key: 'copper-bar', min: 3, max: 8, chance: 0.5 },
       { key: 'tin-bar', min: 3, max: 9, chance: 0.5 },
@@ -31,7 +31,7 @@ const TABLES = {
   // Deeper: better metal, and the tools that open the next layer down.
   deep: {
     rolls: 4,
-    guaranteed: [['torch', 12, 30]],
+    guaranteed: [['torch', 12, 30], ['coin', 90, 260]],
     entries: [
       { key: 'iron-bar', min: 5, max: 14, chance: 0.6 },
       { key: 'silver-bar', min: 3, max: 10, chance: 0.45 },
@@ -47,7 +47,7 @@ const TABLES = {
   // The rare one: what you hope for.
   rich: {
     rolls: 5,
-    guaranteed: [['gold-bar', 4, 10]],
+    guaranteed: [['gold-bar', 4, 10], ['coin', 400, 1100]],
     entries: [
       { key: 'gold-bar', min: 5, max: 15, chance: 0.7 },
       { key: 'cobalt-bar', min: 3, max: 9, chance: 0.4 },
