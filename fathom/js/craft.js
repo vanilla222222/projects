@@ -62,7 +62,11 @@ const ITEMS = {
   'healing-salve': { name: 'Healing Salve', kind: 'use', colour: '#e05c6a', use: { heal: 70 },
     text: 'Restores 70 health' },
   'mana-salve': { name: 'Mana Salve', kind: 'use', colour: '#5c8ae0', use: { restore: 60 },
-    text: 'Restores 60 mana' }
+    text: 'Restores 60 mana' },
+  // A summon. Used where you stand, like everything else of kind `use`, and what it does
+  // is put something in the world that will not leave until one of you is dead.
+  slimecrown: { name: 'Slime Crown', kind: 'use', colour: '#e0c054',
+    use: { summon: 'kingslime' }, text: 'Summons the King Slime' }
 };
 
 // Armour. Four pieces rather than Terraria's three, because boots were asked for. Every
@@ -179,7 +183,12 @@ const ACCESSORIES = {
   'bat-wing': { name: "Bat's Wing", colour: '#6a5b52', text: 'Falls hurt far less and you jump again in the air', fallMul: 0.3, doubleJump: true, drop: 'giantbat' },
   'obsidian-shield': { name: 'Obsidian Shield', colour: '#2e2838', text: 'Defence +8, and lava does not burn you', defense: 8, fireproof: true, drop: 'obsidianhusk' },
   'stinger-brooch': { name: 'Stinger Brooch', colour: '#e0c050', text: 'Move 12% faster and swing 10% faster', speed: 1.12, swing: 0.9, drop: 'hornet' },
-  'demon-heart': { name: 'Demon Heart', colour: '#9c3f6a', text: 'Magic hits 18% harder', magic: 1.18, drop: 'demon' }
+  'demon-heart': { name: 'Demon Heart', colour: '#9c3f6a', text: 'Magic hits 18% harder', magic: 1.18, drop: 'demon' },
+
+  // The king's. Not rare drops but certain ones: beating a boss gives you both, because
+  // a fight you have to prepare for should not then also be a lottery.
+  'royal-gel': { name: 'Royal Gel', colour: '#8fd98f', text: 'Slimes no longer attack you', slimeFriend: true, drop: 'kingslime' },
+  'kings-crown': { name: "King's Crown", colour: '#e0c054', text: 'Everything you do hits 12% harder', melee: 1.12, ranged: 1.12, magic: 1.12, drop: 'kingslime' }
 };
 
 // Every effect the worn equipment adds up to. One function, so the game never has to
@@ -187,6 +196,7 @@ const ACCESSORIES = {
 function equipEffects(wornArmour, wornAccessories) {
   const out = { defense: 0, speed: 1, power: 1, swing: 1, regen: 1, pickup: 1,
     breathMul: 1, fallMul: 1, doubleJump: false, fireproof: false, glow: 0, bonus: null,
+    slimeFriend: false,
     // One multiplier per damage class, plus the two numbers that decide whether magic is
     // worth using at all: what a spell costs and how fast the pool comes back.
     melee: 1, ranged: 1, magic: 1, manaCost: 1, manaRegen: 1, arrowSpeed: 1 };
@@ -212,6 +222,7 @@ function equipEffects(wornArmour, wornAccessories) {
     if (acc.manaCost) out.manaCost *= acc.manaCost;
     if (acc.manaRegen) out.manaRegen *= acc.manaRegen;
     if (acc.arrowSpeed) out.arrowSpeed *= acc.arrowSpeed;
+    if (acc.slimeFriend) out.slimeFriend = true;
     if (acc.regen) out.regen *= acc.regen;
   }
   const bonus = setBonusFor(wornArmour);
@@ -444,6 +455,9 @@ RECIPES.push(
   // Things used rather than worn. A mana crystal takes five fallen stars, which is
   // Terraria's number and about one clear night of looking up.
   { out: { key: 'manacrystal', kind: 'use', count: 1 }, need: [['fallenstar', 5]], station: null },
+  // Enough gel that you have had to clear a lot of slime to afford it, which is the
+  // right way to be introduced to their king.
+  { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 40], ['gold-bar', 5]], station: 'anvil' },
   { out: { key: 'healing-salve', kind: 'use', count: 2 }, need: [['gel', 4], ['glowmoss', 2]], station: 'workbench' },
   { out: { key: 'mana-salve', kind: 'use', count: 2 }, need: [['fallenstar', 1], ['glowmoss', 2]], station: 'workbench' }
 );

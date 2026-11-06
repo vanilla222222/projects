@@ -652,3 +652,48 @@ them names a real enemy and is not also craftable.
 
 Arrows and magic bolts are now drawn. They never were: the bow fired invisible arrows,
 and the only way to tell you had hit something was that it died.
+
+## The King Slime
+
+Fathom had nothing to aim at. Every enemy in it moves toward the player and that is the
+whole of its behaviour, which is fine for something you meet by accident and useless for
+something you summon on purpose: a fight with one idea in it is over before it is a fight.
+
+The King is summoned by a Slime Crown - forty gel and five gold bars, so you have had to
+clear a lot of slime to afford one, which is the right way to be introduced to their king.
+It cannot spawn: `summonOnly` is checked inside `matches()`, so no pool anywhere can
+contain it, which is stronger and more honest than a layer filter that happens never to
+match. The test proves it by asking for the pool in every combination of layer, biome,
+wetness and hour the game can be in.
+
+It hops like a slime and then breaks the three rules a slime obeys:
+
+- **It teleports when you run.** Distance is not an answer, and it does not despawn when
+  you walk away - it arrives instead.
+- **It throws off minions.** Ignoring the room is not an answer either. Nothing ordinary
+  spawns while a boss is alive, and the boss and its minions do not count against the
+  ordinary cap: the fight is the fight.
+- **It shrinks as it is hurt**, to just over half its size, getting faster and harder to
+  land a hit on exactly as it becomes killable. The fight gets more dangerous as you win
+  it. Shrinking is about the feet rather than the top-left corner, or the king rises off
+  the floor every time it is hit.
+
+Scale is one number rather than a second pair of dimensions, so collision, drawing and
+the hit test all keep reading `width` and `height` and nothing else has to know a boss is
+special.
+
+It gives up both its prizes every time, not on a roll: a fight you had to prepare for
+should not then also be a lottery. The **Royal Gel** stops slimes attacking you - except
+the King, because a trinket that turns off the boss fight you paid for is not a reward -
+and the **King's Crown** raises every kind of damage by 12%.
+
+It is drawn as what it obviously is: the same gel, four times over, with a crown on top
+and something unfortunate suspended inside. A boss that is visibly the thing you have been
+stepping on all game is funnier and more alarming than a new monster would be.
+
+The test is the fight rather than the table: it builds a flat arena, summons the King onto
+it, and checks that a second one cannot be summoned, that nothing ordinary spawns beside
+it, that it produces minions and stops at its own limit, that it never sinks through the
+floor over twenty seconds of hopping, that walking 260 tiles away does not lose it, that
+it shrinks in proportion and stays on the floor while shrinking, and that killing it ends
+the fight.

@@ -297,9 +297,17 @@ for (const [station, items] of Object.entries(groups)) {
   const uses = Object.entries(craft.ITEMS).filter(([, v]) => v.use);
   ok(uses.length >= 3, 'only ' + uses.length + ' items are used rather than worn');
   for (const [key, item] of uses) {
-    const fields = ['mana', 'heal', 'restore'].filter(f => item.use[f] !== undefined);
+    const fields = ['mana', 'heal', 'restore', 'summon'].filter(f => item.use[f] !== undefined);
     ok(fields.length === 1, key + ' does ' + fields.length + ' things rather than one');
-    ok(item.use[fields[0]] > 0, key + ' does nothing when used');
+    if (fields[0] === 'summon') {
+      const enemies = require('../js/enemy.js');
+      const called = enemies.BY_KEY[item.use.summon];
+      ok(!!called, key + ' summons ' + item.use.summon + ', which is not an enemy');
+      ok(called && called.summonOnly,
+        key + ' summons ' + item.use.summon + ', which can also spawn on its own');
+    } else {
+      ok(item.use[fields[0]] > 0, key + ' does nothing when used');
+    }
     ok(craft.kindOf(key) === 'use', key + ' is used but is not of kind use');
   }
 }

@@ -131,6 +131,15 @@ function makeGame(canvas, deps) {
   function rareDrop(target) {
     const table = RARE_BY_ENEMY[target.key];
     if (!table || !table.length) return;
+    // A boss gives up everything it carries, every time. A fight you had to prepare for
+    // should not then also be a lottery.
+    if (target.spec.bossDrops) {
+      for (const key of target.spec.bossDrops) {
+        dropItem(target.x + target.width / 2, target.y, key, craft.kindOf(key), 1);
+      }
+      say(target.spec.name + ' is dead', 3.4);
+      return;
+    }
     if (Math.random() > RARE_CHANCE) return;
     const prize = table[Math.floor(Math.random() * table.length)];
     dropItem(target.x, target.y, prize.key, prize.kind, 1);
@@ -152,6 +161,13 @@ function makeGame(canvas, deps) {
     } else if (use.heal !== undefined) {
       if (stats.health >= stats.maxHealth) { say('You are unhurt', 1.2); return true; }
       statsModule.heal(stats, use.heal);
+    } else if (use.summon !== undefined) {
+      if (!swarm) return true;
+      if (swarm.bossAlive()) { say('It is already here', 1.4); return true; }
+      const boss = swarm.summon(use.summon, state.player);
+      if (!boss) { say('There is no room here', 1.6); return true; }
+      say(boss.spec.name + ' has awoken', 3.2);
+      spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.spec.colour, 26);
     } else if (use.restore !== undefined) {
       if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
       stats.mana = Math.min(stats.maxMana, stats.mana + use.restore);
@@ -934,7 +950,12 @@ function makeGame(canvas, deps) {
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase);
       const hit = swarm.touching(state.player);
-      if (hit) {
+      // The Royal Gel: slimes stop noticing you. The king is still a slime, and is the
+      // one slime it does not work on, because a trinket that turns off the boss fight
+      // you paid for is not a reward.
+      const friendly = hit && hit.spec.kind === 'slime'
+        && state.gear && state.gear.slimeFriend;
+      if (hit && !friendly) {
         const dealt = statsModule.damage(stats, hit.spec.damage);
         if (dealt > 0) {
           // Knocked away from whatever hit you, so contact damage is not a death loop.

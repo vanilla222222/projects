@@ -447,6 +447,38 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  // A boss gets a bar across the top of the screen rather than the small one that floats
+  // over an ordinary enemy's head. The difference is the point: this is a fight you chose
+  // and the only number that matters for the next minute is this one.
+  function drawBossBar(state) {
+    const boss = (state.enemies || []).find(e => e.boss);
+    if (!boss) return;
+    const w = Math.min(620, canvas.width * 0.6);
+    const h = 16;
+    const x = (canvas.width - w) / 2;
+    const y = 54;
+    const frac = Math.max(0, boss.hp / boss.maxHp);
+    ctx.save();
+    ctx.fillStyle = 'rgba(12,14,20,0.72)';
+    ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(x, y, w, h);
+    const g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, '#e2645c');
+    g.addColorStop(1, '#8e2a2a');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, w * frac, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(x, y, w * frac, Math.max(1, h * 0.3));
+    ctx.fillStyle = '#efe7d6';
+    ctx.font = '13px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(boss.spec.name + '  ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp,
+      canvas.width / 2, y + h + 16);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
   // Villagers, drawn with the player's own body plan rather than a plan of their own:
   // they are people, and a villager that moved differently from the player would read as
   // an enemy that cannot be hit.
@@ -876,6 +908,7 @@ function makeRenderer(canvas, deps) {
     drawWeather(state, view);
     drawUnderwater(state);
     drawVignette();
+    drawBossBar(state);
     return view;
   }
 
