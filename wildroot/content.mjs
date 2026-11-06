@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=26';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=26';
-import {roomLayout} from './layouts.mjs?v=26';
+import {QUEST_REFORMS} from './quest-content.mjs?v=27';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=27';
+import {roomLayout} from './layouts.mjs?v=27';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -368,3 +368,43 @@ for(const [tier,id,name,slot,stats,cost] of [
 ]){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,station:'anvil',skill:'smithing',equipment:id,cost,bossTier:tier});}
 
 for(const q of STORY)Object.assign(q,QUEST_REFORMS[q.id]);
+
+// Small quest milestones complement the larger crafted upgrades.
+for(const[id,name,target,slots]of [
+ ['grove-bag','Grovekeeper’s Bag','bag',2],['seam-bag','Seamrunner’s Bag','bag',3],
+ ['weaver-bag','Spellweaver’s Bag','bag',3],['warden-bag','Warden’s Backpack','bag',4],
+ ['village-chest','Village Supply Chest','chest',4],['cavern-chest','Cavern Strongbox','chest',6],
+ ['makers-chest','Makers’ Storage Chest','chest',8]
+]){EXPANSIONS[id]={name,target,slots};item(id,name,'rare',target==='bag'?'▣':'▤');}
+for(const[id,name,group,effect,amount,material]of [
+ ['sight','True Sight Stamp','Combat','accuracy',.015,'echo-stone'],
+ ['forge','Maker’s Stamp','Skills','crafting',.015,'copper-bar'],
+ ['weave','Spellweave Stamp','Skills','enchantXP',.025,'dust'],
+ ['cauldron','Cauldron Stamp','Skills','alchemy',.02,'frog-dew'],
+ ['orebag','Ore Satchel Stamp','Misc','miningCarry',.025,'copper'],
+ ['logbag','Timber Satchel Stamp','Misc','loggingCarry',.025,'birch'],
+ ['lunchbag','Lunchbox Stamp','Misc','foodCarry',.025,'tonic']
+]){STAMPS[id]={name,group,effect,amount,material};item('stamp-'+id,name,'rare','▧');}
+export const QUEST_UPGRADES={
+ tools:{'woven-materials-bag':1,'stamp-forge':1},
+ 'under-roots':{'woven-mining-bag':1},
+ 'canopy-letter':{'woven-logging-bag':1,'grove-bag':1},
+ outpost:{'woven-food-bag':1},
+ 'village-memory':{'village-chest':1},
+ 'seam-work':{'seam-bag':1,'stamp-orebag':1},
+ 'stone-oath':{'cavern-chest':1,'stamp-sight':1},
+ 'elder-grove':{'stamp-logbag':1},
+ vault:{'makers-chest':1},
+ 'light-threads':{'weaver-bag':1,'stamp-weave':1},
+ 'bottled-rain':{'stamp-cauldron':1},
+ panacea:{'stamp-lunchbag':1},
+ heart:{'warden-bag':1}
+};
+for(const[qid,items]of Object.entries(QUEST_UPGRADES)){const q=STORY.find(q=>q.id===qid);q.reward.items={...q.reward.items,...items};}
+export const UPGRADE_SOURCES={};
+for(const[id]of Object.entries({...EXPANSIONS,...CAPACITY_BAGS})){
+ const quests=STORY.filter(q=>q.reward.items?.[id]).map(q=>q.id);
+ const shop=Object.entries(TOWN_SHOPS).find(([,d])=>d.stock.some(r=>r[0]===id))?.[0];
+ UPGRADE_SOURCES[id]={quests,shop,recipe:RECIPES.find(r=>r.output===id)?.id};
+}
+for(const[id,d]of Object.entries(STAMPS)){const q=STORY.find(q=>q.reward.items?.['stamp-'+id]);if(q)d.source=q.name+' quest';}
