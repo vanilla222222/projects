@@ -1,8 +1,8 @@
-import {upgradeSource,questRewardPlan} from './reward-progression.mjs?v=28';
-import {food} from './adventure-panels.mjs?v=28';
-import * as D from './content.mjs?v=28';
-import * as E from './engine.mjs?v=28';
-import {abilitySet,abilityAvailable} from './world.mjs?v=28';
+import {upgradeSource,questRewardPlan} from './reward-progression.mjs?v=30';
+import {food} from './adventure-panels.mjs?v=30';
+import * as D from './content.mjs?v=30';
+import * as E from './engine.mjs?v=30';
+import {abilitySet,abilityAvailable} from './world.mjs?v=30';
 export const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n).toLocaleString();
 export function costs(s,cost){return`<div class="costs">${Object.entries(cost).map(([id,n])=>`<span class="${E.amount(s,id)<n?'missing':''}">${esc(D.ITEMS[id]?.name||id)} ${fmt(E.amount(s,id))}/${n}</span>`).join('')}</div>`;}

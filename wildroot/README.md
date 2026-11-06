@@ -207,3 +207,22 @@ Quest milestones add Grovekeeper’s Bag (canopy letter), Seamrunner’s Bag (Re
 Already earned permanent quest upgrades become 35 bonus coins per item; the dialogue preview shows the actual reward before hand-in. Character bags and pouches are personal; chest rewards and stamp rewards are account-wide. Existing completed quests backfill newly added permanent items once, using overflow when necessary; consumed, banked, dropped or registered shared upgrades are recognised. Migration does not pay repeat compensation. Storage Info tracks consumed and owned upgrades, reveals quest sources after accepting their quests, and retains anvil/shop sources.
 
 The reward pass audits all 189 items for three implemented uses. New spare bags, chests and stamps keep the existing reclamation and town-project uses. Early pouch recipe costs remain below their category’s starting stack limit, and bigger tiers unlock with ironworking/gilding; bag upgrades do not replace those crafting milestones.
+
+
+## Gathering, AFK and progressive portal balance
+
+Forward combat gates use increasing personal kill targets. The final jungle exit uses roster kills because the outpost and its class services are shared. Returning to earlier rooms remains free. Journey version 2 preserves rooms that old characters had visited or qualified to enter; new characters use the current combat gates.
+
+| Route | Onward kill targets |
+| --- | --- |
+| Forest | 12, 25, 45, 70, 100 |
+| Copperlight Caves | 18, 40, 85 |
+| Jungle | 130, 170, 220, 280 |
+| Deep Caverns | 115, 155, 205, 270 |
+| Elder Tree | 120, 180, 260 |
+
+Tool tiers and efficiency now use explicit equipment metadata. Copperheart Pick and Living Birch Hatchet outperform ordinary iron tools; the signature pick qualifies for gold. AFK Info includes all gathering requirements, current success/yield tiers and the next efficiency breakpoint. Recipe ingredient previews show backpack stacks at current pouch capacity.
+
+Next-hour AFK forecasts run the offline model on an isolated save, including cooldowns, recovery, food consumption, expiring buffs and skill gains. Long offline gathering advances in at most 30-second steps, allowing earned skill levels to improve the rest of the session. Forecasts use a seeded random sequence; actual random drops and active-play results vary. Common-loot bag estimates share available slots across drop types. Small coin bonuses retain a per-character fractional remainder, so single kills and batch claims accumulate the same bonus instead of discarding fractions.
+
+Boss Hunts shows selected-difficulty accuracy, damage, HP, root-wave damage after defense and equipped healing. It advises preparation without guaranteeing a victory or granting access. The campaign simulation now completes through common-material actions, five classes and an active boss in about 204 model minutes; this is a progression check, not a player-time guarantee.

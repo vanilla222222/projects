@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=28';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=28';
-import {roomLayout} from './layouts.mjs?v=28';
+import {QUEST_REFORMS} from './quest-content.mjs?v=30';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=30';
+import {roomLayout} from './layouts.mjs?v=30';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -408,3 +408,12 @@ for(const[id]of Object.entries({...EXPANSIONS,...CAPACITY_BAGS})){
  UPGRADE_SOURCES[id]={quests,shop,recipe:RECIPES.find(r=>r.output===id)?.id};
 }
 for(const[id,d]of Object.entries(STAMPS)){const q=STORY.find(q=>q.reward.items?.['stamp-'+id]);if(q)d.source=q.name+' quest';}
+
+
+// Tool tiers are explicit: signature tools remain upgrades beyond ordinary iron tools.
+for(const[id,tier,efficiency]of [['copper-pick',1,22],['copper-axe',1,22],['iron-pick',2,60],['iron-axe',2,60],['copperheart-pick',3,95],['living-birch-axe',3,95]])Object.assign(EQUIPMENT[id],{gatherTier:tier,gatherEfficiency:efficiency});
+export const GATHER_NODES={
+ copper:{skill:'mining',level:1,tier:0,threshold:8},oak:{skill:'logging',level:1,tier:0,threshold:8},
+ birch:{skill:'logging',level:2,tier:1,threshold:28},iron:{skill:'mining',level:3,tier:1,threshold:32},
+ 'jungle-wood':{skill:'logging',level:3,tier:1,threshold:55},gold:{skill:'mining',level:5,tier:2,threshold:80}
+};

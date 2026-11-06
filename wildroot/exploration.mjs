@@ -1,5 +1,5 @@
-import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=28';
-import * as I from './inventory.mjs?v=28';
+import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=30';
+import * as I from './inventory.mjs?v=30';
 export const surveyPoint=layout=>{const top=layout.platforms.reduce((a,p)=>p.y<a.y?p:a);return{x:top.x+70,y:top.y};};
 export function claimSurvey(s,c){if(c.activity==='boss'||c.trial)return false;const layout=roomLayout(c.area,c.zone,false,c.secret||null),p=surveyPoint(layout);if(!c.position||Math.abs(c.position.x-p.x)>100||Math.abs(c.position.y-p.y)>60||s.surveys.includes(layout.key))return false;const id=c.secret==='vault'?'iron':c.secret==='sunwell'?'dust':({forest:'birch',caves:'copper',deep:'iron',jungle:'jungle-wood',town:'charcoal','jungle-town':'binding-resin',tree:'dust'})[c.area],count=3+c.zone,coins=8+c.zone*2;s.surveys.push(layout.key);s.coins+=coins;I.give(c,id,count);return{id,count,coins};}
 export function validateSurveys(s){if(!Array.isArray(s.surveys)||new Set(s.surveys).size!==s.surveys.length||s.surveys.some(key=>!ROOM_KEYS.includes(key)||key==='boss'))throw Error('Invalid survey records.');}

@@ -1,4 +1,4 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=28';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=30';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs';
@@ -28,7 +28,7 @@ test('Zone and area progression require the intended kills and stop invalid trav
  assert.equal(E.areaUnlocked(s,'jungle'),false);seedKill(s,'forest-4',12);assert.ok(E.areaUnlocked(s,'jungle'));seedKill(s,'jungle-3',12);assert.ok(E.areaUnlocked(s,'jungle-town'));seedKill(s,'caves-2',12);assert.ok(E.areaUnlocked(s,'deep'));
 });
 test('Multiple characters produce independently while selection changes',()=>{
- const s=E.freshSave(),one=E.selected(s);s.unlockedClasses=['warrior'];E.createCharacter(s,'Two');const two=E.selected(s);E.start(s,one,'gather','oak');E.travel(s,two,'caves',0);E.start(s,two,'gather','copper');E.advance(s,60,rng());assert.equal(one.bag.oak,20);assert.equal(two.bag.copper,20);assert.equal(one.skills.logging,40);assert.equal(two.skills.mining,40);
+ const s=E.freshSave(),one=E.selected(s);s.unlockedClasses=['warrior'];E.createCharacter(s,'Two');const two=E.selected(s);E.start(s,one,'gather','oak');E.travel(s,two,'caves',0);E.start(s,two,'gather','copper');E.advance(s,60,rng());assert.equal(one.bag.oak,30);assert.equal(two.bag.copper,30);assert.equal(one.skills.logging,40);assert.equal(two.skills.mining,40);
  assert.equal(E.start(s,two,'gather','gold'),false);assert.equal(E.start(s,one,'boss'),false);
 });
 test('Crafting enforces station, costs and equipment ownership; specialists double output',()=>{
