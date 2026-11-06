@@ -7,7 +7,11 @@ export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
  const hero=s.characters[0];
  const tick=n=>{E.advance(s,n,rng);seconds+=n;};
  const use=c=>{s.active=c.id;};
- const bank=c=>{use(c);if(completeNpcChains){for(const items of Object.values(D.QUEST_UPGRADES))for(const id of Object.keys(items))if(c.bag[id]){if(D.EXPANSIONS[id])E.useExpansion(s,c,id);if(D.CAPACITY_BAGS[id])E.useCapacityBag(c,id);}}E.travel(s,c,'town',0);c.position=null;E.reclaim(c);E.depositAll(s,c);E.reclaim(c);E.depositAll(s,c);};
+ const needed=new Set([...D.STORY.flatMap(q=>Object.keys(q.deliver||{})),...D.RECIPES.filter(r=>!r.retired).flatMap(r=>Object.keys(r.cost).filter(id=>D.ITEMS[id].rarity==='common')),...Object.values(D.CLASSES).flatMap(d=>Object.keys(d.needs))]);
+ const spareDrop=id=>!needed.has(id)&&Object.values(D.ENEMIES).some(e=>e.loot.some(d=>d.id===id))||!needed.has(id)&&[...D.WORLD_LOOT,...D.GLOBAL_LOOT].some(d=>d.id===id);
+ const bank=c=>{use(c);for(const items of Object.values(D.QUEST_UPGRADES))for(const id of Object.keys(items))if(c.bag[id]){if(D.EXPANSIONS[id])E.useExpansion(s,c,id);if(D.CAPACITY_BAGS[id])E.useCapacityBag(c,id);}
+  if(Object.keys(c.bag).some(id=>c.bag[id]&&spareDrop(id))||Object.keys(c.overflow).some(id=>c.overflow[id]&&spareDrop(id))){E.travel(s,c,'town',2);c.position={x:1520,y:644};let again=true;while(again){again=false;for(let i=E.bagSlots(c).length-1;i>=0;i--){const t=E.itemSlot(c,i);if(t&&!t.gear&&spareDrop(t.id)){const n=E.spareQuantity(s,c,i);if(n)assert.ok(E.reclaimItem(s,c,i,n));}}if(E.reclaim(c))again=true;}}
+  E.travel(s,c,'town',0);c.position=null;E.reclaim(c);E.depositAll(s,c);E.reclaim(c);E.depositAll(s,c);};
  const bankAll=()=>{for(const c of s.characters)bank(c);};
  const stock=id=>(s.inventory[id]||0);
  const available=(id,c)=>E.amount(s,id,c);

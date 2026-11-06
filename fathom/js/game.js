@@ -45,6 +45,7 @@ function makeGame(canvas, deps) {
     stations: new Set(),
     arrows: [],
     stars: [],
+    hook: null,
     stats: null,
     player: null,
     colours: null,
@@ -177,6 +178,79 @@ function makeGame(canvas, deps) {
     inventory.take(item.key, 1);
     spawnParticles(state.player.x + 0.5, state.player.y + 0.5, spec.colour, 10);
     return true;
+  }
+
+  // --- the grappling hook ----------------------------------------------------------
+  // A head that flies until it bites, and then reels you in. It is the single thing that
+  // turns a cave from a series of one-way drops into somewhere you can move around in,
+  // which is why Terraria gives you one early and why it is worth the state it costs.
+  //
+  // The hook lives on the game rather than on the player because it is a thing in the
+  // world with its own position: the player is simply held by it.
+  function fireHook() {
+    const spec = craft.grappleOf(selectedItem());
+    if (!spec) return false;
+    if (state.hook) { releaseHook(); return true; }
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height * 0.4;
+    const dx = pointer.x - cx;
+    const dy = pointer.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    state.hook = { x: cx, y: cy, vx: (dx / len) * spec.speed, vy: (dy / len) * spec.speed,
+      anchored: false, from: { x: cx, y: cy }, spec };
+    return true;
+  }
+
+  function releaseHook() {
+    state.hook = null;
+    state.player.hooked = false;
+  }
+
+  function stepHook(dt) {
+    const hook = state.hook;
+    if (!hook) return;
+    const p = state.player;
+    const cx = p.x + p.width / 2;
+    const cy = p.y + p.height * 0.4;
+
+    if (!hook.anchored) {
+      const steps = Math.ceil(Math.hypot(hook.vx, hook.vy) * dt / 0.25) || 1;
+      for (let i = 0; i < steps; i += 1) {
+        hook.x += (hook.vx * dt) / steps;
+        hook.y += (hook.vy * dt) / steps;
+        if (tiles.isSolid(world.get(Math.floor(hook.x), Math.floor(hook.y)))) {
+          hook.anchored = true;
+          break;
+        }
+      }
+      // A hook that reaches the end of its rope without biting simply comes back.
+      if (!hook.anchored && Math.hypot(hook.x - cx, hook.y - cy) > hook.spec.range) {
+        releaseHook();
+      }
+      return;
+    }
+
+    // Anchored. Reel in until the player is close, then hold. Jumping lets go, which is
+    // how you get off a hook and the reason a hook never traps you.
+    p.hooked = true;
+    const dx = hook.x - cx;
+    const dy = hook.y - cy;
+    const away = Math.hypot(dx, dy) || 1;
+    if (away > 1.4) {
+      p.vx = (dx / away) * hook.spec.pull;
+      p.vy = (dy / away) * hook.spec.pull;
+    } else {
+      // Hanging. A little damping rather than a hard stop, so the player settles under
+      // the anchor instead of locking rigidly to it.
+      p.vx *= 0.82;
+      p.vy *= 0.82;
+    }
+    // The anchor can be mined out from under you.
+    if (!tiles.isSolid(world.get(Math.floor(hook.x), Math.floor(hook.y)))) releaseHook();
+    if (input.jump && away < 3.2) {
+      releaseHook();
+      p.vy = -10;
+    }
   }
 
   // --- falling stars -------------------------------------------------------------------
@@ -568,6 +642,7 @@ function makeGame(canvas, deps) {
     state.player.vx = 0;
     state.player.vy = 0;
     if (swarm) swarm.clear();
+    releaseHook();
     say('You died', 2.2);
   }
 
@@ -887,6 +962,10 @@ function makeGame(canvas, deps) {
     // collapsing reservoir from stalling the loop.
     if (liquid) liquid.step(900);
     swingCooldown = Math.max(0, swingCooldown - dt);
+    // Before the physics, not after: the hook decides the player's velocity and whether
+    // gravity applies at all this step, and a hook that ran afterwards would always be
+    // one frame behind what the player can see.
+    stepHook(dt);
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
@@ -1112,6 +1191,11 @@ function makeGame(canvas, deps) {
         // what a player expects and what makes sure the contents get written back.
         if (ui.isOpen) closeChest();
         ui.toggle();
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'KeyG') {
+        fireHook();
         ev.preventDefault();
         return;
       }
@@ -1349,7 +1433,7 @@ function makeGame(canvas, deps) {
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, useBedAt, useCrystalAt, place, chestMove, checkHousing, talkTo, buyFrom,
+    useDoorAt, useChestAt, useBedAt, useCrystalAt, place, fireHook, releaseHook, chestMove, checkHousing, talkTo, buyFrom,
     get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get swarm() { return swarm; },

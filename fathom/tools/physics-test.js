@@ -107,5 +107,74 @@ const near = physics.aimTile(reacher, { x: 2, y: 1 });
 assert.equal(near.inReach, true, 'a pointer 2 tiles away reported as out of reach');
 checks += 3;
 
+
+// --- ropes ----------------------------------------------------------------------------
+// A rope is not solid and holds nothing up; the whole of it is that gravity stops and
+// the jump key becomes "up". What is worth proving is that it is climbable both ways,
+// that stepping off it drops you, and that it is a way up rather than a free lift.
+{
+  const W = 24;
+  const H = 60;
+  const FLOOR = 40;
+  const ROPE_X = 10;
+  const rope = tiles.idOf('rope');
+  const stone = tiles.idOf('stone');
+  const shaft = {
+    get(x, y) {
+      if (x < 0 || x >= W || y < 0 || y >= H) return stone;
+      if (y >= FLOOR) return stone;
+      return x === ROPE_X && y > 20 ? rope : tiles.AIR;
+    }
+  };
+  const climber = physics.makePlayer(ROPE_X, FLOOR - 2);
+  assert.ok(physics.onClimbable(climber, shaft, tiles), 'standing on a rope is not climbing');
+
+  // Up.
+  const startedAt = climber.y;
+  for (let i = 0; i < 60 * 2; i += 1) {
+    physics.step(climber, shaft, tiles, { jump: true }, 1 / 60);
+  }
+  assert.ok(climber.y < startedAt - 6,
+    'two seconds of climbing rose only ' + (startedAt - climber.y).toFixed(1) + ' tiles');
+  assert.ok(climber.y > 20, 'the climber went past the top of the rope');
+  const topped = climber.y;
+
+  // Holding nothing: a rope holds you where you are rather than letting you slide.
+  for (let i = 0; i < 60; i += 1) physics.step(climber, shaft, tiles, {}, 1 / 60);
+  assert.ok(Math.abs(climber.y - topped) < 0.1,
+    'a second of hanging on a rope slid ' + (climber.y - topped).toFixed(2) + ' tiles');
+
+  // Down.
+  for (let i = 0; i < 60; i += 1) physics.step(climber, shaft, tiles, { down: true }, 1 / 60);
+  assert.ok(climber.y > topped + 3, 'climbing down a rope went nowhere');
+
+  // And stepping off it falls. The rope is one tile wide, so moving sideways leaves it.
+  const stepper = physics.makePlayer(ROPE_X, 26);
+  for (let i = 0; i < 60; i += 1) physics.step(stepper, shaft, tiles, { right: true }, 1 / 60);
+  assert.ok(!physics.onClimbable(stepper, shaft, tiles), 'walking sideways stayed on the rope');
+  assert.ok(stepper.y > 26, 'stepping off a rope did not fall');
+  checks += 6;
+}
+
+// --- the grappling hook ----------------------------------------------------------------
+// The hook itself lives in game.js, but the one thing it asks of the physics is that a
+// hooked player is not pulled down while being reeled in. That is the whole contract.
+{
+  const air = { get: () => tiles.AIR };
+  const hung = physics.makePlayer(0, 0);
+  hung.hooked = true;
+  hung.vy = 0;
+  for (let i = 0; i < 60 * 3; i += 1) physics.step(hung, air, tiles, {}, 1 / 60);
+  assert.ok(Math.abs(hung.vy) < 0.001,
+    'a hooked player accelerated to ' + hung.vy.toFixed(2) + ': gravity is still on');
+  assert.ok(Math.abs(hung.y) < 0.01, 'a hooked player drifted ' + hung.y.toFixed(2) + ' tiles');
+
+  // And releasing restores gravity rather than leaving the player floating.
+  hung.hooked = false;
+  for (let i = 0; i < 30; i += 1) physics.step(hung, air, tiles, {}, 1 / 60);
+  assert.ok(hung.vy > 1, 'letting go of the hook left the player floating');
+  checks += 3;
+}
+
 console.log('Physics: ' + checks + ' invariants held over ' + steps.toLocaleString()
   + ' simulated steps across six columns; 0 ended inside a solid tile');

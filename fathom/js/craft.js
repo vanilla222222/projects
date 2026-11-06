@@ -63,6 +63,15 @@ const ITEMS = {
     text: 'Restores 70 health' },
   'mana-salve': { name: 'Mana Salve', kind: 'use', colour: '#5c8ae0', use: { restore: 60 },
     text: 'Restores 60 mana' },
+  // Grappling hooks. A hook is a tool rather than a weapon: it is fired with its own
+  // key, it does no damage, and what it changes is where you can go. `range` is how far
+  // the head flies before giving up, `speed` how fast it flies, and `pull` how hard the
+  // rope reels you in once it has bitten.
+  grapple: { name: 'Grappling Hook', kind: 'tool', colour: '#9aa3ad',
+    grapple: { range: 18, speed: 46, pull: 16 }, text: 'Fire with G' },
+  'crystal-hook': { name: 'Crystal Hook', kind: 'tool', colour: '#8fa8ff',
+    grapple: { range: 30, speed: 62, pull: 22 }, text: 'Fire with G. Longer, faster' },
+
   // A summon. Used where you stand, like everything else of kind `use`, and what it does
   // is put something in the world that will not leave until one of you is dead.
   slimecrown: { name: 'Slime Crown', kind: 'use', colour: '#e0c054',
@@ -311,6 +320,13 @@ function bestAmmo(countOf) {
   return best;
 }
 
+// The hook a held item fires, if it fires one. Read off the item rather than stored on
+// the player, so swapping hooks mid-swing simply changes the next shot.
+function grappleOf(item) {
+  const spec = item && ITEMS[item.key];
+  return spec && spec.grapple ? spec.grapple : null;
+}
+
 // Which class a weapon belongs to, which decides which multiplier it is scaled by. Read
 // off the weapon rather than stored on it, so a new weapon cannot forget to declare one.
 function classOf(weapon) {
@@ -457,6 +473,9 @@ RECIPES.push(
   { out: { key: 'manacrystal', kind: 'use', count: 1 }, need: [['fallenstar', 5]], station: null },
   // Enough gel that you have had to clear a lot of slime to afford it, which is the
   // right way to be introduced to their king.
+  { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
+  { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
+  { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
   { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 40], ['gold-bar', 5]], station: 'anvil' },
   { out: { key: 'healing-salve', kind: 'use', count: 2 }, need: [['gel', 4], ['glowmoss', 2]], station: 'workbench' },
   { out: { key: 'mana-salve', kind: 'use', count: 2 }, need: [['fallenstar', 1], ['glowmoss', 2]], station: 'workbench' }
@@ -614,7 +633,7 @@ function nameOf(key, tiles) {
 const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
-    classOf, dropOnly, AMMO, bestAmmo };
+    classOf, dropOnly, AMMO, bestAmmo, grappleOf };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_craft;

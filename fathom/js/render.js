@@ -738,6 +738,49 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
+  // The hook, and the line back to the hand. Drawn as a taut line with links on it
+  // rather than a plain stroke, because a plain line reads as a crack in the screen.
+  function drawHook(state, view) {
+    const hook = state.hook;
+    if (!hook) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const p = state.player;
+    const hx = (hook.x - x0) * size - offsetX;
+    const hy = (hook.y - y0) * size - offsetY;
+    const px = (p.x + p.width / 2 - x0) * size - offsetX;
+    const py = (p.y + p.height * 0.4 - y0) * size - offsetY;
+    ctx.save();
+    const dx = hx - px;
+    const dy = hy - py;
+    const len = Math.hypot(dx, dy) || 1;
+    const links = Math.max(1, Math.round(len / (size * 0.3)));
+    ctx.strokeStyle = '#6f6a62';
+    ctx.lineWidth = Math.max(1, zoom * 0.8);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.lineTo(hx, hy);
+    ctx.stroke();
+    ctx.fillStyle = '#9aa3ad';
+    for (let i = 1; i < links; i += 1) {
+      const t = i / links;
+      ctx.fillRect(px + dx * t - zoom, py + dy * t - zoom, zoom * 2, zoom * 2);
+    }
+    // The head itself: a wedge pointing the way it is travelling, or into the wall it
+    // has bitten.
+    const ux = dx / len;
+    const uy = dy / len;
+    ctx.fillStyle = hook.anchored ? '#d8d2bf' : '#cfd6e0';
+    ctx.beginPath();
+    ctx.moveTo(hx + ux * size * 0.22, hy + uy * size * 0.22);
+    ctx.lineTo(hx - uy * size * 0.16, hy + ux * size * 0.16);
+    ctx.lineTo(hx - ux * size * 0.12, hy - uy * size * 0.12);
+    ctx.lineTo(hx + uy * size * 0.16, hy - ux * size * 0.16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Stars falling at night: a bright head with a long tail behind it.
   function drawStars(state, view) {
     if (!state.stars || state.stars.length === 0) return;
@@ -902,6 +945,7 @@ function makeRenderer(canvas, deps) {
     drawLighting(state, view);
     drawCarriedLight(state, view);
     drawBloom(state, view);
+    drawHook(state, view);
     drawShots(state, view);
     drawStars(state, view);
     drawParticles(state, view);

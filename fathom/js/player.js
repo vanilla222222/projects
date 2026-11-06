@@ -131,6 +131,22 @@ function submerged(player, world, tiles) {
     Math.floor(player.y + 0.2)) >= SWIM_DEPTH;
 }
 
+// How fast a rope is climbed, and how much sideways control there is while on one.
+const CLIMB_SPEED = 6.2;
+const CLIMB_DRIFT = 0.3;
+
+// Whether any tile the body overlaps is climbable. Checked along the body's own centre
+// column, so stepping half off a rope lets go of it - which is how you get off one.
+function onClimbable(player, world, tiles) {
+  const x = Math.floor(player.x + player.width / 2);
+  const y0 = Math.floor(player.y);
+  const y1 = Math.floor(player.y + player.height - 0.01);
+  for (let y = y0; y <= y1; y += 1) {
+    if (tiles.tile(world.get(x, y)).climb) return true;
+  }
+  return false;
+}
+
 function step(player, world, tiles, input, dt) {
   unstick(player, world, tiles, 4);
   const swimming = inLiquid(player, world, tiles);
@@ -148,8 +164,28 @@ function step(player, world, tiles, input, dt) {
   if (player.vx > 0) player.facing = 1;
   else if (player.vx < 0) player.facing = -1;
 
+  // On a rope, and on the hook, gravity is simply off. Both are states where the
+  // player is held by something, and in both the vertical speed is decided elsewhere -
+  // by which key is down, or by the hook's pull - so letting gravity also have a say
+  // produces a fight between two rules.
+  const climbing = !swimming && onClimbable(player, world, tiles);
+  player.climbing = climbing;
+
   player.coyote = player.onGround ? COYOTE : Math.max(0, player.coyote - dt);
-  if (swimming) {
+  if (player.hooked) {
+    // The hook sets vx and vy; all that is left here is a little air control, so a
+    // player hanging from a hook can still swing.
+    player.usedAir = false;
+    player.vx *= Math.pow(0.995, dt * 60);
+  } else if (climbing) {
+    player.vx *= Math.pow(0.6, dt * 60);
+    player.vx = Math.max(-MOVE_SPEED * CLIMB_DRIFT, Math.min(MOVE_SPEED * CLIMB_DRIFT, player.vx));
+    if (input.jump) player.vy = -CLIMB_SPEED;
+    else if (input.down) player.vy = CLIMB_SPEED;
+    else player.vy = 0;
+    player.usedAir = false;
+    player.coyote = COYOTE;
+  } else if (swimming) {
     // In water, jump is a continuous swim stroke rather than a one-shot impulse.
     if (input.jump) player.vy = Math.max(player.vy - SWIM_RISE * dt * 9, -SWIM_RISE);
     player.vy = Math.min(SWIM_MAX_FALL, player.vy + SWIM_GRAVITY * dt);
@@ -197,8 +233,10 @@ function step(player, world, tiles, input, dt) {
   const stepY = Math.sign(remainingY) * Math.min(Math.abs(remainingY), 0.25);
   player.onGround = false;
   // Holding down drops you through a platform you are standing on, so a platform is a
-  // floor you can choose to ignore rather than one you have to break.
-  const dropping = input.down && onPlatform(world, tiles, player.x, player.y,
+  // floor you can choose to ignore rather than one you have to break. A rope through a
+  // platform is the normal way to build a shaft, so climbing down one passes through
+  // the deck as well.
+  const dropping = (input.down || climbing) && onPlatform(world, tiles, player.x, player.y,
     player.width, player.height);
   while (Math.abs(remainingY) > 1e-9) {
     const move = Math.abs(remainingY) > 0.25 ? stepY : remainingY;
@@ -253,7 +291,7 @@ function aimTile(player, pointer) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_player = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, liquidFraction, SWIM_DEPTH,
+const EXPORTS_player = { onClimbable, CLIMB_SPEED, CLIMB_DRIFT, makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, liquidFraction, SWIM_DEPTH,
   landsOnPlatform, onPlatform,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
 
