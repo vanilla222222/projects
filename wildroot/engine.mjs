@@ -1,33 +1,34 @@
-import * as J from './journey.mjs?v=23';
-export * from './journey.mjs?v=23';
-import * as Builds from './class-builds.mjs?v=23';
-export * from './class-builds.mjs?v=23';
-import * as Books from './special-talents.mjs?v=23';
-export * from './special-talents.mjs?v=23';
-import * as Hunts from './boss-hunts.mjs?v=23';
-export * from './boss-hunts.mjs?v=23';
-import * as Dungeon from './dungeon.mjs?v=23';
-export * from './dungeon.mjs?v=23';
-import {roomLayout} from './layouts.mjs?v=23';
-export * from './exploration.mjs?v=23';
-export * from './item-economy.mjs?v=23';
-import * as S from './services.mjs?v=23';
-export * from './services.mjs?v=23';
-export * from './workshop.mjs?v=23';
-export * from './alchemy.mjs?v=23';
-import * as C from './chronicle.mjs?v=23';
-export * from './chronicle.mjs?v=23';
-import * as A from './adventure.mjs?v=23';
-export * from './adventure.mjs?v=23';
-import * as L from './legacy.mjs?v=23';
-export * from './legacy.mjs?v=23';
-import * as I from './inventory.mjs?v=23';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=23';
-import * as P from './progression.mjs?v=23';
-export * from './progression.mjs?v=23';
-export {initialize,validate} from './progression.mjs?v=23';
-export * from './inventory.mjs?v=23';
-export {canPay,pay} from './inventory.mjs?v=23';
+import {recordQuestAction} from './quest-content.mjs?v=24';
+import * as J from './journey.mjs?v=24';
+export * from './journey.mjs?v=24';
+import * as Builds from './class-builds.mjs?v=24';
+export * from './class-builds.mjs?v=24';
+import * as Books from './special-talents.mjs?v=24';
+export * from './special-talents.mjs?v=24';
+import * as Hunts from './boss-hunts.mjs?v=24';
+export * from './boss-hunts.mjs?v=24';
+import * as Dungeon from './dungeon.mjs?v=24';
+export * from './dungeon.mjs?v=24';
+import {roomLayout} from './layouts.mjs?v=24';
+export * from './exploration.mjs?v=24';
+export * from './item-economy.mjs?v=24';
+import * as S from './services.mjs?v=24';
+export * from './services.mjs?v=24';
+export * from './workshop.mjs?v=24';
+export * from './alchemy.mjs?v=24';
+import * as C from './chronicle.mjs?v=24';
+export * from './chronicle.mjs?v=24';
+import * as A from './adventure.mjs?v=24';
+export * from './adventure.mjs?v=24';
+import * as L from './legacy.mjs?v=24';
+export * from './legacy.mjs?v=24';
+import * as I from './inventory.mjs?v=24';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,EQUIPMENT,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=24';
+import * as P from './progression.mjs?v=24';
+export * from './progression.mjs?v=24';
+export {initialize,validate} from './progression.mjs?v=24';
+export * from './inventory.mjs?v=24';
+export {canPay,pay} from './inventory.mjs?v=24';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -59,7 +60,7 @@ export const hitChance=(c,e)=>Math.min(1,accuracy(c)/enemyAccuracy(e));
 export const damageRange=(s,c)=>[Math.floor(power(s,c)*.8),Math.ceil(power(s,c)*1.2)];
 export function gatherEfficiency(c,resource){const skill=gatherSkill(resource),tool=c.loadout[skill==='mining'?'pick':'axe']?.base,tier=tool?.startsWith('iron')?60:tool?22:0;return(5+6*skillLevel(c,skill)+tier)*(1+(P.stats(c)[skill]||0)+(c.accountBonuses?.[skill]||0)+(Books.specialBonuses(c).gathering||0)+(c.cardBonus?.[skill]||0)+(c.profTalents.efficiency||0)*.05+(c.class&&CLASSES[c.class].skill===skill?(c.classTalents.specialist||0)*.03:0));}
 export function gatherOdds(c,resource){const efficiency=gatherEfficiency(c,resource),threshold={copper:8,oak:8,birch:28,iron:32,'jungle-wood':55,gold:80}[resource];return{efficiency,threshold,chance:Math.min(1,efficiency/threshold),multi:Math.min(3,1+Math.floor(efficiency/threshold/2))};}
-export function recordGather(s,c,id,n,rng=Math.random){s.metrics.gather[id]=(s.metrics.gather[id]||0)+n;A.addCards(s,id,successes(n,.015,rng));}
+export function recordGather(s,c,id,n,rng=Math.random){recordQuestAction(c,'gather:'+id,n);s.metrics.gather[id]=(s.metrics.gather[id]||0)+n;A.addCards(s,id,successes(n,.015,rng));}
 export function fightStats(s,c){const e=enemyFor(c);if(!e)return null;const guard=e.behavior==='guard'?1.15:1,hits=Math.ceil(e.hp*guard/(power(s,c)*Builds.weaponProfile(c).mult*(1+critChance(c)))),chance=hitChance(c,e),attackTime=hits/chance*attackInterval(c),movementTime=(c.secret?0:260/Math.max(1,movementSpeed(c))),spawns=Math.max(1,roomLayout(c.area,c.zone,false,c.secret||null).spawns.length),respawnLimit=(c.secret?9:5)/spawns,duration=Math.max(attackTime+movementTime,respawnLimit),strikes=Math.max(0,Math.ceil(attackTime/2)-1),incoming=Math.max(0,e.attack-defense(s,c))*strikes;return{duration,incoming,hits,strikes,attackTime,movementTime,respawnLimit,chance};}
 export function successes(n,p,rng=Math.random){if(p>=1)return n;if(p<=0||n<=0)return 0;let hits=0,pos=0;while(pos<n){const u=Math.min(1-Number.EPSILON,Math.max(Number.MIN_VALUE,rng()));pos+=Math.floor(Math.log(1-u)/Math.log(1-p))+1;if(pos<=n)hits++;}return hits;}
 export function grantKills(s,c,e,n,rng=Math.random,{collect=true}={}){const loot=[];if(n<=0)return;A.addCards(s,e.id,successes(n,.025,rng));c.kills+=n;J.recordPersonalKills(c,e.id,n);s.kills[e.id]=(s.kills[e.id]||0)+n;const earned=Math.floor(e.coins*n*(1+(P.bonusesFor(s,c).coins||0)+(c.classTalents?.fortune||0)*.02));s.coins+=earned;c.earnedCoins+=earned;c.hp=Math.min(maxHp(c),c.hp+maxHp(c)*(Books.specialBonuses(c).killHeal||0)*n);gainXp(c,e.xp*n);for(const drop of [...e.loot,...WORLD_LOOT,...GLOBAL_LOOT,...[{id:'statue-'+({forest:'power',caves:'guard',jungle:'heart',deep:e.index%2?'pace':'miner'}[e.area]||'power'),chance:.02}]]){const count=successes(n,drop.chance,rng);if(count){if(collect)I.give(c,drop.id,count);loot.push({id:drop.id,count});if(['legendary','mythical'].includes(ITEMS[drop.id].rarity))note(s,`${c.name} discovered ${ITEMS[drop.id].name} ×${count}!`);}}if(e.id==='boss'&&!s.bossDefeated){s.bossDefeated=true;note(s,'The Rootwarden falls. Return its heart to Hesta to complete the World One story.');}return loot;}
@@ -88,7 +89,7 @@ export function stationFor(c){if(c.area==='town')return c.zone===2?'foundry':c.z
 export function craftCost(c,r){const factor=r.repeat?1+Math.floor((c.gear[r.upgrade]||0)/3):1;return Object.fromEntries(Object.entries(r.cost).map(([k,n])=>[k,n*factor]));}
 export function craftFee(c,r){return r.equipment?5:r.upgrade?5*(r.tier||1+Math.floor(c.gear[r.upgrade]/3)):2;}
 export function canCraft(s,c,r){return !c.dungeon&&!(r.unique&&s.worldCompletionCrafted)&&!(EXPANSIONS[r.output]?.target==='chest'&&s.usedChestExpansions.includes(r.output))&&P.recipeOpen(s,r)&&S.serviceAccess(s,c,r.station,'upgrade')&&s.coins>=craftFee(c,r)&&hasCost(s,craftCost(c,r),c)&&(!r.equipment||!c.loadout[EQUIPMENT[r.equipment].slot]||I.bagUsed(c)<I.bagCapacity(c))&&(r.equipment||!r.upgrade||r.repeat||(c.gear[r.upgrade]||0)<r.tier);}
-export function craft(s,c,id){const r=RECIPES.find(x=>x.id===id);if(!r||!canCraft(s,c,r))return false;if(r.station==='foundry')return P.enqueue(s,c,id,1);s.metrics.crafted++;if(r.unique)s.worldCompletionCrafted=true;spend(s,craftCost(c,r),c);s.coins-=craftFee(c,r);const specialist=c.class&&CLASSES[c.class].skill===r.skill;if(r.equipment){if(r.upgrade)c.gear[r.upgrade]=r.tier;const def=EQUIPMENT[r.equipment];P.createEquipment(s,r.equipment,!c.loadout[def.slot]&&(!def.class||c.class===def.class)?c:null,c);}else if(r.output){I.give(c,r.output,r.count*(specialist&&!r.unique&&!r.id.startsWith('anvil-expansion-')&&EXPANSIONS[r.output]?.target!=='chest'?2:1));if(r.skill==='alchemy')s.alchemy.liquid=Math.min(P.liquidCap(s),s.alchemy.liquid+2);}else c.gear[r.upgrade]=r.repeat?(c.gear[r.upgrade]||0)+1:r.tier;skillXp(c,r.skill,6);gainXp(c,3);note(s,`${c.name}: ${r.name}${specialist&&r.output?' (double yield)':''}.`);return true;}
+export function craft(s,c,id){const r=RECIPES.find(x=>x.id===id);if(!r||!canCraft(s,c,r))return false;if(r.station==='foundry')return P.enqueue(s,c,id,1);recordQuestAction(c,'craft:'+r.id);if(r.equipment)recordQuestAction(c,'craft:equipment');if(r.skill==='alchemy'&&r.id!=='tonic')recordQuestAction(c,'craft:brew');s.metrics.crafted++;if(r.unique)s.worldCompletionCrafted=true;spend(s,craftCost(c,r),c);s.coins-=craftFee(c,r);const specialist=c.class&&CLASSES[c.class].skill===r.skill;if(r.equipment){if(r.upgrade)c.gear[r.upgrade]=r.tier;const def=EQUIPMENT[r.equipment];P.createEquipment(s,r.equipment,!c.loadout[def.slot]&&(!def.class||c.class===def.class)?c:null,c);}else if(r.output){I.give(c,r.output,r.count*(specialist&&!r.unique&&!r.id.startsWith('anvil-expansion-')&&EXPANSIONS[r.output]?.target!=='chest'?2:1));if(r.skill==='alchemy')s.alchemy.liquid=Math.min(P.liquidCap(s),s.alchemy.liquid+2);}else c.gear[r.upgrade]=r.repeat?(c.gear[r.upgrade]||0)+1:r.tier;skillXp(c,r.skill,6);gainXp(c,3);note(s,`${c.name}: ${r.name}${specialist&&r.output?' (double yield)':''}.`);return true;}
 export function offer(s,id){if(!OFFERINGS.includes(id))return false;const level=s.archive[id]||0,cost=ITEMS[id].rarity==='common'?10*(level+1):level+1;if(level>=20||!spend(s,{[id]:cost}))return false;s.archive[id]=level+1;P.syncAccount(s);note(s,`Studied ${ITEMS[id].name}: ${P.studyType(id)} improved.`);return true;}
 export function heal(s,c){if(c.dungeon)return false;if(c.hp>=maxHp(c)||(c.bag.tonic||0)<1)return false;c.bag.tonic--;c.hp=Math.min(maxHp(c),c.hp+40);return true;}
 export function restoreSave(raw,now=Date.now()){

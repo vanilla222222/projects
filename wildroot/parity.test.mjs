@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=23';
-import * as D from './content.mjs?v=23';
-import * as UI from './parity-panels.mjs?v=23';
-import {World,abilitySet} from './world.mjs?v=23';
-import {roomLayout,pointFor} from './layouts.mjs?v=23';
+import * as E from './engine.mjs?v=24';
+import * as D from './content.mjs?v=24';
+import * as UI from './parity-panels.mjs?v=24';
+import {World,abilitySet} from './world.mjs?v=24';
+import {roomLayout,pointFor} from './layouts.mjs?v=24';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};
 const near=(c,id)=>{const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,activity:'rest',secret:null,position:pointFor(roomLayout(d.area,d.zone),d.point)});};
 const round=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

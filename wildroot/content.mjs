@@ -1,5 +1,6 @@
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=23';
-import {roomLayout} from './layouts.mjs?v=23';
+import {QUEST_REFORMS} from './quest-content.mjs?v=24';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=24';
+import {roomLayout} from './layouts.mjs?v=24';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -365,3 +366,5 @@ for(const [tier,id,name,slot,stats,cost] of [
  [1,'rootbound-mail','Challenger Rootmail','body',{health:45,defense:6},{'rootwarden-scale':8,'tempered-bar':5}],
  [2,'ancient-greaves','Ancient Root Greaves','legs',{health:60,defense:8,attack:6},{'rootwarden-scale':12,'tempered-bar':8}]
 ]){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,station:'anvil',skill:'smithing',equipment:id,cost,bossTier:tier});}
+
+for(const q of STORY)Object.assign(q,QUEST_REFORMS[q.id]);

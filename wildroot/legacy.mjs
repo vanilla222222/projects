@@ -1,6 +1,7 @@
-import {roomLayout,pointFor} from './layouts.mjs?v=23';
-import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=23';
-import * as I from './inventory.mjs?v=23';
+import {recordQuestAction} from './quest-content.mjs?v=24';
+import {roomLayout,pointFor} from './layouts.mjs?v=24';
+import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=24';
+import * as I from './inventory.mjs?v=24';
 export const DAY=86400000;
 export function initializeTown(s){s.stampRewardClaims??=[];s.npcTokens??=[];s.worldCompletionCrafted??=false;s.stamps??={};s.gems??=0;s.gemClaims??=[];s.cosmetics??=[];s.teleports??={count:8,at:s.savedAt||Date.now()};s.shopStock??={};for(const c of s.characters){c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;}for(const q of STORY)if(s.story[q.id]?.done&&!s.stampRewardClaims.includes(q.id)&&Object.keys(q.reward.items||{}).some(id=>id.startsWith('stamp-'))){for(const[id,n]of Object.entries(q.reward.items||{}))if(id.startsWith('stamp-')&&!s.stamps[id.slice(6)]&&!(s.inventory[id]>0)&&!s.characters.some(c=>(c.bag[id]||0)+(c.overflow[id]||0)>0||(c.groundLoot||[]).some(d=>d.itemId===id)))I.give(s.characters.find(c=>c.id===s.active)||s.characters[0],id,n);s.stampRewardClaims.push(q.id);}s.visited['forest-0']=true;s.visited['town-0']=true;return s;}
 export function money(value){let n=Math.max(0,Math.floor(value));const out=[];for(const[unit,size]of [['p',1000000],['g',10000],['s',100],['c',1]]){const q=Math.floor(n/size);if(q){out.push(q+unit);n%=size;}}return out.join(' ')||'0c';}
@@ -22,7 +23,7 @@ export function shopRemaining(s,town,id,now=Date.now()){const row=TOWN_SHOPS[tow
 export function buyShop(s,c,id,n=1,now=Date.now()){
  const row=TOWN_SHOPS[c.area]?.stock.find(r=>r[0]===id);if(!nearFacility(c,'shop')||!row||!Number.isInteger(n)||n<1||n>99||shopRemaining(s,c.area,id,now)<n||s.coins<row[1]*n||I.carryRoom(c,id)<n)return false;
  if(id.startsWith('stamp-')&&s.stamps[id.slice(6)])return false;
- const day=Math.floor(now/DAY);if(s.shopStock[c.area]?.day!==day)s.shopStock[c.area]={day,bought:{}};s.shopStock[c.area].bought[id]=(s.shopStock[c.area].bought[id]||0)+n;s.coins-=row[1]*n;I.carry(c,id,n);return true;
+ const day=Math.floor(now/DAY);if(s.shopStock[c.area]?.day!==day)s.shopStock[c.area]={day,bought:{}};s.shopStock[c.area].bought[id]=(s.shopStock[c.area].bought[id]||0)+n;s.coins-=row[1]*n;I.carry(c,id,n);recordQuestAction(c,'shop:buy',n);return true;
 }
 export function sellPrice(id){if(EQUIPMENT[id])return 5;const known=Object.values(TOWN_SHOPS).flatMap(s=>s.stock).find(r=>r[0]===id);return known?Math.max(1,Math.floor(known[1]/4)):ITEMS[id]?.rarity==='common'?1:ITEMS[id]?.rarity==='rare'?2:10;}
 export function sellSlot(s,c,index,n=Infinity){if(!nearFacility(c,'shop'))return 0;const slot=I.bagSlots(c)[index];if(slot?.id?.startsWith('world-token-')||slot?.id==='world-one-completion')return 0;const taken=I.takeSlot(c,index,n);if(!taken)return 0;s.coins+=sellPrice(taken.itemId)*taken.count;return taken.count;}

@@ -1,7 +1,8 @@
-import {FOODS,CARDS,ANVIL_PRODUCTS,STONES,EQUIPMENT,MERITS,WORLD_TASKS,DAILY_TASKS,CARD_COLLECTIONS} from './content.mjs?v=23';
-import * as I from './inventory.mjs?v=23';
-import {serviceAccess} from './services.mjs?v=23';
-import {productOpen} from './workshop.mjs?v=23';
+import {recordQuestAction} from './quest-content.mjs?v=24';
+import {FOODS,CARDS,ANVIL_PRODUCTS,STONES,EQUIPMENT,MERITS,WORLD_TASKS,DAILY_TASKS,CARD_COLLECTIONS} from './content.mjs?v=24';
+import * as I from './inventory.mjs?v=24';
+import {serviceAccess} from './services.mjs?v=24';
+import {productOpen} from './workshop.mjs?v=24';
 const DAY=86400000;
 export function initCharacter(c){c.mp??=20+(c.level-1)*3;c.foodSlots??=[null,null];c.cardSets??={combat:[],skilling:[]};c.cardPreset??='combat';c.cardSetBonuses??={combat:null,skilling:null};c.cardBonus??={};c.anvil??={product:'thread',progress:0,stored:{},upgrades:{speed:0,capacity:0,xp:0},purchased:0};c.minigames??={day:0,used:{},best:{}};c.minigame=null;return c;}
 export function initialize(s){s.cards??={};s.merits??={};s.meritPoints??=0;s.tasksUnlocked??=false;s.taskClaims??=[];s.metrics??={gather:{},anvil:0,forge:0,crafted:0};s.furnaces??=Array.from({length:2},()=>({ore:'copper',oreCount:0,fuel:0,output:0,progress:0,owner:s.characters[0].id}));for(const c of s.characters)initCharacter(c);syncCards(s);rollDaily(s);return s;}
@@ -15,7 +16,7 @@ export function cardCollectionTier(s,id){const d=CARD_COLLECTIONS[id];return d?M
 export function chooseCardCollection(s,c,id){if(id!==null&&(!CARD_COLLECTIONS[id]||!cardCollectionTier(s,id)))return false;c.cardSetBonuses[c.cardPreset]=id;syncCards(s);return true;}
 export const maxMana=c=>c.dungeon?40:20+(c.level-1)*3+(c.class==='mage'?15:c.class==='enchanter'?10:0);
 export const manaRegen=c=>.6+c.level*.025;
-export function equipFood(c,slot,index,n=Infinity){const t=I.bagSlots(c)[index];if(![0,1].includes(slot)||c.foodSlots[slot]||!FOODS[t?.id]||c.lockedSlots.includes(index))return false;const take=I.takeSlot(c,index,Math.min(n,I.stackLimit(c,t.id)));if(!take)return false;c.foodSlots[slot]={id:take.itemId,count:take.count,cooldown:0};return true;}
+export function equipFood(c,slot,index,n=Infinity){const t=I.bagSlots(c)[index];if(![0,1].includes(slot)||c.foodSlots[slot]||!FOODS[t?.id]||c.lockedSlots.includes(index))return false;const take=I.takeSlot(c,index,Math.min(n,I.stackLimit(c,t.id)));if(!take)return false;recordQuestAction(c,'food:equip');c.foodSlots[slot]={id:take.itemId,count:take.count,cooldown:0};return true;}
 export function unequipFood(c,slot){const t=c.foodSlots[slot];if(!t||I.carryRoom(c,t.id)<t.count)return false;I.carry(c,t.id,t.count);c.foodSlots[slot]=null;return true;}
 export function useFood(c,maxHp,seconds=0){if(c.dungeon)return false;for(const t of c.foodSlots)if(t)t.cooldown=Math.max(0,t.cooldown-seconds);if(c.hp<=0||c.hp>maxHp*.5)return false;for(const t of c.foodSlots)if(t?.count&&t.cooldown<=0){t.count--;c.foodEaten=(c.foodEaten||0)+1;t.cooldown=FOODS[t.id].cooldown;c.hp=Math.min(maxHp,c.hp+FOODS[t.id].heal);return true;}return false;}
 export function regenerate(c,seconds,maxHp){if(c.dungeon){c.mp=Math.min(40,c.mp+seconds);return;}c.mp=Math.min(maxMana(c),c.mp+seconds*manaRegen(c));useFood(c,maxHp,seconds);}
