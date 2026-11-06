@@ -39,6 +39,23 @@ const TOOLS = {
 
 // Which tool a given tile answers to. Anything with a background wall is hammer work,
 // a standing trunk is axe work, and the rest is for a pickaxe.
+// What breaking this tile leaves on the ground, or null for nothing.
+//
+// Three cases, and two of them were collapsed into one by a `||` until a pot made it
+// obvious: `drops: null` means the tile leaves nothing behind, `drops: 'something'` names
+// what it leaves, and no `drops` at all means it leaves itself. Under the old spelling
+// every tile declared to drop nothing - grass tufts, ferns, dead bushes, seaweed, reeds -
+// dropped a copy of itself instead.
+//
+// A cell of a multi-tile object leaves the whole object, never the cell: a lone
+// `oakdoor_00` is an item that cannot be placed back and should never exist.
+function dropsOf(spec) {
+  if (!spec) return null;
+  if (spec.drops === null) return null;
+  if (spec.part) return spec.part.of;
+  return spec.drops || spec.key;
+}
+
 function jobFor(spec, isWall) {
   if (isWall) return 'hammer';
   if (spec && spec.trunkOf) return 'axe';
@@ -130,7 +147,7 @@ function requirementName(tileSpec) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_mining = { TOOLS, TIER_COLOURS, jobFor, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
+const EXPORTS_mining = { TOOLS, TIER_COLOURS, jobFor, dropsOf, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
     requirementOf, toughnessOf, canMine, tierColour, isTool, damagePerHit, hitsFor, secondsFor, requirementName };
 
 if (typeof module !== 'undefined' && module.exports) {

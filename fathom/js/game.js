@@ -254,7 +254,8 @@ function makeGame(canvas, deps) {
       if (origin) breakMulti(origin);
       else world.set(aim.x, aim.y, tiles.AIR);
       spawnParticles(aim.x, aim.y, spec.colour, 9);
-      dropItem(aim.x, aim.y, spec.drops || spec.key, craft.kindOf(spec.drops || spec.key), 1);
+      const leaves = mining.dropsOf(spec);
+      if (leaves) dropItem(aim.x, aim.y, leaves, craft.kindOf(leaves), 1);
       // Cutting rock can open a reservoir, so every neighbour of the hole is woken.
       if (liquid) liquid.activateAround(aim.x, aim.y);
     }
@@ -1187,12 +1188,16 @@ function makeGame(canvas, deps) {
     return useChest({ x, y, inReach: true });
   }
 
+  function useCrystalAt(x, y) {
+    return useCrystal({ x, y, inReach: true });
+  }
+
   function useDoorAt(x, y) {
     return useDoor({ x, y, inReach: true });
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, useBedAt, chestMove, checkHousing, talkTo, buyFrom,
+    useDoorAt, useChestAt, useBedAt, useCrystalAt, chestMove, checkHousing, talkTo, buyFrom,
     get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get swarm() { return swarm; },

@@ -107,6 +107,46 @@ ok(m.isTool({ key: 'wood-pick', kind: 'tool' }), 'a pickaxe is a tool');
 ok(m.hitsFor(0, tiles.BY_KEY.stone) === Infinity, 'bare hands never break stone');
 
 // --- the shape of the curve, reported so the numbers are reviewable -------------------
+// --- what breaking a tile leaves -------------------------------------------------------
+// Three cases that were two for a long time: no `drops` means the tile leaves itself,
+// `drops: 'x'` names what it leaves, and `drops: null` means it leaves nothing. The last
+// was collapsed into the first by a `||` in game.js, so every tile declared to drop
+// nothing dropped a copy of itself - and a cell of a multi-tile object dropped a single
+// cell, an item that cannot be placed back and should never have existed.
+{
+  let nothings = 0;
+  let selves = 0;
+  let named = 0;
+  for (const spec of tiles.TILES) {
+    if (spec.id === tiles.AIR) continue;
+    const leaves = m.dropsOf(spec);
+    if (spec.drops === null) {
+      ok(leaves === null, spec.key + ' is declared to drop nothing and drops ' + leaves);
+      nothings += 1;
+      continue;
+    }
+    ok(leaves !== null, spec.key + ' drops nothing but never said so');
+    if (spec.part) {
+      ok(leaves === spec.part.of,
+        spec.key + ' drops ' + leaves + ' rather than the whole ' + spec.part.of);
+      ok(!!tiles.MULTI[leaves], spec.key + ' drops ' + leaves + ', which cannot be placed');
+      named += 1;
+      continue;
+    }
+    if (spec.drops) { ok(leaves === spec.drops, spec.key + ' ignores its own drops'); named += 1; }
+    else {
+      ok(leaves === spec.key, spec.key + ' does not drop itself');
+      ok(!!tiles.BY_KEY[leaves], spec.key + ' drops ' + leaves + ', which is not a tile');
+      selves += 1;
+    }
+  }
+  ok(nothings >= 4, 'only ' + nothings + ' tiles leave nothing behind, so the case is untested');
+  ok(selves > 50, 'only ' + selves + ' tiles drop themselves');
+  ok(named > 8, 'only ' + named + ' tiles name what they drop');
+  console.log('\ndrops: ' + selves + ' tiles leave themselves, ' + named
+    + ' name something else, ' + nothings + ' leave nothing');
+}
+
 const sample = ['dirt', 'stone', 'copper', 'iron', 'basalt', 'slate', 'cobalt', 'emberite'];
 const width = 24;
 console.log('\nseconds to break (— = cannot mine):');
