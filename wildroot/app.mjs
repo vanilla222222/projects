@@ -1,14 +1,15 @@
-import * as Prof from './profession-panels.mjs?v=17';
-import * as UI from './ui-panels.mjs?v=17';
-import {icon,portrait} from './ui-art.mjs?v=17';
-import * as AUI from './adventure-panels.mjs?v=17';
-import * as T from './town-panels.mjs?v=17';
-import * as U from './panels.mjs?v=17';
-import {GameAudio} from './audio.mjs?v=17';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=17';
-import * as E from './engine.mjs?v=17';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=17';
-import {drawWorld,viewFor} from './scene.mjs?v=17';
+import * as EconomyUI from './economy-panels.mjs?v=19';
+import * as Prof from './profession-panels.mjs?v=19';
+import * as UI from './ui-panels.mjs?v=19';
+import {icon,portrait} from './ui-art.mjs?v=19';
+import * as AUI from './adventure-panels.mjs?v=19';
+import * as T from './town-panels.mjs?v=19';
+import * as U from './panels.mjs?v=19';
+import {GameAudio} from './audio.mjs?v=19';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=19';
+import * as E from './engine.mjs?v=19';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=19';
+import {drawWorld,viewFor} from './scene.mjs?v=19';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -23,6 +24,7 @@ function toast(message){$('toast').textContent=message;$('toast').classList.add(
 function save(){if(paused||loadError)return;state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));$('save-state').textContent='Saved locally';}catch{$('save-state').textContent='Export a backup';}}
 const world=new World(state,{onIntent:handleIntent,onEvent:event=>{audio.play(event.type);if(event.type==='notice')toast(event.text);if(event.type==='loot'){loot.unshift({text:`+${event.count} ${ITEMS[event.id].name}`,until:Date.now()+5500});loot=loot.slice(0,4);}}});
 function handleIntent(event){
+ if(event.type==='survey'){world.c.position={x:world.player.x,y:world.player.y};const r=E.claimSurvey(state,world.c);toast(r?'Route surveyed: +'+r.count+' '+ITEMS[r.id].name+' and '+r.coins+' coins.':'This route was already surveyed.');save();return;}
  world.c.position={x:world.player.x,y:world.player.y,facing:world.player.facing};
  const service=event.type==='station'?event.entity.station:event.type==='telescope'?'stars':event.type;
  if(E.SERVICES[service]){uiView.profession=service;uiView.firstVisit=E.discoverService(state,world.c,service)?service:null;save();}
@@ -63,7 +65,7 @@ function renderPanel(){
  }
  if(kind==='npc'&&npc&&!npc.classId){title=npc.name;eyebrow='VILLAGE STEWARD';body='<div class="dialogue"><div class="npc-portrait">⚑</div><div><h3>A village grows together.</h3><p>Blackened roots have reached our well. We need miners, foresters and makers working together. Bring your supplies to the storage chest and help us find the cause.</p></div></div>'+U.npcStories(state,'steward');}
  if(kind==='skills'){title='Class builds & professions';body=UI.talents(state,c,talentView);}
- if(kind==='craft'){const station=['anvil','foundry','alchemy','enchanting'].includes(uiView.profession)?uiView.profession:E.stationFor(c)||'anvil';title=E.SERVICES[station]?.name||'Professions';body=station==='anvil'?Prof.anvil(state,c,uiView):station==='alchemy'?Prof.alchemy(state,c,uiView):station==='enchanting'?Prof.enchanting(state,c,uiView):E.serviceAccess(state,c,'foundry')?UI.crafting(state,c,true,{...uiView,stationOnly:'foundry',recipePage:null}):Prof.locked(state,c,'foundry');}
+ if(kind==='craft'){const station=['anvil','foundry','alchemy','enchanting'].includes(uiView.profession)?uiView.profession:E.stationFor(c)||'anvil';title=E.SERVICES[station]?.name||'Professions';body=station==='anvil'?Prof.anvil(state,c,uiView):station==='alchemy'?Prof.alchemy(state,c,uiView):station==='enchanting'?Prof.enchanting(state,c,uiView):E.serviceAccess(state,c,'foundry')?EconomyUI.foundry(state,c,uiView):Prof.locked(state,c,'foundry');}
  if(kind==='map'){title='World One · Routes & teleports';eyebrow='THE GREENREACH';body=UI.map(state,c,uiView);}
  if(kind==='stamps'){title='Legacy Square · Stamp Registry';body=UI.stamps(state,c,uiView);}
  if(kind==='statues'){title='Legacy Square · Statue Keeper';body=UI.statues(state,c,uiView);}
@@ -79,7 +81,7 @@ function renderPanel(){
  if(kind==='bestiary'){title='Creature Codex';body=UI.bestiary(state,c,uiView);}
  if(kind==='items'){title='Item Codex';body=UI.itemIndex(state,c,uiView);}
  if(kind==='stars'){title='Star Signs & Constellations';body=UI.stars(state,c,uiView);}
- if(kind==='vault'){title='Greenreach Upgrade Vault';body=UI.vault(state);}
+ if(kind==='vault'){title='Greenreach Upgrade Vault';body=EconomyUI.vault(state,c,uiView);}
  if(kind==='achievements'){title='World One Achievements';body=UI.achievements(state);}
  if(kind==='trial'){title='Solo Trials';body=UI.trials(state,c);}
  if(kind==='trial-result'&&trialResult){title=trialResult.completed?'All Waves Cleared':'Trial Complete';body=`<div class="trial-banner">${icon('trophy')}<h3>${trialResult.score} POINTS</h3></div><div class="offline-grid"><div>${trialResult.wave+1}<small>WAVE REACHED</small></div><div>${trialResult.kills}<small>FOES DEFEATED</small></div><div>${E.money(trialResult.coins)}<small>COINS EARNED</small></div></div><button data-panel="trial">Trial records</button><button data-close="">Return to town</button>`;}
@@ -106,10 +108,10 @@ window.addEventListener('pointercancel',()=>{panelInteraction=false;});
 window.addEventListener('keyup',()=>{panelInteraction=false;});
 function buildTargets(){
  const key=world.key+':'+world.map.boss+':'+world.map.monsters.map(e=>e.id).join(',')+':'+world.groundLoot.map(d=>d.id).join(',');if(key===targetKey)return;targetKey=key;
- html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:['shop','stamps','statues','vault','worldgate','tasks','telescope','constellation','arena'].includes(e.kind)?`Visit ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));projectTargets();
+ html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:['survey','shop','stamps','statues','vault','worldgate','tasks','telescope','constellation','arena'].includes(e.kind)?`Visit ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));projectTargets();
 }
 function projectTargets(){renderMinimap();const v=viewFor($('scene'),world.player);for(const button of $('world-objects').children){const e=[...world.map.entities,...world.groundLoot].find(e=>e.id===button.dataset.target);if(!e)continue;button.hidden=e.kind==='enemy'&&e.dead>0||e.x<v.x-80||e.x>v.x+v.width+80||e.y<v.y-160||e.y>v.y+v.height+160;const w=e.kind==='drop'?44:e.kind==='node'?110:90,h=e.kind==='drop'?44:e.kind==='node'?160:e.kind==='portal'?135:120;button.style.left=`${(e.x-w/2-v.x)/v.width*100}%`;button.style.top=`${(e.y-h-v.y)/v.height*100}%`;button.style.width=`${w/v.width*100}%`;button.style.height=`${h/v.height*100}%`;}}
-function renderMinimap(){const map=world.map,v=viewFor($('scene'),world.player),svg=$('room-minimap'),x=n=>n/map.width*260,y=n=>(n-map.minY)/map.height*75;svg.dataset.vertical=String(map.minY<0);svg.innerHTML=`<svg viewBox="0 0 260 75" preserveAspectRatio="none" aria-hidden="true">${map.platforms.map(p=>`<path d="M${x(p.x)} ${y(p.y)}h${x(p.w)}" stroke="#8bba82" stroke-width="2"/>`).join('')}${map.ladders.map(l=>`<path d="M${x(l.x)} ${y(l.top)}V${y(l.bottom)}" stroke="#a38b65"/>`).join('')}${map.entities.filter(e=>e.kind!=='enemy').map(e=>`<circle cx="${x(e.x)}" cy="${y(e.y)-3}" r="2" fill="${e.kind==='portal'?'#72dfff':'#e9c06d'}"/>`).join('')}<rect x="${x(v.x)}" y="${y(v.y)}" width="${x(v.width)}" height="${v.height/map.height*75}" fill="#ffffff0c" stroke="#d3e8ef44"/><circle cx="${x(world.player.x)}" cy="${y(world.player.y)-3}" r="3" fill="#fff4be"/></svg>`;}
+function renderMinimap(){const map=world.map,v=viewFor($('scene'),world.player),svg=$('room-minimap'),x=n=>n/map.width*260,y=n=>(n-map.minY)/map.height*75;svg.dataset.vertical=String(map.height>1400);svg.innerHTML=`<svg viewBox="0 0 260 75" preserveAspectRatio="none" aria-hidden="true">${map.platforms.map(p=>`<path d="M${x(p.x)} ${y(p.y)}h${x(p.w)}" stroke="#8bba82" stroke-width="2"/>`).join('')}${map.ladders.map(l=>`<path d="M${x(l.x)} ${y(l.top)}V${y(l.bottom)}" stroke="#a38b65"/>`).join('')}${map.entities.filter(e=>e.kind!=='enemy').map(e=>`<circle cx="${x(e.x)}" cy="${y(e.y)-3}" r="2" fill="${e.kind==='portal'?'#72dfff':'#e9c06d'}"/>`).join('')}<rect x="${x(v.x)}" y="${y(v.y)}" width="${x(v.width)}" height="${v.height/map.height*75}" fill="#ffffff0c" stroke="#d3e8ef44"/><circle cx="${x(world.player.x)}" cy="${y(world.player.y)-3}" r="3" fill="#fff4be"/></svg>`;}
 $('room-minimap').addEventListener('click',event=>{const rect=$('room-minimap').getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*world.map.width,y=world.map.minY+(event.clientY-rect.top)/rect.height*world.map.height;const e=world.map.entities.filter(e=>e.kind!=='enemy').sort((a,b)=>Math.abs(a.x-x)+Math.abs(a.y-y)-Math.abs(b.x-x)-Math.abs(b.y-y))[0];if(e&&Math.abs(e.x-x)<world.map.width*.035&&Math.abs(e.y-y)<Math.max(100,world.map.height*4/75))world.select(e.id);else world.walkTo(x,y);});
 function refresh(){
  const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
@@ -141,6 +143,9 @@ document.addEventListener('click',event=>{
  if(d.startTrial!==undefined){if(world.beginTrial()){closePanel();targetKey='';save();refresh();}else toast('Stand by the trial board with a ticket at level 3 or higher.');return;}
  if(d.option){if(Object.hasOwn(state.options,d.option))state.options[d.option]=!state.options[d.option];save();renderPanel();refresh();return;}
  if(d.selectTalent){talentView.selected=d.selectTalent;renderPanel();return;}
+ if(d.economyUse){uiView.economyConfirm=null;if(d.economyUse==='infusion'){uiView.profession='enchanting';uiView.enchantTab='infusion';uiView.infusionMaterial=d.item;openPanel('craft');}else if(d.economyUse==='reclaim'){uiView.profession='foundry';uiView.foundryTab='reclaim';openPanel('craft');}else{uiView.vaultTab=d.economyUse==='project'?'projects':'badges';openPanel('vault');}return;}
+ if(d.economyCommit){if(uiView.economyConfirm!==d.key){uiView.economyConfirm=d.key;renderPanel();return;}const t=E.itemSlot(c,Number(d.index)),key=d.economyCommit+':'+d.index+':'+(t?.uid||t?.id)+':'+d.quantity;const result=key===d.key&&(d.economyCommit==='reclaim'?E.reclaimItem(state,c,Number(d.index),Number(d.quantity)):E.contributeItem(state,c,Number(d.index),Number(d.quantity)));uiView.economyConfirm=null;toast(result?'Contributed '+result+' points.':'The selected stack changed or is protected.');E.syncAccount(state);save();renderPanel();refresh();return;}
+ if(d.salvageBuy||d.badgeAttune||d.badgePattern||d.infusionApply){let ok=false;if(d.salvageBuy)ok=E.buySalvage(state,c,d.salvageBuy);if(d.badgeAttune)ok=E.attuneBadge(state,c,d.badgeAttune);if(d.badgePattern)ok=E.learnBadgePattern(state,c,d.badgePattern);if(d.infusionApply){const g=[...Object.values(c.loadout),...c.packGear].find(g=>g.uid===Number(d.uid));if(g?.infusion&&!uiView.infusionConfirm){uiView.infusionConfirm=true;renderPanel();return;}ok=E.infuseItem(state,c,d.uid,d.infusionApply,!!uiView.infusionConfirm);uiView.infusionConfirm=false;}toast(ok?'Progress saved.':'Check requirements, materials and local facility access.');E.syncAccount(state);save();renderPanel();refresh();return;}
  if(d.profession){uiView.profession=d.profession;openPanel('craft');return;}
  if(d.enchantApply){const piece=c.loadout[d.slot];if(piece?.runes[Number(d.index)]&&!uiView.enchantConfirm){uiView.enchantConfirm=true;renderPanel();return;}const ok=E.enchant(state,c,d.slot,d.enchantApply,Number(d.index),!!uiView.enchantConfirm);uiView.enchantConfirm=false;toast(ok?'Enchantment applied.':'Check materials, equipment and bench access.');save();renderPanel();refresh();return;}
  if(d.anvilExpansion||d.learnBlueprint||d.brewBubble||d.brewBoost||d.bubbleUpgrade||d.bubbleEquip||d.vialDiscover||d.vialUpgrade||d.alchemyCoin){let ok=false;
@@ -154,8 +159,8 @@ document.addEventListener('click',event=>{
  if(d.vialUpgrade)ok=E.upgradeVial(state,c,d.vialUpgrade);
  if(d.alchemyCoin)ok=E.coinAlchemy(state,c,d.alchemyCoin,d.kind);
  E.syncAccount(state);toast(ok?'Progress saved.':'Check requirements, materials and facility access.');save();renderPanel();refresh();return;}
- const selections={recipePage:'recipePage',anvilTab:'anvilTab',alchemyTab:'alchemyTab',cauldron:'cauldron',enchantGear:'enchantGear',enchantSlot:'enchantSlot',enchantRune:'enchantRune',enchantTab:'enchantTab',questFilter:'questFilter',selectQuest:'quest',cardGroup:'cardGroup',selectCard:'card',recipeFilter:'recipeFilter',selectRecipe:'recipe',enemyArea:'enemyArea',selectEnemy:'enemy',selectItem:'item',starTab:'starTab',selectSign:'sign',mapRoom:'mapRoom',stampGroup:'stampGroup',selectStamp:'stamp',selectStatue:'statue',industryTab:'industryTab',stoneItem:'stoneItem'};
- for(const[key,value]of Object.entries(selections))if(d[key]!==undefined){uiView.enchantConfirm=false;uiView[value]=key==='stoneItem'?Number(d[key]):d[key];if(d.openCard!==undefined)openPanel('cards');else if(d.openEnemy!==undefined)openPanel('bestiary');else renderPanel();return;}
+ const selections={foundryTab:'foundryTab',vaultTab:'vaultTab',economyItem:'economyItem',economyQuantity:'economyQuantity',infusionGear:'infusionGear',recipePage:'recipePage',anvilTab:'anvilTab',alchemyTab:'alchemyTab',cauldron:'cauldron',enchantGear:'enchantGear',enchantSlot:'enchantSlot',enchantRune:'enchantRune',enchantTab:'enchantTab',questFilter:'questFilter',selectQuest:'quest',cardGroup:'cardGroup',selectCard:'card',recipeFilter:'recipeFilter',selectRecipe:'recipe',enemyArea:'enemyArea',selectEnemy:'enemy',selectItem:'item',starTab:'starTab',selectSign:'sign',mapRoom:'mapRoom',stampGroup:'stampGroup',selectStamp:'stamp',selectStatue:'statue',industryTab:'industryTab',stoneItem:'stoneItem'};
+ for(const[key,value]of Object.entries(selections))if(d[key]!==undefined){uiView.enchantConfirm=false;uiView.economyConfirm=null;uiView.infusionConfirm=false;uiView[value]=key==='stoneItem'?Number(d[key]):d[key];if(d.openCard!==undefined)openPanel('cards');else if(d.openEnemy!==undefined)openPanel('bestiary');else renderPanel();return;}
  if(d.openIndustry){uiView.anvilTab=d.openIndustry==='produce'?'produce':'craft';uiView.industryTab=d.openIndustry;openPanel('industry');return;}
  if(d.codexTab){openPanel(d.codexTab);return;}
  if(d.codexItem){uiView.item=d.codexItem;uiView.itemSearch='';openPanel('items');return;}
@@ -267,7 +272,7 @@ $('skill-button').addEventListener('click',()=>{world.useSkill(0);refresh();});
 $('secondary-button').addEventListener('click',()=>{world.useSkill(1);refresh();});
 $('utility-button').addEventListener('click',()=>{world.useSkill(2);refresh();});
 $('manage-roster').addEventListener('click',()=>openPanel('roster'));
-document.addEventListener('change',e=>{if(e.target.dataset.cauldronWorker){const ok=E.assignCauldron(state,world.c,Number(e.target.dataset.cauldronWorker),e.target.value);if(!ok)toast('That cauldron is full or locked.');save();renderPanel();}});
+document.addEventListener('change',e=>{if(e.target.id==='infusion-material'){uiView.infusionMaterial=e.target.value;uiView.infusionConfirm=false;renderPanel();return;}if(e.target.dataset.cauldronWorker){const ok=E.assignCauldron(state,world.c,Number(e.target.dataset.cauldronWorker),e.target.value);if(!ok)toast('That cauldron is full or locked.');save();renderPanel();}});
 document.addEventListener('input',e=>{if(['recipe-search','item-search'].includes(e.target.id)){const id=e.target.id,key=id==='recipe-search'?'recipeSearch':'itemSearch',start=e.target.selectionStart;uiView[key]=e.target.value;renderPanel();const input=$(id);input.focus();input.setSelectionRange(start,start);return;}if(e.target.id==='audio-volume'){audio.volume=Number(e.target.value);state.settings={...state.settings,volume:audio.volume};save();}});
 document.addEventListener('pointerdown',()=>{if(state.settings?.audio&&!audio.enabled){audio.volume=state.settings.volume??.2;audio.enable(true);}},{once:true});
 $('interact-button').addEventListener('click',()=>world.interact());

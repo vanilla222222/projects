@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=17';import * as D from './content.mjs?v=17';
-import * as UI from './ui-panels.mjs?v=17';
-import {World,createMap,GROUND} from './world.mjs?v=17';import {viewFor} from './scene.mjs?v=17';
+import * as E from './engine.mjs?v=19';import * as D from './content.mjs?v=19';
+import * as UI from './ui-panels.mjs?v=19';
+import {World,createMap,GROUND} from './world.mjs?v=19';import {viewFor} from './scene.mjs?v=19';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const restored=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 const fullChart=s=>{s.stars={unlocked:true,seen:D.CONSTELLATIONS.map(d=>d.id),claimed:D.CONSTELLATIONS.map(d=>d.id),signs:[]};};

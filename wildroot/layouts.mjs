@@ -1,3 +1,4 @@
+import {ROOM_DESIGNS} from './room-designs.mjs?v=19';
 // Authored room profiles. Upper platforms connect directly to the ground for reliable tap navigation.
 export const GROUND=644;
 const D={
@@ -30,5 +31,21 @@ boss:[3240,'Heart of the Rootwarden',[[390,510,435],[1190,470,305],[1930,500,465
 };
 for(let zone=0;zone<3;zone++){const upper=Array.from({length:10+zone*2},(_,i)=>[i%2?850:350,1000,GROUND-(i+1)*180]);D['tree-'+zone]=[2200,['Rootspire Ascent','Heartwood Stair','Crown Observatory'][zone],upper,[[700,upper[2][2]]],{},[['elder',1100,600],['vines',1650,400]],{'portal-left':[65,GROUND],'portal-right':[1760,upper.at(-1)[2]],...(zone===2?{telescope:[1450,upper.at(-1)[2]]}:{})}];}
 export const ROOM_KEYS=Object.keys(D);
-export function roomLayout(area,index,boss=false,secret=null){const key=boss?'boss':secret||`${area}-${index}`,d=D[key];if(!d)throw Error('Unknown room '+key);const[width,title,upper,resources,npcs,landmarks,points={}]=d,platforms=[{id:'ground',x:0,w:width,y:GROUND},...upper.map(([x,w,y],i)=>({id:'shelf-'+i,x,w,y}))],ladders=platforms.slice(1).map((p,i)=>({id:'ladder-'+i,x:area==='tree'?1000+(i%3)*100:p.x+p.w*(i%2?.62:.42),top:p.y,bottom:area==='tree'&&i>0?platforms[i].y:GROUND,from:area==='tree'&&i>0?platforms[i].id:'ground',platform:p.id}));let spawns=[.28,.44,.65,.84].map(t=>({x:Math.round(width*t),y:GROUND})).concat(upper.map(([x,w,y])=>({x:x+w*.65,y})));if(key==='forest-0')spawns=[{x:700,y:GROUND},{x:940,y:GROUND},{x:1110,y:GROUND},{x:490,y:462},{x:840,y:342},{x:1620,y:480},{x:2140,y:GROUND},{x:2200,y:358}];if(boss||secret)spawns=[{x:boss?2390:secret==='sunwell'?1490:1740,y:GROUND}];const cave=['caves','deep'].includes(area)||secret==='vault',jungle=area.includes('jungle');return{key,width,title,minY:area==='tree'?upper.at(-1)[2]-230:0,height:area==='tree'?GROUND-upper.at(-1)[2]+306:720,platforms,ladders,resources:resources.map(([x,y])=>({x,y})),npcs,points,landmarks,spawns,sky:cave?['#18243b','#3f5b68']:jungle?['#4c92a5','#9ec6aa']:['#79b8d7','#d6e8b7']};}
+export function roomLayout(area,index,boss=false,secret=null){
+ const key=boss?'boss':secret||`${area}-${index}`,d=D[key],design=ROOM_DESIGNS[key];if(!d||!design)throw Error('Unknown room '+key);
+ const[width,title,oldUpper,resources,npcs,landmarks,oldPoints={}]=d,upper=[...oldUpper,...design.shelves],points={...oldPoints};
+ const platforms=[{id:'ground',x:0,w:width,y:GROUND},...upper.map(([x,w,y],i)=>({id:'shelf-'+i,x,w,y}))];
+ const ladders=platforms.slice(1).map((p,i)=>{
+  const below=area==='tree'?(i?platforms[i]:platforms[0]):platforms.filter(f=>f.y>p.y&&Math.min(f.x+f.w,p.x+p.w)-Math.max(f.x,p.x)>80).sort((a,b)=>a.y-b.y)[0];
+  const left=Math.max(below.x,p.x)+30,right=Math.min(below.x+below.w,p.x+p.w)-30;
+  const x=area==='tree'?1000+(i%3)*100:left+(right-left)*(i%2?.7:.3);
+  return{id:'ladder-'+i,x,top:p.y,bottom:below.y,from:below.id,platform:p.id};
+ });
+ const top=platforms.reduce((a,b)=>b.y<a.y?b:a),minY=Math.min(0,top.y-230);
+ if(design.exit)points['portal-right']=[top.x+top.w*.7,top.y];
+ let spawns=[.28,.44,.65,.84].map(t=>({x:Math.round(width*t),y:GROUND})).concat(upper.map(([x,w,y])=>({x:x+w*.65,y})));
+ if(key==='forest-0')spawns=[{x:700,y:GROUND},{x:940,y:GROUND},{x:1110,y:GROUND},{x:490,y:462},{x:840,y:342},{x:1620,y:480},{x:2140,y:GROUND},{x:2200,y:358},...design.shelves.map(([x,w,y])=>({x:x+w*.65,y}))];
+ if(boss||secret)spawns=[{x:boss?2390:secret==='sunwell'?1490:1740,y:GROUND}];
+ return{key,width,title,minY,height:GROUND-Math.min(top.y,GROUND)+306,platforms,ladders,resources:resources.map(([x,y])=>({x,y})),npcs,points,landmarks,spawns,sky:design.sky,design};
+}
 export function pointFor(layout,id){if(id==='portal-left')return{x:65,y:GROUND};if(layout.points[id])return{x:layout.points[id][0],y:layout.points[id][1]};if(id==='portal-right')return{x:layout.width-70,y:GROUND};if(id==='storage')return{x:160,y:GROUND};const p=layout.points[id]||layout.npcs[id.replace('npc-','')];return p?{x:p[0],y:p[1]}:{x:layout.width*.6,y:GROUND};}
