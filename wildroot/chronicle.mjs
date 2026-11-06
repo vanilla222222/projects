@@ -1,5 +1,5 @@
-import {STAR_SIGNS,CONSTELLATIONS,VAULT_UPGRADES,ACHIEVEMENTS,RECIPES,TRIAL_WAVES,TELESCOPE} from './content.mjs?v=34';
-import {serviceAccess} from './services.mjs?v=34';
+import {STAR_SIGNS,CONSTELLATIONS,VAULT_UPGRADES,ACHIEVEMENTS,RECIPES,TRIAL_WAVES,TELESCOPE} from './content.mjs?v=35';
+import {serviceAccess} from './services.mjs?v=35';
 const DAY=86400000,integer=n=>Number.isSafeInteger(n)&&n>=0;
 export function initialize(s){s.stars??={unlocked:false,seen:[],claimed:[],signs:[]};s.vault??={};s.achievementClaims??=[];s.recipeFavorites??=[];s.trials??={day:Math.floor(Date.now()/DAY),tickets:3,best:0,runs:0,medals:[]};s.options={questHelper:true,damageNumbers:true,autoPickup:true,autoSkills:true,reducedMotion:false,compact:false,...s.options};for(const c of s.characters){c.starSigns??=[];c.foodEaten??=0;c.trial??=null;}return s;}
 export const starSlots=s=>1+(s.stars.claimed.length>=4?1:0)+(s.stars.claimed.length>=8?1:0);

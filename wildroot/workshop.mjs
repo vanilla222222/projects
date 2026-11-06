@@ -1,6 +1,6 @@
-import {RECIPES} from './content.mjs?v=34';
-import * as I from './inventory.mjs?v=34';
-import {serviceAccess} from './services.mjs?v=34';
+import {RECIPES} from './content.mjs?v=35';
+import * as I from './inventory.mjs?v=35';
+import {serviceAccess} from './services.mjs?v=35';
 
 export const PRODUCT_LEVELS={thread:1,nails:3,brick:5};
 export const recipePage=r=>r.bossTier!==undefined?3:r.station!=='anvil'||r.id.startsWith('anvil-expansion-')?1:['gilding','verdant-steel','heartwood','sunwell'].includes(r.unlock)||r.requiresCompletion||r.unlock?.startsWith('badge-')?3:r.unlock==='ironworking'?2:1;

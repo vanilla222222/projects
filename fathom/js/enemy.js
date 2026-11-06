@@ -170,6 +170,22 @@ const ENEMIES = [
     w: 1.4, h: 1.0, colour: '#dfe7f2', layers: ['sky'], drops: [['feather', 1], ['coin', 4]] },
   { key: 'voidwyrm', name: 'Void Wyrm', kind: 'worm', body: 'worm', hp: 180, damage: 36, weight: 6,
     w: 1.3, h: 1.3, colour: '#3c3a58', layers: ['space'], drops: [['stardust', 2], ['coin', 16]] },
+  // --- the blood moon ------------------------------------------------------------------
+  // Only during the event, only on the surface, and all three are worse than what the
+  // night usually holds. A blood moon should be a reason to be indoors.
+  { key: 'bloodzombie', name: 'Blood Zombie', kind: 'walker', body: 'humanoid', hp: 85,
+    damage: 22, weight: 12, w: 0.85, h: 1.75, colour: '#8e3a3a', layers: ['surface'],
+    event: 'bloodmoon', night: true, day: false,
+    drops: [['rottenflesh', 2], ['coin', 9]] },
+  { key: 'dripper', name: 'Drippler', kind: 'flyer', body: 'maw', hp: 70, damage: 20,
+    weight: 10, w: 1.1, h: 1.1, colour: '#a83a44', layers: ['surface'],
+    event: 'bloodmoon', night: true, day: false, emit: 2,
+    drops: [['tissue', 2], ['coin', 8]] },
+  { key: 'bloodslime', name: 'Blood Slime', kind: 'slime', body: 'slime', hp: 60,
+    damage: 18, weight: 9, w: 1.3, h: 1.0, colour: '#b0333c', layers: ['surface'],
+    event: 'bloodmoon', night: true, day: false,
+    drops: [['gel', 3], ['coin', 7]] },
+
   // --- the king --------------------------------------------------------------------------
   // Summoned, never spawned. `summonOnly` is checked by matches(), so no pool anywhere
   // can contain it - which is stronger and more honest than giving it a layer filter
@@ -191,6 +207,9 @@ for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
 function matches(spec, ctx) {
   if (spec.summonOnly) return false;
+  // An event enemy exists only during its event, and an event does not suppress the
+  // ordinary roster: a blood moon is the usual night with worse things added to it.
+  if (spec.event && ctx.event !== spec.event) return false;
   if (spec.layers && spec.layers.indexOf(ctx.layer) === -1) return false;
   if (spec.biomes && spec.biomes.indexOf(ctx.biome) === -1) return false;
   if (spec.wet && !ctx.wet) return false;
@@ -277,6 +296,9 @@ const DESPAWN = 86;
 // pressure without the crowd.
 const MAX_ALIVE = 6;
 const SPAWN_EVERY = 2.8;
+// How many can be alive at once during an event. Measured the same way the ordinary cap
+// was: at ten the surface was impassable rather than dangerous.
+const EVENT_ALIVE = 9;
 
 function makeSwarm(world, tiles, deps) {
   const { worldgen, random } = deps;
@@ -304,14 +326,14 @@ function makeSwarm(world, tiles, deps) {
 
   // Context at a point: which biome, which layer, is it wet, is it day. This is the whole
   // input to the spawn table.
-  function contextAt(x, y, dayPhase) {
+  function contextAt(x, y, dayPhase, event) {
     const biome = worldgen.biomeAt(world.seed, Math.floor(x)).key;
     const layer = worldgen.layerAt(Math.floor(y)).key;
     const wet = liquidAt(x, y) !== 0;
     // Underground is never daylit, whatever the clock says.
     const surfaceish = layer === 'surface' || layer === 'sky' || layer === 'space';
     const day = surfaceish ? (dayPhase < 0.25 || dayPhase > 0.75) : false;
-    return { biome, layer, wet, day };
+    return { biome, layer, wet, day, event: event || null };
   }
 
   // Terraria's rule, and the one that makes building worth doing: a player-placed wall
@@ -373,11 +395,11 @@ function makeSwarm(world, tiles, deps) {
     return list.find(e => e.boss) || null;
   }
 
-  function trySpawn(player, dayPhase) {
+  function trySpawn(player, dayPhase, event) {
     // A boss and its minions do not count against the ordinary cap, and nothing
     // ordinary spawns while one is alive: the fight is the fight.
     if (list.some(e => e.boss)) return null;
-    if (list.length >= MAX_ALIVE) return null;
+    if (list.length >= (event ? EVENT_ALIVE : MAX_ALIVE)) return null;
     // A few columns per attempt, so one unlucky column does not cost a whole tick.
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const side = rng() < 0.5 ? -1 : 1;
@@ -387,7 +409,7 @@ function makeSwarm(world, tiles, deps) {
 
       // The pool is decided at the player's own altitude band for this column, so a
       // surface spawn is chosen from the surface roster even if the scan reaches deeper.
-      const ctx = contextAt(x, player.y, dayPhase);
+      const ctx = contextAt(x, player.y, dayPhase, event);
       const spec = chooseFrom(poolFor(ctx), rng());
       if (!spec) continue;
 
@@ -396,7 +418,7 @@ function makeSwarm(world, tiles, deps) {
       const y = spots[Math.min(spots.length - 1, Math.floor(rng() * spots.length))];
       if (suppressed(x, y)) continue;
       // And the chosen spot must still belong to the roster it was drawn from.
-      const here = contextAt(x, y, dayPhase);
+      const here = contextAt(x, y, dayPhase, event);
       if (!matches(spec, here)) continue;
 
       const enemy = makeEnemy(spec, x, y);
@@ -620,11 +642,13 @@ function makeSwarm(world, tiles, deps) {
     }
   }
 
-  function step(player, dt, dayPhase) {
+  function step(player, dt, dayPhase, event) {
     cooldown -= dt;
     if (cooldown <= 0) {
-      cooldown = SPAWN_EVERY;
-      trySpawn(player, dayPhase);
+      // A blood moon is not merely a different roster: it is more of everything, which
+      // is what makes it a reason to be indoors rather than a change of scenery.
+      cooldown = event ? SPAWN_EVERY * 0.45 : SPAWN_EVERY;
+      trySpawn(player, dayPhase, event);
     }
     for (let i = list.length - 1; i >= 0; i -= 1) {
       const enemy = list[i];
@@ -679,7 +703,7 @@ function makeSwarm(world, tiles, deps) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_enemy = { ENEMIES, BY_KEY: ENEMY_BY_KEY, ARCHETYPES, GAIT, poolFor, chooseFrom, matches,
-  makeEnemy, makeSwarm, SPAWN_MIN, SPAWN_MAX, DESPAWN, MAX_ALIVE, SPAWN_EVERY };
+  makeEnemy, makeSwarm, SPAWN_MIN, SPAWN_MAX, DESPAWN, MAX_ALIVE, EVENT_ALIVE, SPAWN_EVERY };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_enemy;

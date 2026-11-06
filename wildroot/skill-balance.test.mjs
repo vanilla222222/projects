@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=34';import * as D from './content.mjs?v=34';
-import * as UI from './adventure-panels.mjs?v=34';import * as Parity from './parity-panels.mjs?v=34';
-import {commonLootSeconds} from './assignment-forecast.mjs?v=34';
+import * as E from './engine.mjs?v=35';import * as D from './content.mjs?v=35';
+import * as UI from './adventure-panels.mjs?v=35';import * as Parity from './parity-panels.mjs?v=35';
+import {commonLootSeconds} from './assignment-forecast.mjs?v=35';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 test('Every combat route increases kill requirements, including cross-area entrances',()=>{

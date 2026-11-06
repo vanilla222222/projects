@@ -27,6 +27,9 @@ const ITEMS = {
   'gold-bar': { name: 'Gold Bar', kind: 'bar', colour: '#e0c054' },
   'cobalt-bar': { name: 'Cobalt Bar', kind: 'bar', colour: '#3f7fb5' },
   'emberite-bar': { name: 'Emberite Bar', kind: 'bar', colour: '#d4663a' },
+  // Smelted from what falls out of the sky after the King is dead. The only metal in the
+  // game that is not in the ground.
+  'meteor-bar': { name: 'Meteor Bar', kind: 'bar', colour: '#a06a5c' },
   // Buckets. Two items rather than one with a flag, so a full bucket stacks separately
   // from an empty one and the hotbar shows at a glance which you are holding.
   bucket: { name: 'Empty Bucket', kind: 'tool', colour: '#9aa3ad' },
@@ -121,6 +124,10 @@ const ARMOUR_TIERS = [
     labels: ['Skull', 'Ribs', 'Greaves', 'Boots'], station: 'anvil',
     craft: [['bone', 10], ['leather', 4]],
     bonus: { key: 'marksman', name: 'Marksman', text: 'Arrows hit 25% harder', ranged: 1.25 } },
+  { key: 'meteor', name: 'Meteor', colour: '#a06a5c', base: 11, bar: null, cost: null,
+    labels: ['Helm', 'Suit', 'Leggings', 'Boots'], station: 'anvil',
+    craft: [['meteor-bar', 9]],
+    bonus: { key: 'meteoric', name: 'Meteoric', text: 'Magic costs 40% less mana', manaCost: 0.6 } },
   { key: 'brigand', name: 'Brigand', colour: '#7a5a3a', base: 6, bar: null, cost: null,
     labels: ['Cowl', 'Jerkin', 'Breeches', 'Boots'], station: 'anvil',
     craft: [['leather', 8], ['chitin', 6], ['iron-bar', 3]],
@@ -192,6 +199,7 @@ const ACCESSORIES = {
   'bat-wing': { name: "Bat's Wing", colour: '#6a5b52', text: 'Falls hurt far less and you jump again in the air', fallMul: 0.3, doubleJump: true, drop: 'giantbat' },
   'obsidian-shield': { name: 'Obsidian Shield', colour: '#2e2838', text: 'Defence +8, and lava does not burn you', defense: 8, fireproof: true, drop: 'obsidianhusk' },
   'stinger-brooch': { name: 'Stinger Brooch', colour: '#e0c050', text: 'Move 12% faster and swing 10% faster', speed: 1.12, swing: 0.9, drop: 'hornet' },
+  'blood-charm': { name: 'Blood Charm', colour: '#8e3a3a', text: 'Defence +4, and health returns 60% faster', defense: 4, regen: 1.6, drop: 'bloodzombie' },
   'demon-heart': { name: 'Demon Heart', colour: '#9c3f6a', text: 'Magic hits 18% harder', magic: 1.18, drop: 'demon' },
 
   // The king's. Not rare drops but certain ones: beating a boss gives you both, because
@@ -292,9 +300,11 @@ const WEAPONS = {
   'emerald-staff': { name: 'Emerald Staff', damage: 35, useTime: 0.36, reach: 32, magic: true, mana: 10, bolt: '#3fb56a' },
   'ruby-staff': { name: 'Ruby Staff', damage: 44, useTime: 0.34, reach: 34, magic: true, mana: 12, bolt: '#d8344c' },
   'diamond-staff': { name: 'Diamond Staff', damage: 57, useTime: 0.3, reach: 38, magic: true, mana: 14, bolt: '#bfe8f0' },
+  'meteor-blaster': { name: 'Meteor Blaster', damage: 40, useTime: 0.14, reach: 34, magic: true, mana: 7, bolt: '#ffb05a' },
   'imp-staff': { name: 'Imp Staff', damage: 50, useTime: 0.26, reach: 30, magic: true, mana: 9, bolt: '#e2743a', drop: 'fireimp' },
 
   // --- dropped melee ------------------------------------------------------------------
+  'meteor-sword': { name: 'Meteor Sword', damage: 52, useTime: 0.22, reach: 3.3 },
   'shark-fang': { name: 'Shark Fang', damage: 34, useTime: 0.2, reach: 2.9, drop: 'shark' },
   'hornet-lance': { name: 'Hornet Lance', damage: 30, useTime: 0.34, reach: 4.4, drop: 'hornet' },
   'stone-fist': { name: 'Stone Fist', damage: 62, useTime: 0.46, reach: 3.4, drop: 'rockgolem' },
@@ -375,6 +385,7 @@ const RECIPES = [
   { out: { key: 'cobalt-bar', kind: 'bar', count: 1 }, need: [['cobalt', 4]], station: 'furnace' },
   { out: { key: 'emberite-bar', kind: 'bar', count: 1 }, need: [['emberite', 5]], station: 'furnace' },
   { out: { key: 'glass', kind: 'block', count: 2 }, need: [['sand', 2]], station: 'furnace' },
+  { out: { key: 'meteor-bar', kind: 'bar', count: 1 }, need: [['meteorite', 4]], station: 'furnace' },
 
   // Anvil: bars into metal tools. Each pickaxe opens the rock that holds the next.
   { out: { key: 'bucket', kind: 'tool', count: 1 }, need: [['iron-bar', 3]], station: 'anvil' },
@@ -473,6 +484,10 @@ RECIPES.push(
   { out: { key: 'manacrystal', kind: 'use', count: 1 }, need: [['fallenstar', 5]], station: null },
   // Enough gel that you have had to clear a lot of slime to afford it, which is the
   // right way to be introduced to their king.
+  { out: { key: 'meteor-sword', kind: 'tool', count: 1 }, need: [['meteor-bar', 12], ['#wood', 4]], station: 'anvil' },
+  // The blaster fires fast and cheap rather than hard: with the Meteor set its bolts
+  // cost almost nothing, which is Terraria's joke about the Space Gun and worth keeping.
+  { out: { key: 'meteor-blaster', kind: 'tool', count: 1 }, need: [['meteor-bar', 14], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
-import * as E from './engine.mjs?v=34';import * as D from './content.mjs?v=34';import * as C from './conversations.mjs?v=34';import {npcDialogue} from './dialogue-panels.mjs?v=34';import {MONSTER_ART,monsterArtId,drawMonsterArt,monsterSvg} from './monster-art.mjs?v=34';import {World,createMap,createDungeonMap} from './world.mjs?v=34';
+import * as E from './engine.mjs?v=35';import * as D from './content.mjs?v=35';import * as C from './conversations.mjs?v=35';import {npcDialogue} from './dialogue-panels.mjs?v=35';import {MONSTER_ART,monsterArtId,drawMonsterArt,monsterSvg} from './monster-art.mjs?v=35';import {World,createMap,createDungeonMap} from './world.mjs?v=35';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);E.travel(s,c,'town',0);const npc=createMap('town',0).npcs.find(n=>n.role==='steward');c.position={x:npc.x,y:npc.y};return{s,c,npc};};
 function finishLines(s,c,t){while(!C.conversationReady(s,c,t))t=C.advanceConversation(s,c,t,100);return t;}
 const round=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

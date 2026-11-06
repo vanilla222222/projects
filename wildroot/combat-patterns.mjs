@@ -31,8 +31,10 @@ export function makeTell(e,player,width){
  const kind=nextAttack(e),d=ATTACKS[kind],direction=Math.sign(player.x-e.x)||e.facing||-1;
  const target=['rootburst','pounce'].includes(kind)?Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,player.x)):e.x;
  const end=kind==='charge'?Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,e.x+direction*d.distance)):target;
- return{kind,remaining:d.windup,total:d.windup,x:target,y:e.y,direction,origin:e.x,end,
+ const zones=kind==='rootburst'&&(e.phaseLevel||1)>=3?[{left:target-75,right:target+75},{left:Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,target+direction*230))-75,right:Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,target+direction*230))+75}]:null;
+ const left=kind==='charge'?Math.min(e.x,end)-30:target-(d.radius||30),right=kind==='charge'?Math.max(e.x,end)+30:target+(d.radius||30);
+ return{zones,threatened:Math.abs(player.y-e.y)<65&&(zones||[{left,right}]).some(z=>player.x>=z.left&&player.x<=z.right),kind,remaining:d.windup,total:d.windup,x:target,y:e.y,direction,origin:e.x,end,
   left:kind==='charge'?Math.min(e.x,end)-30:target-(d.radius||30),
   right:kind==='charge'?Math.max(e.x,end)+30:target+(d.radius||30)};
 }
-export function attackDescription(enemy){const style=encounterStyle(enemy),d=ATTACKS[style.pattern];return enemy.id==='boss'?'Jump root sweeps. In later phases, leave eruption marks and watch for rootlings.':d.name+': '+d.hint+'.'+(style.guard?' Its shell opens while winding up and recovering.':'');}
+export function attackDescription(enemy){const style=encounterStyle(enemy),d=ATTACKS[style.pattern];return enemy.id==='boss'?'Jump root sweeps. Later phases add eruption marks and rootlings. In the final phase, sweeps travel both ways and eruptions mark two fixed locations.':d.name+': '+d.hint+'.'+(style.guard?' Its shell opens while winding up and recovering.':'');}

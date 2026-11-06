@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=34';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=34';
-import {roomLayout} from './layouts.mjs?v=34';
+import {QUEST_REFORMS} from './quest-content.mjs?v=35';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=35';
+import {roomLayout} from './layouts.mjs?v=35';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -352,7 +352,7 @@ export const ENEMY_CURVES={
  tree:{hp:[200,380,700],attack:[14,22,32]}
 };
 for(const [area,curve] of Object.entries(ENEMY_CURVES))curve.hp.forEach((hp,i)=>{const e=ENEMIES[area+'-'+i];e.xp=Math.round(e.xp*Math.sqrt(hp/e.hp));e.coins=Math.round(e.coins*(hp/e.hp)**.25);e.hp=hp;e.attack=curve.attack[i];});
-ENEMIES.boss.hp=2600;ENEMIES.boss.attack=24;
+ENEMIES.boss.hp=3900;ENEMIES.boss.attack=24;
 
 // Preserve legacy permanent bonuses; new progress uses equipment enchantments and bubbles.
 for(const r of RECIPES)if(['rune','elixir'].includes(r.id))r.retired=true;

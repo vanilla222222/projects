@@ -730,3 +730,75 @@ The physics test proves the contract rather than the implementation: two seconds
 climbing rises, a second of hanging does not slide, climbing down descends, stepping
 sideways leaves the rope and falls, a hooked player does not accelerate downward over
 three seconds, and letting go restores gravity rather than leaving the player floating.
+
+## Sound
+
+There are no audio assets for the same reason there are no image assets: everything is
+made from a description, so a new sound is a few numbers rather than a file.
+
+One idea, repeated. A sound is a list of **layers**, each either a tone - an oscillator
+sweeping between two frequencies - or a hiss - filtered noise sweeping between two
+cutoffs - with an attack-decay envelope. That is enough for a pickaxe, a bowstring, a
+splash, a spell and a boss, because what distinguishes those is mostly which frequencies
+move which way and how fast. Twenty-seven sounds, the longest 1.46 seconds.
+
+Every sound is jittered in pitch per play. Without that, the same sound fifty times in a
+row is a machine gun rather than a pickaxe. Digging has three sounds rather than one,
+because the difference between a spade in soil and a pick on stone is most of what mining
+sounds like.
+
+**Ambience** is one bed per vertical layer, crossfaded as the player moves between them:
+wind above ground, a hollow drone in the caves, a low roar in hell. The filter closes as
+you go down, so depth is audible.
+
+**Music** is a slow generative line over a held chord, pentatonic because a pentatonic
+scale has no wrong notes in it - which is exactly what you want from music that will play
+for hours and must never once sound like a mistake. Depth lowers the root and darkens the
+scale, so the music says where you are without a word. It is scheduled from the game loop
+one note at a time rather than from a timer, so it stops when the game stops and never
+runs on in a background tab.
+
+Keeping the description separate from the playing is what makes any of this testable:
+there is no audio in Node at all. `node tools/audio-test.js` checks that no sound is
+silent, deafening, clipping or ten seconds long; that the sound names game.js actually
+plays - read out of game.js, not listed in the test - all exist; that every layer of the
+world has an ambience bed; and that the music only ever picks notes inside its own scale
+over six hundred steps of its own line.
+
+That last check caught the real bug: the melody allowed an octave jump in both
+directions on top of a ten-semitone scale, giving it a span of thirty-four semitones.
+That is not a melody, it is an alarm. It only lifts now, never drops.
+
+**N** mutes everything, **B** stops the music. Nothing is built until the first key or
+click, because no browser will start an audio context before one.
+
+## Events
+
+**A blood moon** is a night that is worse. Which nights are blood moons is a hash of the
+night's number, so the whole event costs one integer in the save, every player of a seed
+meets the same nights, and nothing about it has to be written down. Roughly one night in
+seven, and never the first two - a new character should get a little while to find a
+shovel.
+
+It is not merely a different roster. Three enemies exist only during it and are all
+worse than what the night usually holds; the spawn interval drops to 45% and the cap
+rises from six to nine. The moon itself is bigger and red and washes the whole sky,
+because the event has to be visible from inside a house: an event you can only detect by
+reading the spawn table is not an event.
+
+The `event` filter sits in `matches()` beside the layer and biome filters, and it only
+adds. The test checks exactly that: every enemy that spawns on an ordinary night still
+spawns during a blood moon, every event enemy is impossible outside it, and the blood
+moon pool is the ordinary pool plus its own and nothing else.
+
+**A meteor** falls when the King dies, which is how the next tier of material arrives:
+meteorite is in no band and is not generated with the world at all. The crater is written
+into the world's edit diff exactly like anything the player built, so it survives a save
+with no new machinery, and so it can be mined out and will stay mined out. Where it lands
+is a pure function of which meteor it is - 180 to 520 tiles out, on whichever side the
+hash picks - so the announcement can name a direction.
+
+Meteor bars make a sword, a blaster and a suit. The Meteoric set bonus takes 40% off
+every spell, and the blaster is deliberately fast and cheap rather than hard-hitting, so
+wearing the set with it makes magic nearly free - which is Terraria's joke about the
+Space Gun and worth keeping.

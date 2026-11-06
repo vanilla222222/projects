@@ -1,9 +1,9 @@
-import {assignment as rosterAssignment} from './roster-panels.mjs?v=34';
-import {upgradeSource,questRewardPlan} from './reward-progression.mjs?v=34';
-import {food} from './adventure-panels.mjs?v=34';
-import * as D from './content.mjs?v=34';
-import * as E from './engine.mjs?v=34';
-import {abilitySet,abilityAvailable} from './world.mjs?v=34';
+import {assignment as rosterAssignment} from './roster-panels.mjs?v=35';
+import {upgradeSource,questRewardPlan} from './reward-progression.mjs?v=35';
+import {food} from './adventure-panels.mjs?v=35';
+import * as D from './content.mjs?v=35';
+import * as E from './engine.mjs?v=35';
+import {abilitySet,abilityAvailable} from './world.mjs?v=35';
 export const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n).toLocaleString();
 export function costs(s,cost){return`<div class="costs">${Object.entries(cost).map(([id,n])=>`<span class="${E.amount(s,id)<n?'missing':''}">${esc(D.ITEMS[id]?.name||id)} ${fmt(E.amount(s,id))}/${n}</span>`).join('')}</div>`;}

@@ -150,19 +150,41 @@ function makeRenderer(canvas, deps) {
     const cx = canvas.width * 0.5 + Math.cos(angle) * canvas.width * 0.42;
     const cy = canvas.height * 0.62 + Math.sin(angle) * canvas.height * 0.52;
     const isSun = light.solarElevation(state.dayPhase) >= 0;
-    const r = isSun ? 30 : 22;
-    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 4.5);
-    glow.addColorStop(0, isSun ? 'rgba(255,246,214,0.95)' : 'rgba(208,224,255,0.75)');
-    glow.addColorStop(0.18, isSun ? 'rgba(255,224,150,0.5)' : 'rgba(170,196,240,0.3)');
+    // A blood moon is bigger, red, and lights the whole sky rather than a disc of it.
+    // The event has to be visible from inside a house, which means it has to be in the
+    // sky and not only in the spawn table.
+    const bloody = !isSun && !!state.bloodMoon;
+    const r = isSun ? 30 : (bloody ? 34 : 22);
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * (bloody ? 7 : 4.5));
+    if (isSun) {
+      glow.addColorStop(0, 'rgba(255,246,214,0.95)');
+      glow.addColorStop(0.18, 'rgba(255,224,150,0.5)');
+    } else if (bloody) {
+      glow.addColorStop(0, 'rgba(255,120,110,0.95)');
+      glow.addColorStop(0.16, 'rgba(210,60,60,0.5)');
+      glow.addColorStop(0.5, 'rgba(150,30,36,0.18)');
+    } else {
+      glow.addColorStop(0, 'rgba(208,224,255,0.75)');
+      glow.addColorStop(0.18, 'rgba(170,196,240,0.3)');
+    }
     glow.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(cx, cy, r * 4.5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r * (bloody ? 7 : 4.5), 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = isSun ? '#fffbe8' : '#dfe8ff';
+    ctx.fillStyle = isSun ? '#fffbe8' : (bloody ? '#e04a46' : '#dfe8ff');
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
+    if (bloody) {
+      // A wash of red over the whole sky, so the night reads as wrong from anywhere
+      // with a window.
+      const wash = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      wash.addColorStop(0, 'rgba(120,16,22,0.34)');
+      wash.addColorStop(1, 'rgba(60,8,14,0.16)');
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   function drawParallax(state) {

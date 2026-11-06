@@ -915,6 +915,30 @@ const RAIN_THRESHOLD = 0.66;
 const RAIN_BAND = 0.12;
 const GUST_FIELD = 0.012;
 
+// Blood moons. A night either is one or is not, decided by a hash of which night it is,
+// so the whole event costs one integer in the save and every player of a seed meets the
+// same nights. Roughly one night in seven, and never the first two: a new character
+// should get a little while to find a shovel.
+const BLOOD_MOON_ODDS = 0.14;
+const BLOOD_MOON_GRACE = 2;
+
+function bloodMoonAt(seed, night) {
+  if (night <= BLOOD_MOON_GRACE) return false;
+  return unit(seed, night, 0, 9401) < BLOOD_MOON_ODDS;
+}
+
+// Where a meteor lands, given which meteor it is. Far enough away to be a journey and
+// near enough to be findable, on whichever side the hash picks.
+const METEOR_MIN = 180;
+const METEOR_MAX = 520;
+
+function meteorSite(seed, index) {
+  const side = unit(seed, index, 0, 9501) < 0.5 ? -1 : 1;
+  const away = METEOR_MIN + unit(seed, index, 0, 9511) * (METEOR_MAX - METEOR_MIN);
+  const x = Math.round(side * away);
+  return { x, y: columnOf(seed, x).height, side };
+}
+
 function weatherAt(seed, at, biomeKey) {
   const front = fbm1(seed, at * RAIN_FIELD, 9001, 2, 2, 0.35);
   const rain = Math.max(0, Math.min(1, (front - RAIN_THRESHOLD) / RAIN_BAND));
@@ -1475,7 +1499,8 @@ const EXPORTS_worldgen = {
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
     STRUCTURE_SPACING, structureAt, structureRect, structurePlaced, structureTileAt, structureWallAt,
-    crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
+    crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD,
+    bloodMoonAt, BLOOD_MOON_ODDS, BLOOD_MOON_GRACE, meteorSite, METEOR_MIN, METEOR_MAX, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
     structureChest, chestTileAt, baseContainerAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,

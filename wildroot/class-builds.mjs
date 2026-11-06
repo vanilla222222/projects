@@ -1,4 +1,4 @@
-import {CLASSES,CLASS_TALENTS} from './content.mjs?v=34';
+import {CLASSES,CLASS_TALENTS} from './content.mjs?v=35';
 export const CLASS_DESIGNS={
  warrior:{name:'Stoneguard',primary:'might',accuracy:'focus',weapon:'Heavy cleave',family:{effect:'defense',amount:.08},talents:{bulwark:{name:'Bulwark',description:'+0.3 defense per point',effect:'defense',amount:.3,max:20},deepstrike:{name:'Deep Strike',description:'+2% mining efficiency per point',effect:'mining',amount:.02,max:25},crusher:{name:'Crusher',description:'+1% damage per point',effect:'attack',amount:.01,max:25}}},
  mage:{name:'Briarweaver',primary:'focus',accuracy:'finesse',weapon:'Ranged staff bolts',family:{effect:'logging',amount:.003},talents:{canopy:{name:'Canopy Lore',description:'+2% logging efficiency per point',effect:'logging',amount:.02,max:25},arcana:{name:'Arcane Flow',description:'+1% skill power per point',effect:'skill',amount:.01,max:25},quickcast:{name:'Quickcast',description:'+1% attack speed per point',effect:'haste',amount:.01,max:20}}},
@@ -15,5 +15,5 @@ export function classBonuses(c){const b={};for(const[id,d]of Object.entries(CLAS
 export function familyBonuses(s){const b={};for(const[id,d]of Object.entries(CLASS_DESIGNS)){const highest=Math.max(0,...(s.familyRoster||s.characters).filter(c=>c.class===id).map(c=>c.level));if(highest)b[d.family.effect]=(b[d.family.effect]||0)+highest*d.family.amount;}return b;}
 export const primaryAttribute=c=>c.attributes?.[CLASS_DESIGNS[c.class]?.primary]||0;
 export const accuracyAttribute=c=>c.attributes?.[CLASS_DESIGNS[c.class]?.accuracy]||0;
-export const weaponProfile=c=>({warrior:{range:125,mult:1.1,interval:1.06},mage:{range:360,mult:1,interval:1.1},blacksmith:{range:150,mult:.9,interval:1.18,splash:2},enchanter:{range:280,mult:.95,interval:1},alchemist:{range:240,mult:.8,interval:1.15,splash:3}})[c.class]||{range:115,mult:1,interval:1};
+export const weaponProfile=c=>({warrior:{range:125,mult:1.1,interval:1.06},mage:{range:360,mult:1.14,interval:1},blacksmith:{range:165,mult:1.2,interval:1.1,splash:2},enchanter:{range:280,mult:1.05,interval:1},alchemist:{range:240,mult:.95,interval:1.1,splash:3}})[c.class]||{range:115,mult:1,interval:1};
 export function validateBuilds(s){for(const c of s.characters){if(!c.attributes||Object.keys(c.attributes).length!==3||Object.entries(c.attributes).some(([id,n])=>!ATTRIBUTES[id]||!Number.isInteger(n)||n<0)||Object.values(c.attributes).reduce((a,n)=>a+n,0)>(c.level-1)*2)throw Error('Invalid attribute allocation.');}}
