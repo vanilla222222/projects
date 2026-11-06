@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=19';
-import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=19';
+import * as E from './engine.mjs?v=20';
+import {World,createMap,nextRoute,GROUND,PLATFORMS,LADDERS} from './world.mjs?v=20';
 function tick(world,seconds,input={}){for(let i=0;i<seconds*50;i++)world.step(.02,typeof input==='function'?input(i):input);}
 function setup(options={}){const state=E.freshSave(),events=[];return{state,events,world:new World(state,{rng:()=>.5,onIntent:e=>events.push(e),onEvent:e=>events.push(e),...options})};}
 test('Maps have multiple actual enemy entities, platforms, ladders, resources and portals',()=>{
@@ -55,10 +55,10 @@ test('Auto in town cannot create an invalid combat assignment or break the save'
 });
 
 test('All room doorways have unique, reciprocal destinations and arrival points',async()=>{
- const {AREAS,SECRETS}=await import('./content.mjs?v=19');
+ const {AREAS,SECRETS}=await import('./content.mjs?v=20');
  for(const area of AREAS)for(let zone=0;zone<area.zones.length;zone++){
   const map=createMap(area.id,zone),targets=map.portals.map(p=>JSON.stringify([p.destination.area,p.destination.zone,p.destination.boss||false,p.destination.secret||null]));assert.equal(new Set(targets).size,targets.length);
-  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=19');arrivals.push(JSON.stringify(entrancePoint(portal.id,area.id,zone)));}assert.equal(new Set(arrivals).size,arrivals.length);
+  const arrivals=[];for(const portal of map.portals){const to=portal.destination,other=createMap(to.area,to.zone,!!to.boss,to.secret||null),back=other.portals.find(p=>p.id===to.entrance);assert.ok(back,`${area.id}/${zone}/${portal.id} has a matching entrance`);assert.equal(back.destination.area,area.id);assert.equal(back.destination.zone,zone);assert.equal(back.destination.entrance,portal.id);const {entrancePoint}=await import('./world.mjs?v=20');arrivals.push(JSON.stringify(entrancePoint(portal.id,area.id,zone)));}assert.equal(new Set(arrivals).size,arrivals.length);
  }
  for(const[id,d]of Object.entries(SECRETS)){const room=createMap(d.area,d.zone,false,id);assert.equal(room.portals.length,1);assert.equal(room.portals[0].destination.entrance,'secret-'+id);assert.ok(createMap(d.area,d.zone).discoveries.some(e=>e.id===room.portals[0].destination.entrance));}
 });

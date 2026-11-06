@@ -1,15 +1,15 @@
-import * as EconomyUI from './economy-panels.mjs?v=19';
-import * as Prof from './profession-panels.mjs?v=19';
-import * as UI from './ui-panels.mjs?v=19';
-import {icon,portrait} from './ui-art.mjs?v=19';
-import * as AUI from './adventure-panels.mjs?v=19';
-import * as T from './town-panels.mjs?v=19';
-import * as U from './panels.mjs?v=19';
-import {GameAudio} from './audio.mjs?v=19';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=19';
-import * as E from './engine.mjs?v=19';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=19';
-import {drawWorld,viewFor} from './scene.mjs?v=19';
+import * as EconomyUI from './economy-panels.mjs?v=20';
+import * as Prof from './profession-panels.mjs?v=20';
+import * as UI from './ui-panels.mjs?v=20';
+import {icon,portrait} from './ui-art.mjs?v=20';
+import * as AUI from './adventure-panels.mjs?v=20';
+import * as T from './town-panels.mjs?v=20';
+import * as U from './panels.mjs?v=20';
+import {GameAudio} from './audio.mjs?v=20';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=20';
+import * as E from './engine.mjs?v=20';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=20';
+import {drawWorld,viewFor} from './scene.mjs?v=20';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -144,7 +144,7 @@ document.addEventListener('click',event=>{
  if(d.option){if(Object.hasOwn(state.options,d.option))state.options[d.option]=!state.options[d.option];save();renderPanel();refresh();return;}
  if(d.selectTalent){talentView.selected=d.selectTalent;renderPanel();return;}
  if(d.economyUse){uiView.economyConfirm=null;if(d.economyUse==='infusion'){uiView.profession='enchanting';uiView.enchantTab='infusion';uiView.infusionMaterial=d.item;openPanel('craft');}else if(d.economyUse==='reclaim'){uiView.profession='foundry';uiView.foundryTab='reclaim';openPanel('craft');}else{uiView.vaultTab=d.economyUse==='project'?'projects':'badges';openPanel('vault');}return;}
- if(d.economyCommit){if(uiView.economyConfirm!==d.key){uiView.economyConfirm=d.key;renderPanel();return;}const t=E.itemSlot(c,Number(d.index)),key=d.economyCommit+':'+d.index+':'+(t?.uid||t?.id)+':'+d.quantity;const result=key===d.key&&(d.economyCommit==='reclaim'?E.reclaimItem(state,c,Number(d.index),Number(d.quantity)):E.contributeItem(state,c,Number(d.index),Number(d.quantity)));uiView.economyConfirm=null;toast(result?'Contributed '+result+' points.':'The selected stack changed or is protected.');E.syncAccount(state);save();renderPanel();refresh();return;}
+ if(d.economyCommit){if(uiView.economyConfirm!==d.key){uiView.economyConfirm=d.key;renderPanel();return;}const t=E.itemSlot(c,Number(d.index)),key=d.economyCommit+':'+d.index+':'+(t?.uid||t?.id)+':'+d.quantity;const result=key===d.key&&(d.economyCommit==='reclaim'?E.reclaimItem(state,c,Number(d.index),Number(d.quantity)):E.contributeItem(state,c,Number(d.index),Number(d.quantity)));uiView.economyConfirm=null;toast(result?(d.economyCommit==='reclaim'?'Reclaimed for '+result+' salvage.':'Contributed '+result+' project points.'):'The selected stack changed or is protected.');E.syncAccount(state);save();renderPanel();refresh();return;}
  if(d.salvageBuy||d.badgeAttune||d.badgePattern||d.infusionApply){let ok=false;if(d.salvageBuy)ok=E.buySalvage(state,c,d.salvageBuy);if(d.badgeAttune)ok=E.attuneBadge(state,c,d.badgeAttune);if(d.badgePattern)ok=E.learnBadgePattern(state,c,d.badgePattern);if(d.infusionApply){const g=[...Object.values(c.loadout),...c.packGear].find(g=>g.uid===Number(d.uid));if(g?.infusion&&!uiView.infusionConfirm){uiView.infusionConfirm=true;renderPanel();return;}ok=E.infuseItem(state,c,d.uid,d.infusionApply,!!uiView.infusionConfirm);uiView.infusionConfirm=false;}toast(ok?'Progress saved.':'Check requirements, materials and local facility access.');E.syncAccount(state);save();renderPanel();refresh();return;}
  if(d.profession){uiView.profession=d.profession;openPanel('craft');return;}
  if(d.enchantApply){const piece=c.loadout[d.slot];if(piece?.runes[Number(d.index)]&&!uiView.enchantConfirm){uiView.enchantConfirm=true;renderPanel();return;}const ok=E.enchant(state,c,d.slot,d.enchantApply,Number(d.index),!!uiView.enchantConfirm);uiView.enchantConfirm=false;toast(ok?'Enchantment applied.':'Check materials, equipment and bench access.');save();renderPanel();refresh();return;}

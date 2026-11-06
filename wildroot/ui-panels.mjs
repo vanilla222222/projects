@@ -1,10 +1,10 @@
-import * as D from './content.mjs?v=19';
-import * as E from './engine.mjs?v=19';
-import * as Old from './panels.mjs?v=19';
-import * as A from './adventure-panels.mjs?v=19';
-import {roomLayout} from './layouts.mjs?v=19';
-import {roomPortals,abilitySet,abilityAvailable} from './world.mjs?v=19';
-import {icon,itemArt,portrait,esc,fmt,percent,tabs,section} from './ui-art.mjs?v=19';
+import * as D from './content.mjs?v=20';
+import * as E from './engine.mjs?v=20';
+import * as Old from './panels.mjs?v=20';
+import * as A from './adventure-panels.mjs?v=20';
+import {roomLayout} from './layouts.mjs?v=20';
+import {roomPortals,abilitySet,abilityAvailable} from './world.mjs?v=20';
+import {icon,itemArt,portrait,esc,fmt,percent,tabs,section} from './ui-art.mjs?v=20';
 export const statText=stats=>Object.entries(stats).filter(([,v])=>v).map(([id,n])=>`${n>0?'+':''}${['attack','defense','health'].includes(id)?Number(n.toFixed(2)):percent(n)} ${id==='health'?'HP':id}`).join(' · ')||'No bonuses';
 const btn=(label,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${label}</button>`;
 const mini=(label,value)=>`<div class="stat-row"><span>${label}</span><strong>${value}</strong></div>`;

@@ -63,7 +63,7 @@ export function drawRoomSetpieces(g,layout,v,t){
   }
   if(m==='rootcrown'){circle(g,x,b-230,100,'#503349');circle(g,x,b-230,60,'#bb799a55');}
  }
- else if(['engine','clockvault'].includes(m)){gear(g,x,b-400,260,t*.025,'#a3946d');gear(g,x+320,b-600,120,-t*.05,'#858c8b');gear(g,x-310,b-140,150,-t*.04,'#8a7b65');for(const dx of [-420,420])trunk(g,x+dx,b,top,55,'#4c5664');}
+ else if(['engine','clockvault'].includes(m)){for(let y=b-400;y>top+100;y-=500){gear(g,x,y,210,t*.025,'#a3946d');gear(g,x+280,y-160,100,-t*.05,'#858c8b');gear(g,x-270,y+190,125,-t*.04,'#8a7b65');}for(const dx of [-420,420])trunk(g,x+dx,b,top,55,'#4c5664');}
  else if(m==='ziggurat'){for(let i=0;i<8;i++){const w=1100-i*100;rect(g,x-w/2,b-i*150,w,130,d.rock);rect(g,x-w/2,b-i*150,w,14,d.trim);for(let j=0;j<5;j++)rect(g,x-w/2+30+j*w/5,b-i*150+30,25,25,'#b6a779');}circle(g,x,b-1150,65,'#ffe4a577');}
  else if(['ropeways','stiltmarket'].includes(m)){
   for(const dx of [-450,0,450])trunk(g,x+dx,b,top,30,'#5b684c');for(let y=b-190;y>top;y-=220){line(g,[[x-450,y-60],[x,y-10],[x+450,y-60]],'#c5b879',7);rect(g,x-450,y,900,12,'#8b7852');for(let xx=x-430;xx<x+450;xx+=40)line(g,[[xx,y],[xx,y-40-Math.abs(xx-x)*.04]],'#aa9b6a',3);if(m==='stiltmarket'){rect(g,x-120,y-120,240,120,'#8a9a70');rect(g,x-150,y-140,300,22,'#b6a469');rect(g,x-30,y-80,60,80,'#426555');}}
