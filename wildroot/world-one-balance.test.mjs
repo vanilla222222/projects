@@ -37,3 +37,6 @@ test('Hunt reward targets count missing scales and preserve difficulty and recip
 test('Fresh saves complete with three randomized loot streams and real spare-item reclamation',async()=>{
  const{runWorldOne}=await import('./world1-sim.mjs');for(const initial of [3187,713503,90210]){let seed=initial;const rng=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};const r=runWorldOne({rng});assert.ok(r.storyComplete,'seed '+initial);assert.equal(r.characters.length,5);assert.ok(r.state.economy.salvage>0);for(const c of r.state.characters)assert.equal(c.loadout.weapon.base,D.VERDANT_WEAPONS[c.class]);assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(r.state))));}
 });
+for(const starter of ['mage','blacksmith'])test('World One completes when the first adventurer chooses '+starter,async()=>{
+ const{runWorldOne}=await import('./world1-sim.mjs');const r=runWorldOne({starter});assert.ok(r.storyComplete);assert.equal(r.characters[0].class,starter);assert.equal(new Set(r.characters.map(c=>c.class)).size,5);assert.equal(r.state.characters[0].loadout.weapon.base,D.VERDANT_WEAPONS[starter]);assert.ok(r.minutes<360);assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(r.state))));
+});

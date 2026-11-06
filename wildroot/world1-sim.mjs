@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=34';
 import * as D from './content.mjs?v=34';
 import {World} from './world.mjs?v=34';
-export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
+export function runWorldOne({rng=()=>.5,completeNpcChains=false,starter='warrior'}={}){
+ assert.ok(['warrior','mage','blacksmith'].includes(starter),'Starter trainer must be in the first settlement or its adjacent skill rooms.');
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
  const tick=n=>{E.advance(s,n,rng);seconds+=n;};
@@ -19,7 +20,7 @@ export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
  function openRoute(c,area,zone){const req=E.routeRequirement(area,zone);if(!req||E.zoneUnlocked(s,area,zone,c))return;const fighter=req.shared?hero:c;openRoute(fighter,req.area,req.index);const missing=req.goal-((req.shared?s.kills:c.journey.kills)[req.id]||0);if(missing>0)fight(fighter,req.area,req.index,missing);}
  function trainBuild(c){if(c.class){E.investAttribute(c,E.CLASS_DESIGNS[c.class].accuracy,Math.ceil(E.attributePoints(c)/2)||1);E.investAttribute(c,E.CLASS_DESIGNS[c.class].primary,E.attributePoints(c)||1);}E.syncAccount(s);for(const id of ['precision','vitality','haste'])while(E.combatPoints(c)&&c.talents[id]<5)E.train(c,id);for(const id of ['power','precision','vitality','haste','signature','industry'])while(E.combatPoints(c)&&E.train(c,id)){}}
  function fight(c,area,zone,count){openRoute(c,area,zone);trainBuild(c);use(c);assert.ok(E.travel(s,c,area,zone),`route ${area}:${zone}`);assert.ok(E.start(s,c,'fight'));const id=`${area}-${zone}`,target=(s.kills[id]||0)+count;let guard=0;while((s.kills[id]||0)<target&&guard++<2000){tick(10);if(c.activity==='rest')throw Error(`Combat stall at ${id}; attack=${E.power(s,c)}, hp=${E.maxHp(c)}`);}assert.ok((s.kills[id]||0)>=target,id);E.start(s,c,'rest');bank(c);}
- function ensureTool(c,resource){const need=E.gatherRequirement(c,resource);if(!need)return;const skill=E.gatherSkill(resource),level={birch:2,iron:3,'jungle-wood':3,gold:5}[resource]||1;if(E.skillLevel(c,skill)<level){const raw=skill==='mining'?'copper':'oak',required=Math.max(1,Math.ceil((12*(level-1)**2-c.skills[skill])/2));gather(c,raw,required);}
+ function ensureTool(c,resource){const need=E.gatherRequirement(c,resource);if(!need)return;const skill=E.gatherSkill(resource),level={birch:2,iron:3,'jungle-wood':3,gold:5}[resource]||1;let training=0;while(E.skillLevel(c,skill)<level){assert.ok(training++<20,'Gathering skill training stalled');const raw=skill==='mining'?'copper':'oak',required=Math.max(4,Math.ceil((12*(level-1)**2-c.skills[skill])/2));gather(c,raw,required);}
   const base=skill==='mining'?(resource==='gold'?'iron-pick':'copper-pick'):'copper-axe',slot=D.EQUIPMENT[base].slot;if(E.gatherRequirement(c,resource)&&!c.loadout[slot])gear(base,c);else if(resource==='gold'&&c.loadout.pick?.base!=='iron-pick')gear(base,c);
  }
  function gather(c,id,n){const routes={oak:['forest',0],birch:['forest',2],'jungle-wood':['jungle',0],copper:['caves',0],iron:['deep',0],gold:['deep',2]},[area,zone]=routes[id];ensureTool(c,id);openRoute(c,area,zone);use(c);assert.ok(E.travel(s,c,area,zone));assert.ok(E.start(s,c,'gather',id),`${id}: ${E.gatherRequirement(c,id)}`);const initial=(c.bag[id]||0)+(c.overflow[id]||0),target=initial+n;let guard=0;while((c.bag[id]||0)+(c.overflow[id]||0)<target&&guard++<5000)tick(5);assert.ok(guard<5000,`gather stalled ${id}`);E.start(s,c,'rest');bank(c);}
@@ -62,14 +63,14 @@ export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
   else{const r=D.RECIPES.find(r=>r.id===(id==='enchanter'?'dust':'tonic'));for(const[k,n]of Object.entries(r.cost))material(k,n*2);use(c);E.travel(s,c,def.town,def.zone);c.position={x:id==='enchanter'?1700:1510,y:644};assert.ok(E.craft(s,c,r.id));assert.ok(E.craft(s,c,r.id));bank(c);}
   for(const[k,n]of Object.entries(def.needs))material(k,n);use(c);E.travel(s,c,def.town,def.zone);assert.ok(E.progressClass(s,c,id),'practice '+id);assert.ok(E.progressClass(s,c,id),'deliver '+id);events.push({event:'class-'+id,minutes:+(seconds/60).toFixed(2)});bank(c);
  }
- fight(hero,'forest',0,24);initiation(hero,'warrior');story('first-roots');E.withdraw(s,hero,'woven-pouch',1);E.useExpansion(s,hero,'woven-pouch');bank(hero);
- E.createCharacter(s,'Willow’s Apprentice');const mage=E.selected(s);initiation(mage,'mage');story('tools');expand('wooden-crate');gear('copper-sword',hero);gear('copper-mail',hero);gear('copper-pick',hero);gear('copper-axe',mage);
+ fight(hero,'forest',0,24);initiation(hero,starter);story('first-roots');E.withdraw(s,hero,'woven-pouch',1);E.useExpansion(s,hero,'woven-pouch');bank(hero);
+ E.createCharacter(s,'Second Apprentice');initiation(E.selected(s),starter==='mage'?'warrior':'mage');const mage=worker('logging');story('tools');expand('wooden-crate');gear('copper-sword',hero);gear('copper-mail',hero);gear('copper-pick',hero);gear('copper-axe',mage);
  for(const area of ['forest','caves'])for(let zone=0;zone<D.areaById(area).zones.length;zone++)if((s.kills[`${area}-${zone}`]||0)<16)fight(hero,area,zone,16-(s.kills[`${area}-${zone}`]||0));
  story('under-roots');expand('iron-lockbox');gear('iron-sword',hero);gear('iron-pick',hero);gear('iron-mail',hero);gear('iron-helm',hero);gear('birch-boots',hero);story('canopy-letter');
- E.createCharacter(s,'Flint’s Apprentice');initiation(E.selected(s),'blacksmith');
+ E.createCharacter(s,'Third Apprentice');initiation(E.selected(s),['warrior','mage','blacksmith'].find(id=>!s.unlockedClasses.includes(id)));
  for(const area of ['jungle','deep'])for(let zone=0;zone<D.areaById(area).zones.length;zone++)if((s.kills[`${area}-${zone}`]||0)<16)fight(hero,area,zone,16-(s.kills[`${area}-${zone}`]||0));
  E.createCharacter(s,'Mira’s Apprentice');initiation(E.selected(s),'enchanter');E.createCharacter(s,'Fern’s Apprentice');initiation(E.selected(s),'alchemist');story('outpost');expand('runed-cabinet');for(const c of s.characters)if(c!==hero)gear(D.VERDANT_WEAPONS[c.class],c);story('seal');
- gear('warden-blade',hero);gear('tempered-mail',hero);gear('iron-helm',hero);gear('birch-boots',hero);
+ gear(D.VERDANT_WEAPONS[hero.class],hero);gear('tempered-mail',hero);gear('iron-helm',hero);gear('birch-boots',hero);
  material('mining-tonic',1);bank(hero);E.withdraw(s,hero,'mining-tonic',1);assert.ok(E.drink(s,hero,'mining-tonic'));
  material('dust',8);material('bat-fang',6);use(hero);E.travel(s,hero,'jungle-town',0);hero.position={x:1700,y:644};assert.ok(E.enchant(s,hero,'weapon','force',0));assert.ok(E.enchant(s,hero,'weapon','force',1));
  bankAll();use(hero);E.travel(s,hero,'jungle-town',2);const world=new World(s,{rng});assert.ok(world.select('portal-right'));
