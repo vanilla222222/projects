@@ -32,130 +32,133 @@ const ARCHETYPES = {
   worm: { gravity: 0, speed: 4.6, burrows: true }
 };
 
+// Every enemy drops coins, scaled to what it was: a slime is pocket change, an obsidian
+// husk is a day's wages. Coins are what villagers want, so what you kill is what pays for
+// what you buy.
 // weight is relative within whichever pool the enemy lands in. `layers` and `biomes` are
 // filters: an empty or absent list means "anywhere". `day`/`night` default to both.
 const ENEMIES = [
   // --- surface, temperate -------------------------------------------------------------
   { key: 'greenslime', name: 'Green Slime', kind: 'slime', hp: 25, damage: 6, weight: 10,
     w: 1.1, h: 0.85, colour: '#58b05a', layers: ['surface'],
-    biomes: ['plains', 'forest', 'savanna', 'highlands'], drops: [['gel', 2]] },
+    biomes: ['plains', 'forest', 'savanna', 'highlands'], drops: [['gel', 2], ['coin', 2]] },
   { key: 'blueslime', name: 'Blue Slime', kind: 'slime', hp: 35, damage: 8, weight: 6,
     w: 1.2, h: 0.95, colour: '#4a79c9', layers: ['surface', 'caves'],
-    biomes: ['plains', 'forest', 'marsh'], drops: [['gel', 2]] },
+    biomes: ['plains', 'forest', 'marsh'], drops: [['gel', 2], ['coin', 3]] },
   { key: 'zombie', name: 'Zombie', kind: 'walker', hp: 45, damage: 12, weight: 9,
     w: 0.8, h: 1.7, colour: '#5f7a52', layers: ['surface'], night: true, day: false,
-    drops: [['rottenflesh', 1]] },
+    drops: [['rottenflesh', 1], ['coin', 4]] },
   { key: 'demoneye', name: 'Demon Eye', kind: 'flyer', hp: 32, damage: 11, weight: 7,
     w: 0.95, h: 0.95, colour: '#b4484f', layers: ['surface'], night: true, day: false,
-    drops: [['lens', 1]] },
+    drops: [['lens', 1], ['coin', 3]] },
 
   // --- surface, cold --------------------------------------------------------------------
   { key: 'iceslime', name: 'Ice Slime', kind: 'slime', hp: 30, damage: 8, weight: 10,
     w: 1.1, h: 0.85, colour: '#8fc8e6', layers: ['surface', 'caves'],
-    biomes: ['tundra', 'taiga'], drops: [['gel', 2]] },
+    biomes: ['tundra', 'taiga'], drops: [['gel', 2], ['coin', 3]] },
   { key: 'frostwight', name: 'Frost Wight', kind: 'walker', hp: 55, damage: 14, weight: 7,
     w: 0.8, h: 1.75, colour: '#9fb6cc', layers: ['surface'], biomes: ['tundra', 'taiga'],
-    night: true, day: false, drops: [['rottenflesh', 1]] },
+    night: true, day: false, drops: [['rottenflesh', 1], ['coin', 5]] },
 
   // --- surface, dry ----------------------------------------------------------------------
   { key: 'vulture', name: 'Vulture', kind: 'flyer', hp: 28, damage: 10, weight: 9,
     w: 1.3, h: 0.8, colour: '#6b5a44', layers: ['surface'], biomes: ['desert', 'badlands'],
-    drops: [['feather', 1]] },
+    drops: [['feather', 1], ['coin', 3]] },
   { key: 'antlion', name: 'Antlion', kind: 'walker', hp: 42, damage: 13, weight: 7,
     w: 1.2, h: 0.9, colour: '#8a6b3e', layers: ['surface', 'caves'], biomes: ['desert'],
-    drops: [['chitin', 1]] },
+    drops: [['chitin', 1], ['coin', 4]] },
   { key: 'cragstalker', name: 'Crag Stalker', kind: 'crawler', hp: 48, damage: 13, weight: 8,
     w: 1.0, h: 0.8, colour: '#6e6a74', layers: ['surface'], biomes: ['highlands', 'badlands'],
-    drops: [['chitin', 1]] },
+    drops: [['chitin', 1], ['coin', 4]] },
 
   // --- jungle and mire ---------------------------------------------------------------------
   { key: 'jungleslime', name: 'Jungle Slime', kind: 'slime', hp: 40, damage: 10, weight: 9,
     w: 1.2, h: 0.95, colour: '#3f8a3a', layers: ['surface', 'caves'], biomes: ['jungle'],
-    drops: [['gel', 2]] },
+    drops: [['gel', 2], ['coin', 4]] },
   { key: 'hornet', name: 'Hornet', kind: 'flyer', hp: 44, damage: 15, weight: 8,
     w: 1.1, h: 0.8, colour: '#d9b03a', layers: ['surface', 'caves'], biomes: ['jungle'],
-    drops: [['stinger', 1]] },
+    drops: [['stinger', 1], ['coin', 4]] },
   { key: 'boglurker', name: 'Bog Lurker', kind: 'walker', hp: 50, damage: 12, weight: 8,
     w: 0.9, h: 1.5, colour: '#4a5a38', layers: ['surface'], biomes: ['marsh'],
-    drops: [['rottenflesh', 1]] },
+    drops: [['rottenflesh', 1], ['coin', 5]] },
   { key: 'mireleech', name: 'Mire Leech', kind: 'swimmer', hp: 26, damage: 9, weight: 7,
     w: 0.9, h: 0.6, colour: '#6a4450', layers: ['surface', 'caves'], biomes: ['marsh'],
-    wet: true, drops: [['rottenflesh', 1]] },
+    wet: true, drops: [['rottenflesh', 1], ['coin', 2]] },
 
   // --- shore and sea -------------------------------------------------------------------------
   { key: 'crab', name: 'Crab', kind: 'walker', hp: 22, damage: 7, weight: 10,
     w: 0.9, h: 0.6, colour: '#c05a40', layers: ['surface'], biomes: ['beach'],
-    drops: [['chitin', 1]] },
+    drops: [['chitin', 1], ['coin', 2]] },
   { key: 'jellyfish', name: 'Pink Jellyfish', kind: 'swimmer', hp: 30, damage: 10, weight: 9,
     w: 0.9, h: 1.0, colour: '#d472a8', layers: ['surface', 'caves'], biomes: ['ocean'],
-    wet: true, emit: 4, drops: [['gel', 2]] },
+    wet: true, emit: 4, drops: [['gel', 2], ['coin', 3]] },
   { key: 'shark', name: 'Shark', kind: 'swimmer', hp: 85, damage: 22, weight: 5,
     w: 2.1, h: 0.9, colour: '#6d7a85', layers: ['surface', 'caves'], biomes: ['ocean'],
-    wet: true, drops: [['finleather', 1]] },
+    wet: true, drops: [['finleather', 1], ['coin', 8]] },
 
   // --- the blights ----------------------------------------------------------------------------
   { key: 'eaterofsouls', name: 'Eater of Souls', kind: 'flyer', hp: 48, damage: 15, weight: 10,
     w: 1.0, h: 1.0, colour: '#7a5fa8', layers: ['surface', 'caves'], biomes: ['blight'],
-    drops: [['shadowscale', 1]] },
+    drops: [['shadowscale', 1], ['coin', 4]] },
   { key: 'devourer', name: 'Devourer', kind: 'worm', hp: 70, damage: 18, weight: 6,
     w: 1.0, h: 1.0, colour: '#5d4a7d', layers: ['caves', 'deep'], biomes: ['blight'],
-    drops: [['shadowscale', 1]] },
+    drops: [['shadowscale', 1], ['coin', 6]] },
   { key: 'crimera', name: 'Crimera', kind: 'flyer', hp: 50, damage: 16, weight: 10,
     w: 1.0, h: 1.0, colour: '#b0454c', layers: ['surface', 'caves'], biomes: ['crimson'],
-    drops: [['tissue', 1]] },
+    drops: [['tissue', 1], ['coin', 5]] },
   { key: 'bloodcrawler', name: 'Blood Crawler', kind: 'crawler', hp: 45, damage: 14, weight: 8,
     w: 1.0, h: 0.7, colour: '#8e2f36', layers: ['surface', 'caves'], biomes: ['crimson'],
-    drops: [['tissue', 1]] },
+    drops: [['tissue', 1], ['coin', 4]] },
 
   // --- caves ---------------------------------------------------------------------------------
   { key: 'cavebat', name: 'Cave Bat', kind: 'flyer', hp: 26, damage: 9, weight: 10,
-    w: 0.9, h: 0.7, colour: '#6a5b52', layers: ['caves'], drops: [['leather', 1]] },
+    w: 0.9, h: 0.7, colour: '#6a5b52', layers: ['caves'], drops: [['leather', 1], ['coin', 2]] },
   { key: 'giantworm', name: 'Giant Worm', kind: 'worm', hp: 40, damage: 11, weight: 7,
-    w: 0.9, h: 0.9, colour: '#9a7a66', layers: ['caves'], drops: [['wormtooth', 1]] },
+    w: 0.9, h: 0.9, colour: '#9a7a66', layers: ['caves'], drops: [['wormtooth', 1], ['coin', 4]] },
   { key: 'skeleton', name: 'Skeleton', kind: 'walker', hp: 60, damage: 16, weight: 9,
-    w: 0.8, h: 1.7, colour: '#cfc9b8', layers: ['caves', 'deep'], drops: [['bone', 2]] },
+    w: 0.8, h: 1.7, colour: '#cfc9b8', layers: ['caves', 'deep'], drops: [['bone', 2], ['coin', 5]] },
   { key: 'salamander', name: 'Salamander', kind: 'crawler', hp: 50, damage: 15, weight: 7,
-    w: 1.1, h: 0.7, colour: '#8a6a4a', layers: ['caves', 'deep'], drops: [['leather', 1]] },
+    w: 1.1, h: 0.7, colour: '#8a6a4a', layers: ['caves', 'deep'], drops: [['leather', 1], ['coin', 5]] },
   { key: 'motherslime', name: 'Mother Slime', kind: 'slime', hp: 90, damage: 14, weight: 4,
-    w: 1.5, h: 1.2, colour: '#7a8f6a', layers: ['caves', 'deep'], drops: [['gel', 4]] },
+    w: 1.5, h: 1.2, colour: '#7a8f6a', layers: ['caves', 'deep'], drops: [['gel', 4], ['coin', 8]] },
 
   // --- deep caverns --------------------------------------------------------------------------
   { key: 'giantbat', name: 'Giant Bat', kind: 'flyer', hp: 55, damage: 18, weight: 9,
-    w: 1.3, h: 0.9, colour: '#55484f', layers: ['deep'], drops: [['leather', 1]] },
+    w: 1.3, h: 0.9, colour: '#55484f', layers: ['deep'], drops: [['leather', 1], ['coin', 5]] },
   { key: 'armouredskeleton', name: 'Armoured Skeleton', kind: 'walker', hp: 110, damage: 26, weight: 6,
-    w: 0.85, h: 1.75, colour: '#8e949e', layers: ['deep'], drops: [['bone', 3]] },
+    w: 0.85, h: 1.75, colour: '#8e949e', layers: ['deep'], drops: [['bone', 3], ['coin', 10]] },
   { key: 'rockgolem', name: 'Rock Golem', kind: 'walker', hp: 150, damage: 30, weight: 3,
-    w: 1.4, h: 2.0, colour: '#5b5a62', layers: ['deep'], drops: [['stone', 8]] },
+    w: 1.4, h: 2.0, colour: '#5b5a62', layers: ['deep'], drops: [['stone', 8], ['coin', 14]] },
 
   // --- hell ----------------------------------------------------------------------------------
   { key: 'hellbat', name: 'Hellbat', kind: 'flyer', hp: 60, damage: 22, weight: 10,
-    w: 1.0, h: 0.8, colour: '#8a3a2a', layers: ['hell'], emit: 3, drops: [['cinder', 1]] },
+    w: 1.0, h: 0.8, colour: '#8a3a2a', layers: ['hell'], emit: 3, drops: [['cinder', 1], ['coin', 5]] },
   { key: 'fireimp', name: 'Fire Imp', kind: 'walker', hp: 95, damage: 28, weight: 6,
-    w: 0.85, h: 1.5, colour: '#c2543a', layers: ['hell'], emit: 4, drops: [['cinder', 2]] },
+    w: 0.85, h: 1.5, colour: '#c2543a', layers: ['hell'], emit: 4, drops: [['cinder', 2], ['coin', 9]] },
   { key: 'lavaslime', name: 'Lava Slime', kind: 'slime', hp: 70, damage: 24, weight: 7,
-    w: 1.2, h: 0.95, colour: '#e0702f', layers: ['hell'], emit: 5, drops: [['gel', 3]] },
+    w: 1.2, h: 0.95, colour: '#e0702f', layers: ['hell'], emit: 5, drops: [['gel', 3], ['coin', 6]] },
   { key: 'boneserpent', name: 'Bone Serpent', kind: 'worm', hp: 140, damage: 32, weight: 4,
-    w: 1.2, h: 1.2, colour: '#d8d2bf', layers: ['hell', 'hellcaves'], drops: [['bone', 5]] },
+    w: 1.2, h: 1.2, colour: '#d8d2bf', layers: ['hell', 'hellcaves'], drops: [['bone', 5], ['coin', 13]] },
   { key: 'demon', name: 'Demon', kind: 'flyer', hp: 120, damage: 30, weight: 5,
-    w: 1.3, h: 1.6, colour: '#9c3f6a', layers: ['hell'], drops: [['cinder', 2]] },
+    w: 1.3, h: 1.6, colour: '#9c3f6a', layers: ['hell'], drops: [['cinder', 2], ['coin', 11]] },
 
   // --- hell caves and below --------------------------------------------------------------------
   { key: 'cinderwraith', name: 'Cinder Wraith', kind: 'flyer', hp: 130, damage: 34, weight: 9,
-    w: 1.1, h: 1.5, colour: '#b5542f', layers: ['hellcaves'], emit: 5, drops: [['cinder', 3]] },
+    w: 1.1, h: 1.5, colour: '#b5542f', layers: ['hellcaves'], emit: 5, drops: [['cinder', 3], ['coin', 12]] },
   { key: 'magmacrawler', name: 'Magma Crawler', kind: 'crawler', hp: 115, damage: 30, weight: 8,
-    w: 1.2, h: 0.8, colour: '#7a3324', layers: ['hellcaves'], emit: 3, drops: [['cinder', 2]] },
+    w: 1.2, h: 0.8, colour: '#7a3324', layers: ['hellcaves'], emit: 3, drops: [['cinder', 2], ['coin', 10]] },
   { key: 'obsidianhusk', name: 'Obsidian Husk', kind: 'walker', hp: 200, damage: 38, weight: 5,
-    w: 1.2, h: 1.9, colour: '#2e2838', layers: ['hellcaves'], drops: [['obsidian', 3]] },
+    w: 1.2, h: 1.9, colour: '#2e2838', layers: ['hellcaves'], drops: [['obsidian', 3], ['coin', 18]] },
 
   // --- sky and space -----------------------------------------------------------------------------
   { key: 'harpy', name: 'Harpy', kind: 'flyer', hp: 65, damage: 19, weight: 10,
-    w: 1.2, h: 1.4, colour: '#cfb88a', layers: ['sky'], drops: [['feather', 2]] },
+    w: 1.2, h: 1.4, colour: '#cfb88a', layers: ['sky'], drops: [['feather', 2], ['coin', 6]] },
   { key: 'clouddrifter', name: 'Cloud Drifter', kind: 'flyer', hp: 40, damage: 12, weight: 7,
-    w: 1.4, h: 1.0, colour: '#dfe7f2', layers: ['sky'], drops: [['feather', 1]] },
+    w: 1.4, h: 1.0, colour: '#dfe7f2', layers: ['sky'], drops: [['feather', 1], ['coin', 4]] },
   { key: 'voidwyrm', name: 'Void Wyrm', kind: 'worm', hp: 180, damage: 36, weight: 6,
-    w: 1.3, h: 1.3, colour: '#3c3a58', layers: ['space'], drops: [['stardust', 2]] },
+    w: 1.3, h: 1.3, colour: '#3c3a58', layers: ['space'], drops: [['stardust', 2], ['coin', 16]] },
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', hp: 70, damage: 20, weight: 9,
-    w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1]] }
+    w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
 
 const ENEMY_BY_KEY = {};

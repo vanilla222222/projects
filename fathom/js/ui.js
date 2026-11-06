@@ -13,6 +13,9 @@ function makeUI(root, deps) {
   let onCraft = null;
   let chest = null;
   let onChestMove = null;
+  let shop = null;
+  let onBuy = null;
+  let onHeal = null;
   const els = {};
   let open = false;
 
@@ -89,6 +92,22 @@ function makeUI(root, deps) {
       }
       ctx.fillStyle = 'rgba(255,255,255,0.22)';
       ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
+      return canvas;
+    }
+    if (craft && item.key === 'coin') {
+      const u = size / 16;
+      ctx.fillStyle = '#b8912c';
+      ctx.beginPath();
+      ctx.arc(8 * u, 8 * u, 5.6 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#e8c650';
+      ctx.beginPath();
+      ctx.arc(8 * u, 8 * u, 4.4 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath();
+      ctx.arc(6.4 * u, 6.4 * u, 1.5 * u, 0, Math.PI * 2);
+      ctx.fill();
       return canvas;
     }
     if (craft && item.key === 'arrow') {
@@ -275,6 +294,13 @@ function makeUI(root, deps) {
     }
     el('p', 'hint', els.chestPanel).textContent = 'Click to take \u2014 shift-click to stow';
 
+    // The shop, shown while talking to a villager.
+    els.shopPanel = el('div', 'panel shop-panel', els.screen);
+    els.shopName = el('h2', null, els.shopPanel);
+    els.shopPurse = el('p', 'stations', els.shopPanel);
+    els.shopList = el('div', 'craft-list', els.shopPanel);
+    els.shopNote = el('p', 'craft-empty', els.shopPanel);
+
     const craftPanel = el('div', 'panel craft-panel', els.screen);
     el('h2', null, craftPanel).textContent = 'Crafting';
     els.craftStations = el('p', 'stations', craftPanel);
@@ -391,6 +417,44 @@ function makeUI(root, deps) {
     els.gearNote.textContent = lines.join('  \u00b7  ');
   }
 
+  function paintShop() {
+    if (!els.shopPanel) return;
+    els.shopPanel.classList.toggle('visible', !!shop);
+    if (!shop) return;
+    els.shopName.textContent = shop.who.spec.name.replace(/^the /, '');
+    els.shopPurse.textContent = shop.coins.toLocaleString() + ' coin';
+    els.shopList.textContent = '';
+    shop.who.spec.stock.forEach((entry, i) => {
+      const row = el('button', 'craft-row', els.shopList);
+      row.appendChild(iconFor({ key: entry.key, kind: craft.kindOf(entry.key) }, 30));
+      const text = el('span', 'craft-text', row);
+      el('span', 'craft-name', text).textContent = craft.nameOf(entry.key, tiles)
+        + (entry.count > 1 ? ' \u00d7' + entry.count : '');
+      const cost = el('span', 'craft-cost', text);
+      cost.textContent = entry.price.toLocaleString() + ' coin';
+      if (shop.coins < entry.price) row.classList.add('unaffordable');
+      row.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (onBuy) onBuy(i);
+      });
+    });
+    if (shop.who.spec.heals) {
+      const row = el('button', 'craft-row', els.shopList);
+      const text = el('span', 'craft-text', row);
+      el('span', 'craft-name', text).textContent = 'Heal me';
+      el('span', 'craft-cost', text).textContent =
+        shop.who.spec.healPrice.toLocaleString() + ' coin';
+      row.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (onHeal) onHeal();
+      });
+    }
+    els.shopNote.textContent = shop.who.spec.stock.length || shop.who.spec.heals
+      ? '' : 'Nothing for sale.';
+  }
+
   function paintChest() {
     if (!els.chestPanel) return;
     els.chestPanel.classList.toggle('visible', !!chest);
@@ -424,6 +488,7 @@ function makeUI(root, deps) {
       paintCrafting(state);
       paintChest();
       paintGear(state);
+      paintShop();
     }
     const held = inventory.held;
     els.held.textContent = '';
@@ -464,6 +529,10 @@ function makeUI(root, deps) {
     setMessage(text) { if (els.message) els.message.textContent = text; },
     set onCraft(fn) { onCraft = fn; },
     set onChestMove(fn) { onChestMove = fn; },
+    set onBuy(fn) { onBuy = fn; },
+    set onHeal(fn) { onHeal = fn; },
+    openShop(who, purse) { shop = { who, coins: purse.coins }; },
+    closeShop() { shop = null; },
     openChest(box) { chest = box; craftSignature = null; },
     closeChest() { chest = null; },
     get chest() { return chest; },

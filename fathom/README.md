@@ -90,6 +90,8 @@ the cost of one small canvas.
 | `js/liquid.js` | Flowing water: levels, the active set, the budget |
 | `js/loot.js` | Chest tables, rolled from position rather than stored |
 | `js/minimap.js` | The map, and what the player has revealed of it |
+| `js/housing.js` | Room detection and what makes a room a home |
+| `js/villager.js` | Who moves in, when, and what they sell |
 | `js/enemy.js` | 40 enemies, six behaviours, spawn pools per biome and layer |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |

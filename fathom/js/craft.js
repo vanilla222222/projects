@@ -48,7 +48,8 @@ const ITEMS = {
   finleather: { name: 'Shark Fin', kind: 'loot', colour: '#7b8792' },
   cinder: { name: 'Cinder', kind: 'loot', colour: '#d2622f' },
   stardust: { name: 'Stardust', kind: 'loot', colour: '#aab4f0' },
-  arrow: { name: 'Arrow', kind: 'ammo', colour: '#b9a271' }
+  arrow: { name: 'Arrow', kind: 'ammo', colour: '#b9a271' },
+  coin: { name: 'Coin', kind: 'coin', colour: '#d8b43c' }
 };
 
 // Armour. Four pieces rather than Terraria's three, because boots were asked for. Every

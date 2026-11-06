@@ -9,7 +9,7 @@ const PICKUP_RANGE = 2.2;
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
-    minimap: minimapModule,
+    minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
@@ -28,6 +28,8 @@ function makeGame(canvas, deps) {
   let liquid = null;
   let swarm = null;
   let minimap = null;
+  let village = null;
+  let talking = null;
   let swingCooldown = 0;
   let openChest = null;
   let characterId = null;
@@ -376,6 +378,7 @@ function makeGame(canvas, deps) {
   }
 
   function respawnPlayer() {
+    state.progress.deaths += 1;
     statsModule.respawn(stats);
     const spot = state.spawn || defaultSpawn();
     state.player.x = spot.x;
@@ -452,6 +455,80 @@ function makeGame(canvas, deps) {
 
   // Sleeping sets where you come back. In an infinite world this is the difference
   // between dying and losing an afternoon's walk.
+  // Talk to whoever is standing nearby. Checked before the tile under the cursor,
+  // because walking up to somebody and clicking is how a player expects to start a
+  // conversation, not aiming at their feet.
+  function talkTo() {
+    if (!village) return false;
+    const who = village.nearest(state.player.x + state.player.width / 2,
+      state.player.y + state.player.height / 2);
+    if (!who) return false;
+    if (talking && talking.key === who.key) {
+      talking = null;
+      ui.closeShop();
+      return true;
+    }
+    talking = who;
+    ui.openShop(who, { coins: inventory.countOf('coin') });
+    ui.setOpen(true);
+    say(who.spec.greeting, 4);
+    return true;
+  }
+
+  function buyFrom(index) {
+    if (!talking) return;
+    const entry = talking.spec.stock[index];
+    if (!entry) return;
+    if (inventory.countOf('coin') < entry.price) {
+      say('Not enough coin', 1.2);
+      return;
+    }
+    const left = inventory.add({ key: entry.key, kind: craft.kindOf(entry.key) }, entry.count);
+    if (left > 0) {
+      inventory.take(entry.key, entry.count - left);
+      say('No room for that', 1.2);
+      return;
+    }
+    inventory.take('coin', entry.price);
+    say('Bought ' + craft.nameOf(entry.key, tiles), 1.2);
+    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    ui.sync(state);
+  }
+
+  function healFrom() {
+    if (!talking || !talking.spec.heals) return;
+    if (stats.health >= stats.maxHealth) {
+      say('You are unhurt', 1.2);
+      return;
+    }
+    if (inventory.countOf('coin') < talking.spec.healPrice) {
+      say('Not enough coin', 1.2);
+      return;
+    }
+    inventory.take('coin', talking.spec.healPrice);
+    statsModule.heal(stats, stats.maxHealth);
+    say('Patched up', 1.4);
+    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    ui.sync(state);
+  }
+
+  // Ask whether the room the player is standing in is a house, and move somebody in if
+  // it is. The answer is a list of what is missing, which is the useful form.
+  function checkHousing() {
+    if (!village) return;
+    const result = village.settle(state.progress,
+      state.player.x + state.player.width / 2, state.player.y);
+    if (result.moved) {
+      say(result.moved.spec.name + ' has moved in', 3);
+      return;
+    }
+    if (!result.room.valid) {
+      say('Not a home: ' + result.room.problems[0], 3.5);
+      return;
+    }
+    say('A fine room, but nobody new wants it yet', 3);
+  }
+
   function useBed(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.bed) return false;
@@ -530,6 +607,7 @@ function makeGame(canvas, deps) {
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    if (talkTo()) return;
     if (aim0.inReach && useBed(aim0)) return;
     if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
@@ -603,10 +681,17 @@ function makeGame(canvas, deps) {
       const dy = openChest.y - state.player.y;
       if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
     }
+    if (talking && !ui.isOpen) { talking = null; ui.closeShop(); }
 
     // Revealed from the simulation rather than the draw, so the map fills in whether or
     // not the player is looking at it.
     if (minimap) minimap.reveal(world, state.player.x, state.player.y);
+
+    if (village) village.step(dt);
+    // What the player has done, which is what decides who is willing to move in.
+    const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
+    if (depth > state.progress.deepest) state.progress.deepest = depth;
+    state.progress.coins = inventory.countOf('coin');
 
     const gear = currentEffects();
     state.gear = gear;
@@ -777,6 +862,11 @@ function makeGame(canvas, deps) {
         ev.preventDefault();
         return;
       }
+      if (ev.code === 'KeyH') {
+        checkHousing();
+        ev.preventDefault();
+        return;
+      }
       if (ev.code === 'KeyM' && minimap) {
         minimap.setLarge(!minimap.isLarge);
         ev.preventDefault();
@@ -846,6 +936,7 @@ function makeGame(canvas, deps) {
       world: world.serialize(),
       dayPhase: state.dayPhase,
       spawn: state.spawn || null,
+      villagers: village ? village.serialize() : [],
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
     });
@@ -872,12 +963,19 @@ function makeGame(canvas, deps) {
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
       { tiles, worldgen });
+    village = villagerModule.makeVillage(world, tiles, { housing });
+    if (worldRecord.villagers) village.restore(worldRecord.villagers);
+    state.villagers = village.list;
+    state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
+      characterRecord.progress || {});
     state.enemies = swarm.list;
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
       { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
     ui.onChestMove = chestMove;
+    ui.onBuy = buyFrom;
+    ui.onHeal = healFrom;
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
@@ -994,7 +1092,8 @@ function makeGame(canvas, deps) {
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, useBedAt, chestMove, get openChest() { return openChest; },
+    useDoorAt, useChestAt, useBedAt, chestMove, checkHousing, talkTo, buyFrom,
+    get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },

@@ -491,3 +491,33 @@ and a corrupt entry costs a patch of revealed map rather than refusing to load t
 `revealAround` is a free function rather than a method on the map, because it is pure
 logic with no canvas in it and the alternative is a test that needs a DOM to check the
 shape of a disc.
+
+## Housing and villagers
+
+A room is a sealed pocket of air with a background behind it and the right furniture in
+it, and finding one is a flood fill that is allowed to fail. The important property is
+that the fill is **bounded**: started in an open cave, a naive version walks the whole
+world, so it stops at a tile budget and reports "not sealed", which is both the correct
+answer and the cheap one. Validating open ground takes under a millisecond.
+
+Requirements follow Terraria's - an enclosed area between 50 and 750 tiles, a background
+on every tile of it, a door or platform to get in by, a light, a flat surface and
+something to sit on - and each is reported **separately**, because a house that fails is
+a house the player wants to be told how to fix. Press **H** inside a room to be told.
+
+An open door still seals a room. That is what lets a house have a way in without leaking
+into the world, and it falls out of treating doors as walls for the purposes of the fill
+rather than as a special case.
+
+**Who moves in** is a question about progress; **where they live** is a question about
+buildings. Keeping those apart keeps both testable. The Guide comes as soon as there is a
+room; the Merchant wants 250 coins carried; the Smith wants 40 bars smelted; the Nurse
+arrives after you have died once; the Delver after you have been 700 tiles down. So the
+roster arrives in an order that follows what the player has actually done.
+
+Villagers are deliberately not enemies with the sign flipped: they have a home, stay near
+it, walk rather than chase, turn back at drops, and cannot be hit.
+
+**Coins** come from everything that dies, scaled to what it was - a slime is pocket
+change, an obsidian husk is a day's wages - and from chests. What you kill is what pays
+for what you buy.

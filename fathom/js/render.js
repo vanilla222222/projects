@@ -289,6 +289,32 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  // Villagers, drawn like the player rather than like an enemy: they are people.
+  function drawVillagers(state, view) {
+    if (!state.villagers || state.villagers.length === 0) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    for (const v of state.villagers) {
+      const sx = (v.x - x0) * size - offsetX;
+      const sy = (v.y - y0) * size - offsetY;
+      const w = v.width * size;
+      const h = v.height * size;
+      ctx.save();
+      ctx.fillStyle = v.spec.colour;
+      ctx.fillRect(sx, sy + h * 0.3, w, h * 0.7);           // body
+      ctx.fillStyle = '#d7b091';
+      ctx.fillRect(sx + w * 0.12, sy + h * 0.06, w * 0.76, h * 0.26);   // head
+      ctx.fillStyle = v.spec.hair;
+      ctx.fillRect(sx + w * 0.12, sy + h * 0.04, w * 0.76, h * 0.1);    // hair
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      const ex = v.facing > 0 ? sx + w * 0.58 : sx + w * 0.26;
+      ctx.fillRect(ex, sy + h * 0.16, Math.max(1, w * 0.1), Math.max(1, h * 0.06));
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(sx, sy + h * 0.86, w, h * 0.14);
+      ctx.restore();
+    }
+  }
+
   function drawLighting(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const margin = 6;
@@ -492,6 +518,7 @@ function makeRenderer(canvas, deps) {
     drawTiles(state, view);
     drawDrops(state, view);
     drawEnemies(state, view);
+    drawVillagers(state, view);
     drawPlayer(state, view);
     drawLighting(state, view);
     drawCarriedLight(state, view);

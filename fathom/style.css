@@ -524,3 +524,10 @@ html, body {
   #minimap { display: none; }
   #minimap.large { display: block; }
 }
+
+/* A villager's stock, shown while you are talking to them. */
+.shop-panel { padding: 14px; pointer-events: auto; width: 260px; display: none; }
+.shop-panel.visible { display: block; }
+.shop-panel .craft-list { max-height: 320px; }
+.craft-row.unaffordable { opacity: 0.45; }
+.craft-row.unaffordable .craft-cost { color: #c2695f; }

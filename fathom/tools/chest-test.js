@@ -23,7 +23,7 @@ for (const key of loot.allLootKeys()) {
   const named = craft.nameOf(key, tiles);
   ok(named !== key, 'loot item ' + key + ' has no readable name');
   const kind = craft.kindOf(key);
-  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'loot'].includes(kind),
+  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'loot', 'coin', 'accessory'].includes(kind),
     'loot item ' + key + ' has unknown kind ' + kind);
 }
 for (const [name, table] of Object.entries(loot.TABLES)) {
