@@ -531,3 +531,27 @@ html, body {
 .shop-panel .craft-list { max-height: 320px; }
 .craft-row.unaffordable { opacity: 0.45; }
 .craft-row.unaffordable .craft-cost { color: #c2695f; }
+
+/* Item tooltips. A panel rather than the browser's title attribute, which waits a second,
+   cannot be styled, and shows one line where most items now need four. */
+.tip {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  max-width: 260px;
+  padding: 8px 10px;
+  border: 1px solid #39405a;
+  border-radius: 6px;
+  background: rgba(14, 17, 26, 0.95);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  line-height: 1.45;
+  color: #cfd6e4;
+}
+.tip-name {
+  display: block;
+  margin-bottom: 3px;
+  color: #f2e7c9;
+  font-size: 14px;
+}
+.tip-body { white-space: pre-line; color: #9aa6bd; }

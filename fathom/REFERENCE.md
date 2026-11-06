@@ -802,3 +802,33 @@ Meteor bars make a sword, a blaster and a suit. The Meteoric set bonus takes 40%
 every spell, and the blaster is deliberately fast and cheap rather than hard-hitting, so
 wearing the set with it makes magic nearly free - which is Terraria's joke about the
 Space Gun and worth keeping.
+
+## Saying what things do
+
+By this point the game had four armour sets whose entire purpose is one number, two dozen
+accessories that each change one, three damage classes and two mana statistics - and none
+of it was visible anywhere. A slot's tooltip was the browser's `title` attribute holding
+the item's name, and the equipment panel reported defence, speed, mining and little else.
+A stat the player cannot see is a stat that does not exist.
+
+`craft.describe(key, tiles)` returns a name and a few lines for anything the player can
+hold: the class, damage, swing time and reach of a weapon; the mana a staff costs; the
+defence of a piece of armour and the bonus its full set grants; what an accessory does and
+whether it can only be dropped; what a use item does; what a wall is for; what pickaxe
+power a tile needs. It lives in craft.js rather than in the interface because what an item
+does is a fact about the item - and because a function returning lines of text can be
+tested and a panel of DOM cannot.
+
+The test walks every tile, wall, item, weapon, armour piece, accessory and tool in the
+game and requires each to produce at least one line, no line to contain `undefined`, `NaN`
+or `[object Object]`, and the lines to actually carry the thing that matters for that kind.
+Every drop-only item must admit that it only drops, which is the only hint the player ever
+gets that it exists.
+
+The tooltip itself is a floating panel rather than `title`, which waits a second, cannot be
+styled and shows one line where most items now need four. The gear panel reports the three
+damage classes, mana cost, mana regeneration, arrow speed, swing speed and pickup reach.
+
+Icons too: twenty-five accessories were all the same grey square. Accessories are a tinted
+pendant, staffs are a shaft with their own bolt colour on the end, use items are a flask,
+and hooks are a barbed head on a chain.

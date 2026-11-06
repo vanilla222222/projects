@@ -139,6 +139,26 @@ function makeUI(root, deps) {
       ctx.stroke();
       return canvas;
     }
+    if (craft && craft.WEAPONS[item.key] && craft.WEAPONS[item.key].magic) {
+      // A staff: a shaft with the gem it is made of on the end, in that gem's colour.
+      const u = size / 16;
+      const w = craft.WEAPONS[item.key];
+      ctx.strokeStyle = '#7a5a36';
+      ctx.lineWidth = 1.6 * u;
+      ctx.beginPath();
+      ctx.moveTo(4 * u, 14 * u);
+      ctx.lineTo(10 * u, 5 * u);
+      ctx.stroke();
+      ctx.fillStyle = w.bolt || '#9b59d0';
+      ctx.beginPath();
+      ctx.arc(11 * u, 4 * u, 3.1 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(10 * u, 3 * u, 1.1 * u, 0, Math.PI * 2);
+      ctx.fill();
+      return canvas;
+    }
     if (craft && craft.WEAPONS[item.key]) {
       // A sword: blade, crossguard, grip. Tier shows in the blade colour.
       const u = size / 16;
@@ -176,7 +196,75 @@ function makeUI(root, deps) {
       ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
       return canvas;
     }
+    // Accessories. Twenty-five of them, and every one was the same grey square: a
+    // pendant on a chain, tinted, is enough to tell them apart at a glance.
+    const acc = craft && craft.ACCESSORIES[item.key];
+    if (acc) {
+      const u = size / 16;
+      ctx.strokeStyle = '#c9b06a';
+      ctx.lineWidth = 1.4 * u;
+      ctx.beginPath();
+      ctx.arc(8 * u, 7 * u, 4.2 * u, Math.PI * 0.86, Math.PI * 0.14);
+      ctx.stroke();
+      ctx.fillStyle = acc.colour;
+      ctx.beginPath();
+      ctx.moveTo(8 * u, 8 * u);
+      ctx.lineTo(11.5 * u, 11 * u);
+      ctx.lineTo(8 * u, 14.5 * u);
+      ctx.lineTo(4.5 * u, 11 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath();
+      ctx.moveTo(8 * u, 8 * u);
+      ctx.lineTo(8 * u, 11 * u);
+      ctx.lineTo(4.5 * u, 11 * u);
+      ctx.closePath();
+      ctx.fill();
+      return canvas;
+    }
+    // A hook: a shaft with two barbs and a length of chain.
+    const hooked = craft && craft.grappleOf(item);
+    if (hooked) {
+      const u = size / 16;
+      ctx.strokeStyle = '#7d848f';
+      ctx.lineWidth = 1.2 * u;
+      ctx.beginPath();
+      ctx.moveTo(3 * u, 14 * u);
+      ctx.lineTo(8 * u, 8 * u);
+      ctx.stroke();
+      ctx.fillStyle = '#cfd6e0';
+      ctx.beginPath();
+      ctx.moveTo(8 * u, 9 * u);
+      ctx.lineTo(13 * u, 3 * u);
+      ctx.lineTo(11 * u, 8 * u);
+      ctx.lineTo(13 * u, 10 * u);
+      ctx.lineTo(7 * u, 11 * u);
+      ctx.closePath();
+      ctx.fill();
+      return canvas;
+    }
     const itemSpec = craft && craft.ITEMS[item.key];
+    // Something used rather than worn: a flask, so a crystal and a salve do not look
+    // like bars of metal.
+    if (itemSpec && itemSpec.use) {
+      const u = size / 16;
+      ctx.fillStyle = '#bcc6d4';
+      ctx.fillRect(6.5 * u, 2 * u, 3 * u, 3 * u);
+      ctx.fillStyle = itemSpec.colour;
+      ctx.beginPath();
+      ctx.moveTo(6 * u, 5 * u);
+      ctx.lineTo(10 * u, 5 * u);
+      ctx.lineTo(13 * u, 12 * u);
+      ctx.lineTo(11 * u, 14.5 * u);
+      ctx.lineTo(5 * u, 14.5 * u);
+      ctx.lineTo(3 * u, 12 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(5 * u, 7 * u, 1.5 * u, 5 * u);
+      return canvas;
+    }
     if (itemSpec) {
       // An ingot: a stubby trapezoid with a lit top edge, so bars read apart from blocks.
       const u = size / 16;
@@ -219,6 +307,7 @@ function makeUI(root, deps) {
       sync();
     });
     node.addEventListener('contextmenu', (ev) => ev.preventDefault());
+    watchSlot(node, () => inventory.slots[index]);
     return node;
   }
 
@@ -290,6 +379,7 @@ function makeUI(root, deps) {
         ev.stopPropagation();
         if (onChestMove) onChestMove(i, ev.shiftKey);
       });
+      watchSlot(node, () => (chest && chest[i]) || null);
       els.chestSlots.push(node);
     }
     el('p', 'hint', els.chestPanel).textContent = 'Click to take \u2014 shift-click to stow';
@@ -325,6 +415,42 @@ function makeUI(root, deps) {
     return els;
   }
 
+  // The tooltip. A floating panel rather than the browser's `title`, which waits a
+  // second, cannot be styled and shows only one line - and by now most of what an item
+  // does is in the lines underneath the name.
+  function ensureTip() {
+    if (els.tip) return els.tip;
+    els.tip = el('div', 'tip', root);
+    els.tipName = el('strong', 'tip-name', els.tip);
+    els.tipBody = el('span', 'tip-body', els.tip);
+    els.tip.style.display = 'none';
+    return els.tip;
+  }
+
+  function showTip(item, x, y) {
+    if (!item || !craft) { hideTip(); return; }
+    const tip = ensureTip();
+    const said = craft.describe(item.key, tiles);
+    els.tipName.textContent = said.name;
+    els.tipBody.textContent = said.lines.join('\n');
+    tip.style.display = 'block';
+    // Kept inside the window: a tooltip that runs off the right edge is worse than none.
+    const w = tip.offsetWidth || 180;
+    const h = tip.offsetHeight || 60;
+    tip.style.left = Math.min(x + 14, window.innerWidth - w - 8) + 'px';
+    tip.style.top = Math.max(6, Math.min(y + 16, window.innerHeight - h - 8)) + 'px';
+  }
+
+  function hideTip() {
+    if (els.tip) els.tip.style.display = 'none';
+  }
+
+  // Every slot in the game reports what it is holding, wherever it lives.
+  function watchSlot(node, pick) {
+    node.addEventListener('mousemove', (ev) => showTip(pick(), ev.clientX, ev.clientY));
+    node.addEventListener('mouseleave', hideTip);
+  }
+
   function paintSlot(node, index) {
     const item = inventory.slots[index];
     const icon = node.querySelector('.icon');
@@ -333,7 +459,7 @@ function makeUI(root, deps) {
       icon.textContent = '';
       if (item) icon.appendChild(iconFor(item, 30));
       node.dataset.key = item ? item.key : '';
-      node.title = item ? nameOf(item) : '';
+      node.title = '';
     }
     count.textContent = item && item.count > 1 ? String(item.count) : '';
     node.classList.toggle('filled', !!item);
@@ -414,6 +540,18 @@ function makeUI(root, deps) {
     }
     if (gear.fallMul !== 1) lines.push('Falls x' + gear.fallMul);
     if (gear.glow) lines.push('Glowing');
+    // The three damage classes and the two numbers that decide whether magic is worth
+    // using. Four armour sets and a dozen accessories exist only to change these, and
+    // none of them showed up here at all.
+    if (gear.melee !== 1) lines.push('Melee ' + Math.round(gear.melee * 100) + '%');
+    if (gear.ranged !== 1) lines.push('Ranged ' + Math.round(gear.ranged * 100) + '%');
+    if (gear.magic !== 1) lines.push('Magic ' + Math.round(gear.magic * 100) + '%');
+    if (gear.manaCost !== 1) lines.push('Mana cost ' + Math.round(gear.manaCost * 100) + '%');
+    if (gear.manaRegen !== 1) lines.push('Mana returns ' + Math.round(gear.manaRegen * 100) + '%');
+    if (gear.arrowSpeed !== 1) lines.push('Arrows ' + Math.round(gear.arrowSpeed * 100) + '%');
+    if (gear.swing !== 1) lines.push('Swing ' + Math.round(gear.swing * 100) + '%');
+    if (gear.pickup !== 1) lines.push('Reach for drops ' + Math.round(gear.pickup * 100) + '%');
+    if (gear.slimeFriend) lines.push('Slimes ignore you');
     els.gearNote.textContent = lines.join('  \u00b7  ');
   }
 
@@ -513,6 +651,7 @@ function makeUI(root, deps) {
   }
 
   function setOpen(value) {
+    hideTip();
     open = value;
     craftSignature = null;
     els.screen.classList.toggle('visible', open);

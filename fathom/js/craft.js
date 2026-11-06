@@ -337,6 +337,95 @@ function grappleOf(item) {
   return spec && spec.grapple ? spec.grapple : null;
 }
 
+// What an item is, in words, for the tooltip. A stat the player cannot see is a stat
+// that does not exist: by this point the game has four armour sets whose whole purpose is
+// a number, and two dozen accessories that each change one, and none of it was legible.
+//
+// It lives here rather than in the interface because what an item does is a fact about
+// the item, and because a function that returns lines of text can be tested and a panel
+// of DOM cannot.
+function describe(key, tilesModule) {
+  const lines = [];
+  const kind = kindOf(key);
+  const weapon = WEAPONS[key];
+  if (weapon) {
+    const cls = classOf(weapon);
+    lines.push(cls === 'magic' ? 'Magic weapon'
+      : (cls === 'ranged' ? 'Ranged weapon' : 'Melee weapon'));
+    lines.push(weapon.damage + ' damage');
+    lines.push(weapon.useTime.toFixed(2) + 's per swing');
+    if (cls === 'melee') lines.push(weapon.reach.toFixed(1) + ' tiles of reach');
+    else lines.push(weapon.reach + ' tiles of range');
+    if (weapon.mana) lines.push(weapon.mana + ' mana a shot');
+    if (weapon.ammo) lines.push('Fires the best arrow you carry');
+    if (weapon.drop) lines.push('Only dropped, never made');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const armour = ARMOUR[key];
+  if (armour) {
+    const tier = ARMOUR_TIERS.find(t => t.key === armour.tier);
+    lines.push('Armour, worn on the ' + armour.slot);
+    lines.push(armour.defense + ' defence');
+    if (tier && tier.bonus) lines.push('Full set: ' + tier.bonus.text);
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const acc = ACCESSORIES[key];
+  if (acc) {
+    lines.push('Accessory');
+    if (acc.text) lines.push(acc.text);
+    if (acc.drop) lines.push('Only dropped, never made');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const item = ITEMS[key];
+  if (item && item.grapple) {
+    lines.push('Grappling hook');
+    lines.push(item.grapple.range + ' tiles of rope');
+    lines.push('Press G to fire, G again to let go');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  if (item && item.use) {
+    lines.push('Used where you stand');
+    if (item.text) lines.push(item.text);
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  if (AMMO[key]) {
+    lines.push('Ammunition');
+    lines.push(AMMO[key].bonus > 0 ? '+' + AMMO[key].bonus + ' damage' : 'The plain sort');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const tool = CRAFT_TOOLS[key];
+  if (tool) {
+    lines.push(tool.job === 'axe' ? 'Axe' : (tool.job === 'hammer' ? 'Hammer' : 'Pickaxe'));
+    lines.push('Power ' + tool.power);
+    lines.push(tool.useTime.toFixed(2) + 's per swing');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  // Walls are the background layer: they are what is left behind when a block is mined
+  // out, and what stops enemies spawning in a room you built.
+  const wallSpec = CRAFT_WALLS[key];
+  if (wallSpec) {
+    lines.push('Background wall');
+    lines.push('Stops things spawning in the room behind it');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const tile = tilesModule && tilesModule.BY_KEY[key];
+  if (tile) {
+    if (tile.climb) lines.push('Climb it with jump and crouch');
+    else if (tile.station) lines.push('Crafting station: ' + tile.station);
+    else if (tile.solid) lines.push('A block you can place');
+    else lines.push('Placed, but nothing stands on it');
+    if (tile.emit) lines.push('Gives off light');
+    if (tile.require) lines.push('Needs a pickaxe of power ' + tile.require);
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  if (item) {
+    lines.push(kind === 'bar' ? 'A bar, for making things'
+      : (kind === 'coin' ? 'Spend it with a villager' : 'A material'));
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  return { name: nameOf(key, tilesModule), kind, lines };
+}
+
 // Which class a weapon belongs to, which decides which multiplier it is scaled by. Read
 // off the weapon rather than stored on it, so a new weapon cannot forget to declare one.
 function classOf(weapon) {
@@ -648,7 +737,7 @@ function nameOf(key, tiles) {
 const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
-    classOf, dropOnly, AMMO, bestAmmo, grappleOf };
+    classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_craft;
