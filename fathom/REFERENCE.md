@@ -228,3 +228,27 @@ stamped structure has to be scanned for from neighbouring chunks and the margin 
 exceed its half-width; an island forty tiles wide would need a margin three times the
 trees'. A structure that is a pure function of position cannot disagree across a seam at
 all.
+
+## Enemies
+
+Forty enemies, drawn from Terraria's roster where Fathom has the same biome and invented
+where it does not. Six shared behaviours carry all of them: slimes hop, walkers walk and
+step up a tile, flyers home in with a bob, swimmers only move in liquid, crawlers cling,
+and worms swim through rock.
+
+A spawn is chosen from a weighted pool keyed on biome, layer, day/night and whether the
+spot is underwater. An empty pool means nothing spawns, which is how a safe place stays
+safe without a special case.
+
+Two rules are taken straight from Terraria. Spawning happens in a ring outside what the
+player can see. And **a player-placed wall suppresses spawning**, which is what makes
+building a shelter worth doing - the world already records which walls those are, because
+"the player put it there" is exactly the wall edit diff, so it costs no extra storage.
+
+Density was measured, not guessed. At nine simultaneous enemies spawning every 1.6
+seconds the cap was reached in every trial and the surface felt swarmed, while a character
+standing still and doing nothing still survived past three minutes because regeneration
+outpaced the damage. Six and 2.8 seconds keeps the pressure without the crowd.
+
+Swords are separate from pickaxes. A pickaxe will hurt something, at 30% of its power and
+one and a half times its swing time, which is the argument for making a sword.

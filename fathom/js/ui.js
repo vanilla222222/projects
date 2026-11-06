@@ -58,6 +58,27 @@ function makeUI(root, deps) {
       ctx.fillRect(4 * u, 6 * u, 1 * u, 7 * u);
       return canvas;
     }
+    if (craft && craft.WEAPONS[item.key]) {
+      // A sword: blade, crossguard, grip. Tier shows in the blade colour.
+      const u = size / 16;
+      const tier = Object.keys(craft.WEAPONS).indexOf(item.key);
+      const blades = ['#8a6a42', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
+      ctx.fillStyle = blades[tier] || '#aab';
+      ctx.beginPath();
+      ctx.moveTo(12 * u, 2 * u);
+      ctx.lineTo(14 * u, 4 * u);
+      ctx.lineTo(6 * u, 12 * u);
+      ctx.lineTo(4 * u, 10 * u);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillRect(11 * u, 3 * u, 2 * u, 1 * u);
+      ctx.fillStyle = '#6b4a2c';
+      ctx.fillRect(3 * u, 11 * u, 4 * u, 2 * u);
+      ctx.fillStyle = '#9a8248';
+      ctx.fillRect(2 * u, 9 * u, 5 * u, 1.6 * u);
+      return canvas;
+    }
     if (mining && mining.isTool(item)) {
       const u = size / 16;
       ctx.fillStyle = '#6b4a2c';

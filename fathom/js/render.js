@@ -233,6 +233,47 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  // Enemies are drawn as a body, a darker underside and a pair of eyes facing the way
+  // they are moving. Flat colour per species reads better at this scale than detail does,
+  // and the eyes are what make a shape look like it wants something.
+  function drawEnemies(state, view) {
+    if (!state.enemies || state.enemies.length === 0) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    for (const enemy of state.enemies) {
+      const sx = (enemy.x - x0) * size - offsetX;
+      const sy = (enemy.y - y0) * size - offsetY;
+      const w = enemy.width * size;
+      const h = enemy.height * size;
+      ctx.save();
+      if (enemy.hurt > 0) ctx.globalAlpha = 0.55 + 0.45 * Math.sin(enemy.hurt * 90);
+      ctx.fillStyle = enemy.spec.colour;
+      ctx.fillRect(sx, sy, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.26)';
+      ctx.fillRect(sx, sy + h * 0.66, w, h * 0.34);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(sx, sy, w, Math.max(1, h * 0.12));
+
+      const eye = Math.max(2, Math.round(size * 0.13));
+      const ey = sy + h * 0.28;
+      const ex = enemy.facing > 0 ? sx + w * 0.56 : sx + w * 0.44 - eye;
+      ctx.fillStyle = '#f6f1e2';
+      ctx.fillRect(ex, ey, eye, eye);
+      ctx.fillStyle = '#231c22';
+      ctx.fillRect(ex + (enemy.facing > 0 ? eye * 0.4 : 0), ey + eye * 0.25, eye * 0.6, eye * 0.6);
+
+      // A health bar, but only once it has been hurt: an untouched enemy needs no UI.
+      if (enemy.hp < enemy.maxHp) {
+        const frac = Math.max(0, enemy.hp / enemy.maxHp);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(sx, sy - 7, w, 4);
+        ctx.fillStyle = '#d2564e';
+        ctx.fillRect(sx + 1, sy - 6, (w - 2) * frac, 2);
+      }
+      ctx.restore();
+    }
+  }
+
   function drawLighting(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const margin = 6;
@@ -413,6 +454,7 @@ function makeRenderer(canvas, deps) {
     drawWalls(state, view);
     drawTiles(state, view);
     drawDrops(state, view);
+    drawEnemies(state, view);
     drawPlayer(state, view);
     drawLighting(state, view);
     drawBloom(state, view);
