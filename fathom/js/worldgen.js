@@ -73,9 +73,9 @@ const BIOMES = [
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
   { key: 'ocean', name: 'Ocean', temp: -1, moist: -1, bias: 0, cave: 'caverns', drowned: true,
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
-  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'blighttrunk',
+  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'shadelog',
     surface: 'blightgrass', filler: 'dirt', sub: 'blight', wall: 'blightwall', tree: 'blighted', grass: false, overlay: true },
-  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'fleshtrunk',
+  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'crimlog',
     surface: 'fleshgrass', filler: 'dirt', sub: 'flesh', wall: 'fleshwall', tree: 'blighted', grass: false, overlay: true }
 ];
 
@@ -584,6 +584,7 @@ function stratum(seed, x, y, depth, column) {
 }
 
 const ORE_BANDS = [
+  { key: 'tin', from: 12, to: 300, salt: 1151, rarity: 0.786, size: 0.088 },
   { key: 'copper', from: 20, to: 360, salt: 1201, rarity: 0.782, size: 0.085 },
   { key: 'iron', from: 60, to: 520, salt: 1301, rarity: 0.796, size: 0.08 },
   { key: 'silver', from: 180, to: 680, salt: 1401, rarity: 0.818, size: 0.072 },
@@ -801,6 +802,13 @@ function baseTileAt(seed, x, y) {
   return idOf(layer);
 }
 
+// Which lumber each tree species is made of. A blighted tree takes its wood from the
+// biome instead, since the same bare shape grows in both blights.
+const TREE_LOG = {
+  oak: 'oaklog', pine: 'pinelog', jungle: 'mahoganylog', acacia: 'acacialog',
+  blighted: 'shadelog'
+};
+
 const TREES = {
   oak: { height: [6, 10], spacing: 11, canopy: 4, chance: 0.5 },
   pine: { height: [9, 14], spacing: 10, canopy: 3, chance: 0.55, conifer: true },
@@ -826,7 +834,7 @@ function treeAt(seed, x) {
   const root = column.height;
   if (baseTileAt(seed, x, root) !== idOf(biome.surface)) return null;
   return { x, root, height, canopy: spec.canopy, kind: biome.tree, spec,
-    trunk: biome.trunk || 'trunk' };
+    trunk: biome.trunk || TREE_LOG[biome.tree] || 'oaklog' };
 }
 
 // The canopy is an egg, wider above the trunk top than below it, with its edge eroded by a
@@ -998,7 +1006,7 @@ function skyTileAt(seed, x, y) {
 }
 
 function stampTree(write, seed, tree) {
-  const trunk = idOf(tree.trunk || 'trunk');
+  const trunk = idOf(tree.trunk || 'oaklog');
   const leaf = idOf('leaves');
   const spec = tree.spec || TREES[tree.kind] || {};
   for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
@@ -1247,7 +1255,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, layerAt, altitudeOf, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,

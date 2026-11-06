@@ -342,3 +342,42 @@ Three rules kept them honest, and each came from a failure: never in hell, never
 the sea, and never poking out of a hillside. A structure is anchored to its own column's
 surface, so over a neighbouring valley it could reach above the ground there and carve a
 hole in the open hillside; it has to stay buried at every column it spans.
+
+## Wood species, tools and armour
+
+**Six wood species**, one per tree: oak, pine, mahogany, acacia, shadewood and crimwood.
+Each has its own log, block, background, platform, door, chair, table and work bench -
+forty-eight tiles, generated from a table rather than written out, because six times
+eight near-identical entries is forty-eight chances to make one of them different by
+accident.
+
+Tools and armour deliberately do **not** depend on species. A recipe ingredient beginning
+with `#` is a tag: `#wood` matches any species' lumber, so a pickaxe can be made from
+whichever tree happened to be nearest. Gating a pickaxe on finding one particular tree
+would be tedious rather than interesting.
+
+**Three tool jobs**, as in Terraria: a pickaxe breaks blocks, an axe fells trees, a hammer
+takes down background walls. Holding the wrong one does nothing. That is what makes the
+starting set - tin pickaxe, axe, hammer and sword - a set rather than four copies of the
+same thing, and it finally implements the wall rule this file recorded long ago.
+
+**Tin** sits below copper: a shallow ore and the metal the player begins with.
+
+**Platforms** are one-way. The collision test needs the body's position before the move as
+well as after, because landing on a platform is the condition that the feet were above the
+deck and are now below. Checked on position alone, a platform either blocks you the moment
+you jump into it or never catches you at all. Holding down drops you through one.
+
+**Doors** swing when used, whatever you are holding - checked before anything the held item
+would do, because reaching for a door with a block in hand is the common case and walling
+the doorway up instead would be infuriating. A door only closes into empty space, so it
+can never shut on the player.
+
+**Armour** has four slots rather than Terraria's three, because boots were asked for. Every
+two points of defence take one off an incoming hit, with a floor of one, so armour is
+always worth wearing and never makes you untouchable. Defence is read off the worn pieces
+each step rather than cached, so taking a piece off matters immediately.
+
+**The bow** is a weapon that spends ammunition and fires where you point rather than at
+something under the cursor. An arrow is a small body that flies, falls, and stops at the
+first thing it meets.

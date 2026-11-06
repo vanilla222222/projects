@@ -30,6 +30,7 @@ function makeStats() {
     sinceDamage: REGEN_DELAY,
     sinceSpend: MANA_SPEND_DELAY,
     invulnerable: 0,
+    defense: 0,
     dead: false
   };
 }
@@ -42,9 +43,16 @@ function stars(stats) {
   return Math.ceil(stats.maxMana / STAR);
 }
 
-function damage(stats, amount) {
+// Every two points of defence take one off an incoming hit, with a floor of one, so
+// armour is always worth wearing and never makes you untouchable.
+function mitigate(amount, defense) {
+  return Math.max(1, Math.round(amount - (defense || 0) / 2));
+}
+
+function damage(stats, amount, defense) {
   if (stats.dead || stats.invulnerable > 0) return 0;
-  const dealt = Math.min(stats.health, Math.max(0, amount));
+  const after = mitigate(amount, defense === undefined ? stats.defense : defense);
+  const dealt = Math.min(stats.health, Math.max(0, after));
   stats.health -= dealt;
   stats.sinceDamage = 0;
   stats.invulnerable = INVULNERABLE;
@@ -115,7 +123,7 @@ function respawn(stats) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_stats = { makeStats, step: stepStats, stepStats, damage, heal, spendMana, respawn,
+const EXPORTS_stats = { makeStats, mitigate, step: stepStats, stepStats, damage, heal, spendMana, respawn,
     raiseMaxHealth, raiseMaxMana, hearts, stars,
     HEART, STAR, BASE_HEALTH, BASE_MANA, MAX_HEALTH, MAX_MANA };
 

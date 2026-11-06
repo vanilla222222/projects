@@ -72,7 +72,8 @@ function paintOre(ctx, spec, variant, ox, oy) {
 // Bark: vertical fibres with a lit left edge and a dark right edge, so a one-tile trunk still
 // reads as round rather than as a flat brown stripe.
 function paintWood(ctx, spec, variant, ox, oy) {
-  const trunk = spec.key === 'trunk' || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk';
+  const trunk = !!spec.trunkOf || spec.key === 'trunk'
+    || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk';
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox, oy, TILE, TILE);
   for (let x = 0; x < TILE; x += 1) {
@@ -390,6 +391,84 @@ function paintWater(ctx, spec, variant, ox, oy) {
   ctx.restore();
 }
 
+// A platform: a deck with a lip, drawn only in the top third of the tile so the space
+// under it reads as space you can walk through, because you can.
+function paintPlatform(ctx, spec, variant, ox, oy) {
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox, oy + 1, 16, 4);
+  ctx.fillStyle = shade(spec.colour, 0.22);
+  ctx.fillRect(ox, oy + 1, 16, 1);
+  ctx.fillStyle = shade(spec.colour, -0.3);
+  ctx.fillRect(ox, oy + 5, 16, 1);
+  for (let i = 0; i < 2; i += 1) {
+    const x = 3 + i * 8 + (variant % 3);
+    ctx.fillRect(ox + x, oy + 6, 2, 3);
+  }
+}
+
+// A door, hinged on one side. The open leaf is drawn folded flat against its frame.
+function paintDoor(ctx, spec, variant, ox, oy) {
+  const open = spec.door === 'open';
+  ctx.fillStyle = shade(spec.colour, -0.45);
+  ctx.fillRect(ox, oy, 16, 16);
+  const w = open ? 5 : 14;
+  const x = open ? 0 : 1;
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox + x, oy, w, 16);
+  ctx.fillStyle = shade(spec.colour, 0.18);
+  ctx.fillRect(ox + x, oy, 1, 16);
+  ctx.fillStyle = shade(spec.colour, -0.28);
+  ctx.fillRect(ox + x + w - 1, oy, 1, 16);
+  // Panels, and a handle on the swinging edge.
+  if (!open) {
+    ctx.fillStyle = shade(spec.colour, -0.18);
+    ctx.fillRect(ox + 3, oy + 2, 10, 5);
+    ctx.fillRect(ox + 3, oy + 9, 10, 5);
+    ctx.fillStyle = '#d8c070';
+    ctx.fillRect(ox + 12, oy + 8, 2, 2);
+  }
+}
+
+// Chairs, tables and benches: small silhouettes, because a tile of flat colour in a room
+// is indistinguishable from a tile of wall.
+function paintFurniture(ctx, spec, variant, ox, oy) {
+  const c = spec.colour;
+  const dark = shade(c, -0.3);
+  if (spec.furniture === 'chair') {
+    ctx.fillStyle = c;
+    ctx.fillRect(ox + 4, oy + 8, 8, 2);          // the seat
+    ctx.fillStyle = dark;
+    ctx.fillRect(ox + 4, oy + 10, 2, 6);         // legs
+    ctx.fillRect(ox + 10, oy + 10, 2, 6);
+    ctx.fillStyle = c;
+    ctx.fillRect(ox + 10, oy + 2, 2, 7);         // the back
+    ctx.fillStyle = shade(c, 0.2);
+    ctx.fillRect(ox + 4, oy + 8, 8, 1);
+    return;
+  }
+  if (spec.furniture === 'table') {
+    ctx.fillStyle = c;
+    ctx.fillRect(ox, oy + 5, 16, 3);
+    ctx.fillStyle = shade(c, 0.2);
+    ctx.fillRect(ox, oy + 5, 16, 1);
+    ctx.fillStyle = dark;
+    ctx.fillRect(ox + 1, oy + 8, 2, 8);
+    ctx.fillRect(ox + 13, oy + 8, 2, 8);
+    return;
+  }
+  // A work bench, in this species' wood.
+  ctx.fillStyle = shade(c, 0.1);
+  ctx.fillRect(ox + 1, oy + 5, 14, 3);
+  ctx.fillStyle = dark;
+  ctx.fillRect(ox + 2, oy + 8, 2, 7);
+  ctx.fillRect(ox + 12, oy + 8, 2, 7);
+  ctx.fillRect(ox + 4, oy + 10, 8, 1);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.fillRect(ox + 1, oy + 5, 14, 1);
+  ctx.fillStyle = variant % 2 ? '#b9c2cc' : shade(c, -0.5);
+  ctx.fillRect(ox + 4 + (variant % 3), oy + 3, 5, 2);
+}
+
 function paintStation(ctx, spec, variant, ox, oy) {
   const base = spec.colour;
   if (spec.key === 'workbench') {
@@ -465,7 +544,10 @@ function bakeAtlas(document, tiles) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
-      else if (spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'
+      else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
+      else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
+      else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
+      else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'
         || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk') paintWood(ctx, spec, v, ox, oy);
       else if (spec.decor) paintDecor(ctx, spec, v, ox, oy);
       else if (spec.grassTop) paintGrass(ctx, spec, v, ox, oy, spec.soil);

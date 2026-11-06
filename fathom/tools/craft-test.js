@@ -17,21 +17,31 @@ function ok(cond, label) {
 }
 
 // --- the graph is well-formed ----------------------------------------------------------
-const RAW = new Set(['wood', 'stone', 'sand', 'torch',
+const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'tin',
+  ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key),
   'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite']);
 const produced = new Set(craft.RECIPES.map(r => r.out.key));
 
 for (const r of craft.RECIPES) {
   ok(r.out.count > 0, 'recipe for ' + r.out.key + ' yields something');
   ok(r.need.length > 0, 'recipe for ' + r.out.key + ' costs something');
-  ok(['block', 'wall', 'tool', 'bar'].includes(r.out.kind), r.out.key + ' has a known kind');
+  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo'].includes(r.out.kind),
+    r.out.key + ' has a known kind');
   ok(craft.kindOf(r.out.key) === r.out.kind,
     r.out.key + ' kind agrees between recipe and registry');
   ok(craft.nameOf(r.out.key, tiles) !== r.out.key, r.out.key + ' has a readable name');
   for (const [key, count] of r.need) {
     ok(count > 0, r.out.key + ' needs a positive amount of ' + key);
-    ok(RAW.has(key) || produced.has(key),
-      r.out.key + ' needs ' + key + ', which is mineable or craftable');
+    // A tag stands for a family of items; every member of it must itself be obtainable.
+    if (key[0] === '#') {
+      const members = craft.tagMembers(key);
+      ok(members.length > 0, 'tag ' + key + ' matches nothing');
+      ok(members.every(mk => RAW.has(mk) || produced.has(mk)),
+        'tag ' + key + ' includes something unobtainable');
+    } else {
+      ok(RAW.has(key) || produced.has(key),
+        r.out.key + ' needs ' + key + ', which is mineable or craftable');
+    }
     ok(craft.nameOf(key, tiles) !== key, key + ' has a readable name');
   }
   if (r.station) {
@@ -55,7 +65,11 @@ while (grew && rounds < 32) {
   rounds += 1;
   for (const r of craft.RECIPES) {
     if (have.has(r.out.key)) continue;
-    if (r.need.every(([k]) => have.has(k))) { have.add(r.out.key); grew = true; }
+    // A tag is satisfied by any one of its members being obtainable.
+    const met = r.need.every(([k]) => (k[0] === '#'
+      ? craft.tagMembers(k).some(mk => have.has(mk))
+      : have.has(k)));
+    if (met) { have.add(r.out.key); grew = true; }
   }
 }
 for (const key of Object.keys(mining.TOOLS)) {
@@ -70,10 +84,22 @@ for (const spec of tiles.TILES) {
     .some(([, t]) => t.power >= need);
   ok(opener, spec.key + ' can be opened by a craftable pickaxe');
 }
-// The bench is makeable with nothing but wood, so a fresh world is never a dead end.
-const bench = craft.RECIPES.find(r => r.out.key === 'workbench');
-ok(bench && bench.station === null, 'the work bench is a by-hand recipe');
-ok(bench && bench.need.every(([k]) => k === 'wood'), 'the work bench costs only wood');
+// A bench is makeable with nothing but one species' lumber, by hand, so a fresh world is
+// never a dead end. There is no single "workbench" recipe any more: every wood has one.
+const benches = craft.RECIPES.filter(r => /bench$/.test(r.out.key));
+ok(benches.length === tiles.WOODS.length, 'not every wood species has a work bench');
+for (const bench of benches) {
+  ok(bench.station === null, bench.out.key + ' cannot be made by hand');
+  ok(bench.need.every(([k]) => /wood$/.test(k)), bench.out.key + ' costs more than lumber');
+}
+// And the whole building set exists for every species, all by hand.
+for (const w of tiles.WOODS) {
+  for (const part of ['wood', 'back', 'platform', 'door', 'chair', 'table', 'bench']) {
+    const r = craft.RECIPES.find(r2 => r2.out.key === w.key + part);
+    ok(!!r, w.name + ' has no recipe for its ' + part);
+    if (r) ok(r.station === null, w.name + ' ' + part + ' needs a station');
+  }
+}
 
 // --- station reach ---------------------------------------------------------------------
 // A tiny stub world: one work bench at the origin, air everywhere else.
@@ -97,16 +123,16 @@ ok(craft.STATION_REACH_X === 5 && craft.STATION_REACH_Y === 3,
 // --- availability tracks what you hold -------------------------------------------------
 const inv = inventoryModule.makeInventory();
 ok(craft.available(inv, new Set()).length === 0, 'an empty backpack can make nothing');
-inv.add({ key: 'wood', kind: 'block' }, 9);
-ok(!craft.available(inv, new Set()).some(r => r.out.key === 'workbench'),
-  '9 wood is not enough for a bench');
-inv.add({ key: 'wood', kind: 'block' }, 1);
+inv.add({ key: 'oakwood', kind: 'block' }, 9);
+ok(!craft.available(inv, new Set()).some(r => r.out.key === 'oakbench'),
+  '9 oak is not enough for a bench');
+inv.add({ key: 'oakwood', kind: 'block' }, 1);
 const byHand = craft.available(inv, new Set());
-ok(byHand.some(r => r.out.key === 'workbench'), '10 wood affords a bench');
+ok(byHand.some(r => r.out.key === 'oakbench'), '10 oak affords a bench');
 ok(byHand.every(r => r.station === null), 'with no station in reach, only by-hand recipes');
 
 // A bench in reach unlocks bench recipes, and only those you can afford.
-inv.add({ key: 'wood', kind: 'block' }, 20);
+inv.add({ key: 'oakwood', kind: 'block' }, 20);
 const atBench = craft.available(inv, new Set(['workbench']));
 ok(atBench.some(r => r.out.key === 'wood-pick'), 'a bench and wood affords a pickaxe');
 ok(!atBench.some(r => r.out.key === 'copper-pick'), 'the anvil pickaxe is not offered at a bench');
@@ -115,22 +141,22 @@ ok(craft.atStation(new Set(['workbench'])).some(r => r.out.key === 'anvil'),
   'the anvil is still listed as a bench recipe, just unaffordable');
 
 // --- crafting is honest ----------------------------------------------------------------
-const before = inv.countOf('wood');
+const before = inv.countOf('oakwood');
 const pickRecipe = craft.RECIPES.find(r => r.out.key === 'wood-pick');
 ok(craft.craft(inv, pickRecipe), 'crafting a pickaxe succeeds');
-ok(inv.countOf('wood') === before - 12, 'the pickaxe cost exactly 12 wood');
+ok(inv.countOf('oakwood') === before - 12, 'the pickaxe cost exactly 12 wood');
 ok(inv.countOf('wood-pick') === 1, 'the pickaxe arrived');
 
 // Paying for something you cannot afford must change nothing at all.
 const poor = inventoryModule.makeInventory();
-poor.add({ key: 'wood', kind: 'block' }, 3);
+poor.add({ key: 'oakwood', kind: 'block' }, 3);
 ok(!craft.craft(poor, pickRecipe), 'crafting without the cost fails');
-ok(poor.countOf('wood') === 3, 'a failed craft takes nothing');
+ok(poor.countOf('oakwood') === 3, 'a failed craft takes nothing');
 ok(poor.countOf('wood-pick') === 0, 'a failed craft gives nothing');
 
 // And a full backpack must refund rather than swallow the ingredients.
 const full = inventoryModule.makeInventory();
-full.add({ key: 'wood', kind: 'block' }, 40);
+full.add({ key: 'oakwood', kind: 'block' }, 40);
 const main = full.section('main');
 const hotbar = full.section('hotbar');
 for (let i = hotbar.from; i < hotbar.to; i += 1) {
@@ -139,11 +165,11 @@ for (let i = hotbar.from; i < hotbar.to; i += 1) {
 for (let i = main.from; i < main.to; i += 1) {
   if (!full.slots[i]) full.slots[i] = { key: 'stone', kind: 'block', count: 9999 };
 }
-const woodBefore = full.countOf('wood');
+const woodBefore = full.countOf('oakwood');
 ok(woodBefore >= 12, 'the full backpack still holds the wood to try with');
 const crafted = craft.craft(full, pickRecipe);
 ok(!crafted, 'a craft with nowhere to put the result fails');
-ok(full.countOf('wood') === woodBefore, 'a failed craft refunds the ingredients exactly');
+ok(full.countOf('oakwood') === woodBefore, 'a failed craft refunds the ingredients exactly');
 ok(full.countOf('wood-pick') === 0, 'no pickaxe was created');
 
 console.log('\nrecipes by station:');
