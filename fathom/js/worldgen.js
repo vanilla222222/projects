@@ -1282,8 +1282,12 @@ function isSolidId(id) {
 }
 
 function generateChunk(seed, cx, cy) {
-  const tiles = new Uint8Array(CHUNK * CHUNK);
-  const walls = new Uint8Array(CHUNK * CHUNK);
+  // Sixteen bits per tile, not eight. Six wood species with a full furniture set each
+  // had the registry at 151 of a possible 255, and beds alone would have added 48 more;
+  // the ceiling was close enough to start shaping what could be built. A chunk is 48x48,
+  // so this costs 4.6KB per layer per chunk and removes the limit entirely.
+  const tiles = new Uint16Array(CHUNK * CHUNK);
+  const walls = new Uint16Array(CHUNK * CHUNK);
   const x0 = cx * CHUNK;
   const y0 = cy * CHUNK;
   for (let ty = 0; ty < CHUNK; ty += 1) {

@@ -28,7 +28,9 @@ function makePlayer(x, y) {
     width: 0.78, height: 1.72,
     facing: 1, onGround: false, coyote: 0,
     health: 100, maxHealth: 100, breath: 1,
-    mining: null, selected: 0
+    mining: null, selected: 0,
+    fell: 0, landed: 0, breath: 1,
+    speedScale: 1, canDoubleJump: false, usedAir: false, heldJump: false
   };
 }
 
@@ -134,7 +136,8 @@ function step(player, world, tiles, input, dt) {
   const swimming = inLiquid(player, world, tiles);
   player.swimming = swimming;
   player.submerged = swimming && submerged(player, world, tiles);
-  const speed = swimming ? MOVE_SPEED * SWIM_SPEED : MOVE_SPEED;
+  const scale = player.speedScale || 1;
+  const speed = (swimming ? MOVE_SPEED * SWIM_SPEED : MOVE_SPEED) * scale;
   const accel = player.onGround ? 1 : AIR_CONTROL;
   if (input.left) player.vx -= speed * accel * dt * 9;
   if (input.right) player.vx += speed * accel * dt * 9;
@@ -155,7 +158,15 @@ function step(player, world, tiles, input, dt) {
       player.vy = -JUMP_SPEED;
       player.coyote = 0;
       player.onGround = false;
+      player.usedAir = false;
+    } else if (input.jump && !player.heldJump && player.canDoubleJump && !player.usedAir
+      && !player.onGround) {
+      // The second jump, once, until the feet touch something again. Tracking whether
+      // the key was already held is what stops one press spending both jumps.
+      player.vy = -JUMP_SPEED * 0.88;
+      player.usedAir = true;
     }
+    if (player.onGround) player.usedAir = false;
     player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
   }
 
@@ -208,7 +219,21 @@ function step(player, world, tiles, input, dt) {
     player.y = nextY;
     remainingY -= move;
   }
+  player.heldJump = !!input.jump;
   player.onPlatform = onPlatform(world, tiles, player.x, player.y, player.width, player.height);
+
+  // How far the body has fallen without touching anything. Water arrests a fall, which is
+  // both how it works and what makes diving into a pool a way down rather than a death.
+  if (swimming) {
+    player.fell = 0;
+  } else if (player.onGround) {
+    player.landed = player.fell;
+    player.fell = 0;
+  } else if (player.vy > 0) {
+    player.fell = (player.fell || 0) + player.vy * dt;
+  } else {
+    player.fell = 0;
+  }
   return player;
 }
 

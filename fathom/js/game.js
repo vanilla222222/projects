@@ -59,6 +59,13 @@ function makeGame(canvas, deps) {
   // Somewhere to stand, not merely somewhere that is not solid. Cave mouths now break the
   // surface often enough that spawning on the first clear column dropped the player down
   // a shaft at the start of the game; it has to be clear AND have ground under it.
+  // Where a character with no bed comes back to: the same search that places them at the
+  // start of a new world, so it is always somewhere standable rather than world origin.
+  function defaultSpawn() {
+    const p = spawnPlayer();
+    return { x: p.x, y: p.y };
+  }
+
   function spawnPlayer() {
     for (let probe = 0; probe < 400; probe += 1) {
       const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
@@ -122,7 +129,7 @@ function makeGame(canvas, deps) {
       else d.vx = 0;
       if (d.age < 0.35) continue;
       const dist = Math.hypot(px - d.x, py - d.y);
-      if (dist < PICKUP_RANGE) {
+      if (dist < PICKUP_RANGE * ((state.gear && state.gear.pickup) || 1)) {
         const pull = 26 * dt;
         d.x += (px - d.x) * Math.min(1, pull);
         d.y += (py - d.y) * Math.min(1, pull);
@@ -170,7 +177,8 @@ function makeGame(canvas, deps) {
       return;
     }
 
-    const power = mining.powerOf(tool);
+    const gear = state.gear || { power: 1, swing: 1 };
+    const power = mining.powerOf(tool) * gear.power;
     // Walls come away like soft ground: they are a backing, not a seam of rock.
     const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
     if (perHit <= 0) {
@@ -190,8 +198,9 @@ function makeGame(canvas, deps) {
     } else {
       current.perHit = perHit;
       current.swing += dt;
-      if (current.swing < mining.useTimeOf(tool)) return;
-      current.swing -= mining.useTimeOf(tool);
+      const swingTime = mining.useTimeOf(tool) * gear.swing;
+      if (current.swing < swingTime) return;
+      current.swing -= swingTime;
       current.damage += perHit;
       spawnParticles(aim.x, aim.y, spec.colour, 2);
       if (current.damage < current.toughness) return;
@@ -259,16 +268,19 @@ function makeGame(canvas, deps) {
     return true;
   }
 
-  function wornDefense() {
-    const section = inventory.section('armor');
-    let total = 0;
-    for (let i = section.from; i < section.to; i += 1) {
-      const item = inventory.slots[i];
-      if (!item) continue;
-      const piece = craft.ARMOUR[item.key];
-      if (piece) total += piece.defense;
+  // Everything the worn equipment adds up to, recomputed each step rather than cached,
+  // so taking a piece off in the inventory screen matters immediately.
+  function wornKeys(section) {
+    const range = inventory.section(section);
+    const out = [];
+    for (let i = range.from; i < range.to; i += 1) {
+      out.push(inventory.slots[i] ? inventory.slots[i].key : null);
     }
-    return total;
+    return out;
+  }
+
+  function currentEffects() {
+    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'));
   }
 
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
@@ -363,7 +375,7 @@ function makeGame(canvas, deps) {
 
   function respawnPlayer() {
     statsModule.respawn(stats);
-    const spot = state.spawn || { x: 0, y: worldgen.surfaceHeight(seed, 0) - 3 };
+    const spot = state.spawn || defaultSpawn();
     state.player.x = spot.x;
     state.player.y = spot.y;
     state.player.vx = 0;
@@ -436,6 +448,19 @@ function makeGame(canvas, deps) {
     ui.sync(state);
   }
 
+  // Sleeping sets where you come back. In an infinite world this is the difference
+  // between dying and losing an afternoon's walk.
+  function useBed(aim) {
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.bed) return false;
+    const origin = tiles.originOf(spec, aim.x, aim.y);
+    if (!origin) return false;
+    // Stand the player beside the bed when they wake, not inside it.
+    state.spawn = { x: origin.x + 1, y: origin.y - 1 };
+    say('Spawn point set', 1.6);
+    return true;
+  }
+
   function useDoor(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.door) return false;
@@ -503,6 +528,7 @@ function makeGame(canvas, deps) {
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    if (aim0.inReach && useBed(aim0)) return;
     if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
@@ -560,7 +586,7 @@ function makeGame(canvas, deps) {
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
-    statsModule.step(stats, dt, moving);
+    statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving);
     // A swing at something alive takes priority over a swing at the rock behind it.
     if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
     else if (input.dig && !ui.isOpen) mine(dt);
@@ -576,9 +602,11 @@ function makeGame(canvas, deps) {
       if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
     }
 
-    // Defence is read off the worn armour each step rather than cached, so taking a
-    // piece off in the inventory screen matters immediately.
-    stats.defense = wornDefense();
+    const gear = currentEffects();
+    state.gear = gear;
+    stats.defense = gear.defense;
+    state.player.speedScale = gear.speed;
+    state.player.canDoubleJump = gear.doubleJump;
 
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase);
@@ -595,10 +623,34 @@ function makeGame(canvas, deps) {
       }
     }
 
+    // Landing hard. `landed` is the distance of the fall that just ended, set by the
+    // physics step on the frame the feet touch down.
+    if (state.player.landed > 0) {
+      const hurt = Math.round(statsModule.fallDamage(state.player.landed) * gear.fallMul);
+      state.player.landed = 0;
+      if (hurt > 0) {
+        // Armour does not soften a fall, so the mitigation is explicitly skipped.
+        const dealt = statsModule.damage(stats, hurt, 0);
+        if (dealt > 0) {
+          say('Hard landing', 1.2);
+          spawnParticles(state.player.x, state.player.y + state.player.height, '#9a8878', 8);
+        }
+      }
+    }
+
+    // Air. Running out of it costs health every second until you surface.
+    const drowning = statsModule.stepBreath(stats, dt / gear.breathMul,
+      state.player.submerged && gear.breathMul !== Infinity);
+    if (drowning > 0) {
+      stats.invulnerable = 0;
+      const dealt = statsModule.damage(stats, drowning, 0);
+      if (dealt > 0 && Math.random() < 0.08) say('Drowning!', 0.8);
+    }
+
     // Standing in lava burns. It is the only tile in the world that hurts by itself.
     const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
       Math.floor(state.player.y + state.player.height * 0.6)));
-    if (feet.hot) {
+    if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24);
       if (burnt > 0) say('Burning!', 0.9);
     }
@@ -772,6 +824,7 @@ function makeGame(canvas, deps) {
     profiles.saveWorld(worldId, {
       world: world.serialize(),
       dayPhase: state.dayPhase,
+      spawn: state.spawn || null,
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
     });
@@ -831,6 +884,7 @@ function makeGame(canvas, deps) {
     state.stats = stats;
     state.colours = characterRecord.colours || choice.character.colours;
     state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
+    state.spawn = worldRecord.spawn || null;
     state.player = spawnPlayer();
     if (worldRecord.spawn
       && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
@@ -904,6 +958,10 @@ function makeGame(canvas, deps) {
     }
   }
 
+  function useBedAt(x, y) {
+    return useBed({ x, y, inReach: true });
+  }
+
   function useChestAt(x, y) {
     return useChest({ x, y, inReach: true });
   }
@@ -913,7 +971,7 @@ function makeGame(canvas, deps) {
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, chestMove, get openChest() { return openChest; },
+    useDoorAt, useChestAt, useBedAt, chestMove, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },

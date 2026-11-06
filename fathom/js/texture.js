@@ -449,6 +449,45 @@ function paintDoor(ctx, spec, variant, ox, oy) {
   }
 }
 
+// A bed: a headboard at one end, a footboard at the other, a mattress across the middle
+// and a frame underneath. Each cell knows where it sits, so the four read as one object.
+function paintBed(ctx, spec, variant, ox, oy) {
+  const { dx, dy } = spec.bedCell;
+  const wood = spec.colour;
+  const sheet = '#cfd6e2';
+  const blanket = '#9a5f62';
+  if (dy === 0) {
+    // The upper row: posts at the ends, pillow and blanket between.
+    if (dx === 0 || dx === 3) {
+      ctx.fillStyle = shade(wood, -0.1);
+      ctx.fillRect(ox + (dx === 0 ? 2 : 8), oy + 2, 6, 14);
+      ctx.fillStyle = shade(wood, 0.2);
+      ctx.fillRect(ox + (dx === 0 ? 2 : 8), oy + 2, 6, 2);
+      return;
+    }
+    ctx.fillStyle = dx === 1 ? sheet : blanket;
+    ctx.fillRect(ox, oy + 8, 16, 8);
+    if (dx === 1) {
+      ctx.fillStyle = '#eef2f8';
+      ctx.fillRect(ox + 1, oy + 5, 14, 5);     // the pillow
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(ox + 1, oy + 9, 14, 1);
+    } else {
+      ctx.fillStyle = shade(blanket, 0.18);
+      ctx.fillRect(ox, oy + 8, 16, 1);
+    }
+    return;
+  }
+  // The lower row: the frame and its legs.
+  ctx.fillStyle = wood;
+  ctx.fillRect(ox, oy, 16, 4);
+  ctx.fillStyle = shade(wood, 0.18);
+  ctx.fillRect(ox, oy, 16, 1);
+  ctx.fillStyle = shade(wood, -0.32);
+  if (dx === 0) ctx.fillRect(ox + 2, oy + 4, 3, 9);
+  if (dx === 3) ctx.fillRect(ox + 11, oy + 4, 3, 9);
+}
+
 // A chest: a lid across the top two cells and a body across the bottom two, with the
 // lock in the middle where the four cells meet.
 function paintChest(ctx, spec, variant, ox, oy) {
@@ -587,6 +626,7 @@ function bakeAtlas(document, tiles) {
       const oy = spec.id * TILE;
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
+      else if (spec.bed) paintBed(ctx, spec, v, ox, oy);
       else if (spec.chest) paintChest(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);

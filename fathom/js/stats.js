@@ -21,6 +21,15 @@ const MANA_REGEN_STILL = 2.4;
 const MANA_SPEND_DELAY = 0.45;
 const INVULNERABLE = 0.65;
 
+// Falling. Below the safe distance nothing happens; past it every further tile costs
+// health, so a long drop is a decision rather than a free lift downward.
+const SAFE_FALL = 16;
+const FALL_PER_TILE = 5.5;
+
+// Breath, in seconds of air, and what running out costs per second.
+const BREATH_SECONDS = 14;
+const DROWN_PER_SECOND = 14;
+
 function makeStats() {
   return {
     health: BASE_HEALTH,
@@ -31,6 +40,7 @@ function makeStats() {
     sinceSpend: MANA_SPEND_DELAY,
     invulnerable: 0,
     defense: 0,
+    breath: 1,
     dead: false
   };
 }
@@ -61,6 +71,25 @@ function damage(stats, amount, defense) {
     stats.dead = true;
   }
   return dealt;
+}
+
+// What a fall of this many tiles costs. Armour does not soften it: a cushioned landing
+// is what feather falling is for, and that is an accessory rather than a breastplate.
+function fallDamage(tiles) {
+  if (tiles <= SAFE_FALL) return 0;
+  return Math.round((tiles - SAFE_FALL) * FALL_PER_TILE);
+}
+
+// Breath runs down underwater and refills quickly in air. Returns the damage drowning
+// deals this step, which is zero until the air is gone.
+function stepBreath(stats, dt, submerged) {
+  if (submerged) {
+    stats.breath = Math.max(0, stats.breath - dt / BREATH_SECONDS);
+    if (stats.breath > 0) return 0;
+    return DROWN_PER_SECOND * dt;
+  }
+  stats.breath = Math.min(1, stats.breath + dt / 3);
+  return 0;
 }
 
 function heal(stats, amount) {
@@ -123,7 +152,8 @@ function respawn(stats) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_stats = { makeStats, mitigate, step: stepStats, stepStats, damage, heal, spendMana, respawn,
+const EXPORTS_stats = { makeStats, mitigate, fallDamage, stepBreath,
+  SAFE_FALL, FALL_PER_TILE, BREATH_SECONDS, DROWN_PER_SECOND, step: stepStats, stepStats, damage, heal, spendMana, respawn,
     raiseMaxHealth, raiseMaxMana, hearts, stars,
     HEART, STAR, BASE_HEALTH, BASE_MANA, MAX_HEALTH, MAX_MANA };
 

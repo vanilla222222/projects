@@ -415,3 +415,53 @@ the next layer deeper down, and a rare gilded chest with what you hope for.
 An open chest is shut by walking away from it and by the backpack closing for any reason
 at all, as an invariant checked every step rather than something each exit path has to
 remember. That is what stops a chest being left open and its contents never written back.
+
+## Consequences, and recovering from them
+
+Three gaps that together meant the world had no stakes and no way back from them.
+
+**Beds set where you come back.** Dying used to return you to world origin; in an endless
+world that is close to a bug, because dying 3,000 tiles out and 800 down cost you the
+walk as well as the loot. A bed is a four-by-two object per wood species, and using one
+sets the spawn point, which is saved with the world. With no bed, the fallback is the
+same search that places a character at the start of a new world, so it is always
+somewhere standable rather than coordinate zero.
+
+**Falls hurt** past 16 tiles, at 5.5 health per further tile. Water arrests a fall
+entirely, which is both how it works and what makes diving into a pool a way down.
+Armour does not soften a landing - that is what the Feather Charm is for.
+
+**Breath** was a field on the player that nothing ever read. It now runs down over 14
+seconds submerged and costs health every second after that. The HUD shows it only while
+it is running out.
+
+Testing the fall needed the player actually dropped down a shaft: setting `landed`
+directly does nothing, because the physics step recomputes it from the body's own motion
+before the damage check reads it.
+
+## Armour tiers, set bonuses and accessories
+
+Eight tiers times four pieces, generated from a table. The six-ore ladder previously paid
+off in pickaxes and swords but had exactly one armour tier.
+
+Wearing all four pieces of one metal grants that metal's **set bonus**, which is what
+makes a complete suit worth the detour rather than four separate upgrades: tin swings
+tools faster, copper mines harder, iron adds defence, silver moves faster, gold
+regenerates, cobalt breathes water, emberite ignores lava.
+
+**Accessories** fill slots that had existed since the inventory was built and had never
+held anything. Each changes one number the player can feel: a second jump in mid-air,
+triple breath, quartered fall damage, more mining power, more speed, more defence,
+fireproofing, or a light you carry with you.
+
+Every effect is summed by one function and recomputed each step rather than cached, so
+taking a piece off matters immediately, and the equipment screen says in words what the
+worn set is doing. Armour that silently changes a number is armour the player cannot
+reason about.
+
+## A note on tile ids
+
+Chunks store sixteen bits per tile, not eight. Six wood species with a full furniture set
+each had the registry at 151 of a possible 255, and beds alone would have added 48 more;
+the ceiling was close enough to start shaping what could be built. A chunk is 48x48, so
+the change costs 4.6KB per layer per chunk and removes the limit.

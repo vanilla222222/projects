@@ -17,7 +17,12 @@ function ok(cond, label) {
 }
 
 // --- the graph is well-formed ----------------------------------------------------------
-const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'tin',
+// Everything an enemy drops is a raw input as far as crafting is concerned: you get it
+// by killing something rather than by making it.
+const enemyDrops = require('../js/enemy.js').ENEMIES
+  .flatMap(e => (e.drops || []).map(([k]) => k));
+const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'tin', 'crystal', 'glowmoss',
+  'shell', 'obsidian', ...enemyDrops,
   ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key),
   'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite']);
 const produced = new Set(craft.RECIPES.map(r => r.out.key));
@@ -25,7 +30,7 @@ const produced = new Set(craft.RECIPES.map(r => r.out.key));
 for (const r of craft.RECIPES) {
   ok(r.out.count > 0, 'recipe for ' + r.out.key + ' yields something');
   ok(r.need.length > 0, 'recipe for ' + r.out.key + ' costs something');
-  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo'].includes(r.out.kind),
+  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'accessory'].includes(r.out.kind),
     r.out.key + ' has a known kind');
   ok(craft.kindOf(r.out.key) === r.out.kind,
     r.out.key + ' kind agrees between recipe and registry');

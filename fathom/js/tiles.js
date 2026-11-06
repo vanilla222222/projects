@@ -236,6 +236,12 @@ for (const w of WOODS) {
     hardness: 0.2, colour: w.colour, grain: 0.06, toughness: 40, wood: w.key, furniture: 'chair' });
   pushTile({ key: w.key + 'table', name: w.name + ' Table', solid: false, opacity: 8, emit: 0,
     hardness: 0.25, colour: w.colour, grain: 0.06, toughness: 50, wood: w.key, furniture: 'table' });
+  // A bed: four wide, two tall, and the thing that makes dying somewhere far from the
+  // origin survivable.
+  defineMulti(w.key + 'bed', w.name + ' Bed', 4, 2, (dx, dy) => ({
+    solid: false, opacity: 8, emit: 0, hardness: 0.3, colour: w.colour, grain: 0.05,
+    toughness: 60, wood: w.key, bed: true, drops: w.key + 'bed', bedCell: { dx, dy }
+  }));
   pushTile({ key: w.key + 'bench', name: w.name + ' Work Bench', solid: false, opacity: 8,
     emit: 0, hardness: 0.25, colour: w.colour, grain: 0.1, toughness: 60, wood: w.key,
     station: 'workbench', furniture: 'bench' });

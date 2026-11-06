@@ -321,6 +321,28 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
+  // A light the player carries. Drawn after the lighting pass as an additive glow rather
+  // than fed into the tile light field, because the field is computed per tile from the
+  // world and the player is not in the world.
+  function drawCarriedLight(state, view) {
+    const glow = state.gear && state.gear.glow;
+    if (!glow) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const sx = (state.player.x + state.player.width / 2 - x0) * size - offsetX;
+    const sy = (state.player.y + state.player.height / 2 - y0) * size - offsetY;
+    const radius = glow * size;
+    const g = ctx.createRadialGradient(sx, sy, size * 0.3, sx, sy, radius);
+    g.addColorStop(0, 'rgba(255, 221, 160, 0.55)');
+    g.addColorStop(0.5, 'rgba(255, 200, 120, 0.22)');
+    g.addColorStop(1, 'rgba(255, 190, 110, 0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = g;
+    ctx.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    ctx.restore();
+  }
+
   function drawBloom(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
@@ -472,6 +494,7 @@ function makeRenderer(canvas, deps) {
     drawEnemies(state, view);
     drawPlayer(state, view);
     drawLighting(state, view);
+    drawCarriedLight(state, view);
     drawBloom(state, view);
     drawParticles(state, view);
     drawUnderwater(state);
