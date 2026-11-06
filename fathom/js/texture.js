@@ -406,27 +406,69 @@ function paintPlatform(ctx, spec, variant, ox, oy) {
   }
 }
 
-// A door, hinged on one side. The open leaf is drawn folded flat against its frame.
+// A door, hinged on one side and three tiles tall. Each cell knows which row it is, so
+// the handle is drawn once and the panels line up into one object rather than three
+// stacked hatches each with its own furniture.
 function paintDoor(ctx, spec, variant, ox, oy) {
   const open = spec.door === 'open';
-  ctx.fillStyle = shade(spec.colour, -0.45);
+  const row = spec.doorRow || 0;
+  ctx.fillStyle = shade(spec.colour, -0.5);
   ctx.fillRect(ox, oy, 16, 16);
   const w = open ? 5 : 14;
   const x = open ? 0 : 1;
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox + x, oy, w, 16);
+  // The hinge side is lit, the swinging side shaded, all the way down.
   ctx.fillStyle = shade(spec.colour, 0.18);
   ctx.fillRect(ox + x, oy, 1, 16);
-  ctx.fillStyle = shade(spec.colour, -0.28);
+  ctx.fillStyle = shade(spec.colour, -0.3);
   ctx.fillRect(ox + x + w - 1, oy, 1, 16);
-  // Panels, and a handle on the swinging edge.
-  if (!open) {
-    ctx.fillStyle = shade(spec.colour, -0.18);
-    ctx.fillRect(ox + 3, oy + 2, 10, 5);
-    ctx.fillRect(ox + 3, oy + 9, 10, 5);
-    ctx.fillStyle = '#d8c070';
-    ctx.fillRect(ox + 12, oy + 8, 2, 2);
+  if (open) return;
+
+  // A panel per row, inset from the frame, and a lintel on the top cell.
+  ctx.fillStyle = shade(spec.colour, -0.18);
+  const top = row === 0 ? 4 : 1;
+  const height = row === 2 ? 11 : 14;
+  ctx.fillRect(ox + 3, oy + top, 10, height);
+  ctx.fillStyle = shade(spec.colour, 0.08);
+  ctx.fillRect(ox + 4, oy + top + 1, 8, height - 2);
+  if (row === 0) {
+    ctx.fillStyle = shade(spec.colour, -0.34);
+    ctx.fillRect(ox + 1, oy + 1, 14, 2);
   }
+  if (row === 2) {
+    ctx.fillStyle = shade(spec.colour, -0.34);
+    ctx.fillRect(ox + 1, oy + 13, 14, 2);
+  }
+  // One handle, on the middle cell, on the swinging edge.
+  if (row === 1) {
+    ctx.fillStyle = '#d8c070';
+    ctx.fillRect(ox + 11, oy + 7, 2, 3);
+    ctx.fillStyle = shade('#d8c070', -0.4);
+    ctx.fillRect(ox + 11, oy + 9, 2, 1);
+  }
+}
+
+// A chest: a lid across the top two cells and a body across the bottom two, with the
+// lock in the middle where the four cells meet.
+function paintChest(ctx, spec, variant, ox, oy) {
+  const top = spec.part.dy === 0;
+  const left = spec.part.dx === 0;
+  const c = spec.colour;
+  ctx.fillStyle = top ? shade(c, 0.1) : c;
+  ctx.fillRect(ox + (left ? 1 : 0), oy + (top ? 3 : 0), left ? 15 : 15, top ? 13 : 14);
+  // Banding, and a strap down the join.
+  ctx.fillStyle = shade(c, -0.38);
+  if (top) ctx.fillRect(ox + (left ? 1 : 0), oy + 3, 15, 2);
+  ctx.fillRect(ox + (left ? 1 : 0), oy + (top ? 14 : 12), 15, 2);
+  ctx.fillStyle = shade(c, 0.26);
+  if (top) ctx.fillRect(ox + (left ? 1 : 0), oy + 5, 15, 1);
+  // The lock, drawn across the seam by the two cells that meet there.
+  ctx.fillStyle = '#d8c070';
+  if (top && left) ctx.fillRect(ox + 13, oy + 11, 3, 5);
+  if (top && !left) ctx.fillRect(ox, oy + 11, 3, 5);
+  if (!top && left) ctx.fillRect(ox + 13, oy, 3, 3);
+  if (!top && !left) ctx.fillRect(ox, oy, 3, 3);
 }
 
 // Chairs, tables and benches: small silhouettes, because a tile of flat colour in a room
@@ -545,6 +587,7 @@ function bakeAtlas(document, tiles) {
       const oy = spec.id * TILE;
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
+      else if (spec.chest) paintChest(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'

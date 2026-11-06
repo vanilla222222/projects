@@ -27,6 +27,7 @@ function makeGame(canvas, deps) {
   let liquid = null;
   let swarm = null;
   let swingCooldown = 0;
+  let openChest = null;
   let characterId = null;
   let worldId = null;
   let running = false;
@@ -201,9 +202,19 @@ function makeGame(canvas, deps) {
       spawnParticles(aim.x, aim.y, spec.colour, 6);
       dropItem(aim.x, aim.y, spec.key, 'wall', 1);
     } else {
-      world.set(aim.x, aim.y, tiles.AIR);
+      const origin = tiles.originOf(spec, aim.x, aim.y);
+      if (origin && spec.chest) {
+        // A broken chest gives up everything inside it rather than swallowing it.
+        if (openChest && openChest.x === origin.x && openChest.y === origin.y) closeChest();
+        for (const item of world.getContainer(origin.x, origin.y) || []) {
+          dropItem(origin.x, origin.y, item.key, item.kind, item.count);
+        }
+        world.setContainer(origin.x, origin.y, []);
+      }
+      if (origin) breakMulti(origin);
+      else world.set(aim.x, aim.y, tiles.AIR);
       spawnParticles(aim.x, aim.y, spec.colour, 9);
-      dropItem(aim.x, aim.y, spec.drops || spec.key, 'block', 1);
+      dropItem(aim.x, aim.y, spec.drops || spec.key, craft.kindOf(spec.drops || spec.key), 1);
       // Cutting rock can open a reservoir, so every neighbour of the hole is woken.
       if (liquid) liquid.activateAround(aim.x, aim.y);
     }
@@ -364,34 +375,148 @@ function makeGame(canvas, deps) {
   // A door swings when you use it, whatever you are holding. Checked before anything the
   // held item would do, because reaching for a door with a block in hand is the common
   // case and walling the doorway up instead would be infuriating.
+  // Open the chest under the cursor, or shut the one that is open. A chest is a
+  // multi-tile object, so any of its four cells opens the same box.
+  function useChest(aim) {
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.chest) return false;
+    const origin = tiles.originOf(spec, aim.x, aim.y);
+    if (!origin) return false;
+    if (openChest && openChest.x === origin.x && openChest.y === origin.y) {
+      closeChest();
+      return true;
+    }
+    const items = (world.getContainer(origin.x, origin.y) || []).map(it => ({ ...it }));
+    while (items.length < ui.CHEST_SLOTS) items.push(null);
+    openChest = { x: origin.x, y: origin.y, items: items.slice(0, ui.CHEST_SLOTS) };
+    ui.openChest(openChest);
+    ui.setOpen(true);
+    say(spec.name, 1.0);
+    return true;
+  }
+
+  function closeChest() {
+    if (!openChest) return;
+    // Write back only what is actually there, so an emptied chest saves as an empty
+    // list rather than twenty nulls.
+    world.setContainer(openChest.x, openChest.y, openChest.items.filter(Boolean));
+    openChest = null;
+    ui.closeChest();
+  }
+
+  function chestMove(index, toChest) {
+    if (!openChest) return;
+    if (toChest) {
+      // Stow whatever is selected in the hotbar into the first free chest slot.
+      const held = selectedItem();
+      if (!held) return;
+      let slot = openChest.items.findIndex(it => it && it.key === held.key
+        && it.count < inventoryModule.STACK_MAX);
+      if (slot < 0) slot = openChest.items.findIndex(it => !it);
+      if (slot < 0) {
+        say('Chest is full', 1.0);
+        return;
+      }
+      const moving = held.count;
+      if (openChest.items[slot]) openChest.items[slot].count += moving;
+      else openChest.items[slot] = { key: held.key, kind: held.kind, count: moving };
+      inventory.take(held.key, moving);
+      ui.sync(state);
+      return;
+    }
+    const item = openChest.items[index];
+    if (!item) return;
+    const left = inventory.add({ key: item.key, kind: item.kind }, item.count);
+    if (left === item.count) {
+      say('Backpack full', 1.0);
+      return;
+    }
+    if (left > 0) item.count = left;
+    else openChest.items[index] = null;
+    ui.sync(state);
+  }
+
   function useDoor(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.door) return false;
-    const other = tiles.BY_KEY[spec.swings];
-    if (!other) return false;
+    const origin = tiles.originOf(spec, aim.x, aim.y);
+    if (!origin) return false;
+    const want = tiles.MULTI[spec.swings];
+    if (!want) return false;
+
     // A door only closes into empty space, so it can never shut on the player.
     if (spec.door === 'open') {
       const p = state.player;
-      const overlaps = aim.x + 1 > p.x && aim.x < p.x + p.width
-        && aim.y + 1 > p.y && aim.y < p.y + p.height;
-      if (overlaps) {
-        say('Something is in the way', 0.9);
-        return true;
+      for (let dy = 0; dy < origin.h; dy += 1) {
+        const ty = origin.y + dy;
+        if (origin.x + 1 > p.x && origin.x < p.x + p.width
+          && ty + 1 > p.y && ty < p.y + p.height) {
+          say('Something is in the way', 0.9);
+          return true;
+        }
       }
     }
-    world.set(aim.x, aim.y, other.id);
-    if (liquid) liquid.activateAround(aim.x, aim.y);
+    for (let dy = 0; dy < origin.h; dy += 1) {
+      for (let dx = 0; dx < origin.w; dx += 1) {
+        world.set(origin.x + dx, origin.y + dy, tiles.cellOf(spec.swings, dx, dy).id);
+      }
+    }
+    if (liquid) liquid.activateAround(origin.x, origin.y);
     return true;
+  }
+
+  // Put down a whole multi-tile object, or refuse. Every cell must be clear and the
+  // object must have something to stand on, so a door cannot be hung in mid-air.
+  function placeMulti(def, aim) {
+    const x0 = aim.x;
+    const y0 = aim.y - (def.h - 1);          // anchored by the cell under the cursor
+    for (let dy = 0; dy < def.h; dy += 1) {
+      for (let dx = 0; dx < def.w; dx += 1) {
+        const id = world.get(x0 + dx, y0 + dy);
+        if (id !== tiles.AIR) return false;
+      }
+    }
+    let supported = false;
+    for (let dx = 0; dx < def.w; dx += 1) {
+      if (tiles.isSolid(world.get(x0 + dx, y0 + def.h))) supported = true;
+    }
+    if (!supported) return false;
+    for (let dy = 0; dy < def.h; dy += 1) {
+      for (let dx = 0; dx < def.w; dx += 1) {
+        world.set(x0 + dx, y0 + dy, tiles.cellOf(def.key, dx, dy).id);
+      }
+    }
+    if (liquid) liquid.activateAround(x0, y0);
+    return true;
+  }
+
+  // Take a whole multi-tile object away when any one of its cells is broken, so a door
+  // can never be left as two thirds of a door.
+  function breakMulti(origin) {
+    for (let dy = 0; dy < origin.h; dy += 1) {
+      for (let dx = 0; dx < origin.w; dx += 1) {
+        world.set(origin.x + dx, origin.y + dy, tiles.AIR);
+      }
+    }
+    if (liquid) liquid.activateAround(origin.x, origin.y);
   }
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
     if (!item) return;
     const aim = physics.aimTile(state.player, pointer);
     if (!aim.inReach) return;
     if (useBucket(item, aim)) return;
+
+    // A multi-tile object is placed as one piece or not at all.
+    const multi = tiles.MULTI[item.key];
+    if (multi) {
+      if (placeMulti(multi, aim)) inventory.take(item.key, 1);
+      return;
+    }
 
     if (item.kind === 'wall') {
       if (world.getWall(aim.x, aim.y) !== 0) return;
@@ -440,6 +565,16 @@ function makeGame(canvas, deps) {
     if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
     else if (input.dig && !ui.isOpen) mine(dt);
     else state.player.mining = null;
+
+    // An open chest is shut by walking away from it, and by the backpack closing for any
+    // reason at all. Making that an invariant checked every step, rather than something
+    // each exit path has to remember, is what stops a chest being left open and its
+    // contents never written back.
+    if (openChest) {
+      const dx = openChest.x - state.player.x;
+      const dy = openChest.y - state.player.y;
+      if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
+    }
 
     // Defence is read off the worn armour each step rather than cached, so taking a
     // piece off in the inventory screen matters immediately.
@@ -576,11 +711,15 @@ function makeGame(canvas, deps) {
     addEventListener('keydown', (ev) => {
       if (!running) return;
       if (ev.code === 'KeyE' || ev.code === 'Tab' || ev.code === 'KeyI') {
+        // Shutting the backpack shuts whatever chest was open with it, which is both
+        // what a player expects and what makes sure the contents get written back.
+        if (ui.isOpen) closeChest();
         ui.toggle();
         ev.preventDefault();
         return;
       }
       if (ev.code === 'Escape' && ui.isOpen) {
+        closeChest();
         ui.setOpen(false);
         return;
       }
@@ -662,6 +801,7 @@ function makeGame(canvas, deps) {
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
       { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
+    ui.onChestMove = chestMove;
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
@@ -764,12 +904,16 @@ function makeGame(canvas, deps) {
     }
   }
 
+  function useChestAt(x, y) {
+    return useChest({ x, y, inReach: true });
+  }
+
   function useDoorAt(x, y) {
     return useDoor({ x, y, inReach: true });
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt,
+    useDoorAt, useChestAt, chestMove, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },

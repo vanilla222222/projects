@@ -381,3 +381,37 @@ each step rather than cached, so taking a piece off matters immediately.
 **The bow** is a weapon that spends ammunition and fires where you point rather than at
 something under the cursor. An arrow is a small body that flies, falls, and stops at the
 first thing it meets.
+
+## Multi-tile objects
+
+A door is three tiles tall and a chest two by two, but the world stores one byte per tile
+and so an object cannot carry its own extent. Each cell therefore gets its own tile id,
+tagged with which cell of which object it is; from any cell the origin is
+`(x - part.dx, y - part.dy)`, which is all the code needs to use, break or draw the whole
+thing as one piece.
+
+The alternative - one tile id plus a side table of object positions - would need that
+table saved, kept in step with every edit, and consulted on every collision test. Cell
+tiles cost ids, which are cheap here, and nothing else.
+
+Placing one is all-or-nothing: every cell must be clear and something must be underneath,
+so a door cannot be hung in mid-air. Breaking any cell takes the whole object, so a door
+can never be left as two thirds of a door.
+
+## Chests and loot
+
+Contents are a pure function of the chest's position and the world seed, exactly like the
+tiles around them, and only become stored data once the player has taken something out. A
+world with ten thousand untouched chests costs nothing to save, and two players on the
+same seed find the same sword in the same cabin. `tools/chest-test.js` checks that
+directly: reading a chest must create no edits, and an emptied chest must stay empty
+across a save rather than refilling from the generator.
+
+A table rolls each entry independently rather than picking one, so a chest can hold
+several things - 88 distinct contents across 119 generated chests. Three bands by depth:
+survival kit and an occasional weapon near the surface, better metal and the tools for
+the next layer deeper down, and a rare gilded chest with what you hope for.
+
+An open chest is shut by walking away from it and by the backpack closing for any reason
+at all, as an invariant checked every step rather than something each exit path has to
+remember. That is what stops a chest being left open and its contents never written back.

@@ -252,6 +252,7 @@ function craft(inventory, recipe) {
 
 // A key's kind, so refunds and drops rebuild the same item they came from.
 function kindOf(key) {
+  if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return 'block';
   if (ARMOUR[key]) return 'armor';
   if (WEAPONS[key]) return 'tool';
   if (ITEMS[key]) return ITEMS[key].kind;
@@ -264,6 +265,7 @@ function kindOf(key) {
 
 function nameOf(key, tiles) {
   if (key === '#wood') return 'Wood';
+  if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return CRAFT_TILES.MULTI[key].name;
   if (ARMOUR[key]) return ARMOUR[key].name;
   if (WEAPONS[key]) return WEAPONS[key].name;
   if (ITEMS[key]) return ITEMS[key].name;

@@ -656,6 +656,57 @@ function structurePlaced(seed, slot) {
 
 const STRUCTURE_STATIONS = ['workbench', 'furnace', 'anvil'];
 
+// Where a structure keeps its chest, if it has one, as an absolute origin. A cabin
+// almost always has one and a ruin often does; a grotto is a natural chamber and a
+// mineshaft was stripped before it was abandoned.
+function structureChest(seed, slot) {
+  const r = structurePlaced(seed, slot);
+  if (!r) return null;
+  const odds = r.kind === 'cabin' ? 0.86 : r.kind === 'ruin' ? 0.5 : 0;
+  if (odds === 0) return null;
+  if (unit(seed, slot, 0, 7501) > odds) return null;
+  const x = r.x0 + 2 + Math.floor(unit(seed, slot, 0, 7503) * Math.max(1, r.w - 5));
+  const y = r.y1 - 3;                                  // standing on the floor
+  const depth = y - columnOf(seed, r.body.ax).height;
+  let band = unit(seed, slot, 0, 7507) < 0.06 ? 'rich' : null;
+  if (!band) band = depth > 760 ? 'rich' : depth > 320 ? 'deep' : 'caves';
+  const kind = band === 'rich' ? 'goldchest' : band === 'deep' ? 'ironchest' : 'woodchest';
+  return { x, y, kind, band, slot };
+}
+
+// The chest tile at a position, if a structure put one there.
+function chestTileAt(seed, x, y) {
+  const slot = Math.floor(x / STRUCTURE_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    const chest = structureChest(seed, s);
+    if (!chest) continue;
+    const dx = x - chest.x;
+    const dy = y - chest.y;
+    if (dx < 0 || dx > 1 || dy < 0 || dy > 1) continue;
+    return cellOf(chest.kind, dx, dy).id;
+  }
+  return null;
+}
+
+// The item-kind lookup lives in craft.js, which loads after this file in the browser and
+// is required here in Node. Resolving it at call time rather than at load time is what
+// lets one spelling work in both.
+function lootKindOf(key) {
+  if (typeof require === 'function') return require('./craft.js').kindOf(key);
+  return kindOf(key);
+}
+
+// What is in the chest whose origin is here, before anybody has touched it.
+function baseContainerAt(seed, x, y) {
+  const slot = Math.floor(x / STRUCTURE_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    const chest = structureChest(seed, s);
+    if (!chest || chest.x !== x || chest.y !== y) continue;
+    return rollChest(seed, x, y, chest.band, { unit, kindOf: lootKindOf });
+  }
+  return null;
+}
+
 function structureTileAt(seed, x, y) {
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
@@ -742,6 +793,12 @@ function baseTileAt(seed, x, y) {
 
   // Structures win over the rock they are set into, but not over hell or the sea, which
   // structureTileAt refuses for itself.
+  // A chest is positioned from its own room's interior, never on the shell, so it can be
+  // answered before the room itself. Checking it only against air left a quarter of them
+  // with one cell clipped off by a ruin's rubble.
+  const box = chestTileAt(seed, x, y);
+  if (box !== null) return box;
+
   const built = structureTileAt(seed, x, y);
   if (built !== null) return built;
 
@@ -1264,6 +1321,7 @@ const EXPORTS_worldgen = {
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
     STRUCTURE_SPACING, structureAt, structureRect, structurePlaced, structureTileAt, structureWallAt,
+    structureChest, chestTileAt, baseContainerAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
@@ -1282,6 +1340,8 @@ if (typeof module !== 'undefined' && module.exports) {
   global.AIR = tiles.AIR;
   global.idOf = tiles.idOf;
   global.tile = tiles.tile;
+  global.cellOf = tiles.cellOf;
+  global.rollChest = require('./loot.js').rollChest;
   global.wallIdOf = tiles.wallIdOf;
   module.exports = EXPORTS_worldgen;
 } else if (typeof FATHOM !== 'undefined') {

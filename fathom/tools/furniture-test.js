@@ -25,8 +25,14 @@ function makeBox(rows) {
       const i = y * w + x;
       if (ch === '#') grid[i] = tiles.idOf('stone');
       else if (ch === '=') grid[i] = tiles.idOf('oakplatform');
-      else if (ch === 'D') grid[i] = tiles.idOf('oakdoor');
-      else if (ch === 'd') grid[i] = tiles.idOf('oakdooropen');
+      else if (ch === 'D' || ch === 'd') {
+        // Doors in a picture are drawn as a vertical run; each row becomes the matching
+        // cell of the object so the fixture is a real door and not three door tops.
+        let top = y;
+        while (top > 0 && (rows[top - 1][x] === ch)) top -= 1;
+        const cell = tiles.cellOf(ch === 'D' ? 'oakdoor' : 'oakdooropen', 0, Math.min(2, y - top));
+        grid[i] = cell.id;
+      }
       else grid[i] = tiles.AIR;
     }
   }
@@ -51,10 +57,27 @@ const NONE = { left: false, right: false, jump: false, down: false, dig: false }
 // --- 1. the whole wood set is coherent -------------------------------------------------
 ok(tiles.WOODS.length >= 4, 'too few wood species');
 for (const w of tiles.WOODS) {
-  for (const part of ['log', 'wood', 'platform', 'door', 'dooropen', 'chair', 'table', 'bench']) {
+  for (const part of ['log', 'wood', 'platform', 'chair', 'table', 'bench']) {
     const spec = tiles.BY_KEY[w.key + part];
     ok(!!spec, w.name + ' is missing its ' + part);
     if (spec) ok(spec.wood === w.key, w.key + part + ' is not tagged with its species');
+  }
+  // Doors are multi-tile objects now, so they live in the object registry rather than
+  // as a single tile.
+  for (const part of ['door', 'dooropen']) {
+    const def = tiles.MULTI[w.key + part];
+    ok(!!def, w.name + ' is missing its ' + part);
+    if (!def) continue;
+    ok(def.w === 1 && def.h === 3, w.key + part + ' is not one tile wide and three tall');
+    ok(def.cells.length === 3, w.key + part + ' does not have three cells');
+    def.cells.forEach((cell, i) => {
+      ok(cell.wood === w.key, w.key + part + ' cell ' + i + ' is not tagged with its species');
+      ok(cell.part.dy === i, w.key + part + ' cell ' + i + ' has the wrong offset');
+      // From any cell, the origin must come back as the top of the object.
+      const origin = tiles.originOf(cell, 40, 100 + i);
+      ok(origin && origin.x === 40 && origin.y === 100,
+        w.key + part + ' cell ' + i + ' does not resolve to its own origin');
+    });
   }
   ok(!!tiles.WALL_BY_KEY[w.key + 'back'], w.name + ' has no background');
   // A log must be walk-through and must drop that species' wood.
@@ -62,12 +85,13 @@ for (const w of tiles.WOODS) {
   ok(!log.solid, w.key + ' logs are solid, so a forest would be a wall');
   ok(log.drops === w.key + 'wood', w.key + ' logs do not drop their own wood');
   // The two door halves must point at each other.
-  const shut = tiles.BY_KEY[w.key + 'door'];
-  const open = tiles.BY_KEY[w.key + 'dooropen'];
+  const shut = tiles.MULTI[w.key + 'door'].cells[0];
+  const open = tiles.MULTI[w.key + 'dooropen'].cells[0];
   ok(shut.solid && !open.solid, w.key + ' door does not change solidity when it opens');
-  ok(shut.swings === open.key && open.swings === shut.key,
-    w.key + ' door halves do not swing into each other');
+  ok(shut.swings === w.key + 'dooropen' && open.swings === w.key + 'door',
+    w.key + ' door states do not swing into each other');
   ok(shut.drops === open.drops, w.key + ' door drops a different item depending on state');
+  ok(shut.drops === w.key + 'door', w.key + ' door does not drop itself');
   // A platform is never solid, or it would not be a platform.
   ok(!tiles.BY_KEY[w.key + 'platform'].solid, w.key + ' platform is solid');
   ok(tiles.BY_KEY[w.key + 'bench'].station === 'workbench',
