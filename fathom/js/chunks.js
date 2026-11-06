@@ -7,6 +7,33 @@
 // still leaves room to halve repeatedly without the rounding swallowing the remainder.
 const LEVEL_FULL = 255;
 
+// Bitsets travel as base64. btoa/atob exist in the browser; Buffer is the Node spelling.
+function packBits(bits) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(bits).toString('base64');
+  let binary = '';
+  for (let i = 0; i < bits.length; i += 1) binary += String.fromCharCode(bits[i]);
+  return btoa(binary);
+}
+
+function unpackBits(text, length) {
+  try {
+    if (typeof Buffer !== 'undefined') {
+      const buf = Buffer.from(text, 'base64');
+      const out = new Uint8Array(length);
+      out.set(buf.subarray(0, length));
+      return out;
+    }
+    const binary = atob(text);
+    const out = new Uint8Array(length);
+    for (let i = 0; i < Math.min(length, binary.length); i += 1) out[i] = binary.charCodeAt(i);
+    return out;
+  } catch (err) {
+    // A corrupt or truncated entry costs the player a patch of revealed map, which is
+    // not worth refusing to load a world over.
+    return null;
+  }
+}
+
 function chunkKey(cx, cy) {
   return cx + ':' + cy;
 }
@@ -26,6 +53,10 @@ function makeWorld(seed, generator) {
   // says", so an untouched world of chests costs nothing to save; a chest the player has
   // opened and changed gets an entry.
   const containers = new Map();
+  // Which tiles the player has seen, one bit each, a bitset per chunk. A chunk is 48x48,
+  // so that is 288 bytes rather than the 2,304 a byte-per-tile array would take, and a
+  // map of a thousand explored chunks saves in a quarter of a megabyte.
+  const explored = new Map();
   const dirty = new Set();
 
   function chunkAt(cx, cy) {
@@ -206,6 +237,51 @@ function makeWorld(seed, generator) {
     containers.delete(containerKey(x, y));
   }
 
+  // --- exploration ------------------------------------------------------------------
+  const EXPLORED_BYTES = (generator.CHUNK * generator.CHUNK) >> 3;
+
+  function exploredSlot(cx, cy, create) {
+    const key = chunkKey(cx, cy);
+    let bits = explored.get(key);
+    if (!bits && create) {
+      bits = new Uint8Array(EXPLORED_BYTES);
+      explored.set(key, bits);
+    }
+    return bits;
+  }
+
+  function markExplored(x, y) {
+    const cx = Math.floor(x / generator.CHUNK);
+    const cy = Math.floor(y / generator.CHUNK);
+    const bits = exploredSlot(cx, cy, true);
+    const lx = x - cx * generator.CHUNK;
+    const ly = y - cy * generator.CHUNK;
+    const index = ly * generator.CHUNK + lx;
+    bits[index >> 3] |= 1 << (index & 7);
+  }
+
+  function isExplored(x, y) {
+    const cx = Math.floor(x / generator.CHUNK);
+    const cy = Math.floor(y / generator.CHUNK);
+    const bits = explored.get(chunkKey(cx, cy));
+    if (!bits) return false;
+    const lx = x - cx * generator.CHUNK;
+    const ly = y - cy * generator.CHUNK;
+    const index = ly * generator.CHUNK + lx;
+    return (bits[index >> 3] & (1 << (index & 7))) !== 0;
+  }
+
+  function exploredCount() {
+    let n = 0;
+    for (const bits of explored.values()) {
+      for (let i = 0; i < bits.length; i += 1) {
+        let b = bits[i];
+        while (b) { n += b & 1; b >>= 1; }
+      }
+    }
+    return n;
+  }
+
   function isWallSafe(x, y) {
     if (getWall(x, y) === 0) return false;
     const cx = Math.floor(x / generator.CHUNK);
@@ -242,7 +318,12 @@ function makeWorld(seed, generator) {
     for (const [key, slot] of levels) levelOut[key] = [...slot.entries()];
     const boxes = {};
     for (const [key, items] of containers) boxes[key] = items;
-    return { seed, edits: out, wallEdits: wallOut, levels: levelOut, containers: boxes };
+    // Exploration is stored as base64 rather than an array of numbers: a chunk's 288
+    // bytes become 384 characters instead of roughly 1,100.
+    const seen = {};
+    for (const [key, bits] of explored) seen[key] = packBits(bits);
+    return { seed, edits: out, wallEdits: wallOut, levels: levelOut,
+      containers: boxes, explored: seen };
   }
 
   function restore(saved) {
@@ -250,6 +331,7 @@ function makeWorld(seed, generator) {
     wallEdits.clear();
     levels.clear();
     containers.clear();
+    explored.clear();
     loaded.clear();
     for (const [key, list] of Object.entries(saved.edits || {})) {
       edits.set(key, new Map(list));
@@ -263,17 +345,22 @@ function makeWorld(seed, generator) {
     for (const [key, items] of Object.entries(saved.containers || {})) {
       containers.set(key, items);
     }
+    for (const [key, text] of Object.entries(saved.explored || {})) {
+      const bits = unpackBits(text, EXPLORED_BYTES);
+      if (bits) explored.set(key, bits);
+    }
   }
 
   return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
-    getContainer, setContainer, clearContainer, chunkAt, evictOutside, editCount, serialize, restore,
+    getContainer, setContainer, clearContainer,
+    markExplored, isExplored, exploredCount, chunkAt, evictOutside, editCount, serialize, restore,
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }
 
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_chunks = { makeWorld, chunkKey, LEVEL_FULL };
+const EXPORTS_chunks = { makeWorld, chunkKey, LEVEL_FULL, packBits, unpackBits };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_chunks;

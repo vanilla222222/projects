@@ -465,3 +465,29 @@ Chunks store sixteen bits per tile, not eight. Six wood species with a full furn
 each had the registry at 151 of a possible 255, and beds alone would have added 48 more;
 the ceiling was close enough to start shaping what could be built. A chunk is 48x48, so
 the change costs 4.6KB per layer per chunk and removes the limit.
+
+## The map
+
+An endless world with fourteen biomes and seven vertical layers and no way to find your
+way back is a world you stop exploring, because every trip out is one you might not be
+able to undo.
+
+Two sizes of the same thing: a corner panel that is always there, and the same chart
+blown up to fill the screen on **M**, with **[** and **]** to zoom. Both draw one pixel
+per tile into a small canvas which is then scaled up - the same trick the lighting uses,
+so the cost is the number of tiles sampled rather than the number of screen pixels
+painted. It redraws about ten times a second, because a map does not need sixty.
+
+Colours come from the tile registry, so the map never needs its own palette kept in step
+with the world. Open space shows its background wall rather than nothing, which is what
+makes a dug tunnel legible against solid rock, and water shows as water.
+
+**What the player has seen** is stored as one bit per tile, a bitset per chunk: 288 bytes
+where a byte per tile would be 2,304. Walking 3,200 tiles reveals 165,767 tiles and costs
+52KB, measured - about 2.6 bits per tile once base64 is counted. It is revealed from the
+simulation rather than the draw, so the map fills in whether or not it is being looked at,
+and a corrupt entry costs a patch of revealed map rather than refusing to load the world.
+
+`revealAround` is a free function rather than a method on the map, because it is pure
+logic with no canvas in it and the alternative is a test that needs a DOM to check the
+shape of a disc.

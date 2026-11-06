@@ -498,3 +498,29 @@ html, body {
   color: #9fb0c4;
   max-width: 260px;
 }
+
+/* The map. A corner panel that is always there, and the same canvas blown up to fill the
+   screen on M. */
+#minimap {
+  position: fixed;
+  top: 92px;
+  right: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: #0b0e16;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 5;
+}
+#minimap.large {
+  top: 50%;
+  right: 50%;
+  transform: translate(50%, -50%);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.75);
+}
+@media (max-width: 900px) {
+  #minimap { display: none; }
+  #minimap.large { display: block; }
+}

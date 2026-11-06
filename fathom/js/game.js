@@ -9,6 +9,7 @@ const PICKUP_RANGE = 2.2;
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
+    minimap: minimapModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
@@ -26,6 +27,7 @@ function makeGame(canvas, deps) {
   let ui = null;
   let liquid = null;
   let swarm = null;
+  let minimap = null;
   let swingCooldown = 0;
   let openChest = null;
   let characterId = null;
@@ -602,6 +604,10 @@ function makeGame(canvas, deps) {
       if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
     }
 
+    // Revealed from the simulation rather than the draw, so the map fills in whether or
+    // not the player is looking at it.
+    if (minimap) minimap.reveal(world, state.player.x, state.player.y);
+
     const gear = currentEffects();
     state.gear = gear;
     stats.defense = gear.defense;
@@ -704,6 +710,7 @@ function makeGame(canvas, deps) {
       }
     }
     lastView = renderer.draw(state);
+    if (minimap) minimap.draw(state, dt);
     drawAim();
     syncUI();
     requestAnimationFrame(frame);
@@ -768,6 +775,20 @@ function makeGame(canvas, deps) {
         if (ui.isOpen) closeChest();
         ui.toggle();
         ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'KeyM' && minimap) {
+        minimap.setLarge(!minimap.isLarge);
+        ev.preventDefault();
+        return;
+      }
+      if ((ev.code === 'BracketLeft' || ev.code === 'BracketRight') && minimap) {
+        minimap.zoomBy(ev.code === 'BracketRight' ? 1 : -1);
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'Escape' && minimap && minimap.isLarge) {
+        minimap.setLarge(false);
         return;
       }
       if (ev.code === 'Escape' && ui.isOpen) {
@@ -849,6 +870,8 @@ function makeGame(canvas, deps) {
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
+    minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
+      { tiles, worldgen });
     state.enemies = swarm.list;
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
