@@ -1,6 +1,6 @@
-import {ENEMIES} from './content.mjs?v=35';
-import * as I from './inventory.mjs?v=35';
-import {serviceAccess} from './services.mjs?v=35';
+import {ENEMIES} from './content.mjs?v=36';
+import * as I from './inventory.mjs?v=36';
+import {serviceAccess} from './services.mjs?v=36';
 export const BOSS_TIERS=[{name:'Normal',hp:1,attack:1,keys:1,scales:2},{name:'Challenger',hp:2.5,attack:1.6,keys:2,scales:4},{name:'Ancient',hp:5,attack:2.2,keys:3,scales:7}];
 export const MINI_COOLDOWNS={sunwell:2*3600000,vault:3*3600000};
 export function initBossHunts(s){s.bossHunt??={keys:0,day:-1,kills:{boss:s.bossDefeated?1:0,sunwell:s.kills.sunwell||0,vault:s.kills.vault||0},tiers:[s.bossDefeated?1:0,0,0],ready:{}};for(const c of s.characters){c.bossTier??=0;c.encounter??=null;}}

@@ -314,5 +314,59 @@ for (const [station, items] of Object.entries(groups)) {
   }
 }
 
+// --- 7. everything can say what it is -----------------------------------------------------
+// A stat the player cannot see is a stat that does not exist. By now there are four
+// armour sets whose whole purpose is one number and two dozen accessories that each
+// change one, so every item has to be able to describe itself.
+{
+  const everything = new Set([
+    ...Object.keys(craft.ITEMS),
+    ...Object.keys(craft.WEAPONS),
+    ...Object.keys(craft.ARMOUR),
+    ...Object.keys(craft.ACCESSORIES),
+    ...Object.keys(mining.TOOLS),
+    ...tiles.TILES.filter(t => !t.part).map(t => t.key),
+    ...tiles.WALLS.filter(w => w.key !== 'none').map(w => w.key)
+  ]);
+  let longest = 0;
+  for (const key of everything) {
+    const said = craft.describe(key, tiles);
+    ok(!!said && typeof said.name === 'string' && said.name.length > 0,
+      key + ' has no name in its description');
+    ok(said.name !== key, key + ' describes itself by its own key');
+    ok(Array.isArray(said.lines) && said.lines.length > 0, key + ' says nothing about itself');
+    for (const line of said.lines) {
+      ok(typeof line === 'string' && line.length > 0 && line.length < 80,
+        key + ' has a description line of ' + (line || '').length + ' characters');
+      ok(!/undefined|NaN|\[object/.test(line), key + ' says "' + line + '"');
+    }
+    longest = Math.max(longest, said.lines.length);
+  }
+  ok(longest >= 3, 'the longest description is only ' + longest + ' lines');
+
+  // And the lines actually say the thing that matters for each kind.
+  const says = (key, bit) => craft.describe(key, tiles).lines.join(' | ').includes(bit);
+  ok(says('diamond-staff', 'Magic weapon') && says('diamond-staff', 'mana a shot'),
+    'a staff does not say it is magic or what it costs');
+  ok(says('gold-bow', 'Ranged weapon') && says('gold-bow', 'best arrow'),
+    'a bow does not say it is ranged or how it picks ammunition');
+  ok(says('iron-sword', 'Melee weapon') && says('iron-sword', 'reach'),
+    'a sword does not say it is melee or how far it reaches');
+  ok(says('apprentice-chest', 'defence') && says('apprentice-chest', 'Full set'),
+    'armour does not say its defence or its set bonus');
+  ok(says('royal-gel', 'Only dropped'), 'a drop-only item does not say so');
+  ok(says('grapple', 'Press G'), 'a hook does not say how to use it');
+  ok(says('manacrystal', 'maximum mana'), 'a mana crystal does not say what it does');
+  ok(says('rope', 'Climb'), 'a rope does not say it can be climbed');
+  ok(says('iron-pick', 'Power'), 'a pickaxe does not say how strong it is');
+  ok(says('diamond', 'power'), 'a tile that needs a good pickaxe does not say so');
+
+  // Every drop-only weapon and accessory admits it, which is the only hint the player
+  // ever gets that a thing exists at all.
+  for (const entry of craft.dropOnly()) {
+    ok(says(entry.key, 'Only dropped'), entry.key + ' does not admit it only drops');
+  }
+}
+
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);

@@ -110,3 +110,6 @@
 #panel-content .offline-materials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
 #panel-content .offline-materials p{margin:3px 0;overflow-wrap:anywhere}
 @media(max-width:700px){#panel-content .roster-cards{grid-template-columns:1fr}#panel-content .offline-materials{grid-template-columns:1fr}}
+
+.world-screen[data-boss="true"] .quest-tracker{display:none}
+@media(max-width:700px){.world-screen[data-boss="true"] .map-title h1{font-size:17px}}
