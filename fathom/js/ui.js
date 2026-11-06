@@ -7,7 +7,7 @@
 const CHEST_SLOTS = 20;
 
 function makeUI(root, deps) {
-  const { tiles, texture, inventory, atlas, mining, craft } = deps;
+  const { tiles, texture, inventory, atlas, mining, craft, controls } = deps;
   let craftRows = [];
   let craftSignature = null;
   let onCraft = null;
@@ -399,6 +399,19 @@ function makeUI(root, deps) {
 
     els.gearNote = el('p', 'gear-note', els.screen.querySelector('.equip-panel'));
 
+    // The controls, in the one screen every player is told how to open. Three keys had
+    // been added - the hook, sound, music - with no way for anybody to discover them.
+    if (controls && controls.length) {
+      const keysPanel = el('div', 'panel keys-panel', els.screen);
+      el('h2', null, keysPanel).textContent = 'Controls';
+      const list = el('div', 'keys', keysPanel);
+      for (const [key, what] of controls) {
+        const row = el('div', 'keys-row', list);
+        el('kbd', null, row).textContent = key;
+        el('span', null, row).textContent = what;
+      }
+    }
+
     els.bar = el('div', 'hotbar', root);
     els.hotbarSlots = [];
     const hotbar = inventory.section('hotbar');
@@ -552,6 +565,9 @@ function makeUI(root, deps) {
     if (gear.swing !== 1) lines.push('Swing ' + Math.round(gear.swing * 100) + '%');
     if (gear.pickup !== 1) lines.push('Reach for drops ' + Math.round(gear.pickup * 100) + '%');
     if (gear.slimeFriend) lines.push('Slimes ignore you');
+    // Health regeneration: the Gilded set bonus and the Blood Charm both change it, and
+    // both were doing so silently.
+    if (gear.regen !== 1) lines.push('Healing ' + Math.round(gear.regen * 100) + '%');
     els.gearNote.textContent = lines.join('  \u00b7  ');
   }
 

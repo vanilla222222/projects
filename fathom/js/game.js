@@ -73,6 +73,26 @@ function makeGame(canvas, deps) {
 
   const input = { left: false, right: false, jump: false, down: false, dig: false };
 
+  // What the keys do, in one place, so the help the player reads cannot drift from the
+  // keys the game listens for. Three of these - the hook, the sound, the music - were
+  // added with no way for anybody to find out they existed.
+  const CONTROLS = [
+    ['A D \u2190\u2192', 'Walk'],
+    ['W Space \u2191', 'Jump, climb, swim up'],
+    ['S \u2193', 'Crouch, drop through, climb down'],
+    ['Click', 'Mine, chop, attack'],
+    ['Right click', 'Place, use, talk'],
+    ['1 \u2013 0', 'Hotbar'],
+    ['E', 'Backpack'],
+    ['G', 'Grappling hook'],
+    ['H', 'Is this room a house?'],
+    ['M', 'Map  ( [ ] zoom )'],
+    ['N', 'Sound'],
+    ['B', 'Music'],
+    ['P', 'Pause']
+  ];
+
+
   // Sound. One object for the whole game; it does nothing at all until a key or a click
   // has been seen, because no browser will start an audio context before one.
   const audio = audioModule ? audioModule.makeAudio(window) : null;
@@ -1470,7 +1490,8 @@ function makeGame(canvas, deps) {
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
-      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
+      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft,
+        controls: CONTROLS });
     ui.onChestMove = chestMove;
     ui.onBuy = buyFrom;
     ui.onHeal = healFrom;
@@ -1608,6 +1629,7 @@ function makeGame(canvas, deps) {
     get ui() { return ui; },
     get profiles() { return profiles; },
     get audio() { return audio; },
+    get controls() { return CONTROLS; },
     // A test seam: draw one frame without the animation loop, so a measurement can
     // separate the cost of simulating from the cost of drawing.
     drawOnce() { lastView = renderer.draw(state); return lastView; },
