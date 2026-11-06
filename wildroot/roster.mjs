@@ -1,6 +1,6 @@
-import * as D from './content.mjs?v=33';
-import * as E from './engine.mjs?v=33';
-import {upgradeSource} from './reward-progression.mjs?v=33';
+import * as D from './content.mjs?v=34';
+import * as E from './engine.mjs?v=34';
+import {upgradeSource} from './reward-progression.mjs?v=34';
 export const inEncounter=c=>!!(c.dungeon||c.trial||c.encounter||c.secret||c.activity==='boss');
 const recipeFor=id=>D.RECIPES.find(r=>r.output===id||r.equipment===id);
 const goal=(title,detail,action='inventory',value='')=>({title,detail,action,value});
@@ -33,7 +33,7 @@ export function nextGoal(s,c){
    return craftGoal(s,c,'echo-lens','Improve accuracy with an Echo Lens')||goal('Improve your accuracy','Train Precision when you gain a level; compare hit chance in AFK Info.','skills');}
   if(f.incoming>0&&!c.foodSlots.some(t=>t?.count)){
    if(Object.keys(D.FOODS).some(id=>c.bag[id]))return goal('Equip carried food','Put food in a food slot in Items → Foods. Backpack food is not eaten automatically.','inventory','food');
-   if(E.areaUnlocked(s,'jungle-town'))return craftGoal(s,c,'bread','Pack food for longer fights')||goal('Equip food before longer fights','Find food sources in the item reference, then equip it in Items → Foods.');
+   return goal('Buy and equip food','Trail Bread: Hearthstead shop, 4 coins each. Walk to a town shop, then equip bread in Items → Foods.','inventory','food');
   }
  }
  if(c.activity==='rest')return goal('Choose an assignment','Assign a personally discovered room, or take control and explore.','assignment');

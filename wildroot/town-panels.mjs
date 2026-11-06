@@ -1,5 +1,5 @@
-import * as D from './content.mjs?v=33';
-import * as E from './engine.mjs?v=33';
+import * as D from './content.mjs?v=34';
+import * as E from './engine.mjs?v=34';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString();
 const effectName=id=>({enchantXP:'enchanting XP',miningCarry:'mining stack capacity',loggingCarry:'logging stack capacity',foodCarry:'food stack capacity',alchemy:'cauldron brewing speed',crafting:'anvil and foundry speed'}[id]||id);

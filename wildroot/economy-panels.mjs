@@ -1,7 +1,7 @@
-import * as D from './content.mjs?v=33';
-import * as E from './engine.mjs?v=33';
-import * as UI from './ui-panels.mjs?v=33';
-import {icon,itemArt,esc,tabs,section} from './ui-art.mjs?v=33';
+import * as D from './content.mjs?v=34';
+import * as E from './engine.mjs?v=34';
+import * as UI from './ui-panels.mjs?v=34';
+import {icon,itemArt,esc,tabs,section} from './ui-art.mjs?v=34';
 const button=(text,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
 export function carriedActions(s,c,kind,v){
