@@ -121,7 +121,12 @@ const TILES = [
   { id: 69, key: 'sapphire', name: 'Sapphire', solid: true, opacity: 40, emit: 3, hardness: 1.6, colour: '#3f7fd8', grain: 0.16, ore: true, gem: true, require: 35, toughness: 145 },
   { id: 70, key: 'emerald', name: 'Emerald', solid: true, opacity: 40, emit: 3, hardness: 1.9, colour: '#3fb56a', grain: 0.16, ore: true, gem: true, require: 35, toughness: 165 },
   { id: 71, key: 'ruby', name: 'Ruby', solid: true, opacity: 40, emit: 4, hardness: 2.2, colour: '#d8344c', grain: 0.16, ore: true, gem: true, require: 45, toughness: 185 },
-  { id: 72, key: 'diamond', name: 'Diamond', solid: true, opacity: 30, emit: 5, hardness: 2.6, colour: '#bfe8f0', grain: 0.16, ore: true, gem: true, require: 55, toughness: 210 }
+  { id: 72, key: 'diamond', name: 'Diamond', solid: true, opacity: 30, emit: 5, hardness: 2.6, colour: '#bfe8f0', grain: 0.16, ore: true, gem: true, require: 55, toughness: 210 },
+
+  // Rope. Not solid, so it blocks nothing and holds nothing up; `climb` is the whole of
+  // it, and the physics reads that flag rather than the tile's identity, so anything
+  // climbable added later works the same way for free.
+  { id: 73, key: 'rope', name: 'Rope', solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#b89a62', grain: 0, climb: true, toughness: 10 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is

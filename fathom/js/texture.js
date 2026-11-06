@@ -703,6 +703,24 @@ function paintLifeCrystal(ctx, spec, variant, ox, oy) {
   }
 }
 
+// A rope: a twisted cord down the middle of the tile, drawn so that stacked tiles line
+// up into one continuous line rather than into a column of separate dashes.
+function paintRope(ctx, spec, variant, ox, oy) {
+  const c = spec.colour;
+  ctx.fillStyle = shade(c, -0.35);
+  ctx.fillRect(ox + 7, oy, 3, TILE);
+  ctx.fillStyle = c;
+  for (let y = 0; y < TILE; y += 1) {
+    // Two strands crossing: the offset is a function of y alone, so the twist continues
+    // across the tile boundary.
+    const t = Math.sin((y + oy) * 0.9) * 1.1;
+    ctx.fillRect(ox + 8 + Math.round(t), oy + y, 1, 1);
+    ctx.fillRect(ox + 8 - Math.round(t), oy + y, 1, 1);
+  }
+  ctx.fillStyle = shade(c, 0.35);
+  for (let y = 1; y < TILE; y += 4) ctx.fillRect(ox + 8, oy + y, 1, 1);
+}
+
 // A pot: a bellied jar with a rim and a shoulder highlight.
 function paintPot(ctx, spec, variant, ox, oy) {
   const c = spec.colour;
@@ -844,6 +862,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.chest) paintChest(ctx, spec, v, ox, oy);
       else if (spec.crystal === 'life') paintLifeCrystal(ctx, spec, v, ox, oy);
       else if (spec.pot) paintPot(ctx, spec, v, ox, oy);
+      else if (spec.climb) paintRope(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'

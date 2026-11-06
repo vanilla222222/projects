@@ -697,3 +697,36 @@ it, that it produces minions and stops at its own limit, that it never sinks thr
 floor over twenty seconds of hopping, that walking 260 tiles away does not lose it, that
 it shrinks in proportion and stays on the floor while shrinking, and that killing it ends
 the fight.
+
+## Ropes and the grappling hook
+
+A cave was a series of one-way drops. You could always get down and often not back up, so
+depth was a commitment rather than a place to move around in. Two things fix that, and
+both are Terraria's.
+
+**A rope** is not solid, holds nothing up, and blocks nothing. The whole of it is a
+`climb` flag, which the physics reads rather than the tile's identity, so anything
+climbable added later works the same way for free. On a rope gravity is simply off: the
+jump key becomes up, down is down, and letting go of both holds you where you are. Step
+sideways off the one-tile column and you fall, which is how you get off one. Climbing down
+also passes through a platform, because a rope through a platform is the normal way to
+build a shaft.
+
+**The hook** is a head that flies until it bites and then reels you in. It lives on the
+game rather than on the player, because it is a thing in the world with its own position
+and the player is simply held by it. Jump lets go, which is why a hook can never trap you,
+and the anchor being mined out from under you drops you too.
+
+Gravity is off for a hooked player for the same reason it is off on a rope: the vertical
+speed is decided elsewhere - by the pull, or by which key is down - and letting gravity
+also have a say produces a fight between two rules. The hook is stepped **before** the
+physics rather than after, or everything it does is a frame behind what the player sees.
+
+Two hooks: iron (18 tiles, pull 16) and crystal (30 tiles, faster and harder). `range`,
+`speed` and `pull` live on the item, so swapping hooks mid-swing simply changes the next
+shot.
+
+The physics test proves the contract rather than the implementation: two seconds of
+climbing rises, a second of hanging does not slide, climbing down descends, stepping
+sideways leaves the rope and falls, a hooked player does not accelerate downward over
+three seconds, and letting go restores gravity rather than leaving the player floating.
