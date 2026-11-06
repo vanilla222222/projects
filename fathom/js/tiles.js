@@ -167,6 +167,47 @@ function pushTile(spec) {
   return spec;
 }
 
+// --- multi-tile objects ----------------------------------------------------------------
+// A door is three tiles tall and a chest is two by two, but the world stores one byte per
+// tile, so an object cannot carry its own extent. Each cell therefore gets its own tile
+// id, tagged with which cell of which object it is. From any cell the origin is
+// (x - part.dx, y - part.dy), which is all the code needs to use, break or draw the whole
+// thing as one piece.
+//
+// The alternative - one tile id plus a side table of object positions - would need that
+// table saved, synchronised with every edit, and consulted on every collision test. Cell
+// tiles cost ids, which are cheap here, and nothing else.
+function defineMulti(key, name, w, h, build) {
+  const cells = [];
+  for (let dy = 0; dy < h; dy += 1) {
+    for (let dx = 0; dx < w; dx += 1) {
+      const spec = build(dx, dy);
+      spec.key = key + '_' + dx + dy;
+      spec.name = name;
+      spec.part = { of: key, dx, dy, w, h };
+      cells.push(pushTile(spec));
+    }
+  }
+  MULTI[key] = { key, name, w, h, cells };
+  return MULTI[key];
+}
+
+const MULTI = {};
+
+// The origin of the object this tile belongs to, or null if it is an ordinary tile.
+function originOf(spec, x, y) {
+  if (!spec || !spec.part) return null;
+  return { x: x - spec.part.dx, y: y - spec.part.dy, of: spec.part.of,
+    w: spec.part.w, h: spec.part.h };
+}
+
+// The cell tile of a multi-tile object at a given offset.
+function cellOf(key, dx, dy) {
+  const def = MULTI[key];
+  if (!def) return null;
+  return def.cells[dy * def.w + dx];
+}
+
 for (const w of WOODS) {
   const dark = shadeHex(w.colour, -0.22);
   // The standing trunk. Non-solid, so a forest is never a wall, and it drops its lumber.
@@ -179,12 +220,18 @@ for (const w of WOODS) {
   pushTile({ key: w.key + 'platform', name: w.name + ' Platform', solid: false, opacity: 6,
     emit: 0, hardness: 0.3, colour: w.colour, grain: 0.08, toughness: 60, wood: w.key,
     platform: true });
-  pushTile({ key: w.key + 'door', name: w.name + ' Door', solid: true, opacity: 34, emit: 0,
-    hardness: 0.5, colour: dark, grain: 0.07, toughness: 80, wood: w.key,
-    door: 'closed', swings: w.key + 'dooropen', drops: w.key + 'door' });
-  pushTile({ key: w.key + 'dooropen', name: w.name + ' Door', solid: false, opacity: 4,
-    emit: 0, hardness: 0.5, colour: dark, grain: 0.07, toughness: 80, wood: w.key,
-    door: 'open', swings: w.key + 'door', drops: w.key + 'door' });
+  // A door is one tile wide and three tall, as in Terraria, so a doorway is a doorway
+  // rather than a stack of separate hatches each with its own handle.
+  defineMulti(w.key + 'door', w.name + ' Door', 1, 3, (dx, dy) => ({
+    solid: true, opacity: 34, emit: 0, hardness: 0.5, colour: dark, grain: 0.07,
+    toughness: 80, wood: w.key, door: 'closed', swings: w.key + 'dooropen',
+    drops: w.key + 'door', doorRow: dy
+  }));
+  defineMulti(w.key + 'dooropen', w.name + ' Door', 1, 3, (dx, dy) => ({
+    solid: false, opacity: 4, emit: 0, hardness: 0.5, colour: dark, grain: 0.07,
+    toughness: 80, wood: w.key, door: 'open', swings: w.key + 'door',
+    drops: w.key + 'door', doorRow: dy
+  }));
   pushTile({ key: w.key + 'chair', name: w.name + ' Chair', solid: false, opacity: 4, emit: 0,
     hardness: 0.2, colour: w.colour, grain: 0.06, toughness: 40, wood: w.key, furniture: 'chair' });
   pushTile({ key: w.key + 'table', name: w.name + ' Table', solid: false, opacity: 8, emit: 0,
@@ -192,6 +239,23 @@ for (const w of WOODS) {
   pushTile({ key: w.key + 'bench', name: w.name + ' Work Bench', solid: false, opacity: 8,
     emit: 0, hardness: 0.25, colour: w.colour, grain: 0.1, toughness: 60, wood: w.key,
     station: 'workbench', furniture: 'bench' });
+}
+
+// Chests. Two by two, with a loot table decided by where they are found: a cabin in the
+// caves holds different things from one in the deep. Contents are generated from the
+// position rather than stored, like everything else here, and only become an edit once
+// the player has taken something out.
+const CHESTS = [
+  { key: 'woodchest', name: 'Wooden Chest', colour: '#8a6038', band: 'caves' },
+  { key: 'ironchest', name: 'Iron Chest', colour: '#8e949e', band: 'deep' },
+  { key: 'goldchest', name: 'Gilded Chest', colour: '#c9a542', band: 'rich' }
+];
+
+for (const c of CHESTS) {
+  defineMulti(c.key, c.name, 2, 2, () => ({
+    solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: c.colour, grain: 0.05,
+    toughness: 70, chest: c.key, drops: c.key
+  }));
 }
 
 const WALL_BY_KEY = {};
@@ -243,7 +307,8 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WOOD_BY_TREE, shadeHex, tile, isSolid, opacityOf, emitOf, idOf,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WOOD_BY_TREE, shadeHex,
+  MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 
 if (typeof module !== 'undefined' && module.exports) {

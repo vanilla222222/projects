@@ -22,6 +22,10 @@ function makeWorld(seed, generator) {
   // tile with no entry here is full, which is what generation produces, so an ocean costs
   // nothing to represent and only the tiles a player has disturbed take up space.
   const levels = new Map();
+  // What is inside each chest, keyed by its origin. Absent means "whatever the generator
+  // says", so an untouched world of chests costs nothing to save; a chest the player has
+  // opened and changed gets an entry.
+  const containers = new Map();
   const dirty = new Set();
 
   function chunkAt(cx, cy) {
@@ -180,6 +184,28 @@ function makeWorld(seed, generator) {
     return true;
   }
 
+  // --- containers -----------------------------------------------------------------
+  function containerKey(x, y) {
+    return x + ',' + y;
+  }
+
+  function getContainer(x, y) {
+    const key = containerKey(x, y);
+    const stored = containers.get(key);
+    if (stored) return stored;
+    if (!generator.baseContainerAt) return null;
+    return generator.baseContainerAt(seed, x, y);
+  }
+
+  function setContainer(x, y, items) {
+    containers.set(containerKey(x, y), items);
+    dirty.add(chunkKey(Math.floor(x / generator.CHUNK), Math.floor(y / generator.CHUNK)));
+  }
+
+  function clearContainer(x, y) {
+    containers.delete(containerKey(x, y));
+  }
+
   function isWallSafe(x, y) {
     if (getWall(x, y) === 0) return false;
     const cx = Math.floor(x / generator.CHUNK);
@@ -203,6 +229,7 @@ function makeWorld(seed, generator) {
     for (const diff of edits.values()) n += diff.size;
     for (const diff of wallEdits.values()) n += diff.size;
     for (const slot of levels.values()) n += slot.size;
+    n += containers.size;
     return n;
   }
 
@@ -213,13 +240,16 @@ function makeWorld(seed, generator) {
     for (const [key, diff] of wallEdits) wallOut[key] = [...diff.entries()];
     const levelOut = {};
     for (const [key, slot] of levels) levelOut[key] = [...slot.entries()];
-    return { seed, edits: out, wallEdits: wallOut, levels: levelOut };
+    const boxes = {};
+    for (const [key, items] of containers) boxes[key] = items;
+    return { seed, edits: out, wallEdits: wallOut, levels: levelOut, containers: boxes };
   }
 
   function restore(saved) {
     edits.clear();
     wallEdits.clear();
     levels.clear();
+    containers.clear();
     loaded.clear();
     for (const [key, list] of Object.entries(saved.edits || {})) {
       edits.set(key, new Map(list));
@@ -230,9 +260,13 @@ function makeWorld(seed, generator) {
     for (const [key, list] of Object.entries(saved.levels || {})) {
       levels.set(key, new Map(list));
     }
+    for (const [key, items] of Object.entries(saved.containers || {})) {
+      containers.set(key, items);
+    }
   }
 
-  return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe, chunkAt, evictOutside, editCount, serialize, restore,
+  return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
+    getContainer, setContainer, clearContainer, chunkAt, evictOutside, editCount, serialize, restore,
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }
 

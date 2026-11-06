@@ -4,11 +4,15 @@
 // the browser handles hit-testing. Item icons are drawn from the same baked atlas the world
 // uses, so a slot shows the block it will place.
 
+const CHEST_SLOTS = 20;
+
 function makeUI(root, deps) {
   const { tiles, texture, inventory, atlas, mining, craft } = deps;
   let craftRows = [];
   let craftSignature = null;
   let onCraft = null;
+  let chest = null;
+  let onChestMove = null;
   const els = {};
   let open = false;
 
@@ -26,7 +30,9 @@ function makeUI(root, deps) {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     if (!item) return canvas;
-    const spec = tiles.BY_KEY[item.key];
+    // A multi-tile object is shown by its top cell, which is the recognisable one.
+    const multi = tiles.MULTI && tiles.MULTI[item.key];
+    const spec = multi ? multi.cells[0] : tiles.BY_KEY[item.key];
     if (spec && spec.colour) {
       ctx.drawImage(atlas, 0, spec.id * texture.TILE, texture.TILE, texture.TILE, 0, 0, size, size);
       return canvas;
@@ -249,6 +255,24 @@ function makeUI(root, deps) {
       }
     }
 
+    // The chest panel: present only while a chest is open, which is why it is built
+    // once and hidden rather than created and destroyed on every use.
+    els.chestPanel = el('div', 'panel chest-panel', els.screen);
+    el('h2', null, els.chestPanel).textContent = 'Chest';
+    els.chestGrid = el('div', 'grid chest-grid', els.chestPanel);
+    els.chestSlots = [];
+    for (let i = 0; i < CHEST_SLOTS; i += 1) {
+      const node = el('div', 'slot', els.chestGrid);
+      node.dataset.chest = String(i);
+      node.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (onChestMove) onChestMove(i, ev.shiftKey);
+      });
+      els.chestSlots.push(node);
+    }
+    el('p', 'hint', els.chestPanel).textContent = 'Click to take \u2014 shift-click to stow';
+
     const craftPanel = el('div', 'panel craft-panel', els.screen);
     el('h2', null, craftPanel).textContent = 'Crafting';
     els.craftStations = el('p', 'stations', craftPanel);
@@ -341,6 +365,24 @@ function makeUI(root, deps) {
       : (total ? 'Nothing you can afford yet.' : 'Find or place a station.');
   }
 
+  function paintChest() {
+    if (!els.chestPanel) return;
+    els.chestPanel.classList.toggle('visible', !!chest);
+    if (!chest) return;
+    for (let i = 0; i < els.chestSlots.length; i += 1) {
+      const node = els.chestSlots[i];
+      const item = chest.items[i];
+      node.textContent = '';
+      node.classList.toggle('filled', !!item);
+      if (!item) continue;
+      node.appendChild(iconFor(item, 30));
+      if (item.count > 1) {
+        const n = el('span', 'count', node);
+        n.textContent = String(item.count);
+      }
+    }
+  }
+
   function sync(state) {
     for (let i = 0; i < els.hotbarSlots.length; i += 1) {
       paintSlot(els.hotbarSlots[i], inventory.section('hotbar').from + i);
@@ -354,6 +396,7 @@ function makeUI(root, deps) {
       }
       paintSlot(els.trashSlot, inventory.section('trash').from);
       paintCrafting(state);
+      paintChest();
     }
     const held = inventory.held;
     els.held.textContent = '';
@@ -389,7 +432,12 @@ function makeUI(root, deps) {
   return { build, sync, toggle, setOpen, get isOpen() { return open; },
     setField(key, text) { if (els[key]) els[key].textContent = text; },
     setMessage(text) { if (els.message) els.message.textContent = text; },
-    set onCraft(fn) { onCraft = fn; } };
+    set onCraft(fn) { onCraft = fn; },
+    set onChestMove(fn) { onChestMove = fn; },
+    openChest(box) { chest = box; craftSignature = null; },
+    closeChest() { chest = null; },
+    get chest() { return chest; },
+    CHEST_SLOTS };
 }
 
 // The module's public surface, declared once. index.html used to repeat these

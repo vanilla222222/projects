@@ -466,3 +466,14 @@ html, body {
   .craft-panel { width: 240px; }
   .craft-list { max-height: 240px; }
 }
+
+/* A chest, shown beside the backpack while one is open. Hidden rather than removed, so
+   opening a second chest does not rebuild the panel. */
+.chest-panel { padding: 14px; pointer-events: auto; display: none; }
+.chest-panel.visible { display: block; }
+.chest-grid { grid-template-columns: repeat(5, 44px); }
+.chest-panel .hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #7f8da0;
+}
