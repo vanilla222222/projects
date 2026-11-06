@@ -83,3 +83,10 @@
 
 #panel-content .npc-speech:hover,#panel-content .npc-speech:focus,#panel-content .npc-speech:active{background:#f7e9bd!important;color:#343b36!important}
 #panel-content .npc-speech:focus-visible{outline:3px solid #977334;outline-offset:2px}
+
+/* Storage sources and permanent-upgrade status stay readable on narrow screens. */
+#panel-content .capacity-list h4{font-size:14px!important;line-height:1.4}
+#panel-content .capacity-entry{gap:8px;padding:9px;align-items:center}
+#panel-content .capacity-entry span{min-width:0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+#panel-content .capacity-entry small,#panel-content .capacity-entry b{font-size:12px!important;line-height:1.4;white-space:normal}
+#panel-content .capacity-entry>b{flex:0 0 72px;text-align:right;color:#3f5634}
