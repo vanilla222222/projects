@@ -175,3 +175,28 @@ two different places is most of what makes a biome felt rather than labelled.
   not a tinted square, so a hillside has a silhouette.
 - Trees carry branches and a root flare. Without them a trunk is a pole with a hat.
 - The blights have their own wood, so a blighted tree stops looking like an ordinary one.
+
+## Water
+
+Water was static when oceans were added: a body you could swim in but not move. It now
+flows. Each water tile carries a level from 1 to 255 and the simulation moves volume down
+first, then sideways toward the average of a cell and its open neighbours.
+
+Three things keep it affordable on an endless world:
+
+- **An active set.** A cell is simulated only while it is moving; a pass that moves nothing
+  out of a cell drops it. Still water is therefore free, which matters when most water in
+  the world is a settled ocean.
+- **A budget per step.** Leftover cells wait for the next frame, so a collapsing reservoir
+  costs several frames rather than one long one.
+- **A minimum flow.** Sideways movement targets the floored average and never passes it,
+  so equal cells exchange nothing.
+
+Flatness has an exact guarantee and it is not "every column equal": two adjacent columns
+can sit one unit apart with no legal move between them, so an n-column basin may hold a
+gradient of up to n-1 units out of 255. `tools/liquid-test.js` asserts that, rather than a
+stricter claim that would be false.
+
+Only partial tiles are stored. A water tile with no entry is full, which is what generation
+produces, so an entire ocean costs nothing to represent and a save holds only the tiles a
+player has actually disturbed.

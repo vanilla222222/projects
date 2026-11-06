@@ -87,6 +87,7 @@ the cost of one small canvas.
 | `js/light.js` | coloured sun and emitter propagation, day cycle |
 | `js/mining.js` | Pickaxe power, per-tile toughness, the tier gate |
 | `js/craft.js` | Recipes, the bar and tool registry, station reach |
+| `js/liquid.js` | Flowing water: levels, the active set, the budget |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/render.js` | sky, parallax, walls, tiles, lighting, bloom, particles |

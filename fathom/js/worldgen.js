@@ -584,6 +584,16 @@ function canStamp(existing, id) {
   return GROWS_IN_WATER.indexOf(spec.key) !== -1;
 }
 
+// Identity helpers the live world asks for, so chunks.js never needs its own copy of the
+// tile registry just to tell water from rock.
+function isLiquidId(id) {
+  return !!tile(id).liquid;
+}
+
+function isSolidId(id) {
+  return !!tile(id).solid;
+}
+
 function generateChunk(seed, cx, cy) {
   const tiles = new Uint8Array(CHUNK * CHUNK);
   const walls = new Uint8Array(CHUNK * CHUNK);
@@ -618,6 +628,7 @@ const EXPORTS_worldgen = {
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
+    isLiquidId, isSolidId, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };

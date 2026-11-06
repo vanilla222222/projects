@@ -3,6 +3,10 @@
 // over generation. An edited chunk remembers only its diff, so a save file is the seed plus
 // the tiles the player actually changed rather than the world.
 
+// A full tile of water. Stored in one byte, so this is the largest value that fits and
+// still leaves room to halve repeatedly without the rounding swallowing the remainder.
+const LEVEL_FULL = 255;
+
 function chunkKey(cx, cy) {
   return cx + ':' + cy;
 }
@@ -11,6 +15,10 @@ function makeWorld(seed, generator) {
   const loaded = new Map();
   const edits = new Map();
   const wallEdits = new Map();
+  // How full each water tile is, 1..LEVEL_FULL. Only partial tiles are stored: a water
+  // tile with no entry here is full, which is what generation produces, so an ocean costs
+  // nothing to represent and only the tiles a player has disturbed take up space.
+  const levels = new Map();
   const dirty = new Set();
 
   function chunkAt(cx, cy) {
@@ -96,6 +104,61 @@ function makeWorld(seed, generator) {
   // Safe walls stop enemies spawning in front of them and are what a built structure needs;
   // naturally generated walls do neither. The rule is "the player put it there", and that is
   // already recorded in the wall edit diff, so safety needs no storage of its own.
+  // --- water levels ---------------------------------------------------------------
+  // A level is meaningless without water in the tile, so these two always agree: setting
+  // a level of zero removes the water, and removing the water forgets the level.
+  function getLevel(x, y) {
+    if (!generator.isLiquidId(get(x, y))) return 0;
+    const cx = Math.floor(x / generator.CHUNK);
+    const cy = Math.floor(y / generator.CHUNK);
+    const slot = levels.get(chunkKey(cx, cy));
+    if (!slot) return LEVEL_FULL;
+    const lx = x - cx * generator.CHUNK;
+    const ly = y - cy * generator.CHUNK;
+    const found = slot.get(ly * generator.CHUNK + lx);
+    return found === undefined ? LEVEL_FULL : found;
+  }
+
+  function setLevel(x, y, value) {
+    if (y < 0 || y >= generator.WORLD_H) return false;
+    const amount = Math.max(0, Math.min(LEVEL_FULL, Math.round(value)));
+    const cx = Math.floor(x / generator.CHUNK);
+    const cy = Math.floor(y / generator.CHUNK);
+    const key = chunkKey(cx, cy);
+    const lx = x - cx * generator.CHUNK;
+    const ly = y - cy * generator.CHUNK;
+    const index = ly * generator.CHUNK + lx;
+    let slot = levels.get(key);
+
+    if (amount === 0) {
+      if (generator.isLiquidId(get(x, y))) set(x, y, 0);
+      if (slot) {
+        slot.delete(index);
+        if (slot.size === 0) levels.delete(key);
+      }
+      return true;
+    }
+    if (!generator.isLiquidId(get(x, y))) {
+      if (generator.isSolidId(get(x, y))) return false;
+      set(x, y, generator.WATER_ID);
+    }
+    if (amount >= LEVEL_FULL) {
+      if (slot) {
+        slot.delete(index);
+        if (slot.size === 0) levels.delete(key);
+      }
+      dirty.add(key);
+      return true;
+    }
+    if (!slot) {
+      slot = new Map();
+      levels.set(key, slot);
+    }
+    slot.set(index, amount);
+    dirty.add(key);
+    return true;
+  }
+
   function isWallSafe(x, y) {
     if (getWall(x, y) === 0) return false;
     const cx = Math.floor(x / generator.CHUNK);
@@ -118,6 +181,7 @@ function makeWorld(seed, generator) {
     let n = 0;
     for (const diff of edits.values()) n += diff.size;
     for (const diff of wallEdits.values()) n += diff.size;
+    for (const slot of levels.values()) n += slot.size;
     return n;
   }
 
@@ -126,12 +190,15 @@ function makeWorld(seed, generator) {
     for (const [key, diff] of edits) out[key] = [...diff.entries()];
     const wallOut = {};
     for (const [key, diff] of wallEdits) wallOut[key] = [...diff.entries()];
-    return { seed, edits: out, wallEdits: wallOut };
+    const levelOut = {};
+    for (const [key, slot] of levels) levelOut[key] = [...slot.entries()];
+    return { seed, edits: out, wallEdits: wallOut, levels: levelOut };
   }
 
   function restore(saved) {
     edits.clear();
     wallEdits.clear();
+    levels.clear();
     loaded.clear();
     for (const [key, list] of Object.entries(saved.edits || {})) {
       edits.set(key, new Map(list));
@@ -139,16 +206,19 @@ function makeWorld(seed, generator) {
     for (const [key, list] of Object.entries(saved.wallEdits || {})) {
       wallEdits.set(key, new Map(list));
     }
+    for (const [key, list] of Object.entries(saved.levels || {})) {
+      levels.set(key, new Map(list));
+    }
   }
 
-  return { seed, get, set, getWall, setWall, isWallSafe, chunkAt, evictOutside, editCount, serialize, restore,
+  return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe, chunkAt, evictOutside, editCount, serialize, restore,
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }
 
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_chunks = { makeWorld, chunkKey };
+const EXPORTS_chunks = { makeWorld, chunkKey, LEVEL_FULL };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_chunks;

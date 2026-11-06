@@ -154,9 +154,26 @@ function makeRenderer(canvas, deps) {
         const sx = tx * size - offsetX;
         const sy = ty * size - offsetY;
         const variant = texture.variantFor(wx, wy);
-        ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
-
         const spec = tiles.tile(id);
+
+        // Water is drawn at the height it actually holds, measured from the bottom of the
+        // tile. A tile that is a third full looks a third full, which is the only way a
+        // shoreline or a draining pool reads as anything other than a staircase.
+        if (spec.liquid) {
+          const level = state.world.getLevel ? state.world.getLevel(wx, wy) : 255;
+          if (level <= 0) continue;
+          // A tile with water above it is drawn full, so a deep body has no seams in it.
+          const below = state.world.get(wx, wy - 1);
+          const brimming = tiles.tile(below).liquid || level >= 250;
+          const frac = brimming ? 1 : Math.max(0.08, level / 255);
+          const hPix = Math.round(size * frac);
+          const srcH = Math.max(1, Math.round(TILE * frac));
+          ctx.drawImage(atlas, variant * TILE, id * TILE + (TILE - srcH), TILE, srcH,
+            sx, sy + size - hPix, size, hPix);
+          continue;
+        }
+
+        ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
         if (!spec.solid) continue;
         const mask = autotile.maskAt((nx, ny) => tiles.isSolid(state.world.get(nx, ny)), wx, wy);
         if (autotile.isBuried(mask)) continue;
