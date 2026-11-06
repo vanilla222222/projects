@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=21';
-import * as D from './content.mjs?v=21';
-import * as UI from './parity-panels.mjs?v=21';
-import {World,abilitySet} from './world.mjs?v=21';
-import {roomLayout,pointFor} from './layouts.mjs?v=21';
+import * as E from './engine.mjs?v=23';
+import * as D from './content.mjs?v=23';
+import * as UI from './parity-panels.mjs?v=23';
+import {World,abilitySet} from './world.mjs?v=23';
+import {roomLayout,pointFor} from './layouts.mjs?v=23';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};
 const near=(c,id)=>{const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,activity:'rest',secret:null,position:pointFor(roomLayout(d.area,d.zone),d.point)});};
 const round=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
@@ -49,4 +49,20 @@ test('Dungeon practice, abandonment and daily entry refills cannot create duplic
 });
 test('New panels render meaningful content, every new inventory item has three real uses, malformed progress rejects',()=>{
  const{s,c}=setup();for(const id of ['buildExtras','books','journey','afkDetails','hunts','dungeon'])assert.doesNotMatch(UI[id](s,c),/undefined|NaN/);for(const id of ['rootwarden-scale','rootbound-helm','rootbound-mail','ancient-greaves'])assert.ok(D.purposes(id).length>=3,id);for(const mutate of [s=>s.characters[0].attributes.might=999,s=>s.books=['bad'],s=>s.characters[0].journey.kills.bad=1,s=>s.bossHunt.keys=10,s=>s.dungeons.charges=10,s=>s.afkReport={seconds:1},s=>s.characters[0].specialTalents.hemoglobin=1]){const raw=JSON.parse(JSON.stringify(s));mutate(raw);assert.throws(()=>E.restoreSave(raw));}
+});
+
+test('A boss knockout ends the attempt outside its gate; retrying spends a new key and restores boss health',()=>{
+ const{s,c}=setup();s.kills['jungle-3']=120;s.storyFlags.bossPermit=true;s.bossDefeated=true;s.bossHunt.keys=3;c.level=20;c.hp=E.maxHp(c);E.travel(s,c,'jungle-town',2);const w=new World(s,{rng:()=>.5});assert.ok(w.travel(c.area,c.zone,{boss:true,entrance:'portal-left'}));const boss=w.map.monsters[0];w.hit(boss);assert.ok(boss.hp<boss.enemy.hp);assert.equal(s.bossHunt.keys,2);w.hurt(100000);w.step(.02);assert.equal(w.map.boss,false);assert.equal(c.encounter,null);assert.equal(c.activity,'rest');assert.equal(w.player.respawn,3);assert.equal(s.bossHunt.keys,2);assert.equal(s.bossHunt.tiers[0],0);for(let i=0;i<160;i++)w.step(.02);assert.equal(c.hp,E.maxHp(c));assert.ok(w.travel(c.area,c.zone,{boss:true,entrance:'portal-left'}));assert.equal(s.bossHunt.keys,1);assert.equal(w.map.monsters[0].hp,w.map.monsters[0].enemy.hp);assert.ok(round(s));
+});
+test('Guardian defeat recovers outside its hidden entrance without a victory cooldown or reward',()=>{
+ const{s,c}=setup();c.journey.kills['forest-2']=30;s.secretUnlocks=['sunwell'];const w=new World(s,{rng:()=>.5});assert.ok(w.travel('forest',3,{secret:'sunwell',entrance:'portal-left'}));w.hurt(100000);w.step(.02);assert.equal(c.secret,null);assert.equal(c.encounter,null);assert.equal(w.map.secret,null);assert.equal(c.area,'forest');assert.equal(c.zone,3);assert.equal(s.bossHunt.kills.sunwell,0);assert.equal(s.bossHunt.ready.sunwell,undefined);assert.equal(c.bag['sap-essence'],undefined);assert.ok(w.map.platforms.some(p=>p.y===w.player.y&&w.player.x>=p.x&&w.player.x<=p.x+p.w));assert.ok(round(s));
+});
+test('Passive foundry level-ups keep dungeon HP isolated while retaining the level-up recovery at home',()=>{
+ const{s,c}=setup();c.level=4;c.xp=E.xpNeeded(c)-1;s.coins=10;s.inventory.oak=10;near(c,'foundry');assert.ok(E.enqueue(s,c,'charcoal',1));near(c,'dungeon');const homeHp=c.hp;assert.ok(E.startDungeon(s,c));c.hp=35;E.advanceProduction(s,20);assert.equal(c.level,5);assert.equal(c.hp,35);assert.equal(c.dungeon.home.hp,homeHp+6);E.finishDungeon(s,c,'abandoned',false);assert.equal(c.hp,homeHp+6);assert.ok(round(s));
+});
+test('Guardian reservations prevent parallel character entries and repeated starts never consume another boss key',()=>{
+ const{s,c}=setup();s.unlockedClasses=['warrior'];E.createCharacter(s,'Second');const b=E.selected(s);assert.ok(E.beginEncounter(s,c,'sunwell',1000));assert.equal(E.beginEncounter(s,b,'sunwell',1000),false);assert.equal(E.beginEncounter(s,c,'sunwell',1000),false);c.encounter=null;assert.ok(E.beginEncounter(s,b,'sunwell',1000));E.finishEncounter(s,b,1000);assert.equal(E.beginEncounter(s,c,'sunwell',1001),false);s.storyFlags.bossPermit=true;s.bossDefeated=true;s.bossHunt.keys=3;assert.ok(E.beginEncounter(s,c,'boss',1000));assert.equal(E.beginEncounter(s,c,'boss',1000),false);assert.equal(s.bossHunt.keys,2);
+});
+test('A guardian victory removes lingering attacks instead of hitting the player after the hunt is won',()=>{
+ const{s,c}=setup();c.level=30;c.journey.kills['forest-2']=30;s.secretUnlocks=['sunwell'];const w=new World(s,{rng:()=>.5});assert.ok(w.travel('forest',3,{secret:'sunwell',entrance:'portal-left'}));w.hazards=[{kind:'bolt',x:w.player.x,y:w.player.y-35,vx:0,width:100,height:100,damage:10000,life:4}];w.hit(w.map.monsters[0],10000);assert.equal(s.bossHunt.kills.sunwell,1);assert.equal(w.hazards.length,0);const hp=c.hp;w.step(.02);assert.ok(c.hp>=hp);assert.equal(w.map.secret,'sunwell');assert.ok(round(s));
 });

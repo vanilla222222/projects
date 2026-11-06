@@ -1,4 +1,4 @@
-import {AREAS,ENEMIES,STORY,ITEMS,SKILLS} from './content.mjs?v=21';
+import {AREAS,ENEMIES,STORY,ITEMS,SKILLS} from './content.mjs?v=23';
 export const PORTAL_GOALS={forest:[8,18,30,45,60],caves:[12,28,50],jungle:[40,60,90,120],deep:[45,65,95,140],tree:[25,45,70]};
 export const personalStory=c=>c.journey.story;
 export function initJourney(c){c.journey??={kills:{},story:{},visited:{'forest-0':true,'town-0':true},legacy:[]};return c;}

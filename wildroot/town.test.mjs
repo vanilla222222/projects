@@ -1,6 +1,6 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=21';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=23';
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as D from './content.mjs?v=21';import * as E from './engine.mjs?v=21';import * as U from './panels.mjs?v=21';import * as T from './town-panels.mjs?v=21';import {World,createMap,abilityAvailable} from './world.mjs?v=21';
+import * as D from './content.mjs?v=23';import * as E from './engine.mjs?v=23';import * as U from './panels.mjs?v=23';import * as T from './town-panels.mjs?v=23';import {World,createMap,abilityAvailable} from './world.mjs?v=23';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c,w:new World(s)};};
 const near=(s,c,id)=>{E.travel(s,c,id==='shop'?'town':'town',id==='shop'?0:3);c.position={...createMap(c.area,c.zone).facilities.find(e=>e.id===id)};};
 test('Legacy Square branches from Village Green, retains the Foundry route and keeps World 2 dormant',()=>{const square=createMap('town',3),green=createMap('town',0),foundry=createMap('town',2);assert.equal(square.portals.length,1);assert.equal(square.portals[0].destination.zone,0);assert.equal(green.portals.find(p=>p.id==='portal-town-square').destination.zone,3);assert.equal(foundry.portals.find(p=>p.id==='portal-right').destination.area,'caves');assert.deepEqual(square.facilities.map(f=>f.kind),['stamps','statues','vault','tasks','worldgate','dungeon','arena','constellation','survey']);assert.equal(square.monsters.length,0);assert.equal(square.storage.length,1);assert.equal(D.AREAS.length,7);});
