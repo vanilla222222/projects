@@ -1608,6 +1608,10 @@ function makeGame(canvas, deps) {
     get ui() { return ui; },
     get profiles() { return profiles; },
     get audio() { return audio; },
+    // A test seam: draw one frame without the animation loop, so a measurement can
+    // separate the cost of simulating from the cost of drawing.
+    drawOnce() { lastView = renderer.draw(state); return lastView; },
+    get renderer() { return renderer; },
     dropMeteor, stepEvents, eventKey };
 }
 

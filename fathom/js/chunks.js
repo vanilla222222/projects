@@ -59,16 +59,41 @@ function makeWorld(seed, generator) {
   const explored = new Map();
   const dirty = new Set();
 
+  // A one-entry memo in front of the chunk map. Every read of the world goes through
+  // here, and every one of them was building the string `cx + ':' + cy` and hashing it:
+  // the renderer's tile pass alone does about thirteen thousand reads a frame, because
+  // each solid tile also asks about its eight neighbours for the edge mask. The reads
+  // arrive in near-perfect spatial order, so remembering the last chunk turns almost all
+  // of them into two integer comparisons.
+  let memoCx = NaN;
+  let memoCy = NaN;
+  let memoChunk = null;
+
+  function forgetMemo() {
+    memoCx = NaN;
+    memoCy = NaN;
+    memoChunk = null;
+  }
+
   function chunkAt(cx, cy) {
+    if (cx === memoCx && cy === memoCy) return memoChunk;
     const key = chunkKey(cx, cy);
     let chunk = loaded.get(key);
-    if (chunk) return chunk;
+    if (chunk) {
+      memoCx = cx;
+      memoCy = cy;
+      memoChunk = chunk;
+      return chunk;
+    }
     chunk = generator.generateChunk(seed, cx, cy);
     const diff = edits.get(key);
     if (diff) for (const [index, id] of diff) chunk.tiles[index] = id;
     const wallDiff = wallEdits.get(key);
     if (wallDiff) for (const [index, id] of wallDiff) chunk.walls[index] = id;
     loaded.set(key, chunk);
+    memoCx = cx;
+    memoCy = cy;
+    memoChunk = chunk;
     return chunk;
   }
 
@@ -296,7 +321,10 @@ function makeWorld(seed, generator) {
   function evictOutside(cx0, cy0, cx1, cy1) {
     for (const key of [...loaded.keys()]) {
       const [cx, cy] = key.split(':').map(Number);
-      if (cx < cx0 || cx > cx1 || cy < cy0 || cy > cy1) loaded.delete(key);
+      if (cx < cx0 || cx > cx1 || cy < cy0 || cy > cy1) {
+        loaded.delete(key);
+        forgetMemo();
+      }
     }
   }
 
@@ -333,6 +361,7 @@ function makeWorld(seed, generator) {
     containers.clear();
     explored.clear();
     loaded.clear();
+    forgetMemo();
     for (const [key, list] of Object.entries(saved.edits || {})) {
       edits.set(key, new Map(list));
     }

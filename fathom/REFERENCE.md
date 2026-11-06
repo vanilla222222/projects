@@ -865,3 +865,34 @@ add a work bench recipe that was not missing. A station is a property of a tile,
 key: every wood species already has its own, and `oakbench` is an Oak Work Bench providing
 the station `workbench`. The test had compared a station's name against item keys. The
 craft test caught the spurious recipe immediately, which is the argument for having both.
+
+## Measuring the renderer
+
+The renderer has nineteen passes and had never been measured. `renderer.setProfiling(true)`
+times each one and `renderer.profile()` reports mean milliseconds per frame, worst first;
+off, it costs one boolean test per pass. A renderer with nineteen passes needs a way to
+answer "which one" that is not guesswork.
+
+What it found, at 1600x900 and zoom 2:
+
+- **Walls cost 5 to 7.5ms drawing cells that are then painted over.** A solid block covers
+  its whole cell, and underground that is almost every cell on the screen. Skipping them
+  took the pass under a millisecond.
+- **The water pass created a gradient per column.** Over open ocean every column has the
+  same surface as its neighbour, so neighbouring columns that agree are now filled as one
+  shape - one gradient for the screen instead of fifty.
+- **Every read of the world built a string key** (`cx + ':' + cy`) and hashed it, and the
+  tile pass alone does about thirteen thousand reads a frame because each solid tile also
+  asks about its eight neighbours for the edge mask. A one-entry memo in front of the
+  chunk map turns almost all of them into two integer comparisons.
+- `maskAt` was handed a freshly allocated closure per tile; the edge shades were
+  re-assigned per rectangle, and assigning `fillStyle` makes the canvas parse the colour
+  string. Both are now hoisted.
+
+And what it found that is **not** worth acting on: the tile pass costs about the same
+whether it draws 416 tiles or 5,858 of them - 14ms against 29ms for fourteen times the
+count. The cost is pixel fill rate, not per-tile overhead, because headless Chromium has
+no GPU and software-rasterises the whole 1.44-megapixel canvas. That is a property of the
+measuring environment rather than of the game, and contorting the renderer around it
+would be optimising for a browser nobody plays in. The measurements are kept here so the
+next person does not repeat the investigation.
