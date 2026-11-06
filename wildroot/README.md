@@ -173,7 +173,7 @@ Validation covers all item transactions, protected last copies, no-profit salvag
 
 ## Personal progression and the repeatable World One loop (v21)
 
-Combat portals and story quest journals are personal. Each character earns their own kill counts (Forest: 8/18/30/45/60; Caves: 12/28/50; Jungle: 40/60/90/120; Depths: 45/65/95/140; Elder Tree: 25/45/70). Town access, blueprints, major story flags, discoveries and NPC-token proof remain shared. Existing saves grandfather previously unlocked routes and seed each existing character's quest history and kills; new slots start their own journey. The map and tracker show the selected character's requirements.
+Combat portals and story quest journals are personal. Each character earns their own kill counts (Forest: 12/25/45/70/100; Caves: 18/40/85; Jungle: 130/170/220/280; Depths: 115/155/205/270; Elder Tree: 120/180/260). Town access, blueprints, major story flags, discoveries and NPC-token proof remain shared. Existing saves grandfather previously unlocked routes and seed each existing character's quest history and kills; new slots start their own journey. The map and tracker show the selected character's requirements.
 
 Each class has three unique additional talents and a distinct basic weapon profile: warrior heavy melee, mage ranged bolts, blacksmith hammer splash, enchanter ranged runes, alchemist flask splash. Two attribute points per level have class-specific damage and accuracy roles. Family bonuses use only the highest-level member of each class. Six special talent books come from personal quests, merits, guardian victories and dungeon marks. Books unlock account-wide; special points are personal and separate from other talent budgets. Their effects feed real healing, combat AFK, gathering efficiency, potion strength, character XP and profession XP.
 
@@ -206,7 +206,7 @@ Quest milestones add Grovekeeper’s Bag (canopy letter), Seamrunner’s Bag (Re
 
 Already earned permanent quest upgrades become 35 bonus coins per item; the dialogue preview shows the actual reward before hand-in. Character bags and pouches are personal; chest rewards and stamp rewards are account-wide. Existing completed quests backfill newly added permanent items once, using overflow when necessary; consumed, banked, dropped or registered shared upgrades are recognised. Migration does not pay repeat compensation. Storage Info tracks consumed and owned upgrades, reveals quest sources after accepting their quests, and retains anvil/shop sources.
 
-The reward pass audits all 189 items for three implemented uses. New spare bags, chests and stamps keep the existing reclamation and town-project uses. Early pouch recipe costs remain below their category’s starting stack limit, and bigger tiers unlock with ironworking/gilding; bag upgrades do not replace those crafting milestones.
+The reward pass audits all 195 items for three implemented uses. New spare bags, chests and stamps keep the existing reclamation and town-project uses. Early pouch recipe costs remain below their category’s starting stack limit, and bigger tiers unlock with ironworking/gilding; bag upgrades do not replace those crafting milestones.
 
 
 ## Gathering, AFK and progressive portal balance
@@ -226,3 +226,14 @@ Tool tiers and efficiency now use explicit equipment metadata. Copperheart Pick 
 Next-hour AFK forecasts run the offline model on an isolated save, including cooldowns, recovery, food consumption, expiring buffs and skill gains. Long offline gathering advances in at most 30-second steps, allowing earned skill levels to improve the rest of the session. Forecasts use a seeded random sequence; actual random drops and active-play results vary. Common-loot bag estimates share available slots across drop types. Small coin bonuses retain a per-character fractional remainder, so single kills and batch claims accumulate the same bonus instead of discarding fractions.
 
 Boss Hunts shows selected-difficulty accuracy, damage, HP, root-wave damage after defense and equipped healing. It advises preparation without guaranteeing a victory or granting access. The campaign simulation now completes through common-material actions, five classes and an active boss in about 204 model minutes; this is a progression check, not a player-time guarantee.
+
+
+## Active encounters and rare-drop choices
+
+Eight attack patterns share their geometry between visible warnings and hit detection. Frogs and mites mark a landing location; boars and scarabs charge a bounded lane; ranged enemies fire aimed bolts or split volleys; golems and guardians mark slams or root eruptions. Shell enemies expose themselves during windup and a 1.2-second recovery opening. Rootwarden phases alternate jumpable root sweeps and marked eruptions, clear old hazards on phase transitions and summon rootlings once per phase. Dodges receive text/audio feedback; a 0.45-second damage recovery window prevents overlapping attacks from hitting simultaneously. Lethal damage still defeats the character before food can rescue them. Reduced-motion warnings use steady opacity.
+
+Six optional rare-material equipment recipes offer accuracy, critical chance, movement or gathering choices. Four new rare-material enchantments add accuracy, defense, movement/logging or mining efficiency. All use existing rare drops, remain outside mandatory quest requirements and retain the ordinary spare-equipment reclamation/project roles. Accuracy from equipment and enchantments now affects actual hit chance and displays as a flat stat.
+
+Willow’s spring quest requires one Sunwell Sap and the logging challenge, avoiding repeated two-hour guardian cooldowns for her completion token. Existing accepted quests become easier. The dialogue reflects the new delivery.
+
+`runWorldOne({completeNpcChains:true})` extends the common-material fresh-save campaign with real guardian encounters, personal crafting, food/shop actions, a scored logging challenge, tree visits and seeded rare-material farming. It completes all 18 NPC quests, all five classes, six NPC tokens and the combined completion token in about 234 model minutes. No save-state quest completion shortcuts are used. The standard main-story campaign remains separately checked.

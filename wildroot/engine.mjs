@@ -1,35 +1,35 @@
-import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=30';
-import {recordQuestAction} from './quest-content.mjs?v=30';
-import * as J from './journey.mjs?v=30';
-export * from './journey.mjs?v=30';
-import * as Builds from './class-builds.mjs?v=30';
-export * from './class-builds.mjs?v=30';
-import * as Books from './special-talents.mjs?v=30';
-export * from './special-talents.mjs?v=30';
-import * as Hunts from './boss-hunts.mjs?v=30';
-export * from './boss-hunts.mjs?v=30';
-import * as Dungeon from './dungeon.mjs?v=30';
-export * from './dungeon.mjs?v=30';
-import {roomLayout} from './layouts.mjs?v=30';
-export * from './exploration.mjs?v=30';
-export * from './item-economy.mjs?v=30';
-import * as S from './services.mjs?v=30';
-export * from './services.mjs?v=30';
-export * from './workshop.mjs?v=30';
-export * from './alchemy.mjs?v=30';
-import * as C from './chronicle.mjs?v=30';
-export * from './chronicle.mjs?v=30';
-import * as A from './adventure.mjs?v=30';
-export * from './adventure.mjs?v=30';
-import * as L from './legacy.mjs?v=30';
-export * from './legacy.mjs?v=30';
-import * as I from './inventory.mjs?v=30';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=30';
-import * as P from './progression.mjs?v=30';
-export * from './progression.mjs?v=30';
-export {initialize,validate} from './progression.mjs?v=30';
-export * from './inventory.mjs?v=30';
-export {canPay,pay} from './inventory.mjs?v=30';
+import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=31';
+import {recordQuestAction} from './quest-content.mjs?v=31';
+import * as J from './journey.mjs?v=31';
+export * from './journey.mjs?v=31';
+import * as Builds from './class-builds.mjs?v=31';
+export * from './class-builds.mjs?v=31';
+import * as Books from './special-talents.mjs?v=31';
+export * from './special-talents.mjs?v=31';
+import * as Hunts from './boss-hunts.mjs?v=31';
+export * from './boss-hunts.mjs?v=31';
+import * as Dungeon from './dungeon.mjs?v=31';
+export * from './dungeon.mjs?v=31';
+import {roomLayout} from './layouts.mjs?v=31';
+export * from './exploration.mjs?v=31';
+export * from './item-economy.mjs?v=31';
+import * as S from './services.mjs?v=31';
+export * from './services.mjs?v=31';
+export * from './workshop.mjs?v=31';
+export * from './alchemy.mjs?v=31';
+import * as C from './chronicle.mjs?v=31';
+export * from './chronicle.mjs?v=31';
+import * as A from './adventure.mjs?v=31';
+export * from './adventure.mjs?v=31';
+import * as L from './legacy.mjs?v=31';
+export * from './legacy.mjs?v=31';
+import * as I from './inventory.mjs?v=31';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=31';
+import * as P from './progression.mjs?v=31';
+export * from './progression.mjs?v=31';
+export {initialize,validate} from './progression.mjs?v=31';
+export * from './inventory.mjs?v=31';
+export {canPay,pay} from './inventory.mjs?v=31';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -56,7 +56,7 @@ export function start(s,c,activity,resource=null){if(c.dungeon)return false;cons
 export function gatherInterval(c,resource){const skill=gatherSkill(resource),specialist=c.class&&CLASSES[c.class].skill===skill,stat=P.stats(c),tool=skill==='mining'?'pick':'axe';return Math.max(.65,(3+(['iron','birch'].includes(resource)?1:['gold','jungle-wood'].includes(resource)?2:0))/(1+(skillLevel(c,skill)-1)*.06+(specialist?.65:0)+(c.loadout[tool]?stat[skill]:c.gear[tool]*.25)+(c.talents.industry||0)*.05+(c.profTalents.efficiency||0)*.05+(c.accountBonuses?.[skill]||0)+(specialist?(c.classTalents?.specialist||0)*.03:0)+P.potionValue(c,skill)));}
 export function gatherYield(c,n,rng=Math.random){return n+successes(n,Math.min(.5,(c.profTalents.prosperity||0)*.02),rng);}
 export function enemyFor(c){return c.activity==='boss'?ENEMIES.boss:c.secret?ENEMIES[SECRETS[c.secret]?.enemy]:zoneEnemy(c.area,c.zone);}
-export const accuracy=c=>c.dungeon?100:(10+c.level*3+Builds.accuracyAttribute(c)*1.5+(c.talents.precision||0)*2)*(1+(c.cardBonus?.accuracy||0)+(c.accountBonuses?.accuracy||0));
+export const accuracy=c=>c.dungeon?100:(10+c.level*3+Builds.accuracyAttribute(c)*1.5+(c.talents.precision||0)*2+(P.stats(c).accuracy||0))*(1+(c.cardBonus?.accuracy||0)+(c.accountBonuses?.accuracy||0));
 export const enemyAccuracy=e=>e.id.startsWith('dungeon-')?100:e.id==='boss'?(e.accuracy||125):({forest:[7,15,25,40,60],caves:[15,32,55],jungle:[65,80,100,125],deep:[60,80,110,140],tree:[60,90,135]}[e.area]?.[e.index]||45);
 export const hitChance=(c,e)=>Math.min(1,accuracy(c)/enemyAccuracy(e));
 export const damageRange=(s,c)=>[Math.floor(power(s,c)*.8),Math.ceil(power(s,c)*1.2)];
