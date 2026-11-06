@@ -129,7 +129,14 @@ function idOf(key) {
   return found.id;
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_tiles;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.tiles = EXPORTS_tiles;
 }

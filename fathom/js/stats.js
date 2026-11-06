@@ -112,8 +112,15 @@ function respawn(stats) {
   return stats;
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeStats, step: stepStats, stepStats, damage, heal, spendMana, respawn,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_stats = { makeStats, step: stepStats, stepStats, damage, heal, spendMana, respawn,
     raiseMaxHealth, raiseMaxMana, hearts, stars,
     HEART, STAR, BASE_HEALTH, BASE_MANA, MAX_HEALTH, MAX_MANA };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_stats;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.stats = EXPORTS_stats;
 }

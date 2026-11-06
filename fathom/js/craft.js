@@ -124,7 +124,14 @@ function nameOf(key, tiles) {
   return key;
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { RECIPES, ITEMS, STATION_REACH_X, STATION_REACH_Y,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_craft = { RECIPES, ITEMS, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_craft;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.craft = EXPORTS_craft;
 }

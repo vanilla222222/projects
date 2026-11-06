@@ -221,6 +221,13 @@ function makeInventory(spec) {
   };
 }
 
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_inventory = { makeInventory, LAYOUT, STACK_MAX };
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { makeInventory, LAYOUT, STACK_MAX };
+  module.exports = EXPORTS_inventory;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.inventory = EXPORTS_inventory;
 }

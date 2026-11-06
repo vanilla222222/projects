@@ -208,21 +208,38 @@ for (const biome of gen.BIOMES) {
 // does not call ocean. The ocean is one rule, so this is the test of that rule.
 const WATER = tiles.idOf('water');
 let waterCells = 0;
+let undergroundWater = 0;
 for (const s of SURVEY_SEEDS) {
   for (let x = -4000; x < 4000; x += 7) {
     const surface = gen.surfaceHeight(s, x);
     const isOcean = gen.biomeAt(s, x).key === 'ocean';
-    check((gen.baseTileAt(s, x, gen.SEA_LEVEL) === WATER) === isOcean,
-      'column ' + x + ' wetness at sea level disagrees with its ocean label');
-    for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 40); y += 1) {
+    // Every ocean column is wet at sea level. The converse stopped being true once
+    // caves could flood: a mire's water table can reach sea level underground, which is
+    // checked below as a flooded cave rather than as open sea.
+    if (isOcean) {
+      check(gen.baseTileAt(s, x, gen.SEA_LEVEL) === WATER,
+        'ocean column ' + x + ' is dry at sea level');
+    }
+    const flood = gen.floodFloor(s, x, gen.columnOf(s, x));
+    for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 300); y += 1) {
       if (gen.baseTileAt(s, x, y) !== WATER) continue;
       waterCells += 1;
       check(y >= gen.SEA_LEVEL, 'water above sea level at ' + x + ',' + y);
-      check(y < surface, 'water inside solid ground at ' + x + ',' + y);
+      if (y < surface) continue;          // the open sea, above the ground
+      // Below the ground, water means a flooded cave: this column must have a water
+      // table, the tile must be above its floor, and it must be a cave in the first
+      // place, never water sitting inside what should be solid rock.
+      undergroundWater += 1;
+      check(flood > 0, 'flooded cave at ' + x + ',' + y + ' in a column with no water table');
+      check(y <= flood, 'water below the water table at ' + x + ',' + y);
+      check(gen.caveDensity(s, x, y, y - surface, gen.columnOf(s, x))
+        > gen.caveThreshold(gen.columnOf(s, x)),
+        'water inside solid rock at ' + x + ',' + y);
     }
   }
 }
 check(waterCells > 0, 'no water generated anywhere');
+check(undergroundWater > 0, 'no flooded caves generated: the underground ocean is missing');
 check(!tiles.isSolid(WATER), 'water must not be solid');
 
 // 12. The two blights never overlap, and neither sits in the sea.
@@ -249,12 +266,53 @@ for (let x = -9000; x < 9000; x += 29) {
     'column ' + x + ' climate disagrees with its own weights');
 }
 
+// 14. Each biome's underground has its own character. Materials alone are just a palette;
+// what makes a jungle cavern feel unlike a tundra tunnel is how much of the rock is open
+// and how tall the cavities are. Measured rather than asserted by eye.
+const openness = {};
+for (const s of [SEED, 4242, -98765]) {
+  for (let x = -30000; x < 30000; x += 13) {
+    const column = gen.columnOf(s, x);
+    if (column.biome.key === 'ocean' || column.biome.key === 'beach') continue;
+    const key = column.climate.key;
+    const a = openness[key] || (openness[key] = { air: 0, n: 0, runs: 0 });
+    let prev = false;
+    for (let d = 40; d < 300; d += 1) {
+      const open = gen.baseTileAt(s, x, column.height + d) === tiles.AIR;
+      a.n += 1;
+      if (open) a.air += 1;
+      if (open && !prev) a.runs += 1;
+      prev = open;
+    }
+  }
+}
+for (const [key, a] of Object.entries(openness)) {
+  const pct = a.air / a.n;
+  // No biome may be a solid block with no caves, nor a void with no rock left.
+  check(pct > 0.04, key + ' underground is nearly solid: ' + (pct * 100).toFixed(1) + '% open');
+  check(pct < 0.45, key + ' underground is nearly hollow: ' + (pct * 100).toFixed(1) + '% open');
+}
+// And the designed extremes really are extremes: the jungle's caverns are the roomiest
+// and the tundra's tunnels the tightest, by a margin that a player would notice.
+const cavity = (k) => openness[k].air / Math.max(1, openness[k].runs);
+check(cavity('jungle') > cavity('tundra') * 2,
+  'jungle cavities are not meaningfully larger than tundra ones');
+check(cavity('desert') > cavity('plains') * 1.4,
+  'desert halls are not meaningfully larger than ordinary caves');
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
   + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles; all '
   + gen.BIOMES.length + ' biomes generate; ' + waterCells.toLocaleString()
-  + ' water cells all inside their basins');
+  + ' water cells all inside their basins, ' + undergroundWater.toLocaleString()
+  + ' of them in flooded caves');
+
+console.log('underground openness (depth 40-300):');
+for (const [key, a] of Object.entries(openness).sort((x, y) => y[1].air / y[1].n - x[1].air / x[1].n)) {
+  console.log('  ' + key.padEnd(11) + (100 * a.air / a.n).toFixed(1).padStart(5) + '% open, mean cavity '
+    + (a.air / Math.max(1, a.runs)).toFixed(1) + ' tiles');
+}
 
 console.log('biome share across ' + SURVEY_SEEDS.length + ' seeds:');
 for (const [key, n] of Object.entries(seen).sort((a, b) => b[1] - a[1])) {

@@ -102,7 +102,14 @@ function requirementName(tileSpec) {
   return best ? TOOLS[best].name : 'a stronger pickaxe';
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { TOOLS, TIER_COLOURS, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
+// The module's public surface, declared once. index.html used to repeat these
+// names by hand, and three separate times a new export was added here and
+// forgotten there, which broke the game at runtime while every test passed.
+const EXPORTS_mining = { TOOLS, TIER_COLOURS, SOFT, INSTANT, BREAK_AT, toolSpec, powerOf, useTimeOf,
     requirementOf, toughnessOf, canMine, tierColour, isTool, damagePerHit, hitsFor, secondsFor, requirementName };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = EXPORTS_mining;
+} else if (typeof FATHOM !== 'undefined') {
+  FATHOM.mining = EXPORTS_mining;
 }
