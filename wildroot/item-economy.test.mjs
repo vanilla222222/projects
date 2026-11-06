@@ -1,13 +1,14 @@
+import {seedKill,seedStory} from './test-fixtures.mjs?v=21';
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=20';import * as D from './content.mjs?v=20';
-import * as UI from './economy-panels.mjs?v=20';
-import {roomLayout,pointFor} from './layouts.mjs?v=20';
+import * as E from './engine.mjs?v=21';import * as D from './content.mjs?v=21';
+import * as UI from './economy-panels.mjs?v=21';
+import {roomLayout,pointFor} from './layouts.mjs?v=21';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);s.coins=10000;return{s,c};};
 function visit(c,id){const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,secret:null,activity:'rest',position:pointFor(roomLayout(d.area,d.zone),d.point)});}
 const roundtrip=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
-function spare(s,c,id){if(D.EXPANSIONS[id]){if(D.EXPANSIONS[id].target==='bag')c.usedExpansions.push(id);else s.usedChestExpansions.push(id);}if(D.CAPACITY_BAGS[id])c.usedCapacityBags.push(id);if(id.startsWith('stamp-'))s.stamps[id.slice(6)]={level:1,cap:5};if(id==='sculpting-tool')c.statuesUnlocked=true;if(id.startsWith('anvil-expansion-'))s.workshop.pages=3;if(id==='boss-heart')s.story.heart={accepted:true,done:true};if(D.EQUIPMENT[id])E.createEquipment(s,id,null,c);else E.give(c,id,2);return E.bagSlots(c).findIndex(t=>t?.id===id||t?.uid&&c.packGear.some(g=>g.uid===t.uid&&g.base===id));}
+function spare(s,c,id){if(D.EXPANSIONS[id]){if(D.EXPANSIONS[id].target==='bag')c.usedExpansions.push(id);else s.usedChestExpansions.push(id);}if(D.CAPACITY_BAGS[id])c.usedCapacityBags.push(id);if(id.startsWith('stamp-'))s.stamps[id.slice(6)]={level:1,cap:5};if(id==='sculpting-tool')c.statuesUnlocked=true;if(id.startsWith('anvil-expansion-'))s.workshop.pages=3;if(id==='boss-heart')seedStory(s,'heart',{accepted:true,done:true});if(D.EQUIPMENT[id])E.createEquipment(s,id,null,c);else E.give(c,id,2);return E.bagSlots(c).findIndex(t=>t?.id===id||t?.uid&&c.packGear.some(g=>g.uid===t.uid&&g.base===id));}
 test('Every single World One item has at least three distinct, implemented uses, excluding selling',()=>{
- assert.equal(Object.keys(D.ITEMS).length,171);for(const id of Object.keys(D.ITEMS)){const uses=D.purposes(id);assert.ok(uses.length>=3,id+': '+uses.join('; '));assert.equal(new Set(uses).size,uses.length,id);assert.ok(uses.every(u=>!/sell/i.test(u)),id);}
+ assert.equal(Object.keys(D.ITEMS).length,175);for(const id of Object.keys(D.ITEMS)){const uses=D.purposes(id);assert.ok(uses.length>=3,id+': '+uses.join('; '));assert.equal(new Set(uses).size,uses.length,id);assert.ok(uses.every(u=>!/sell/i.test(u)),id);}
 });
 test('Every ordinary item can actually reclaim and contribute a spare through separate transactions',()=>{
  for(const id of Object.keys(D.ITEMS).filter(id=>!E.BADGES[id]))for(const action of ['reclaim','project']){const{s,c}=setup(),i=spare(s,c,id);assert.ok(i>=0,id);visit(c,action==='reclaim'?'foundry':'vault');const before=E.itemSlot(c,i),n=before.qty;const value=action==='reclaim'?E.reclaimItem(s,c,i):E.contributeItem(s,c,i);assert.equal(value,E.salvageValue(id),id+'/'+action);if(action==='reclaim')assert.equal(s.economy.salvage,value);else assert.equal(s.economy.projects[E.itemProject(id,!!D.EQUIPMENT[id])],value);assert.equal(D.EQUIPMENT[id]?c.packGear.length:c.bag[id],D.EQUIPMENT[id]?0:n-1,id);assert.doesNotThrow(()=>roundtrip(s),id+'/'+action);}
@@ -34,7 +35,7 @@ test('Unearned badge actions do not spend coins or open a signature recipe',()=>
  const{s,c}=setup();visit(c,'vault');const coins=s.coins;for(const id of Object.keys(E.BADGES)){assert.equal(E.attuneBadge(s,c,id),false);assert.equal(E.learnBadgePattern(s,c,id),false);}assert.equal(s.coins,coins);assert.deepEqual(s.economy.patterns,[]);
 });
 test('Every infusible drop has a real permanent effect and exact costs, with one replaceable slot',()=>{
- for(const id of E.INFUSION_ITEMS()){const{s,c}=setup();visit(c,'enchanting');s.story.heart={accepted:true,done:true};const item=E.createEquipment(s,'copper-sword',c);E.give(c,id,50);E.give(c,'dust',20);const cost=E.infusionCost(id);assert.ok(E.infuseItem(s,c,item.uid,id),id);assert.equal(c.bag[id],50-cost[id],id);assert.deepEqual(E.infusionStats(id),Object.fromEntries(Object.entries(E.equipmentStats(item)).filter(([k])=>k!=='attack').concat(Object.hasOwn(E.infusionStats(id),'attack')?[['attack',E.equipmentStats(item).attack-7]]:[])),id);const materials=c.bag[id];assert.equal(E.infuseItem(s,c,item.uid,id),false);assert.equal(c.bag[id],materials);assert.doesNotThrow(()=>roundtrip(s));}
+ for(const id of E.INFUSION_ITEMS()){const{s,c}=setup();visit(c,'enchanting');seedStory(s,'heart',{accepted:true,done:true});const item=E.createEquipment(s,'copper-sword',c);E.give(c,id,50);E.give(c,'dust',20);const cost=E.infusionCost(id);assert.ok(E.infuseItem(s,c,item.uid,id),id);assert.equal(c.bag[id],50-cost[id],id);assert.deepEqual(E.infusionStats(id),Object.fromEntries(Object.entries(E.equipmentStats(item)).filter(([k])=>k!=='attack').concat(Object.hasOwn(E.infusionStats(id),'attack')?[['attack',E.equipmentStats(item).attack-7]]:[])),id);const materials=c.bag[id];assert.equal(E.infuseItem(s,c,item.uid,id),false);assert.equal(c.bag[id],materials);assert.doesNotThrow(()=>roundtrip(s));}
  const{s,c}=setup();visit(c,'enchanting');const item=E.createEquipment(s,'iron-sword',c);s.inventory['moss-slime']=100;s.inventory['bat-fang']=100;s.inventory.dust=100;assert.ok(E.infuseItem(s,c,item.uid,'moss-slime'));assert.ok(E.infuseItem(s,c,item.uid,'bat-fang',true));assert.equal(item.infusion,'bat-fang');
 });
 test('Malformed economy, project, badge and infusion records cannot replace a save',()=>{

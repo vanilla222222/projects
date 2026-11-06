@@ -40,6 +40,24 @@ function makeUI(root, deps) {
       ctx.strokeRect(size * 0.16, size * 0.16, size * 0.68, size * 0.68);
       return canvas;
     }
+    if (craft && (item.key === 'bucket' || item.key === 'water-bucket')) {
+      const u = size / 16;
+      const full = item.key === 'water-bucket';
+      ctx.fillStyle = '#8f98a3';
+      ctx.fillRect(4 * u, 5 * u, 8 * u, 1 * u);
+      ctx.fillStyle = '#9aa3ad';
+      ctx.fillRect(4 * u, 6 * u, 8 * u, 7 * u);
+      ctx.fillRect(5 * u, 13 * u, 6 * u, 1 * u);
+      if (full) {
+        ctx.fillStyle = '#3f86c4';
+        ctx.fillRect(5 * u, 7 * u, 6 * u, 6 * u);
+        ctx.fillStyle = 'rgba(190,230,255,0.5)';
+        ctx.fillRect(5 * u, 7 * u, 6 * u, 1 * u);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillRect(4 * u, 6 * u, 1 * u, 7 * u);
+      return canvas;
+    }
     if (mining && mining.isTool(item)) {
       const u = size / 16;
       ctx.fillStyle = '#6b4a2c';

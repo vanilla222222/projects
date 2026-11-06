@@ -16,7 +16,11 @@ const ITEMS = {
   'silver-bar': { name: 'Silver Bar', kind: 'bar', colour: '#cdd2dc' },
   'gold-bar': { name: 'Gold Bar', kind: 'bar', colour: '#e0c054' },
   'cobalt-bar': { name: 'Cobalt Bar', kind: 'bar', colour: '#3f7fb5' },
-  'emberite-bar': { name: 'Emberite Bar', kind: 'bar', colour: '#d4663a' }
+  'emberite-bar': { name: 'Emberite Bar', kind: 'bar', colour: '#d4663a' },
+  // Buckets. Two items rather than one with a flag, so a full bucket stacks separately
+  // from an empty one and the hotbar shows at a glance which you are holding.
+  bucket: { name: 'Empty Bucket', kind: 'tool', colour: '#9aa3ad' },
+  'water-bucket': { name: 'Water Bucket', kind: 'tool', colour: '#3f86c4' }
 };
 
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
@@ -31,6 +35,7 @@ const RECIPES = [
   { out: { key: 'plankwall', kind: 'wall', count: 4 }, need: [['wood', 1]], station: 'workbench' },
   { out: { key: 'brickwall', kind: 'wall', count: 4 }, need: [['stone', 1]], station: 'workbench' },
   { out: { key: 'anvil', kind: 'block', count: 1 }, need: [['iron-bar', 5]], station: 'workbench' },
+  { out: { key: 'bucket', kind: 'tool', count: 1 }, need: [['iron-bar', 3]], station: 'anvil' },
 
   // Furnace: ore into bars, and sand into glass. Smelting is the whole point of depth.
   { out: { key: 'copper-bar', kind: 'bar', count: 1 }, need: [['copper', 3]], station: 'furnace' },

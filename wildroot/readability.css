@@ -60,3 +60,9 @@
 @media(max-width:800px){#panel-content .recipe-icon-grid {max-height:300px;}}
 .alchemy-material {display:flex;flex-direction:column;gap:8px;font:14px/1.5 system-ui,sans-serif;min-width:0;margin-bottom:14px;}
 .alchemy-material select {min-width:0;max-width:100%;padding:10px;background:#fff0c8;color:#342c22;font:14px system-ui;}
+
+/* World One progression panels retain usable touch targets and wrap long book titles. */
+.ability-cards article{min-width:0;overflow-wrap:anywhere}
+.ability-cards article h3,.ability-cards article h4{line-height:1.35}
+.ability-cards article small{display:block;line-height:1.5;white-space:normal}
+.ability-cards article button{min-height:42px;white-space:normal}

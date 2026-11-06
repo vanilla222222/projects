@@ -8,7 +8,7 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, mining, craft, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    noise, autotile, mining, craft, liquid: liquidModule, inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
@@ -23,6 +23,7 @@ function makeGame(canvas, deps) {
   let inventory = null;
   let stats = null;
   let ui = null;
+  let liquid = null;
   let characterId = null;
   let worldId = null;
   let running = false;
@@ -184,8 +185,48 @@ function makeGame(canvas, deps) {
       world.set(aim.x, aim.y, tiles.AIR);
       spawnParticles(aim.x, aim.y, spec.colour, 9);
       dropItem(aim.x, aim.y, spec.drops || spec.key, 'block', 1);
+      // Cutting rock can open a reservoir, so every neighbour of the hole is woken.
+      if (liquid) liquid.activateAround(aim.x, aim.y);
     }
     state.player.mining = null;
+  }
+
+  // A bucket holds exactly one full tile of water. Scooping takes the fullest tile within
+  // reach rather than the aimed one, so dipping into a pool works without pixel-hunting
+  // for the tile that happens to be brim-full.
+  function useBucket(item, aim) {
+    if (item.key === 'water-bucket') {
+      if (tiles.isSolid(world.get(aim.x, aim.y))) return true;
+      if (world.getLevel(aim.x, aim.y) >= world.LEVEL_FULL) return true;
+      const room = world.LEVEL_FULL - world.getLevel(aim.x, aim.y);
+      world.setLevel(aim.x, aim.y, world.getLevel(aim.x, aim.y) + room);
+      liquid.activateAround(aim.x, aim.y);
+      inventory.take('water-bucket', 1);
+      inventory.add({ key: 'bucket', kind: 'tool' }, 1);
+      say('Poured', 0.8);
+      return true;
+    }
+    if (item.key !== 'bucket') return false;
+    let best = null;
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const level = world.getLevel(aim.x + dx, aim.y + dy);
+        if (level > 0 && (!best || level > best.level)) {
+          best = { x: aim.x + dx, y: aim.y + dy, level };
+        }
+      }
+    }
+    if (!best) {
+      say('Nothing to scoop', 0.9);
+      return true;
+    }
+    // A partial tile still fills the bucket: a bucket is a unit, not a measure.
+    world.setLevel(best.x, best.y, 0);
+    liquid.activateAround(best.x, best.y);
+    inventory.take('bucket', 1);
+    inventory.add({ key: 'water-bucket', kind: 'tool' }, 1);
+    say('Filled', 0.8);
+    return true;
   }
 
   function place() {
@@ -193,6 +234,7 @@ function makeGame(canvas, deps) {
     if (!item) return;
     const aim = physics.aimTile(state.player, pointer);
     if (!aim.inReach) return;
+    if (useBucket(item, aim)) return;
 
     if (item.kind === 'wall') {
       if (world.getWall(aim.x, aim.y) !== 0) return;
@@ -223,9 +265,15 @@ function makeGame(canvas, deps) {
     if (!againstBlock && !(spec.emit > 0 && againstWall)) return;
     world.set(aim.x, aim.y, spec.id);
     inventory.take(item.key, 1);
+    // Placing a block can displace or dam water just as surely as removing one.
+    if (liquid) liquid.activateAround(aim.x, aim.y);
   }
 
   function simulate(dt) {
+    // Water first, so what the player collides with this step is where the water ended up
+    // rather than where it was. The budget is per step, not per frame, which keeps a
+    // collapsing reservoir from stalling the loop.
+    if (liquid) liquid.step(900);
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
@@ -417,6 +465,7 @@ function makeGame(canvas, deps) {
     if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
+    liquid = liquidModule.makeLiquid(world, tiles);
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
@@ -478,7 +527,27 @@ function makeGame(canvas, deps) {
     mine(dt);
   }
 
-  return { state, start, deps, swingAt, selectedItem,
+  // Test seams for the browser checks: wake the water near the player, and ask how much
+  // of it is still moving.
+  function liquidWake() {
+    if (!liquid) return;
+    const px = Math.floor(state.player.x);
+    const py = Math.floor(state.player.y);
+    liquid.activateRegion(px - 60, py - 60, 120, 140);
+  }
+
+  function liquidActive() {
+    return liquid ? liquid.activeCount : 0;
+  }
+
+  // Test seam: use the held bucket on a named tile, the same path the mouse takes.
+  function useBucketAt(x, y) {
+    const item = selectedItem();
+    if (!item) return false;
+    return useBucket(item, { x, y, inReach: true });
+  }
+
+  return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
     get inventory() { return inventory; },
     get stats() { return stats; },
     get seed() { return seed; },

@@ -94,15 +94,17 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= w || ly < 0 || ly >= h) return;
-    if (id === tiles.idOf('leaves') || id === tiles.idOf('vine')) {
-      if (out[ly * w + lx] !== tiles.AIR) return;
-    }
+    // The same stamping rule the real generator uses, imported rather than restated:
+    // a second copy here once made this oracle agree with itself and not with the game.
+    if (!gen.canStamp(out[ly * w + lx], id)) return;
     out[ly * w + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + w + STRUCTURE_MARGIN; wx += 1) {
     const tree = gen.treeAt(seed, wx);
     if (tree) gen.stampTree(write, seed, tree);
-    gen.decorate(write, seed, wx);
+    // Same explicit bounds the chunked path uses, so the two cannot differ by
+    // accident of a default.
+    gen.decorate(write, seed, wx, y0 - 1, y0 + h + 1);
   }
   return { out, outWalls, w, h };
 }
@@ -110,7 +112,17 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
 let seamTiles = 0;
 let seamMismatch = 0;
 const firstMismatches = [];
-for (const [cx0, cy0] of [[-6, 5], [0, 5], [11, 6], [-21, 7]]) {
+// Chunk rows chosen to straddle every layer, not just the surface. A sky island, a
+// planetoid and the trench are all wider than a chunk, so each is a chance for chunked
+// and one-piece generation to disagree; the surface-only sample would never have seen it.
+const SEAM_REGIONS = [
+  [-6, 5], [0, 5], [11, 6], [-21, 7],                 // surface and shallow caves
+  [0, -10], [2, -8], [-4, -7],                        // sky: islands and cloud banks
+  [1, -22], [3, -19], [-2, -25],                      // space: planetoids and vacuum
+  [0, 32], [-3, 36], [2, 40],                         // hell and its caves
+  [0, 60], [1, 90], [-1, 140]                         // the trench, and far below it
+];
+for (const [cx0, cy0] of SEAM_REGIONS) {
   const wChunks = 3;
   const hChunks = 2;
   const whole = wholeRegion(SEED, cx0, cy0, wChunks, hChunks);
@@ -300,13 +312,171 @@ check(cavity('jungle') > cavity('tundra') * 2,
 check(cavity('desert') > cavity('plains') * 1.4,
   'desert halls are not meaningfully larger than ordinary caves');
 
+// 15. Foliage. Every prop in the registry must actually grow somewhere, wet props must
+// grow underwater and dry ones above it, and nothing a prop is stamped into may have been
+// something else: a bamboo stalk that replaced a tree trunk is a bug you only see by
+// looking, so it is checked here instead.
+const DECOR = tiles.TILES.filter(t => t.decor);
+// Shells are deliberately not here: they belong on the beach as well as the sea bed.
+const WET = new Set(gen.WET_ONLY);
+const propCounts = {};
+for (const s of [SEED, 4242, -98765]) {
+  const done = new Set();
+  for (let x = -9000; x < 9000; x += 1) {
+    const column = gen.columnOf(s, x);
+    const cx = Math.floor(x / gen.CHUNK);
+    const cy = Math.floor((column.height - 6) / gen.CHUNK);
+    const key = cx + ',' + cy;
+    if (done.has(key)) continue;
+    done.add(key);
+    for (const yy of [cy, cy + 1]) {
+      const chunk = gen.generateChunk(s, cx, yy);
+      for (let i = 0; i < chunk.tiles.length; i += 1) {
+        const spec = tiles.tile(chunk.tiles[i]);
+        if (!spec.decor) continue;
+        propCounts[spec.key] = (propCounts[spec.key] || 0) + 1;
+        const lx = cx * gen.CHUNK + (i % gen.CHUNK);
+        const ly = yy * gen.CHUNK + Math.floor(i / gen.CHUNK);
+        // The cell a prop occupies must have been empty, or water for the wet ones.
+        const under = gen.baseTileAt(s, lx, ly);
+        check(under === tiles.AIR || tiles.tile(under).liquid,
+          spec.key + ' at ' + lx + ',' + ly + ' replaced ' + tiles.tile(under).key);
+        if (WET.has(spec.key)) {
+          check(ly >= gen.SEA_LEVEL, spec.key + ' is growing above sea level at ' + lx);
+        }
+      }
+    }
+  }
+}
+for (const spec of DECOR) {
+  check(!spec.solid, spec.key + ' is solid, so foliage would block movement');
+  check((propCounts[spec.key] || 0) > 0, spec.key + ' never grows anywhere');
+}
+
+// 16. The vertical layers. The world has no floor and no ceiling, so what is checked is
+// that each band contains what it is supposed to, that the trench never closes, and that
+// nothing lives in the vacuum above space.
+const LAYER_SAMPLES = [SEED, 4242, -98765];
+for (const layer of gen.LAYERS) {
+  const probe = Number.isFinite(layer.from) ? layer.from + 20 : layer.to - 400;
+  check(gen.layerAt(gen.SEA_LEVEL + probe).key === layer.key,
+    'layer ' + layer.key + ' does not contain its own altitude ' + probe);
+}
+// Layers tile the whole axis with no gap and no overlap.
+for (let i = 1; i < gen.LAYERS.length; i += 1) {
+  check(gen.LAYERS[i - 1].to === gen.LAYERS[i].from,
+    'a gap or overlap between ' + gen.LAYERS[i - 1].key + ' and ' + gen.LAYERS[i].key);
+}
+
+// Hell's great hall, and its repeats below the hell caves. This is the promise that
+// infinite depth stays somewhere you can go: at any depth, however absurd, there must be
+// a wide open span with rock under it to stand on and no more than a fraction of it lava.
+let hallsChecked = 0;
+for (const s of LAYER_SAMPLES) {
+  // Sampled at the middle of each hall rather than at an arbitrary offset: a row taken
+  // at the lava surface is legitimately narrow, and testing one would be testing the
+  // sample rather than the world.
+  for (let k = 0; k < 120; k += 1) {
+    const alt = gen.HALL_TOP + k * gen.HALL_PERIOD + Math.round(gen.HALL_PERIOD * 0.5);
+    if (!gen.inHall(alt)) continue;
+    const y = gen.SEA_LEVEL + alt;
+    let open = 0;
+    let lava = 0;
+    for (let x = -400; x <= 400; x += 1) {
+      const id = gen.baseTileAt(s, x, y);
+      if (id === tiles.AIR) open += 1;
+      else if (tiles.tile(id).key === 'lava') lava += 1;
+    }
+    hallsChecked += 1;
+    check(open > 120, 'a hall at depth ' + alt + ' is only ' + open + ' tiles open across 801');
+    check(lava < 600, 'a hall at depth ' + alt + ' is ' + lava + '/801 lava');
+  }
+}
+// And a hall has a floor: somewhere below the open span there is rock, not endless void.
+for (const s of LAYER_SAMPLES) {
+  for (let alt = gen.HALL_RESUME + 60; alt < 12000; alt += gen.HALL_PERIOD) {
+    let floor = 0;
+    for (let d = 0; d < gen.HALL_PERIOD; d += 1) {
+      const id = gen.baseTileAt(s, 0, gen.SEA_LEVEL + alt + d);
+      if (tiles.isSolid(id)) { floor += 1; }
+    }
+    check(floor > 20, 'no floor found within one hall period below depth ' + alt);
+  }
+}
+
+// Sky and space hold their own structures, and the vacuum above space holds nothing.
+let islands = 0;
+let bodies = 0;
+for (let slot = -200; slot < 200; slot += 1) {
+  const island = gen.skyIslandAt(SEED, slot);
+  if (island) {
+    islands += 1;
+    const alt = gen.altitudeOf(island.cy);
+    check(alt <= -250 && alt >= -800, 'a sky island sits at altitude ' + alt);
+  }
+  const body = gen.planetoidAt(SEED, slot);
+  if (body) {
+    bodies += 1;
+    const alt = gen.altitudeOf(body.cy);
+    check(alt <= -750 && alt >= gen.SPACE_FLOOR,
+      'a planetoid sits at altitude ' + alt + ', outside space');
+  }
+}
+check(islands > 50, 'too few sky islands generate: ' + islands);
+check(bodies > 50, 'too few planetoids generate: ' + bodies);
+for (const s of LAYER_SAMPLES) {
+  for (let alt = gen.SPACE_FLOOR - 40; alt > gen.SPACE_FLOOR - 900; alt -= 37) {
+    for (let x = -3000; x < 3000; x += 271) {
+      check(gen.baseTileAt(s, x, gen.SEA_LEVEL + alt) === tiles.AIR,
+        'something solid at altitude ' + alt + ', above the top of space');
+    }
+  }
+}
+
+// Lava belongs to hell and below, and nowhere else. Water is the opposite: it must never
+// appear down there, where it would have no way to have got in.
+const LAVA = tiles.idOf('lava');
+let lavaSeen = 0;
+for (const s of LAYER_SAMPLES) {
+  for (let alt = -400; alt < 3000; alt += 23) {
+    for (let x = -2000; x < 2000; x += 173) {
+      const id = gen.baseTileAt(s, x, gen.SEA_LEVEL + alt);
+      if (id !== LAVA) continue;
+      lavaSeen += 1;
+      check(alt >= 1250, 'lava at altitude ' + alt + ', above hell');
+    }
+  }
+}
+check(lavaSeen > 0, 'no lava generates anywhere');
+
+// Hell and its caves must be walkable. A layer that is entirely rock and lava is a wall,
+// not a place: the first version measured 0% open air down there.
+for (const [key, a0, a1] of [['hell', 1260, 1740], ['hellcaves', 1760, 2160]]) {
+  let air = 0;
+  let n = 0;
+  for (let alt = a0; alt < a1; alt += 11) {
+    for (let x = -1200; x < 1200; x += 17) {
+      if (gen.baseTileAt(SEED, x, gen.SEA_LEVEL + alt) === tiles.AIR) air += 1;
+      n += 1;
+    }
+  }
+  check(air / n > 0.04, key + ' is only ' + (100 * air / n).toFixed(1) + '% walkable');
+}
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
   + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles; all '
   + gen.BIOMES.length + ' biomes generate; ' + waterCells.toLocaleString()
   + ' water cells all inside their basins, ' + undergroundWater.toLocaleString()
-  + ' of them in flooded caves');
+  + ' of them in flooded caves; all ' + DECOR.length + ' foliage types grow; all '
+  + gen.LAYERS.length + ' vertical layers hold their own content and hell\'s hall stayed open and floored at '
+  + hallsChecked.toLocaleString() + ' depths down to 60,000');
+
+console.log('foliage stamped at the surface across 3 seeds:');
+for (const [key, n] of Object.entries(propCounts).sort((a, b) => b[1] - a[1])) {
+  console.log('  ' + key.padEnd(13) + n.toLocaleString());
+}
 
 console.log('underground openness (depth 40-300):');
 for (const [key, a] of Object.entries(openness).sort((x, y) => y[1].air / y[1].n - x[1].air / x[1].n)) {

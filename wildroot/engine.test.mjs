@@ -1,3 +1,4 @@
+import {seedKill,seedStory} from './test-fixtures.mjs?v=21';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs';
@@ -23,8 +24,8 @@ test('All five classes unlock duplicates and exactly six initial slots',()=>{
  assert.equal(s.unlockedClasses.length,5);assert.equal(E.slots(s),6);assert.equal(E.availableClass(s,'warrior'),true);assert.ok(E.createCharacter(s,'Another warrior'));train(s,E.selected(s),'warrior');assert.equal(E.slots(s),6);assert.equal(E.createCharacter(s,'Seventh'),false);
 });
 test('Zone and area progression require the intended kills and stop invalid travel',()=>{
- const s=E.freshSave(),c=E.selected(s);assert.equal(E.travel(s,c,'forest',1),false);s.kills['forest-0']=12;assert.ok(E.travel(s,c,'forest',1));assert.equal(E.travel(s,c,'forest',-1),false);assert.equal(E.travel(s,c,'forest',99),false);assert.equal(E.travel(s,c,'missing',0),false);
- assert.equal(E.areaUnlocked(s,'jungle'),false);s.kills['forest-4']=12;assert.ok(E.areaUnlocked(s,'jungle'));s.kills['jungle-3']=12;assert.ok(E.areaUnlocked(s,'jungle-town'));s.kills['caves-2']=12;assert.ok(E.areaUnlocked(s,'deep'));
+ const s=E.freshSave(),c=E.selected(s);assert.equal(E.travel(s,c,'forest',1),false);seedKill(s,'forest-0',12);assert.ok(E.travel(s,c,'forest',1));assert.equal(E.travel(s,c,'forest',-1),false);assert.equal(E.travel(s,c,'forest',99),false);assert.equal(E.travel(s,c,'missing',0),false);
+ assert.equal(E.areaUnlocked(s,'jungle'),false);seedKill(s,'forest-4',12);assert.ok(E.areaUnlocked(s,'jungle'));seedKill(s,'jungle-3',12);assert.ok(E.areaUnlocked(s,'jungle-town'));seedKill(s,'caves-2',12);assert.ok(E.areaUnlocked(s,'deep'));
 });
 test('Multiple characters produce independently while selection changes',()=>{
  const s=E.freshSave(),one=E.selected(s);s.unlockedClasses=['warrior'];E.createCharacter(s,'Two');const two=E.selected(s);E.start(s,one,'gather','oak');E.travel(s,two,'caves',0);E.start(s,two,'gather','copper');E.advance(s,60,rng());assert.equal(one.bag.oak,20);assert.equal(two.bag.copper,20);assert.equal(one.skills.logging,40);assert.equal(two.skills.mining,40);
@@ -40,7 +41,7 @@ test('Material studies consume resources and improve a specific account discipli
 });
 test('Combat awards layered loot, XP, coins and progress without allowing impossible bosses',()=>{
  const s=E.freshSave(),c=E.selected(s);E.start(s,c,'fight');E.advance(s,300,rng());assert.ok(c.kills>0);assert.ok(c.level>=3);assert.ok(s.coins>0);assert.ok(c.bag['moss-slime']>0);assert.ok(c.hp>=0);
- s.kills['jungle-3']=12;s.storyFlags.bossPermit=true;E.travel(s,c,'jungle-town',2);E.start(s,c,'boss');const before=c.kills;E.advance(s,1000,rng());assert.equal(c.kills,before);assert.equal(s.bossDefeated,false);assert.equal(c.activity,'rest');
+ seedKill(s,'jungle-3',12);s.storyFlags.bossPermit=true;E.travel(s,c,'jungle-town',2);E.start(s,c,'boss');const before=c.kills;E.advance(s,1000,rng());assert.equal(c.kills,before);assert.equal(s.bossDefeated,false);assert.equal(c.activity,'rest');
  c.level=50;c.gear.weapon=3;c.gear.armor=3;c.gear.rune=100;c.hp=E.maxHp(c);E.start(s,c,'boss');E.advance(s,1000,rng());assert.equal(s.bossDefeated,false);assert.equal(c.bag['boss-heart'],undefined);assert.equal(c.activity,'rest');
 });
 test('Offline claims use elapsed time, cap at 8h, and cannot be claimed twice',()=>{

@@ -1,6 +1,6 @@
 # World One item-use audit
 
-171 items; every item has at least three distinct implemented roles. Selling, moving, equipping a cosmetic and duplicate descriptions do not count as additional roles. Ordinary spare items can be reclaimed at the foundry or contributed to a specific Legacy Square project. Protected tokens instead have non-consuming attunements and signature patterns.
+175 items; every item has at least three distinct implemented roles. Selling, moving, equipping a cosmetic and duplicate descriptions do not count as additional roles. Ordinary spare items can be reclaimed at the foundry or contributed to a specific Legacy Square project. Protected tokens instead have non-consuming attunements and signature patterns.
 
 The core transaction test executes both spare-item actions for every ordinary item, and attunement/pattern/crafting actions for all eight protected badges. An additional test checks every infusible material.
 
@@ -181,3 +181,8 @@ The core transaction test executes both spare-item actions for every ordinary it
 Materials in the existing research catalogue additionally support a permanent relic infusion in gear, separate from its two rune slots and three upgrade-stone slots. The UI previews exact stat changes before consuming anything.
 
 Final copies of unused expansions, capacity pouches, stamps, anvil books, chisels and the unsubmitted boss heart are reserved. Locked slots and equipped gear cannot be reclaimed or contributed. NPC tokens, the Rootbound Seal and the completion token cannot be destroyed by either action. Token benefits remain claimable from earned quest proof after all six tokens are combined.
+
+| Rootwarden Scale (`rootwarden-scale`) | Rootbound Helm; Challenger Rootmail; Ancient Root Greaves | Reclaim spare copies at the foundry for salvage; exchange salvage for crafting materials | Contribute spare copies to the Supply Depot at the Legacy Square vault |
+| Rootbound Helm (`rootbound-helm`) | Equip Head | Reclaim spare copies at the foundry for salvage; exchange salvage for crafting materials | Contribute spare copies to the Village Arsenal at the Legacy Square vault |
+| Challenger Rootmail (`rootbound-mail`) | Equip Body | Reclaim spare copies at the foundry for salvage; exchange salvage for crafting materials | Contribute spare copies to the Village Arsenal at the Legacy Square vault |
+| Ancient Root Greaves (`ancient-greaves`) | Equip Legs | Reclaim spare copies at the foundry for salvage; exchange salvage for crafting materials | Contribute spare copies to the Village Arsenal at the Legacy Square vault |

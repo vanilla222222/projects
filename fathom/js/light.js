@@ -16,7 +16,11 @@ const EMIT_TINTS = {
   crystal: [132, 164, 255],
   glowmoss: [96, 226, 176],
   mushroom: [186, 134, 226],
-  emberite: [214, 92, 52]
+  emberite: [214, 92, 52],
+  lava: [255, 138, 60],
+  brimstone: [198, 84, 52],
+  cinderstone: [170, 90, 60],
+  starrock: [150, 160, 230]
 };
 
 // dayPhase runs 0 at noon through 0.5 at midnight and back. Solar elevation is its cosine,

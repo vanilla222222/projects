@@ -73,16 +73,25 @@ function unstick(player, world, tiles, limit) {
 
 // Whether the tile at the player's chest is liquid. Chest rather than feet, so standing
 // in a puddle does not make you swim and wading does not stop you walking.
+// Deep enough to swim in. A tile holding a splash of water is something you wade through;
+// only a tile that is mostly full should take your feet off the ground.
+const SWIM_DEPTH = 0.45;
+
+function liquidFraction(world, tiles, x, y) {
+  const id = world.get(x, y);
+  if (!tiles.tile(id).liquid) return 0;
+  if (!world.getLevel) return 1;
+  return world.getLevel(x, y) / (world.LEVEL_FULL || 255);
+}
+
 function inLiquid(player, world, tiles) {
-  const spec = tiles.tile(world.get(Math.floor(player.x + player.width / 2),
-    Math.floor(player.y + player.height * 0.35)));
-  return !!(spec && spec.liquid);
+  return liquidFraction(world, tiles, Math.floor(player.x + player.width / 2),
+    Math.floor(player.y + player.height * 0.35)) >= SWIM_DEPTH;
 }
 
 function submerged(player, world, tiles) {
-  const spec = tiles.tile(world.get(Math.floor(player.x + player.width / 2),
-    Math.floor(player.y + 0.2)));
-  return !!(spec && spec.liquid);
+  return liquidFraction(world, tiles, Math.floor(player.x + player.width / 2),
+    Math.floor(player.y + 0.2)) >= SWIM_DEPTH;
 }
 
 function step(player, world, tiles, input, dt) {
@@ -171,7 +180,7 @@ function aimTile(player, pointer) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_player = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged,
+const EXPORTS_player = { makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, liquidFraction, SWIM_DEPTH,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
 
 if (typeof module !== 'undefined' && module.exports) {

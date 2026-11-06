@@ -156,3 +156,75 @@ those scarcity decisions apply and the generator is its own design rather than a
   than empty. A mire has a shallower water table for the same reason.
 - Water is static, non-solid and translucent. Swimming is three numbers in the physics
   step; being underwater is shown by tinting the view, not by lighting the water.
+
+## Foliage
+
+Terraria's surface decoration is largely one grass tile plus a handful of shared props.
+Fathom gives each biome its own planting table, because two patches of grass reading as
+two different places is most of what makes a biome felt rather than labelled.
+
+- Thirteen prop types, all non-solid and all one-swing: tufts, ferns, flowers, bamboo,
+  cacti, dead bushes, reeds, shells, seaweed, coral, frost shards, and the two blights'
+  own caps.
+- Seaweed and coral grow only submerged; everything else only in air. **Shells are the
+  exception** and grow on the sea bed and the beach alike, which is where a player looks
+  for them.
+- Bamboo, cactus and seaweed are stalks rather than single tiles. Seaweed is clamped to
+  the depth of water above it, or a stalk in a shallow bay grows out into the air.
+- Grass is drawn as a lit top band with a ragged root fringe into the soil beneath it,
+  not a tinted square, so a hillside has a silhouette.
+- Trees carry branches and a root flare. Without them a trunk is a pole with a hat.
+- The blights have their own wood, so a blighted tree stops looking like an ordinary one.
+
+## Water
+
+Water was static when oceans were added: a body you could swim in but not move. It now
+flows. Each water tile carries a level from 1 to 255 and the simulation moves volume down
+first, then sideways toward the average of a cell and its open neighbours.
+
+Three things keep it affordable on an endless world:
+
+- **An active set.** A cell is simulated only while it is moving; a pass that moves nothing
+  out of a cell drops it. Still water is therefore free, which matters when most water in
+  the world is a settled ocean.
+- **A budget per step.** Leftover cells wait for the next frame, so a collapsing reservoir
+  costs several frames rather than one long one.
+- **A minimum flow.** Sideways movement targets the floored average and never passes it,
+  so equal cells exchange nothing.
+
+Flatness has an exact guarantee and it is not "every column equal": two adjacent columns
+can sit one unit apart with no legal move between them, so an n-column basin may hold a
+gradient of up to n-1 units out of 255. `tools/liquid-test.js` asserts that, rather than a
+stricter claim that would be false.
+
+Only partial tiles are stored. A water tile with no entry is full, which is what generation
+produces, so an entire ocean costs nothing to represent and a save holds only the tiles a
+player has actually disturbed.
+
+## Vertical layers
+
+The world has no floor and no ceiling. Everything is measured against sea level, which is
+the one altitude that does not move: surface height varies by a couple of hundred tiles
+between a highland and an ocean bed, so a layer defined against the ground would wander.
+
+| altitude | layer | what is there |
+| --- | --- | --- |
+| -750 and above | Space | planetoids of skystone and starrock, black sky, no horizon |
+| -750 to -250 | Sky | floating islands - grass over soil over a skystone keel - and cloud banks |
+| -250 to +50 | Surface | the fourteen biomes |
+| +50 to +750 | Caves | per-biome cave profiles and strata |
+| +750 to +1250 | Deep Caverns | basalt into deep slate |
+| +1250 to +1750 | Hell | the great hall: ash ceiling, ash floor, standing columns, lava lakes |
+| +1750 to +2170 | Hell Caves | brimstone, cinderstone and obsidian, heavily flooded with lava |
+| +2170 and below | the hall again, repeating without end |
+
+Below the hell caves the great hall repeats every 500 tiles, with a slab of rock between
+one hall and the next and passages bored through it. A new palette every thousand tiles
+would be a promise the generator cannot keep; one enormous recognisable place that goes
+on forever is a journey instead.
+
+Sky islands and planetoids are computed from (x, y) rather than stamped like trees. A
+stamped structure has to be scanned for from neighbouring chunks and the margin has to
+exceed its half-width; an island forty tiles wide would need a margin three times the
+trees'. A structure that is a pure function of position cannot disagree across a seam at
+all.

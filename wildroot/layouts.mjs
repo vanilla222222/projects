@@ -1,4 +1,4 @@
-import {ROOM_DESIGNS} from './room-designs.mjs?v=20';
+import {ROOM_DESIGNS} from './room-designs.mjs?v=21';
 // Authored room profiles. Upper platforms connect directly to the ground for reliable tap navigation.
 export const GROUND=644;
 const D={
@@ -21,10 +21,10 @@ const D={
 'town-0':[2300,'Village Green',[[350,500,470],[1030,430,350],[1660,430,342]],[],{steward:[1510,644]},[['market',770,560],['well',1630,160]],{'portal-town-square':[1940,342],shop:[1100,644]}],
 'town-1':[2100,'Hammer Street',[[280,450,455],[980,600,335],[1720,220,490]],[],{blacksmith:[760,644]},[['workshops',620,550],['chimneys',1630,300]],{station:[1390,644]}],
 'town-2':[2420,'The Furnace Yard',[[270,420,510],[900,480,360],[1630,530,460]],[],{},[['chimneys',900,550],['orepiles',2080,220]],{station:[1520,644]}],
-'town-3':[3060,'Legacy Square',[[330,460,450],[1040,520,325],[1840,440,470],[2530,330,350]],[],{},[['flags',1000,700],['fountain',1670,180]],{vault:[1670,644],arena:[2350,644],stamps:[650,644],statues:[1330,644],tasks:[1990,644],'world-gate':[2700,644]}],
+'town-3':[3060,'Legacy Square',[[330,460,450],[1040,520,325],[1840,440,470],[2530,330,350]],[],{},[['flags',1000,700],['fountain',1670,180]],{dungeon:[1050,644],vault:[1670,644],arena:[2350,644],stamps:[650,644],statues:[1330,644],tasks:[1990,644],'world-gate':[2700,644]}],
 'jungle-town-0':[2700,'Canopy Market',[[330,450,460],[1040,550,300],[1810,520,425]],[],{enchanter:[810,644]},[['canopyhouses',620,780],['vines',2360,220]],{shop:[1200,644],station:[1700,644]}],
 'jungle-town-1':[2460,'The Alchemist’s Garden',[[240,430,335],[900,530,470],[1690,510,310]],[],{alchemist:[850,644]},[['garden',660,660],['pond',1940,300]],{station:[1510,644]}],
-'jungle-town-2':[2800,'Rootbound Approach',[[300,600,465],[1110,430,290],[1750,620,400]],[],{},[['roots',1200,600],['ruins',2220,400]]],
+'jungle-town-2':[2800,'Rootbound Approach',[[300,600,465],[1110,430,290],[1750,620,400]],[],{},[['roots',1200,600],['ruins',2220,400]],{bossboard:[2470,644]}],
 sunwell:[2120,'The Hidden Sunwell',[[260,440,460],[910,500,320],[1580,330,450]],[],{},[['spring',1050,550],['shrine',1740,230]]],
 vault:[2460,'The Forgotten Vault',[[300,480,485],[1010,580,330],[1830,370,440]],[],{},[['forgedoor',960,350],['hoist',1960,260]]],
 boss:[3240,'Heart of the Rootwarden',[[390,510,435],[1190,470,305],[1930,500,465],[2680,350,350]],[],{},[['elder',2390,650],['roots',1480,500],['ruins',2870,220]]]

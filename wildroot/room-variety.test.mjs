@@ -1,9 +1,10 @@
+import {seedKill,seedStory} from './test-fixtures.mjs?v=21';
 import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
-import * as E from './engine.mjs?v=20';import * as D from './content.mjs?v=20';
-import {roomLayout,ROOM_KEYS,GROUND} from './layouts.mjs?v=20';import {ROOM_DESIGNS} from './room-designs.mjs?v=20';
-import {World,createMap} from './world.mjs?v=20';import {drawWorld,viewFor} from './scene.mjs?v=20';
+import * as E from './engine.mjs?v=21';import * as D from './content.mjs?v=21';
+import {roomLayout,ROOM_KEYS,GROUND} from './layouts.mjs?v=21';import {ROOM_DESIGNS} from './room-designs.mjs?v=21';
+import {World,createMap} from './world.mjs?v=21';import {drawWorld,viewFor} from './scene.mjs?v=21';
 const rooms=()=>[...D.AREAS.flatMap(a=>a.zones.map((_,zone)=>({area:a.id,zone}))),...Object.entries(D.SECRETS).map(([secret,d])=>({area:d.area,zone:d.zone,secret})),{area:'jungle-town',zone:2,boss:true}];
-function setup(r){const s=E.freshSave();for(const a of D.AREAS)for(let i=0;i<a.zones.length;i++)s.kills[a.id+'-'+i]=12;s.storyFlags.bossPermit=true;s.stars.unlocked=true;s.secretUnlocks=['sunwell'];const c=E.selected(s);Object.assign(c,{area:r.area,zone:r.zone,secret:r.secret||null,activity:r.boss?'boss':'rest'});return{s,c,w:new World(s,{rng:()=>.5})};}
+function setup(r){const s=E.freshSave();for(const a of D.AREAS)for(let i=0;i<a.zones.length;i++)seedKill(s,a.id+'-'+i,12);s.storyFlags.bossPermit=true;s.stars.unlocked=true;s.secretUnlocks=['sunwell'];const c=E.selected(s);Object.assign(c,{area:r.area,zone:r.zone,secret:r.secret||null,activity:r.boss?'boss':'rest'});return{s,c,w:new World(s,{rng:()=>.5})};}
 const tick=(w,seconds)=>{for(let i=0;i<seconds*50;i++)w.step(.02);};
 test('All 29 rooms have their own art direction, colours and authored vertical silhouettes',()=>{
  const moods=new Set(),motifs=new Set(),colours=new Set();assert.equal(Object.keys(ROOM_DESIGNS).length,29);for(const r of rooms()){const m=createMap(r.area,r.zone,r.boss,r.secret),d=m.layout.design;moods.add(d.mood);motifs.add(d.motif);colours.add(d.sky.join());assert.ok(m.minY<0,m.layout.key);assert.ok(m.height>900,m.layout.key);assert.ok(m.platforms.some(p=>p.y<0),m.layout.key);}assert.equal(moods.size,29);assert.equal(motifs.size,29);assert.equal(colours.size,29);

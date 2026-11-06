@@ -1,5 +1,5 @@
-import * as I from './inventory.mjs?v=20';
-import {serviceAccess} from './services.mjs?v=20';
+import * as I from './inventory.mjs?v=21';
+import {serviceAccess} from './services.mjs?v=21';
 
 export const CAULDRONS={
  orange:{name:'Ember Cauldron',color:'#ba633b',bubbles:['copperheart','ironwill','bigstrike']},
@@ -51,7 +51,7 @@ export function advanceAlchemy(s,seconds){
  a.liquid=Math.min(waterCap(s),a.liquid+seconds*.03*(1+(s.guild.study||0)*.1+a.liquidUpgrades.water.rate*.15+assigned(s,'water').length*.5));
  if(alchemyLevel(s)>=5)a.mist=Math.min(mistCap(s),a.mist+seconds*.01*(1+a.liquidUpgrades.mist.rate*.15+assigned(s,'mist').length*.5));
  for(const id of Object.keys(CAULDRONS)){const workers=assigned(s,id);if(!workers.length)continue;const d=a.cauldrons[id],duration=brewDuration(s,id);if(d.points>=10)continue;
-  const strength=workers.reduce((n,c)=>n+(1+(level(c)-1)*.05)*(c.class==='alchemist'?1.35:1),0);
+  const strength=workers.reduce((n,c)=>n+(1+(level(c)-1)*.05)*(c.class==='alchemist'?1.35:1)*(1+(c.accountBonuses?.alchemy||0)),0);
   d.progress+=seconds*strength;const n=Math.min(10-d.points,Math.floor(d.progress/duration));d.points+=n;d.progress-=n*duration;if(d.points>=10)d.progress=0;
   for(const c of workers)c.skills.alchemy+=n*2;
  }

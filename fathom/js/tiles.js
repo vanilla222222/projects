@@ -8,7 +8,7 @@ const AIR = 0;
 const TILES = [
   { id: 0, key: 'air', name: 'Air', solid: false, opacity: 0, emit: 0, hardness: 0, colour: null },
   { id: 1, key: 'dirt', name: 'Dirt', solid: true, opacity: 48, emit: 0, hardness: 0.35, colour: '#6b4a2f', grain: 0.14 , toughness: 100 },
-  { id: 2, key: 'grass', name: 'Grass', solid: true, opacity: 48, emit: 0, hardness: 0.35, colour: '#4f7d35', grain: 0.16 , toughness: 100 },
+  { id: 2, key: 'grass', name: 'Grass', solid: true, opacity: 48, emit: 0, hardness: 0.35, colour: '#4f7d35', grain: 0.16 , toughness: 100 , grassTop: true, soil: '#6b4a2f' },
   { id: 3, key: 'stone', name: 'Stone', solid: true, opacity: 56, emit: 0, hardness: 0.9, colour: '#6e6e78', grain: 0.11 , toughness: 100 },
   { id: 4, key: 'clay', name: 'Clay', solid: true, opacity: 48, emit: 0, hardness: 0.5, colour: '#9c5c44', grain: 0.1 , toughness: 90 },
   { id: 5, key: 'sand', name: 'Sand', solid: true, opacity: 44, emit: 0, hardness: 0.3, colour: '#cbb279', grain: 0.12 , toughness: 80 },
@@ -49,19 +49,57 @@ const TILES = [
 
   // Jungle and marsh ground.
   { id: 33, key: 'mud', name: 'Mud', solid: true, opacity: 50, emit: 0, hardness: 0.4, colour: '#4e3a2a', grain: 0.13, toughness: 95 },
-  { id: 34, key: 'junglegrass', name: 'Jungle Grass', solid: true, opacity: 50, emit: 0, hardness: 0.4, colour: '#3f7a2e', grain: 0.17, toughness: 95, drops: 'mud' },
+  { id: 34, key: 'junglegrass', name: 'Jungle Grass', solid: true, opacity: 50, emit: 0, hardness: 0.4, colour: '#3f7a2e', grain: 0.17, toughness: 95, drops: 'mud' , grassTop: true, soil: '#4e3a2a' },
   { id: 35, key: 'peat', name: 'Peat', solid: true, opacity: 52, emit: 0, hardness: 0.4, colour: '#3b3324', grain: 0.15, toughness: 90 },
 
   // The two blights. Both generate, because an endless world never has to choose.
   { id: 36, key: 'blight', name: 'Blightstone', solid: true, opacity: 60, emit: 0, hardness: 1.6, colour: '#4a3f63', grain: 0.12, require: 45, toughness: 220 },
-  { id: 37, key: 'blightgrass', name: 'Blighted Grass', solid: true, opacity: 52, emit: 0, hardness: 0.5, colour: '#6a5a8c', grain: 0.16, toughness: 110, drops: 'dirt' },
+  { id: 37, key: 'blightgrass', name: 'Blighted Grass', solid: true, opacity: 52, emit: 0, hardness: 0.5, colour: '#6a5a8c', grain: 0.16, toughness: 110, drops: 'dirt' , grassTop: true, soil: '#3a3148' },
   { id: 38, key: 'flesh', name: 'Fleshstone', solid: true, opacity: 60, emit: 0, hardness: 1.6, colour: '#6e2f33', grain: 0.12, require: 45, toughness: 220 },
-  { id: 39, key: 'fleshgrass', name: 'Fleshy Grass', solid: true, opacity: 52, emit: 0, hardness: 0.5, colour: '#9c3f45', grain: 0.16, toughness: 110, drops: 'dirt' },
+  { id: 39, key: 'fleshgrass', name: 'Fleshy Grass', solid: true, opacity: 52, emit: 0, hardness: 0.5, colour: '#9c3f45', grain: 0.16, toughness: 110, drops: 'dirt' , grassTop: true, soil: '#4a2426' },
 
   // Badlands strata and the shore.
   { id: 40, key: 'redclay', name: 'Red Clay', solid: true, opacity: 50, emit: 0, hardness: 0.6, colour: '#a85436', grain: 0.11, toughness: 100 },
   { id: 41, key: 'sandstone', name: 'Sandstone', solid: true, opacity: 58, emit: 0, hardness: 1, colour: '#9c8150', grain: 0.1, toughness: 130 },
-  { id: 42, key: 'saltcrust', name: 'Salt Crust', solid: true, opacity: 46, emit: 0, hardness: 0.5, colour: '#d8d2c0', grain: 0.09, toughness: 90 }
+  { id: 42, key: 'saltcrust', name: 'Salt Crust', solid: true, opacity: 46, emit: 0, hardness: 0.5, colour: '#d8d2c0', grain: 0.09, toughness: 90 },
+
+  // Foliage and surface props. All non-solid and all `decor`, which means one swing takes
+  // them whatever you are holding, they never block movement, and they are swept away if
+  // the block they stand on is mined. Each biome plants its own, which is most of what
+  // makes two patches of grass read as two different places.
+  { id: 43, key: 'tuft', name: 'Grass Tuft', solid: false, opacity: 0, emit: 0, hardness: 0.05, colour: '#5f9b3c', grain: 0, decor: true, drops: null },
+  { id: 44, key: 'flower', name: 'Wildflower', solid: false, opacity: 0, emit: 0, hardness: 0.05, colour: '#d9d06a', grain: 0, decor: true },
+  { id: 45, key: 'jungletuft', name: 'Jungle Fern', solid: false, opacity: 0, emit: 0, hardness: 0.05, colour: '#49a23a', grain: 0, decor: true, drops: null },
+  { id: 46, key: 'bamboo', name: 'Bamboo', solid: false, opacity: 4, emit: 0, hardness: 0.2, colour: '#8fb24a', grain: 0, decor: true, toughness: 40 },
+  { id: 47, key: 'cactus', name: 'Cactus', solid: false, opacity: 6, emit: 0, hardness: 0.3, colour: '#4f7f46', grain: 0, decor: true, toughness: 50 },
+  { id: 48, key: 'deadbush', name: 'Dead Bush', solid: false, opacity: 0, emit: 0, hardness: 0.05, colour: '#8a6b42', grain: 0, decor: true, drops: null },
+  { id: 49, key: 'shell', name: 'Shell', solid: false, opacity: 0, emit: 0, hardness: 0.05, colour: '#e8d8c6', grain: 0, decor: true },
+  { id: 50, key: 'seaweed', name: 'Seaweed', solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#3f7a5c', grain: 0, decor: true, drops: null },
+  { id: 51, key: 'coral', name: 'Coral', solid: false, opacity: 2, emit: 1, hardness: 0.2, colour: '#d9686f', grain: 0, decor: true },
+  { id: 52, key: 'blightshroom', name: 'Blight Cap', solid: false, opacity: 0, emit: 6, hardness: 0.05, colour: '#9b74d8', grain: 0, decor: true },
+  { id: 53, key: 'fleshshroom', name: 'Crimson Cap', solid: false, opacity: 0, emit: 6, hardness: 0.05, colour: '#d8565e', grain: 0, decor: true },
+  { id: 54, key: 'frostshard', name: 'Frost Shard', solid: false, opacity: 2, emit: 2, hardness: 0.1, colour: '#b8dff0', grain: 0, decor: true },
+  { id: 55, key: 'reeds', name: 'Reeds', solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#7c8f3e', grain: 0, decor: true, drops: null },
+
+  // Blighted wood, so a blighted tree stops looking like an ordinary one.
+  { id: 56, key: 'blighttrunk', name: 'Blighted Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#564770', grain: 0.1, drops: 'wood', toughness: 90 },
+  { id: 57, key: 'fleshtrunk', name: 'Crimson Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#6d3338', grain: 0.1, drops: 'wood', toughness: 90 },
+
+  // The deep layers. Ash and brimstone are hell's rock; obsidian is what lava leaves
+  // where it meets water, and is the hardest thing in the world to cut.
+  { id: 58, key: 'ash', name: 'Ash', solid: true, opacity: 52, emit: 0, hardness: 0.6, colour: '#4a4247', grain: 0.14, toughness: 120 },
+  { id: 59, key: 'brimstone', name: 'Brimstone', solid: true, opacity: 62, emit: 3, hardness: 2, colour: '#6b3326', grain: 0.13, require: 65, toughness: 280 },
+  { id: 60, key: 'obsidian', name: 'Obsidian', solid: true, opacity: 66, emit: 0, hardness: 2.6, colour: '#241f2e', grain: 0.06, require: 100, toughness: 420 },
+  { id: 61, key: 'cinderstone', name: 'Cinderstone', solid: true, opacity: 60, emit: 1, hardness: 1.5, colour: '#3b2f33', grain: 0.12, require: 45, toughness: 240 },
+
+  // Lava. A liquid like water, so it flows through the same simulation, but it burns and
+  // it lights its own caverns. `hot` is what tells the rest of the game it hurts.
+  { id: 62, key: 'lava', name: 'Lava', solid: false, opacity: 10, emit: 11, hardness: 0, colour: '#d2502a', grain: 0, liquid: true, hot: true, toughness: 20 },
+
+  // Sky and space.
+  { id: 63, key: 'skystone', name: 'Skystone', solid: true, opacity: 56, emit: 0, hardness: 1.1, colour: '#8d93a8', grain: 0.1, toughness: 140 },
+  { id: 64, key: 'starrock', name: 'Starrock', solid: true, opacity: 58, emit: 2, hardness: 1.6, colour: '#4b4a63', grain: 0.12, require: 45, toughness: 200 },
+  { id: 65, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is
@@ -84,7 +122,10 @@ const WALLS = [
   { id: 12, key: 'blightwall', name: 'Blight Wall', colour: '#2c2440', opacity: 7, natural: true },
   { id: 13, key: 'fleshwall', name: 'Flesh Wall', colour: '#401c20', opacity: 7, natural: true },
   { id: 14, key: 'redclaywall', name: 'Red Clay Wall', colour: '#5e2f1e', opacity: 7, natural: true },
-  { id: 15, key: 'sandstonewall', name: 'Sandstone Wall', colour: '#5a4a2e', opacity: 7, natural: true }
+  { id: 15, key: 'sandstonewall', name: 'Sandstone Wall', colour: '#5a4a2e', opacity: 7, natural: true },
+  { id: 16, key: 'ashwall', name: 'Ash Wall', colour: '#2b2529', opacity: 7, natural: true },
+  { id: 17, key: 'brimstonewall', name: 'Brimstone Wall', colour: '#3d1d16', opacity: 7, natural: true },
+  { id: 18, key: 'skywall', name: 'Sky Wall', colour: '#4c5266', opacity: 6, natural: true }
 ];
 
 const WALL_BY_KEY = {};
