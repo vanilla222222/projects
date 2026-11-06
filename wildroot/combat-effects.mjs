@@ -8,3 +8,5 @@ export function drawAttackEffects(g,effects,reducedMotion=false){
   else{g.arc(f.toX,f.toY,calling==='warrior'?42:27,-1.4,1.2);g.stroke();}g.restore();
  }
 }
+
+export function bossHudLayout(width){return{top:width<800?115:25,width:Math.min(390,width-40)};}
