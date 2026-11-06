@@ -771,3 +771,34 @@ That is not a melody, it is an alarm. It only lifts now, never drops.
 
 **N** mutes everything, **B** stops the music. Nothing is built until the first key or
 click, because no browser will start an audio context before one.
+
+## Events
+
+**A blood moon** is a night that is worse. Which nights are blood moons is a hash of the
+night's number, so the whole event costs one integer in the save, every player of a seed
+meets the same nights, and nothing about it has to be written down. Roughly one night in
+seven, and never the first two - a new character should get a little while to find a
+shovel.
+
+It is not merely a different roster. Three enemies exist only during it and are all
+worse than what the night usually holds; the spawn interval drops to 45% and the cap
+rises from six to nine. The moon itself is bigger and red and washes the whole sky,
+because the event has to be visible from inside a house: an event you can only detect by
+reading the spawn table is not an event.
+
+The `event` filter sits in `matches()` beside the layer and biome filters, and it only
+adds. The test checks exactly that: every enemy that spawns on an ordinary night still
+spawns during a blood moon, every event enemy is impossible outside it, and the blood
+moon pool is the ordinary pool plus its own and nothing else.
+
+**A meteor** falls when the King dies, which is how the next tier of material arrives:
+meteorite is in no band and is not generated with the world at all. The crater is written
+into the world's edit diff exactly like anything the player built, so it survives a save
+with no new machinery, and so it can be mined out and will stay mined out. Where it lands
+is a pure function of which meteor it is - 180 to 520 tiles out, on whichever side the
+hash picks - so the announcement can name a direction.
+
+Meteor bars make a sword, a blaster and a suit. The Meteoric set bonus takes 40% off
+every spell, and the blaster is deliberately fast and cheap rather than hard-hitting, so
+wearing the set with it makes magic nearly free - which is Terraria's joke about the
+Space Gun and worth keeping.

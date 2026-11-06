@@ -24,8 +24,10 @@ const enemyDrops = require('../js/enemy.js').ENEMIES
 // Ores and gems come from the generator's own band table rather than from a list
 // written out here, which went stale the moment six gems were added to it.
 const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
+// Meteorite is raw but is in no band: it is not generated with the world at all. A
+// meteor falls where a meteor falls, and its crater is written into the edit diff.
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
-  'shell', 'obsidian', 'fallenstar', ...enemyDrops, ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', ...enemyDrops, ...ORES,
   ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key)]);
 const produced = new Set(craft.RECIPES.map(r => r.out.key));
 

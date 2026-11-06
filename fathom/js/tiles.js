@@ -126,7 +126,10 @@ const TILES = [
   // Rope. Not solid, so it blocks nothing and holds nothing up; `climb` is the whole of
   // it, and the physics reads that flag rather than the tile's identity, so anything
   // climbable added later works the same way for free.
-  { id: 73, key: 'rope', name: 'Rope', solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#b89a62', grain: 0, climb: true, toughness: 10 }
+  // Meteorite. It is not generated with the world: a meteor falls where a meteor falls,
+  // and the crater is written into the edit diff like anything else the player did.
+  { id: 73, key: 'meteorite', name: 'Meteorite', solid: true, opacity: 56, emit: 5, hardness: 2.4, colour: '#8a5c52', grain: 0.2, ore: true, require: 45, toughness: 200 },
+  { id: 74, key: 'rope', name: 'Rope', solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#b89a62', grain: 0, climb: true, toughness: 10 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is

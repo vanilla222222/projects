@@ -56,6 +56,11 @@ function makeGame(canvas, deps) {
     drops: [],
     paused: false,
     weather: { rain: 0, wind: 0, snow: 0 },
+    // Which night it is, and whether this one is a blood moon. One integer in the save
+    // decides the whole event, because the moon is a pure function of the night's number.
+    nights: 0,
+    bloodMoon: false,
+    meteors: 0,
     // Animation state the renderer reads. `anim` is the player's gait phase, advanced by
     // distance walked rather than by the clock so the legs match the ground; `swingArm`
     // is where in its arc the swing currently is, or null when the arms are at rest.
@@ -209,6 +214,61 @@ function makeGame(canvas, deps) {
     spawnParticles(state.player.x + 0.5, state.player.y + 0.5, spec.colour, 10);
     if (!use.summon) sfx('use');
     return true;
+  }
+
+  // --- events ---------------------------------------------------------------------
+  // The night counter is the only thing saved: whether a given night is a blood moon is
+  // a hash of its number, so every player of a seed meets the same nights and nothing
+  // about the event has to be written down.
+  const NIGHT_FROM = 0.27;
+  const NIGHT_TO = 0.73;
+  let wasNight = false;
+
+  function stepEvents() {
+    const night = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
+    if (night && !wasNight) {
+      state.nights += 1;
+      state.bloodMoon = worldgen.bloodMoonAt(seed, state.nights);
+      if (state.bloodMoon) {
+        say('The moon is bleeding', 4.2);
+        sfx('roar', { gain: 0.7, pitch: 1.3 });
+      }
+    }
+    if (!night && wasNight && state.bloodMoon) {
+      state.bloodMoon = false;
+      say('The blood moon has set', 2.6);
+    }
+    wasNight = night;
+  }
+
+  function eventKey() {
+    return state.bloodMoon ? 'bloodmoon' : null;
+  }
+
+  // A meteor lands somewhere far off when the King dies. The crater is written into the
+  // world's edit diff exactly like anything the player built, so it survives a save with
+  // no new machinery at all - and so it can be mined out and will stay mined out.
+  const METEOR_RADIUS = 7;
+
+  function dropMeteor() {
+    state.meteors += 1;
+    const site = worldgen.meteorSite(seed, state.meteors);
+    const ore = tiles.idOf('meteorite');
+    const r = METEOR_RADIUS;
+    for (let dy = -r; dy <= r; dy += 1) {
+      for (let dx = -r; dx <= r; dx += 1) {
+        const d = Math.hypot(dx, dy * 1.25);
+        if (d > r) continue;
+        const x = site.x + dx;
+        const y = site.y + dy;
+        // A bowl: hollow above the ground line, ore below it, and a ragged rim.
+        if (d > r - 1.6 && Math.random() < 0.45) continue;
+        if (y < site.y) world.set(x, y, tiles.AIR);
+        else world.set(x, y, ore);
+      }
+    }
+    say('A star has fallen to the ' + (site.side > 0 ? 'east' : 'west'), 4.6);
+    return site;
   }
 
   // --- the grappling hook ----------------------------------------------------------
@@ -662,6 +722,9 @@ function makeGame(canvas, deps) {
       }
       spawnParticles(target.x, target.y, target.spec.colour, 14);
       sfxAt('enemydie', target.x, target.y, { pitch: target.boss ? 0.5 : 1 });
+      // Killing the King brings something down out of the sky, which is how the next
+      // tier of material arrives: it is not in the ground anywhere.
+      if (target.boss) dropMeteor();
       rareDrop(target);
       // Roughly one kill in five leaves a heart behind, and a hurt player sees them
       // more often: the drop is there to keep a fight going, so it arrives when the
@@ -1097,6 +1160,7 @@ function makeGame(canvas, deps) {
       audio.setAmbience(layerKey);
       audio.stepMusic(dt, layerKey, state.dayPhase > 0.27 && state.dayPhase < 0.73);
     }
+    stepEvents();
     state.weather = worldgen.weatherAt(seed, state.time,
       worldgen.biomeAt(seed, Math.floor(state.player.x)).key);
 
@@ -1107,7 +1171,7 @@ function makeGame(canvas, deps) {
     state.player.canDoubleJump = gear.doubleJump;
 
     if (swarm) {
-      swarm.step(state.player, dt, state.dayPhase);
+      swarm.step(state.player, dt, state.dayPhase, eventKey());
       const hit = swarm.touching(state.player);
       // The Royal Gel: slimes stop noticing you. The king is still a slime, and is the
       // one slime it does not work on, because a trinket that turns off the boss fight
@@ -1368,6 +1432,8 @@ function makeGame(canvas, deps) {
       world: world.serialize(),
       dayPhase: state.dayPhase,
       spawn: state.spawn || null,
+      nights: state.nights,
+      meteors: state.meteors,
       villagers: village ? village.serialize() : [],
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
@@ -1437,6 +1503,10 @@ function makeGame(canvas, deps) {
     state.stats = stats;
     state.colours = characterRecord.colours || choice.character.colours;
     state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
+    state.nights = worldRecord.nights || 0;
+    state.meteors = worldRecord.meteors || 0;
+    state.bloodMoon = false;
+    wasNight = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
     state.spawn = worldRecord.spawn || null;
     state.player = spawnPlayer();
     if (worldRecord.spawn
@@ -1537,7 +1607,8 @@ function makeGame(canvas, deps) {
     get seed() { return seed; },
     get ui() { return ui; },
     get profiles() { return profiles; },
-    get audio() { return audio; } };
+    get audio() { return audio; },
+    dropMeteor, stepEvents, eventKey };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

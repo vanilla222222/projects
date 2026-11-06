@@ -87,7 +87,8 @@ for (const layer of ['caves', 'deep', 'hell', 'hellcaves', 'sky', 'space']) {
 for (const spec of ENEMIES) {
   const layer = (spec.layers || ['surface'])[0];
   const biome = (spec.biomes || ['plains'])[0];
-  const ctx = { biome, layer, wet: !!spec.wet, day: spec.day === false ? false : true };
+  const ctx = { biome, layer, wet: !!spec.wet, day: spec.day === false ? false : true,
+    event: spec.event || null };
   if (spec.summonOnly) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
     // in which the spawn table could produce it. Checked against every combination the
@@ -96,8 +97,10 @@ for (const spec of ENEMIES) {
       for (const b of ['plains', 'forest', 'ocean', 'jungle', 'blight', 'crimson']) {
         for (const wet of [true, false]) {
           for (const day of [true, false]) {
-            ok(poolFor({ biome: b, layer: l, wet, day }).indexOf(spec) === -1,
-              spec.key + ' can be spawned in ' + l + '/' + b);
+            for (const event of [null, 'bloodmoon']) {
+              ok(poolFor({ biome: b, layer: l, wet, day, event }).indexOf(spec) === -1,
+                spec.key + ' can be spawned in ' + l + '/' + b);
+            }
           }
         }
       }
@@ -202,6 +205,34 @@ const victim = enemyModule.makeEnemy(enemyModule.BY_KEY.greenslime, 0, 0);
 ok(!chase.damage(victim, victim.maxHp - 1), 'an enemy died one point early');
 ok(chase.damage(victim, 1), 'an enemy survived exactly lethal damage');
 ok(victim.dead, 'a killed enemy is not marked dead');
+
+// --- 5b. events --------------------------------------------------------------------------
+// An event enemy must be impossible outside its event, and the event must not suppress
+// the ordinary roster: a blood moon is the usual night with worse things added to it.
+{
+  const night = { biome: 'forest', layer: 'surface', wet: false, day: false, event: null };
+  const blood = Object.assign({}, night, { event: 'bloodmoon' });
+  const ordinary = poolFor(night);
+  const cursed = poolFor(blood);
+  const eventers = ENEMIES.filter(e => e.event === 'bloodmoon');
+  ok(eventers.length >= 3, 'only ' + eventers.length + ' enemies belong to the blood moon');
+  for (const spec of eventers) {
+    ok(ordinary.indexOf(spec) === -1, spec.key + ' spawns on an ordinary night');
+    ok(cursed.indexOf(spec) !== -1, spec.key + ' does not spawn during its own event');
+    ok(spec.hp > 50, spec.key + ' is a blood moon enemy with only ' + spec.hp + ' health');
+  }
+  for (const spec of ordinary) {
+    ok(cursed.indexOf(spec) !== -1,
+      spec.key + ' stops spawning during a blood moon, which should only add to the night');
+  }
+  ok(cursed.length === ordinary.length + eventers.length,
+    'the blood moon pool is not the ordinary pool plus its own');
+  // And daytime is never a blood moon's hour, whatever the flag says.
+  const dayBlood = poolFor(Object.assign({}, blood, { day: true }));
+  for (const spec of eventers) {
+    ok(dayBlood.indexOf(spec) === -1, spec.key + ' spawned in daylight');
+  }
+}
 
 // --- 6. the king -----------------------------------------------------------------------
 // A boss is the one enemy the player chooses to meet, so the things worth proving are the
