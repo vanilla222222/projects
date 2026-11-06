@@ -62,9 +62,20 @@ a tile had no way out, so spawning inside a tree trunk wedged you there permanen
 
 ## Drawing
 
-No image assets. Tile textures are baked procedurally into one atlas at load, four variants
-each so large expanses do not visibly tile. Edges are shaded per tile from the eight-neighbour
-mask, so a face open to the sky gets a lit rim and a buried tile gets none.
+No image assets. Tile textures are baked procedurally into one atlas at load, twelve variants
+each - four noise patterns crossed with three brightness bands - so large expanses do not
+visibly tile. The band is chosen by a two-scale coherent hash of the tile's position rather
+than per tile, so ground varies in patches as well as per block instead of reading as a
+checkerboard. Each solid variant carries a baked bevel, lit along its top and left edges and
+darkened along its bottom and right, which is what makes one block distinguishable from the
+next in a wall of the same material. On top of that every material is drawn differently:
+soil gets pebbles and root flecks, rock gets bedding planes and the occasional crack, sand
+gets ripples, ice gets facets. Edges are shaded per tile from the eight-neighbour mask, so a
+face open to the sky gets a lit rim and a buried tile gets none.
+
+The sky is a five-stop gradient with a haze band on the horizon whose strength follows the
+sun's elevation, and three bands of drifting cloud at different depths, so the sky moves
+with the camera at a fraction of its speed instead of being a still photograph.
 
 Light is coloured and runs over the visible window with a margin: sunlight falls per column
 and dims through whatever it passes, so a cave mouth throws a shaft rather than a hard edge,

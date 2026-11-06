@@ -5,7 +5,18 @@
 // per tile from its neighbour mask, because a tile's lit edges depend on what is beside it.
 
 const TILE = 16;
-const VARIANTS = 4;
+
+// Four noise patterns, in three brightness bands. The bands are what break up a field of
+// dirt: with one shade, several hundred tiles of soil read as a single flat mass however
+// much per-pixel noise is sprinkled on them, because the eye integrates the noise away
+// and sees only the average. The band is chosen by a coarse hash of position, so the
+// brightness varies in patches of several tiles rather than per tile, which is what makes
+// it read as ground rather than as static.
+const PATTERNS = 4;
+const SHADE_BANDS = 3;
+const VARIANTS = PATTERNS * SHADE_BANDS;
+const BAND_SHADE = [-0.042, 0, 0.042];
+const BAND_SIZE = 4;            // tiles per brightness patch
 
 function shade(hex, amount) {
   const n = parseInt(hex.slice(1), 16);
@@ -32,9 +43,31 @@ function hashPixel(id, variant, x, y) {
   return (h >>> 0) / 4294967296;
 }
 
+// The base material painter. Per-pixel noise alone averages out to flat colour at any
+// distance, so this works at three scales: broad blotches, mid-size clusters, and single
+// pixels. What a material gets on top of that depends on what it is - soil has pebbles,
+// rock has bedding planes and cracks, sand has ripples - because "brown with noise" and
+// "grey with noise" is what made every surface look like the same surface.
 function paintGrain(ctx, spec, variant, ox, oy) {
   const grain = spec.grain || 0;
   if (grain <= 0) return;
+
+  // Broad blotches: a handful of soft patches per tile, which is the scale the eye reads
+  // as material rather than as dirt on the screen.
+  // Kept low-contrast and small on purpose: a bright blotch is a shape, and a shape that
+  // repeats every few tiles reads as wallpaper rather than as ground.
+  for (let i = 0; i < 3; i += 1) {
+    const n = hashPixel(spec.id, variant * 7 + i, i * 5, 3);
+    const cx = (hashPixel(spec.id, variant, i * 3, 11) * TILE) | 0;
+    const cy = (hashPixel(spec.id, variant, i * 3, 29) * TILE) | 0;
+    const r = 2 + n * 3;
+    ctx.fillStyle = shade(spec.colour, (n - 0.5) * grain * 0.8);
+    ctx.beginPath();
+    ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Mid-size clusters and single pixels.
   for (let y = 0; y < TILE; y += 1) {
     for (let x = 0; x < TILE; x += 1) {
       const n = hashPixel(spec.id, variant, x, y);
@@ -47,6 +80,80 @@ function paintGrain(ctx, spec, variant, ox, oy) {
       }
     }
   }
+
+  paintMaterial(ctx, spec, variant, ox, oy);
+}
+
+// What distinguishes one material from another at a glance.
+function paintMaterial(ctx, spec, variant, ox, oy) {
+  const kind = materialOf(spec);
+  if (kind === 'soil') {
+    // Pebbles and root flecks.
+    for (let i = 0; i < 5; i += 1) {
+      const px = (hashPixel(spec.id, variant + 3, i * 7, 2) * TILE) | 0;
+      const py = (hashPixel(spec.id, variant + 3, i * 7, 19) * TILE) | 0;
+      const big = hashPixel(spec.id, variant, i, 41) > 0.72;
+      ctx.fillStyle = shade(spec.colour, big ? 0.3 : -0.28);
+      ctx.fillRect(ox + px, oy + py, big ? 2 : 1, big ? 2 : 1);
+    }
+    return;
+  }
+  if (kind === 'rock') {
+    // Bedding planes: a couple of faint horizontal seams, offset per variant, which is
+    // what makes a wall of stone read as layered rock rather than as grey paint.
+    for (let i = 0; i < 2; i += 1) {
+      const y = ((variant * 5 + i * 9 + 3) % TILE);
+      ctx.fillStyle = shade(spec.colour, -0.16);
+      ctx.fillRect(ox, oy + y, TILE, 1);
+      ctx.fillStyle = shade(spec.colour, 0.1);
+      ctx.fillRect(ox, oy + y + 1, TILE, 1);
+    }
+    // A crack, sometimes.
+    if (hashPixel(spec.id, variant, 5, 5) > 0.55) {
+      ctx.fillStyle = shade(spec.colour, -0.3);
+      let cx = (hashPixel(spec.id, variant, 9, 1) * TILE) | 0;
+      for (let y = 2; y < TILE - 2; y += 1) {
+        ctx.fillRect(ox + cx, oy + y, 1, 1);
+        if (hashPixel(spec.id, variant, cx, y) > 0.6) cx += hashPixel(spec.id, variant, y, cx) > 0.5 ? 1 : -1;
+        cx = Math.max(0, Math.min(TILE - 1, cx));
+      }
+    }
+    return;
+  }
+  if (kind === 'sand') {
+    // Ripples.
+    for (let y = (variant % 4); y < TILE; y += 4) {
+      ctx.fillStyle = shade(spec.colour, -0.1);
+      for (let x = 0; x < TILE; x += 1) {
+        const wave = Math.round(Math.sin((x + variant * 3) * 0.6) * 1.2);
+        ctx.fillRect(ox + x, oy + y + wave, 1, 1);
+      }
+    }
+    return;
+  }
+  if (kind === 'ice') {
+    // Facets: a few bright diagonal slivers.
+    for (let i = 0; i < 3; i += 1) {
+      const x = (hashPixel(spec.id, variant, i * 11, 7) * TILE) | 0;
+      const y = (hashPixel(spec.id, variant, i * 11, 23) * TILE) | 0;
+      const len = 3 + ((i + variant) % 4);
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      for (let j = 0; j < len; j += 1) {
+        ctx.fillRect(ox + ((x + j) % TILE), oy + ((y + j) % TILE), 1, 1);
+      }
+    }
+  }
+}
+
+// Which family of material a tile belongs to, for texturing purposes only.
+function materialOf(spec) {
+  if (spec.material) return spec.material;
+  const key = spec.key;
+  if (/dirt|grass|mud|peat|clay|ash|redclay/.test(key)) return 'soil';
+  if (/sand|salt/.test(key)) return 'sand';
+  if (/ice|snow|cloud|frost/.test(key)) return 'ice';
+  if (/stone|granite|basalt|slate|brim|cinder|obsidian|skystone|starrock/.test(key)) return 'rock';
+  return 'plain';
 }
 
 function paintOre(ctx, spec, variant, ox, oy) {
@@ -624,6 +731,7 @@ function bakeAtlas(document, tiles) {
     for (let v = 0; v < VARIANTS; v += 1) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
+      const band = Math.floor(v / PATTERNS);
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
       else if (spec.bed) paintBed(ctx, spec, v, ox, oy);
@@ -646,21 +754,70 @@ function bakeAtlas(document, tiles) {
         ctx.fillRect(ox, oy, TILE, TILE);
         paintGrain(ctx, spec, v, ox, oy);
       }
+
+      // The brightness band, washed over whatever was painted. Done here rather than in
+      // each painter so every material gets it, including the ones with hand-drawn
+      // silhouettes.
+      if (band !== 1 && spec.solid && !spec.door && !spec.chest && !spec.bed) {
+        ctx.save();
+        ctx.globalCompositeOperation = band === 0 ? 'multiply' : 'screen';
+        const amount = Math.abs(BAND_SHADE[band]);
+        const level = band === 0 ? 255 - Math.round(255 * amount * 2)
+          : Math.round(255 * amount * 2);
+        ctx.fillStyle = 'rgb(' + level + ',' + level + ',' + level + ')';
+        ctx.fillRect(ox, oy, TILE, TILE);
+        ctx.restore();
+      }
+
+      // A bevel on every solid tile: a lit top-left edge and a shaded bottom-right one.
+      // Without it a wall of the same material is one undifferentiated mass, because
+      // nothing marks where one block ends and the next begins.
+      if (spec.solid && !spec.liquid) {
+        ctx.save();
+        // Light enough to separate one block from the next without drawing a grid over
+        // the world: at 0.13 and 0.18 a wall of dirt read as a tiled lattice.
+        ctx.globalAlpha = 0.06;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(ox, oy, TILE, 1);
+        ctx.fillRect(ox, oy, 1, TILE);
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(ox, oy + TILE - 1, TILE, 1);
+        ctx.fillRect(ox + TILE - 1, oy, 1, TILE);
+        ctx.restore();
+      }
     }
   }
   return canvas;
 }
 
+// Which baked variant a tile at this position uses: a noise pattern chosen per tile, and
+// a brightness band chosen per patch of a few tiles, so the ground varies at two scales
+// at once.
 function variantFor(x, y) {
   let h = (x * 73856093) ^ (y * 19349663);
   h ^= h >>> 13;
-  return (h >>> 0) % VARIANTS;
+  const pattern = (h >>> 0) % PATTERNS;
+  // Two scales of patch, summed. One scale alone tiles the world into visible squares of
+  // a single brightness; two offset scales break that boundary up.
+  const band = (bandAt(x, y, BAND_SIZE, 374761393)
+    + bandAt(x + 2, y + 1, BAND_SIZE * 2 + 1, 668265263)) % SHADE_BANDS;
+  return pattern + PATTERNS * band;
+}
+
+function bandAt(x, y, size, salt) {
+  let b = (Math.floor(x / size) * salt) ^ (Math.floor(y / size) * 1103515245);
+  b ^= b >>> 15;
+  b = Math.imul(b, 2246822519);
+  b ^= b >>> 13;
+  return (b >>> 0) % SHADE_BANDS;
 }
 
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_texture = { TILE, VARIANTS, bakeAtlas, variantFor, shade };
+const EXPORTS_texture = { TILE, VARIANTS, PATTERNS, SHADE_BANDS, BAND_SIZE,
+  bakeAtlas, variantFor, shade };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_texture;
