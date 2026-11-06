@@ -237,3 +237,14 @@ Six optional rare-material equipment recipes offer accuracy, critical chance, mo
 Willow’s spring quest requires one Sunwell Sap and the logging challenge, avoiding repeated two-hour guardian cooldowns for her completion token. Existing accepted quests become easier. The dialogue reflects the new delivery.
 
 `runWorldOne({completeNpcChains:true})` extends the common-material fresh-save campaign with real guardian encounters, personal crafting, food/shop actions, a scored logging challenge, tree visits and seeded rare-material farming. It completes all 18 NPC quests, all five classes, six NPC tokens and the combined completion token in about 234 model minutes. No save-state quest completion shortcuts are used. The standard main-story campaign remains separately checked.
+
+
+## Roster management and offline reports
+
+The Players screen compares each character's saved assignment, room, current rate estimates, food, overflow, bag use, weapon, armor and tools. Each card names its current bottleneck and recommends a concrete next goal with a recipe, material source or usable carried upgrade. AFK Info performs the detailed hour simulation for the chosen character; the overview uses lightweight current-rate estimates.
+
+Assignment choices use the worker's own discoveries and portal unlocks. Every available gathering resource is selectable. A missing skill/tool, locked route, unvisited destination or active encounter rejects the operation before changing location, activity, progress or loot. Changing a task in the same room keeps the position. Changing rooms retains floor items and equipment instance metadata.
+
+Character switching preserves position, facing, valid ladder progress and partial gathering progress. Combat/gathering resumes on return. Paid hunts, guardians, trials, dungeons and respawn recovery block switching so changing characters cannot reset an active encounter. Pending loot collection during switching does not silently cancel the outgoing assignment.
+
+Offline reports store actual gains plus the initial assignment, duration, initial and final limitations, food types consumed, remaining equipped food, expired buffs, retreats and overflow. Overflow is explicitly retained, not lost. Merged reports keep each character's own tracked duration and starting context, with the latest ending state; older unread reports remain supported and clearly indicate incomplete detailed history. Report actions view the character or recompute their next goal without awarding rewards a second time. Retreated or interrupted assignments retain an actionable warning until retried or changed.

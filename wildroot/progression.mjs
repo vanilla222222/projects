@@ -1,21 +1,21 @@
-import * as Rewards from './reward-progression.mjs?v=31';
-import {roomLayout} from './layouts.mjs?v=31';
-import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=31';
-import * as J from './journey.mjs?v=31';
-import * as Builds from './class-builds.mjs?v=31';
-import * as Books from './special-talents.mjs?v=31';
-import * as Hunts from './boss-hunts.mjs?v=31';
-import * as Dungeon from './dungeon.mjs?v=31';
-import {validateSurveys} from './exploration.mjs?v=31';
-import * as X from './item-economy.mjs?v=31';
-import * as S from './services.mjs?v=31';
-import * as B from './workshop.mjs?v=31';
-import * as H from './alchemy.mjs?v=31';
-import * as C from './chronicle.mjs?v=31';
-import * as A from './adventure.mjs?v=31';
-import * as L from './legacy.mjs?v=31';
-import * as I from './inventory.mjs?v=31';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=31';
+import * as Rewards from './reward-progression.mjs?v=33';
+import {roomLayout} from './layouts.mjs?v=33';
+import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=33';
+import * as J from './journey.mjs?v=33';
+import * as Builds from './class-builds.mjs?v=33';
+import * as Books from './special-talents.mjs?v=33';
+import * as Hunts from './boss-hunts.mjs?v=33';
+import * as Dungeon from './dungeon.mjs?v=33';
+import {validateSurveys} from './exploration.mjs?v=33';
+import * as X from './item-economy.mjs?v=33';
+import * as S from './services.mjs?v=33';
+import * as B from './workshop.mjs?v=33';
+import * as H from './alchemy.mjs?v=33';
+import * as C from './chronicle.mjs?v=33';
+import * as A from './adventure.mjs?v=33';
+import * as L from './legacy.mjs?v=33';
+import * as I from './inventory.mjs?v=33';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=33';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;if(c.dungeon)c.dungeon.home.hp+=6;else c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
@@ -24,7 +24,7 @@ export const canPay=I.canPay;
 export const pay=I.pay;
 export function log(s,message){s.log.unshift(message);s.log=s.log.slice(0,30);}
 export function initializeCharacter(c,s,migrate=false){
- c.upgradeRewardClaims??=[];J.initJourney(c);Builds.initBuild(c);c.bossTier??=0;c.encounter??=null;c.dungeon??=null;c.lifetimeXp??=0;c.earnedCoins??=0;c.coinRemainder??=0;c.metMentors??=Object.keys(c.quests||{});c.classTalents??=Object.fromEntries(Object.keys(Builds.classTalentDefs(c)).map(id=>[id,0]));c.hotbar??=[0,1,2];c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;
+ c.assignmentWarning??=null;c.upgradeRewardClaims??=[];J.initJourney(c);Builds.initBuild(c);c.bossTier??=0;c.encounter??=null;c.dungeon??=null;c.lifetimeXp??=0;c.earnedCoins??=0;c.coinRemainder??=0;c.metMentors??=Object.keys(c.quests||{});c.classTalents??=Object.fromEntries(Object.keys(Builds.classTalentDefs(c)).map(id=>[id,0]));c.hotbar??=[0,1,2];c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;
  c.loadout??={};c.profTalents??={efficiency:0,prosperity:0,mastery:0,workmanship:0};c.builds??=[null,null];c.buffs??=[];
  c.talents={power:0,vitality:0,industry:0,precision:0,haste:0,signature:0,...c.talents};
  if(migrate){for(const[slot,ids]of Object.entries({weapon:['copper-sword','iron-sword','gold-sword'],body:['copper-mail','iron-mail','gold-mail'],pick:['copper-pick','iron-pick'],axe:['copper-axe','iron-axe']})){const tier=c.gear[slot==='body'?'armor':slot]||0;if(tier&&!c.loadout[slot])c.loadout[slot]={uid:s.nextEquipmentId++,base:ids[Math.min(ids.length,tier)-1],runes:[]};}}

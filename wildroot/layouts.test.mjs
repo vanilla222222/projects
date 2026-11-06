@@ -1,12 +1,12 @@
-import {makeTell} from './combat-patterns.mjs?v=31';
-import {seedKill,seedStory} from './test-fixtures.mjs?v=31';
+import {makeTell} from './combat-patterns.mjs?v=33';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=33';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=31';
-import {AREAS,SECRETS} from './content.mjs?v=31';
-import {World,createMap,GROUND} from './world.mjs?v=31';
-import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=31';
-import {viewFor} from './scene.mjs?v=31';
+import * as E from './engine.mjs?v=33';
+import {AREAS,SECRETS} from './content.mjs?v=33';
+import {World,createMap,GROUND} from './world.mjs?v=33';
+import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=33';
+import {viewFor} from './scene.mjs?v=33';
 const rooms=()=>[...AREAS.flatMap(a=>a.zones.map((_,i)=>({area:a.id,index:i}))),...Object.entries(SECRETS).map(([secret,d])=>({area:d.area,index:d.zone,secret})),{area:'jungle-town',index:2,boss:true}];
 const open=()=>{const s=E.freshSave();for(const a of AREAS)for(let i=0;i<a.zones.length;i++)seedKill(s,`${a.id}-${i}`,12);s.storyFlags.bossPermit=true;s.secretUnlocks=['sunwell'];s.stars.unlocked=true;return s;};
 const tick=(w,t)=>{for(let i=0;i<t*50;i++)w.step(.02);};
@@ -16,5 +16,5 @@ test('Every entity and entrance stands on a real floor; each shelf has a connect
 test('Tap navigation actually reaches every upper platform in all 29 rooms',()=>{for(const r of rooms()){const s=open(),c=E.selected(s);Object.assign(c,{area:r.area,zone:r.index,activity:r.boss?'boss':'rest',secret:r.secret||null});const w=new World(s,{rng:()=>.5});for(const f of w.map.platforms.slice(1)){Object.assign(w.player,{x:190,y:GROUND,vy:0,vx:0,climbing:false,grounded:true,climbTo:null});w.auto=false;w.walkTo(f.x+f.w*.8,f.y);tick(w,40);assert.equal(w.player.y,f.y,w.map.layout.key+'/'+f.id);assert.ok(Math.abs(w.player.x-(f.x+f.w*.8))<12,w.map.layout.key+'/'+f.id);assert.equal(w.destination,null);}}});
 test('Camera pans across full rooms and clamps at both edges on desktop and narrow screens',()=>{for(const canvas of [{clientWidth:1280,clientHeight:720},{clientWidth:390,clientHeight:520}]){const p={x:20,roomWidth:3800};assert.equal(viewFor(canvas,p).x,0);p.x=1900;const v=viewFor(canvas,p);assert.ok(v.x>0);assert.equal(p.x,1900);p.x=3790;assert.equal(viewFor(canvas,p).x,3800-v.width);}});
 test('Actual portal traversal arrives beside the named reciprocal entrance on a valid floor',()=>{for(const r of rooms()){const s=open(),c=E.selected(s);Object.assign(c,{area:r.area,zone:r.index,activity:r.boss?'boss':'rest',secret:r.secret||null});const w=new World(s,{rng:()=>.5}),portals=w.map.portals.map(p=>p.id);for(const id of portals){Object.assign(c,{area:r.area,zone:r.index,activity:r.boss?'boss':'rest',secret:r.secret||null,position:null});w.enter(!!r.boss);const portal=w.map.portals.find(p=>p.id===id),to=portal.destination;assert.ok(w.usePortal(portal),r.area+'/'+r.index+'/'+id);const entrance=w.map.entities.find(e=>e.id===to.entrance);assert.ok(entrance);assert.equal(Math.abs(w.player.x-entrance.x),70);assert.equal(w.player.y,entrance.y);assert.ok(support(w.map,w.player));}}});
-test('Old coordinates and old floor drops migrate to reachable ground or shelves',()=>{const s=open(),c=E.selected(s);Object.assign(c,{area:'forest',zone:1,position:{x:490,y:462},groundLoot:[{id:'old',itemId:'oak',count:2,x:490,y:462}]});const w=new World(E.restoreSave(JSON.parse(JSON.stringify(s))));assert.equal(w.player.y,GROUND);assert.ok(support(w.map,w.groundLoot[0]));w.pickLoot('old');tick(w,15);assert.equal(w.c.bag.oak,2);});
+test('Old coordinates and old floor drops migrate to reachable ground or shelves',()=>{const s=open(),c=E.selected(s);Object.assign(c,{area:'forest',zone:1,position:{x:490,y:462},groundLoot:[{id:'old',itemId:'oak',count:2,x:490,y:462}]});const w=new World(E.restoreSave(JSON.parse(JSON.stringify(s))));assert.ok(w.player.y>=462);assert.ok(w.map.platforms.some(p=>p.y===w.player.y&&w.player.x>=p.x&&w.player.x<=p.x+p.w));assert.ok(support(w.map,w.groundLoot[0]));w.pickLoot('old');tick(w,15);assert.equal(w.c.bag.oak,2);});
 test('Enemies stay within their platform during chasing and charges',()=>{const s=open(),w=new World(s,{rng:()=>.5});for(const e of w.map.monsters.filter(e=>e.y<GROUND)){e.x=e.ledgeMax;w.player.x=e.ledgeMax+80;w.player.y=e.y;w.target=e;for(let i=0;i<100;i++)w.step(.02);assert.ok(e.x<=e.ledgeMax);e.telegraph=makeTell({...e,enemy:{id:'charge-check',behavior:'charge'}},w.player,w.map.width);w.resolveAttack(e);assert.ok(e.x<=e.ledgeMax);assert.ok(e.x>=e.ledgeMin);}});

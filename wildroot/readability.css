@@ -90,3 +90,23 @@
 #panel-content .capacity-entry span{min-width:0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
 #panel-content .capacity-entry small,#panel-content .capacity-entry b{font-size:12px!important;line-height:1.4;white-space:normal}
 #panel-content .capacity-entry>b{flex:0 0 72px;text-align:right;color:#3f5634}
+
+/* Character management: broad rows and readable source/action text. */
+#panel-content .roster-cards{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+#panel-content .roster-card{min-width:0;text-align:left;overflow-wrap:anywhere}
+#panel-content .roster-card .character-art{width:56px;height:88px;float:right;margin:0 0 8px 10px}
+#panel-content .roster-card h3{font-size:17px!important;line-height:1.4}
+#panel-content .roster-state{display:block;font-size:11px!important;font-weight:bold;margin:7px 0;color:#435c48}
+#panel-content .roster-card p{font-size:13px!important;line-height:1.5}
+#panel-content .roster-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0;clear:both}
+#panel-content .roster-metrics>div{padding:8px;background:#e7d4a3;min-width:0;border:1px solid #b7a071}
+#panel-content .roster-metrics small{display:block;font-size:11px!important;line-height:1.4}
+#panel-content .roster-metrics strong{display:block;font-size:15px;line-height:1.5}
+#panel-content .roster-goal{border-left:4px solid #63826a;padding:10px;background:#efe1b9;margin:10px 0}
+#panel-content .roster-goal h4{font-size:14px!important;line-height:1.5;margin:0 0 6px}
+#panel-content .roster-goal p{margin:0}
+#panel-content .roster-card .save-actions{display:flex;flex-wrap:wrap;gap:7px;clear:both}
+#panel-content .roster-card .save-actions button{flex:1 1 105px;white-space:normal}
+#panel-content .offline-materials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+#panel-content .offline-materials p{margin:3px 0;overflow-wrap:anywhere}
+@media(max-width:700px){#panel-content .roster-cards{grid-template-columns:1fr}#panel-content .offline-materials{grid-template-columns:1fr}}
