@@ -1,7 +1,8 @@
-import {surveyPoint} from './exploration.mjs?v=30';
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=30';
-import {roomLayout,pointFor} from './layouts.mjs?v=30';
-import * as E from './engine.mjs?v=30';
+import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=31';
+import {surveyPoint} from './exploration.mjs?v=31';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=31';
+import {roomLayout,pointFor} from './layouts.mjs?v=31';
+import * as E from './engine.mjs?v=31';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -123,17 +124,23 @@ export class World {
   }
   return Math.sign(t.x-p.x);
  }
- hurt(base){const damage=Math.max(1,Math.round(base-E.defense(this.state,this.c)));this.c.hp=Math.max(0,this.c.hp-damage);E.useFood(this.c,E.maxHp(this.c));this.particle(this.player.x,this.player.y-80,'−'+damage,'#ff9989');this.onEvent({type:'hurt'});}
- resolveAttack(e){const tell=e.telegraph,p=this.player,kind=tell.kind,base=e.enemy.attack;
-  if(kind==='bolt'){this.hazards.push({kind:'bolt',x:e.x,y:e.y-55,vx:tell.direction*280,width:22,height:27,damage:base,life:4});}
-  else if(kind==='charge'){const end=Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||this.map.width-25,e.x+tell.direction*210)),lo=Math.min(e.x,end),hi=Math.max(e.x,end);if(p.x>lo-30&&p.x<hi+30&&Math.abs(p.y-e.y)<45)this.hurt(base*1.4);e.x=end;this.particle(e.x,e.y-70,'CHARGE','#ffcf8c');}
-  else if(kind==='rootwave'){this.hazards.push({kind:'wave',x:e.x,y:GROUND-20,vx:tell.direction*290,width:35,height:35,damage:base*1.3,life:4});if((e.phaseLevel||1)>=2)this.hazards.push({kind:'bolt',x:e.x,y:GROUND-130,vx:tell.direction*250,width:23,height:28,damage:base,life:4});}
-  else{const range=kind==='slam'?125:85;if(Math.abs(p.x-e.x)<range&&Math.abs(p.y-e.y)<45)this.hurt(base*(kind==='slam'?1.25:1));this.particle(e.x,e.y-65,kind==='slam'?'SLAM':'!', '#ffd59b');}
+ hurt(base){if((this.player.hurtGrace||0)>0||this.c.hp<=0)return false;this.player.hurtGrace=.45;const damage=Math.max(1,Math.round(base-E.defense(this.state,this.c)));this.c.hp=Math.max(0,this.c.hp-damage);E.useFood(this.c,E.maxHp(this.c));this.particle(this.player.x,this.player.y-80,'−'+damage,'#ff9989');this.onEvent({type:'hurt'});return true;}
+ resolveAttack(e){const tell=e.telegraph,p=this.player,kind=tell.kind,base=e.enemy.attack,d=ATTACKS[kind]||ATTACKS.hop;
+  const avoid=()=>{this.particle(p.x,p.y-105,'DODGED','#abe5cb');this.onEvent({type:'dodge'});};
+  if(kind==='bolt'||kind==='volley'){for(const offset of kind==='volley'?[-42,0]:[0])this.hazards.push({kind:'bolt',x:e.x,y:e.y-55+offset,vx:tell.direction*d.speed,width:22,height:27,damage:base*d.mult,life:4,origin:e.x,avoided:false});}
+  else if(kind==='rootwave'){this.hazards.push({kind:'wave',x:e.x,y:e.y-20,vx:tell.direction*d.speed,width:35,height:35,damage:base*d.mult,life:5,origin:e.x,avoided:false});}
+  else{const hit=p.x>=tell.left&&p.x<=tell.right&&Math.abs(p.y-tell.y)<45;
+   if(hit)this.hurt(base*d.mult);else if(Math.abs(p.x-tell.x)<500&&Math.abs(p.y-tell.y)<220)avoid();
+   if(kind==='charge')e.x=tell.end;if(kind==='pounce')e.x=tell.x;
+   this.particle(tell.x,tell.y-70,kind==='rootburst'?'ROOTS!':kind==='pounce'?'POUNCE!':kind.toUpperCase(), '#ffd59b');
+  }
+  e.attackCount=(e.attackCount||0)+1;
  }
+
  step(dt,input={}){
-  if(this.c.dungeon&&this.c.dungeon.phase!=='fight')return;if(!Number.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.06);this.switchCheck();this.time+=dt;const p=this.player,c=this.c;
+  if(this.c.dungeon&&this.c.dungeon.phase!=='fight')return;if(!Number.isFinite(dt)||dt<=0)return;dt=Math.min(dt,.06);this.switchCheck();this.time+=dt;const p=this.player,c=this.c;p.hurtGrace=Math.max(0,(p.hurtGrace||0)-dt);
   p.attack=Math.max(0,p.attack-dt);p.skill=Math.max(0,p.skill-dt);p.cooldowns=p.cooldowns.map(n=>Math.max(0,n-dt));E.advanceBuffs(c,dt);E.regenerate(c,dt,E.maxHp(c));p.flash=Math.max(0,p.flash-dt);
-  for(const e of this.map.monsters){e.flash=Math.max(0,(e.flash||0)-dt);if(e.dead>0){e.dead-=dt;if(e.dead<=0){e.dead=0;e.hp=e.enemy.hp;e.attack=1.5;e.telegraph=null;}}}
+  for(const e of this.map.monsters){e.flash=Math.max(0,(e.flash||0)-dt);if(e.dead>0){e.dead-=dt;if(e.dead<=0){e.dead=0;e.hp=e.enemy.hp;e.attack=1.5;e.telegraph=null;e.attackCount=0;e.phaseLevel=1;e.guardRecovery=0;}}}
   for(const particle of this.particles){particle.life-=dt;particle.y-=dt*35;}this.particles=this.particles.filter(p=>p.life>0);for(const d of this.drops)d.life-=dt;this.drops=this.drops.filter(d=>d.life>0);
   if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0){const spawn=this.c.entryPoint?makePlayer({position:this.c.entryPoint},this.map.layout):{x:190,y:GROUND};p.x=spawn.x;p.y=spawn.y;p.facing=spawn.facing||1;p.vy=0;p.grounded=true;c.hp=E.maxHp(c);this.stop();}return;}
   if(input.horizontal||input.vertical||input.jump){this.target=null;this.destination=null;this.auto=false;c.activity=this.c.dungeon?'dungeon':this.map.trial?'trial':'rest';c.progress=0;}
@@ -159,17 +166,17 @@ export class World {
    if(e.dead>0)continue;
    if(e.poison){e.poison.remaining-=dt;e.poison.next-=dt;if(e.poison.next<=0){e.poison.next+=1;this.hit(e,e.poison.mult);}if(e.poison.remaining<=0)e.poison=null;if(e.dead>0)continue;}
    if((e.stun||0)>0){e.stun-=dt;continue;}
-   const same=Math.abs(e.y-p.y)<50,dx=p.x-e.x,engaged=same&&Math.abs(dx)<(e.enemy.behavior==='bolt'?380:270)&&fighting;
-   e.guarding=e.enemy.behavior==='guard'&&Math.floor(this.time/3)%2===0;
-   if(e.enemy.id==='boss'&&fighting){const phase=e.hp/e.enemy.hp<.3?3:e.hp/e.enemy.hp<.65?2:1;if(phase>(e.phaseLevel||1)){e.phaseLevel=phase;this.particle(e.x,e.y-230,'PHASE '+phase,'#ffa588');this.onEvent({type:'boss-phase'});for(let i=0;i<2;i++){const enemy={...ENEMIES['jungle-0'],id:'boss-rootling',name:'Rootling',hp:35,attack:3,xp:4,coins:1},add={id:'add-'+phase+'-'+i,kind:'enemy',enemy,x:e.x-400+i*450,home:e.x-400+i*450,ledgeMin:25,ledgeMax:this.map.width-25,y:GROUND,hp:35,dead:0,attack:1.5,phase:i};this.map.monsters.push(add);this.map.entities.push(add);}}}
-   if(e.telegraph){e.telegraph.remaining-=dt;if(e.telegraph.remaining<=0){this.resolveAttack(e);e.telegraph=null;e.attack=e.enemy.id==='boss'?2.6:2;}continue;}
+   const style=encounterStyle(e.enemy),attack=ATTACKS[style.pattern]||ATTACKS.hop,same=Math.abs(e.y-p.y)<50,dx=p.x-e.x,engaged=same&&Math.abs(dx)<(e.enemy.id==='boss'?650:Math.max(270,attack.range))&&fighting;e.guardRecovery=Math.max(0,(e.guardRecovery||0)-dt);
+   e.guarding=!!style.guard&&!e.telegraph&&!e.guardRecovery&&Math.floor(this.time/3)%2===0;
+   if(e.enemy.id==='boss'&&fighting){const phase=e.hp/e.enemy.hp<.3?3:e.hp/e.enemy.hp<.65?2:1;if(phase>(e.phaseLevel||1)){e.phaseLevel=phase;e.telegraph=null;e.attack=1.4;this.hazards=[];this.particle(e.x,e.y-230,'PHASE '+phase+' · ROOTS AWAKEN','#ffa588');this.onEvent({type:'boss-phase'});for(let i=0;i<2;i++){const enemy={...ENEMIES['jungle-0'],id:'boss-rootling',name:'Rootling',hp:35,attack:3,xp:4,coins:1},add={id:'add-'+phase+'-'+i,kind:'enemy',enemy,x:e.x-400+i*450,home:e.x-400+i*450,ledgeMin:25,ledgeMax:this.map.width-25,y:GROUND,hp:35,dead:0,attack:1.5,phase:i};this.map.monsters.push(add);this.map.entities.push(add);}}}
+   if(e.telegraph){e.telegraph.remaining-=dt;if(e.telegraph.remaining<=0){const kind=e.telegraph.kind;this.resolveAttack(e);e.telegraph=null;e.guardRecovery=1.2;if(encounterStyle(e.enemy).guard)this.particle(e.x,e.y-85,'OPEN!','#c5edcb');e.attack=(ATTACKS[kind]||ATTACKS.hop).recovery;}continue;}
    if(!engaged){e.x=e.home+Math.sin(this.time*.65+e.phase)*20;continue;}
    const behavior=e.enemy.behavior||'hop';
-   if(Math.abs(dx)>85&&behavior!=='bolt')e.x+=Math.sign(dx)*Math.min(Math.abs(dx),45*dt);
+   if(Math.abs(dx)>85&&!['bolt','volley'].includes(style.pattern))e.x+=Math.sign(dx)*Math.min(Math.abs(dx),style.pace*dt);
    e.x=Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||this.map.width-25,e.x));e.facing=dx>0?1:-1;e.attack-=dt;
-   if(e.attack<=0&&(Math.abs(dx)<(behavior==='bolt'?380:behavior==='rootwave'?500:behavior==='charge'?240:150))){e.telegraph={kind:behavior,remaining:e.enemy.windup||1,total:e.enemy.windup||1,x:p.x,direction:Math.sign(dx)||-1};this.onEvent({type:'warning'});}
+   if(e.attack<=0&&Math.abs(dx)<(e.enemy.id==='boss'?650:attack.range)){e.telegraph=makeTell(e,p,this.map.width);e.guarding=false;this.onEvent({type:'warning',text:ATTACKS[e.telegraph.kind].hint});}
   }
-  for(const hazard of this.hazards){hazard.life-=dt;hazard.x+=(hazard.vx||0)*dt;if(!hazard.hit&&Math.abs(hazard.x-p.x)<hazard.width&&Math.abs((hazard.y||GROUND)-(p.y-35))<hazard.height){hazard.hit=true;this.hurt(hazard.damage);}}
+  for(const hazard of this.hazards){hazard.life-=dt;hazard.x+=(hazard.vx||0)*dt;if(!hazard.hit&&!hazard.avoided&&Number.isFinite(hazard.origin)&&(hazard.vx>0?hazard.x>p.x+hazard.width:hazard.x<p.x-hazard.width)){hazard.avoided=true;if(Math.abs(p.y-hazard.y)<220){this.particle(p.x,p.y-105,'DODGED','#abe5cb');this.onEvent({type:'dodge'});}}if(!hazard.hit&&Math.abs(hazard.x-p.x)<hazard.width&&Math.abs((hazard.y||GROUND)-(p.y-35))<hazard.height){hazard.hit=true;this.hurt(hazard.damage);}}
   this.hazards=this.hazards.filter(h=>h.life>0&&h.x>-60&&h.x<this.map.width+60);
   if(this.c.trial){this.c.trial.time=Math.max(0,this.c.trial.time-dt);if(c.hp<=0||this.c.trial.time<=0){this.endTrial(false);return;}if(this.map.monsters.every(e=>e.dead>0)){if(this.c.trial.wave>=TRIAL_WAVES.length-1){this.endTrial(true);return;}this.c.trial.wave++;this.spawnTrialWave();}}
   if(c.dungeon){c.dungeon.time=Math.max(0,c.dungeon.time-dt);if(c.hp<=0||c.dungeon.time<=0){this.endDungeon(c.hp<=0?'knockout':'timeout');return;}if(this.map.monsters.every(e=>e.dead>0)){const result=E.clearDungeonRoom(c,this.rng);if(result==='complete')this.endDungeon('complete');else this.onIntent({type:'dungeon'});return;}}

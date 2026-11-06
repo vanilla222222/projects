@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=30';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=30';
-import {roomLayout} from './layouts.mjs?v=30';
+import {QUEST_REFORMS} from './quest-content.mjs?v=31';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=31';
+import {roomLayout} from './layouts.mjs?v=31';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -417,3 +417,24 @@ export const GATHER_NODES={
  birch:{skill:'logging',level:2,tier:1,threshold:28},iron:{skill:'mining',level:3,tier:1,threshold:32},
  'jungle-wood':{skill:'logging',level:3,tier:1,threshold:55},gold:{skill:'mining',level:5,tier:2,threshold:80}
 };
+
+
+// Rare drops offer optional build choices; the main quest path needs none of them.
+export const RARE_CRAFTS=[
+ ['bramble-band','Bramble Band','ring',{attack:3,crit:.02},{'boar-hide-rare':2,'copper-bar':4,'vine-fiber':8},'ironworking'],
+ ['echo-lens','Echo Lens','charm',{accuracy:12,defense:1},{'echo-stone-rare':2,'iron-bar':3,'bat-fang':8},'ironworking'],
+ ['sapwing-boots','Sapwing Boots','feet',{speed:.08,health:8,defense:1},{'moth-wing-rare':3,birch:16,thread:10},'ironworking'],
+ ['sentinel-visor','Sentinel Visor','head',{defense:3,health:12,accuracy:8},{'sentinel-core-rare':2,'tempered-bar':3,dust:8},'gilding'],
+ ['scarab-compass','Scarab Compass','charm',{mining:.18,accuracy:6},{'scarab-husk-rare':2,'gold-bar':2,'iron-shell':8},'gilding'],
+ ['grove-pendant','Grove Pendant','charm',{logging:.18,health:12},{'grove-seed-rare':2,birch:25,'binding-resin':3},'ironworking']
+];
+for(const[id,name,slot,stats,cost,unlock]of RARE_CRAFTS){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,skill:'smithing',station:'anvil',equipment:id,cost,unlock});}
+Object.assign(RUNES,{
+ sight:{name:'Trueflight',description:'+8 accuracy, +1 attack',stats:{accuracy:8,attack:1},cost:{dust:8,'echo-stone-rare':1},unlock:'ironworking'},
+ shell:{name:'Shellward',description:'+2 defense, +12 health',stats:{defense:2,health:12},cost:{dust:8,'crawler-shell-rare':2},unlock:'ironworking'},
+ canopy:{name:'Canopy Step',description:'+7% movement, +8% logging efficiency',stats:{speed:.07,logging:.08},cost:{dust:10,'moth-wing-rare':2},unlock:'gilding'},
+ seam:{name:'Deepseam',description:'+18% mining efficiency',stats:{mining:.18},cost:{dust:10,'iron-shell-rare':2},unlock:'gilding'}
+});
+// One successful guardian encounter is enough for Willow's story, rather than
+// requiring several real-time cooldown cycles to earn her completion token.
+STORY.find(q=>q.id==='spring').deliver['sap-essence']=1;

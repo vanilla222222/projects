@@ -48,6 +48,45 @@ function makeRenderer(canvas, deps) {
   // How far into space the camera is: 0 at and below the sky layer's floor, 1 once the
   // camera is properly in vacuum. Used to black out the sky and hide the horizon, because
   // a planetoid against a blue sky with mountains behind it reads as a hill, not a world.
+  // Drifting cloud banks, drawn as soft overlapping blobs. They move with the camera at
+  // a fraction of its speed and with time, so the sky is not a still photograph.
+  const CLOUD_BANDS = [
+    { y: 0.12, scale: 0.0016, drift: 6, size: 96, alpha: 0.26, depth: 0.04 },
+    { y: 0.22, scale: 0.0026, drift: 11, size: 68, alpha: 0.3, depth: 0.07 },
+    { y: 0.32, scale: 0.0038, drift: 18, size: 46, alpha: 0.2, depth: 0.11 }
+  ];
+
+  function drawClouds(state) {
+    const vacuum = spaceFactor(state);
+    if (vacuum >= 1) return;
+    const night = Math.max(0, -light.solarElevation(state.dayPhase));
+    const tint = night > 0.3 ? '235,238,250' : '255,253,246';
+    ctx.save();
+    ctx.globalAlpha = (1 - vacuum) * (night > 0.3 ? 0.5 : 1);
+    for (const band of CLOUD_BANDS) {
+      const originX = state.camera.x * band.depth + state.time * band.drift;
+      const baseY = canvas.height * band.y;
+      for (let px = -band.size; px <= canvas.width + band.size; px += band.size * 0.7) {
+        const wx = (originX + px) * band.scale;
+        const n = noise.fbm1(state.world.seed + 4201, wx, 131, 3, 2, 0.5);
+        // The threshold is what makes a sky of separate clouds rather than one overcast
+        // sheet: most of the field has to fall below it, or the puffs merge into fog.
+        if (n < 0.54) continue;
+        // Eased rather than linear: a linear ramp from the threshold makes every cloud
+        // nearly transparent, because the noise rarely reaches its own maximum.
+        const puff = Math.min(1, Math.pow((n - 0.54) / 0.18, 0.7));
+        const r = band.size * (0.35 + puff * 0.8);
+        const yy = baseY + Math.sin(wx * 3.1) * band.size * 0.3;
+        const g = ctx.createRadialGradient(px, yy, r * 0.2, px, yy, r);
+        g.addColorStop(0, 'rgba(' + tint + ',' + (band.alpha * puff).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(' + tint + ',0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(px - r, yy - r, r * 2, r * 2);
+      }
+    }
+    ctx.restore();
+  }
+
   function spaceFactor(state) {
     if (!worldgen || !worldgen.SEA_LEVEL) return 0;
     const alt = state.camera.y - worldgen.SEA_LEVEL;
@@ -57,11 +96,29 @@ function makeRenderer(canvas, deps) {
   function drawSky(state) {
     const [top, mid, low] = skyColours(state.dayPhase);
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    // Five stops rather than three. A three-stop gradient over a whole screen is a flat
+    // wash: the extra stops are where the sky gets its depth, and the band just above the
+    // horizon is where most of the colour of a real sky actually lives.
     g.addColorStop(0, top);
-    g.addColorStop(0.55, mid);
+    g.addColorStop(0.3, mixHex(top, mid, 0.55));
+    g.addColorStop(0.58, mid);
+    g.addColorStop(0.82, mixHex(mid, low, 0.7));
     g.addColorStop(1, low);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // A haze band sitting on the horizon, brightest where the sun is.
+    const elev = light.solarElevation(state.dayPhase);
+    if (elev > -0.2) {
+      const haze = ctx.createLinearGradient(0, canvas.height * 0.52, 0, canvas.height * 0.92);
+      const strength = Math.max(0, Math.min(1, (elev + 0.2) / 0.6));
+      haze.addColorStop(0, 'rgba(255,255,255,0)');
+      haze.addColorStop(1, 'rgba(255,248,232,' + (0.16 * strength).toFixed(3) + ')');
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, canvas.height * 0.52, canvas.width, canvas.height * 0.4);
+    }
+
+    drawClouds(state);
 
     // In space the sky goes black whatever the hour.
     const vacuum = spaceFactor(state);
