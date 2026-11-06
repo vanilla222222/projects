@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=36';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=36';
-import {roomLayout} from './layouts.mjs?v=36';
+import {QUEST_REFORMS} from './quest-content.mjs?v=38';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=38';
+import {roomLayout} from './layouts.mjs?v=38';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -110,7 +110,7 @@ export const EQUIPMENT={
  'tempered-mail':{name:'Verdant Steel Mail',slot:'body',stats:{defense:9,health:85}},
  'guild-charm':{name:'Artisan’s Charm',slot:'charm',stats:{mining:.1,logging:.1,crafting:.1}},
  'warden-charm':{name:'Heartwood Charm',slot:'charm',stats:{attack:9,health:35,skill:.15}},
- 'sunwell-staff':{name:'Sunwell Branch',slot:'weapon',stats:{attack:25,skill:.2,logging:.15}}
+ 'sunwell-staff':{name:'Sunwell Branch',slot:'weapon',stats:{attack:27,skill:.28,logging:.35}}
 };
 export const GEAR_SLOTS={weapon:'Weapon',head:'Head',body:'Body',feet:'Feet',pick:'Pickaxe',axe:'Hatchet',charm:'Accessory'};
 for(const [id,e]of Object.entries(EQUIPMENT)){item(id,e.name,'rare',e.slot==='weapon'?'⚔':e.slot==='body'?'▱':e.slot==='head'?'♜':e.slot==='feet'?'♟':'✦');const r=RECIPES.find(r=>r.id===e.recipe);if(r)r.equipment=id;}
@@ -122,7 +122,7 @@ RECIPES.push(
  ...[
  ['oak-staff',{plank:5,birch:12,'grove-seed':8}],['forge-hammer',{'iron-bar':5,plank:4,'echo-stone':6}],['rune-focus',{birch:15,dust:8,'moth-wing':8}],['catalyst-flask',{'copper-bar':4,tonic:3,'frog-dew':8}],
  ['copper-helm',{'copper-bar':3,'boar-hide':5}],['birch-boots',{birch:10,'boar-hide':8}],['iron-helm',{'iron-bar':5,'crawler-shell':8}],['tempered-mail',{'tempered-bar':6,'iron-shell':12,'binding-resin':4}],
- ['guild-charm',{'copper-bar':4,plank:4,dust:4,tonic:2}],['warden-blade',{'tempered-bar':8,'binding-resin':5,'sentinel-core':10}],['warden-charm',{'boss-heart':1,dust:15,'gold-bar':5}],['sunwell-staff',{'sap-essence':3,'tempered-bar':3,'jungle-wood':15}]
+ ['guild-charm',{'copper-bar':4,plank:4,dust:4,tonic:2}],['warden-blade',{'tempered-bar':8,'binding-resin':5,'sentinel-core':10}],['warden-charm',{'boss-heart':1,dust:15,'gold-bar':5}],['sunwell-staff',{'sap-essence':1,'tempered-bar':3,'jungle-wood':15}]
  ].map(([id,cost])=>({id:`gear-${id}`,name:EQUIPMENT[id].name,skill:'smithing',station:'anvil',cost,equipment:id,unlock:['tempered-mail','warden-blade'].includes(id)?'verdant-steel':id==='warden-charm'?'heartwood':id==='sunwell-staff'?'sunwell':id==='iron-helm'?'ironworking':null})),
  {id:'binding-resin',name:'Mix Binding Resin',skill:'alchemy',station:'alchemy',cost:{'jungle-wood':3,'moss-slime':2},output:'binding-resin',count:2},
  ...[['mining-tonic',{tonic:1,copper:8,'bat-fang':3}],['logging-tonic',{tonic:1,birch:8,'grove-seed':3}],['battle-tonic',{tonic:1,'wisp-ember':4,'vine-fiber':4}],['ward-tonic',{tonic:1,'crawler-shell':4,'frog-dew':4}]].map(([id,cost])=>({id,name:ITEMS[id].name,skill:'alchemy',station:'alchemy',cost,output:id,count:1,unlock:'brewing'}))

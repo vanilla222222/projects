@@ -1,5 +1,5 @@
-import * as I from './inventory.mjs?v=36';
-import {serviceAccess} from './services.mjs?v=36';
+import * as I from './inventory.mjs?v=38';
+import {serviceAccess} from './services.mjs?v=38';
 
 export const CAULDRONS={
  orange:{name:'Ember Cauldron',color:'#ba633b',bubbles:['copperheart','ironwill','bigstrike']},

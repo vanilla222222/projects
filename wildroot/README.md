@@ -268,3 +268,11 @@ Rootwarden health is 3,900 before difficulty multipliers. Phase three sends swee
 A live phone check caught boss HUD overlap with the room title and quest tracker. Runtime 36 reserves space below the title for the boss panel, uses a contrasting panel background, and hides the quest tracker only during boss encounters.
 
 Runtime entry 37 also suppresses the boss's duplicate local name caption during an attack windup, keeping it out of the dodge instruction; the main boss panel retains the name and phase. Unchanged dependencies retain runtime-36 cache keys.
+
+Inventory flow pass (runtime 38): equipment comparison tables include every gained and lost stat, including rune/stone/infusion bonuses and stats absent from the candidate. Rings show both destinations and offer explicit slot choices. The same comparison is available in crafting previews.
+
+At a town chest, Store & Clear Overflow repeatedly deposits unlocked materials and claims what fits; full chests and locks leave quantities intact. Deposit Spare Gear moves only unequipped, unlocked gear, preserving instance upgrades. Characters already at a chest can switch without closing storage; others must walk there first. Transfer messages report partial amounts. Material details at a chest identify supplies held by other characters.
+
+The backpack counter opens Items and signals retained floor loot or pending overflow. Full-bag notices name the blocked item, floor loot is listed in Items, and rare pickups receive distinct colors. Quest delivery objectives link to the item reference; material sources include gathering rooms, skill requirements, recipe unlock hints, shop prices and map links. Unobtained reward quests identify the mentor instead of revealing their title.
+
+Equipment audit: the Sunwell Branch was strictly outclassed by the common verdant staff despite needing three cooldown-gated guardian drops. It now costs one sap and trades some attack for stronger logging/skill bonuses, keeping a useful profession role. All 199 items retain at least three implemented uses.
