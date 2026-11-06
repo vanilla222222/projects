@@ -481,20 +481,16 @@ function paintDecor(ctx, spec, variant, ox, oy) {
   }
 }
 
+// Liquid tiles are deliberately featureless. Anything baked into them - a highlight line,
+// a darker bed - repeats every tile, and a body of water is the one place where a repeat
+// is unmissable: an ocean rendered from a textured atlas reads as brickwork. The motion
+// and the light live in the renderer instead, where they can be continuous functions of
+// world position and time and so cross tile borders without a seam.
 function paintWater(ctx, spec, variant, ox, oy) {
   ctx.save();
-  ctx.globalAlpha = 0.62;
+  ctx.globalAlpha = 0.66;
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox, oy, 16, 16);
-  ctx.globalAlpha = 0.16;
-  ctx.fillStyle = '#bfe6ff';
-  for (let i = 0; i < 3; i += 1) {
-    const y = ((variant * 5 + i * 6) % 16);
-    ctx.fillRect(ox, oy + y, 16, 1);
-  }
-  ctx.globalAlpha = 0.1;
-  ctx.fillStyle = '#06203a';
-  ctx.fillRect(ox, oy + 12, 16, 4);
   ctx.restore();
 }
 

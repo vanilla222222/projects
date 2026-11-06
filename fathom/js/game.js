@@ -11,7 +11,7 @@ function makeGame(canvas, deps) {
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
-    profile: profileModule, menu: menuModule } = deps;
+    profile: profileModule, menu: menuModule, sprite } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -31,6 +31,7 @@ function makeGame(canvas, deps) {
   let village = null;
   let talking = null;
   let swingCooldown = 0;
+  let swingTotal = 0.4;
   let openChest = null;
   let characterId = null;
   let worldId = null;
@@ -52,6 +53,12 @@ function makeGame(canvas, deps) {
     particles: [],
     drops: [],
     paused: false,
+    // Animation state the renderer reads. `anim` is the player's gait phase, advanced by
+    // distance walked rather than by the clock so the legs match the ground; `swingArm`
+    // is where in its arc the swing currently is, or null when the arms are at rest.
+    anim: 0,
+    swingArm: null,
+    held: null,
     message: '',
     messageUntil: 0
   };
@@ -343,6 +350,7 @@ function makeGame(canvas, deps) {
     if (weapon && weapon.ranged) {
       if (!shoot(weapon)) return true;
       swingCooldown = weapon.useTime;
+      swingTotal = weapon.useTime;
       return true;
     }
     if (!swarm) return false;
@@ -364,6 +372,7 @@ function makeGame(canvas, deps) {
       cooldown = mining.useTimeOf(item) * 1.5;
     }
     swingCooldown = cooldown;
+    swingTotal = cooldown;
     target.vx += Math.sign(target.x - cx) * 6;
     target.vy -= 3;
     spawnParticles(target.x, target.y, target.spec.colour, 5);
@@ -657,6 +666,27 @@ function makeGame(canvas, deps) {
     if (liquid) liquid.activateAround(aim.x, aim.y);
   }
 
+  // What is in the player's hand, as the renderer needs it: a shape and two colours.
+  // Derived rather than stored, because the hand holds whatever the hotbar says it does.
+  function heldLook() {
+    const item = selectedItem();
+    if (!item) return null;
+    const key = item.key;
+    if (craft.WEAPONS[key]) {
+      const w = craft.WEAPONS[key];
+      return { shape: w.ranged ? 'axe' : 'blade', head: '#cfd6e0',
+        handle: '#6d4f30', length: w.ranged ? 0.4 : 0.5 };
+    }
+    if (mining.isTool(item)) {
+      const job = mining.TOOLS[key] ? mining.TOOLS[key].job : 'pick';
+      return { shape: job === 'axe' ? 'axe' : (job === 'hammer' ? 'block' : 'pick'),
+        head: '#b9c0ca', handle: '#6d4f30', length: 0.46 };
+    }
+    const spec = tiles.BY_KEY[key];
+    if (spec) return { shape: 'block', head: spec.colour, handle: spec.colour, length: 0.2 };
+    return null;
+  }
+
   function simulate(dt) {
     // Water first, so what the player collides with this step is where the water ended up
     // rather than where it was. The budget is per step, not per frame, which keeps a
@@ -671,6 +701,22 @@ function makeGame(canvas, deps) {
     if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
     else if (input.dig && !ui.isOpen) mine(dt);
     else state.player.mining = null;
+
+    // Where the arms are. Mining drives the arc from the dig timer so the swing lands
+    // when the tile takes damage; a weapon swing drives it from its own cooldown.
+    state.anim += Math.abs(state.player.x - before) * 2.3;
+    const dug = state.player.mining;
+    if (dug) {
+      const tool = selectedItem();
+      const period = Math.max(0.08, mining.useTimeOf(tool)
+        * ((state.gear && state.gear.swing) || 1));
+      state.swingArm = Math.min(1, (dug.swing % period) / period);
+    } else if (swingCooldown > 0) {
+      state.swingArm = Math.min(1, 1 - swingCooldown / Math.max(0.01, swingTotal));
+    } else {
+      state.swingArm = null;
+    }
+    state.held = heldLook();
 
     // An open chest is shut by walking away from it, and by the backpack closing for any
     // reason at all. Making that an invariant checked every step, rather than something
@@ -958,7 +1004,7 @@ function makeGame(canvas, deps) {
     world = chunks.makeWorld(seed, worldgen);
     if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
 
-    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
+    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
@@ -1095,6 +1141,7 @@ function makeGame(canvas, deps) {
     useDoorAt, useChestAt, useBedAt, chestMove, checkHousing, talkTo, buyFrom,
     get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
+    get swarm() { return swarm; },
     get inventory() { return inventory; },
     get stats() { return stats; },
     get seed() { return seed; },

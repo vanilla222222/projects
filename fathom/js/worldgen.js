@@ -119,6 +119,28 @@ const CLIMATE_BIOMES = BIOMES.filter(b => !b.overlay);
 const SEA_LEVEL = SKY_H + 104;
 const BEACH_BAND = 10;
 
+// Spawn is always on dry land. Terraria guarantees this too, and for the same reason: the
+// first thing a new world has to do is give you somewhere to stand. Without it the
+// continent field decides, and roughly a fifth of seeds opened with the player treading
+// water over an abyss with no wood in reach.
+//
+// It is done by pulling the surface up towards a dry ceiling rather than by biasing the
+// continent field, because the continent field is only one of the terms in the height and
+// a column with land above zero can still be submerged by its own hills. Within
+// HOME_FLAT tiles of origin the pull is total and the ground cannot be sea; from there it
+// eases out to nothing over HOME_FADE, so the coastline is pushed away from spawn rather
+// than deleted. Everything stays a pure function of x.
+const HOME_FLAT = 420;
+const HOME_FADE = 1100;
+
+function homeFactor(x) {
+  const d = Math.abs(x);
+  if (d <= HOME_FLAT) return 1;
+  if (d >= HOME_FLAT + HOME_FADE) return 0;
+  const t = 1 - (d - HOME_FLAT) / HOME_FADE;
+  return t * t * (3 - 2 * t);
+}
+
 // --- the fields -------------------------------------------------------------------------
 // All three are pure in x, so two chunks asking about the same column get the same answer.
 
@@ -356,6 +378,14 @@ function buildColumn(seed, x) {
   const abyss = Math.pow(Math.max(0, shelf - 0.14), 1.4) * 2600;
   let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
     + abyss - Math.max(0, land) * 12;
+  // Pull the ground up towards dry land near the origin. Below the ceiling nothing
+  // happens at all, so the homeland keeps its own hills and valleys; only a column that
+  // would have been shore or sea is lifted, and only as far as the factor says.
+  const home = homeFactor(x);
+  if (home > 0) {
+    const ceiling = SEA_LEVEL - BEACH_BAND - 8;
+    if (h > ceiling) h += (ceiling - h) * home;
+  }
   h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 900, Math.round(h)));
 
   // Identity. Sea and shore override climate; a blight overrides everything but the sea.
@@ -1318,6 +1348,7 @@ const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
+    homeFactor, HOME_FLAT, HOME_FADE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,

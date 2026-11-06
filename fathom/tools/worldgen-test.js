@@ -655,6 +655,36 @@ for (let slot = -400; slot < 400; slot += 1) {
 }
 check(stationsFound > 5, 'only ' + stationsFound + ' crafting stations across every cabin');
 
+// --- spawn is always on dry land ------------------------------------------------------
+// Measured on the property the player meets - the surface near origin is above the water
+// line and its biome is neither ocean nor beach - rather than on the continent field,
+// which is only one of the terms that decide the height.
+let homelandSeeds = 0;
+let driestShore = 1e9;
+for (let s = 0; s < 60; s += 1) {
+  const seed = 1000003 * s - 7919;
+  homelandSeeds += 1;
+  let nearestSea = 1e9;
+  for (let x = -gen.HOME_FLAT; x <= gen.HOME_FLAT; x += 1) {
+    const col = gen.columnOf(seed, x);
+    check(col.height <= gen.SEA_LEVEL - gen.BEACH_BAND,
+      'seed ' + seed + ' column ' + x + ' is under water ' + col.height
+      + ' with sea level ' + gen.SEA_LEVEL);
+    check(col.biome.key !== 'ocean' && col.biome.key !== 'beach',
+      'seed ' + seed + ' has ' + col.biome.key + ' at ' + x + ', inside the homeland');
+  }
+  // And the sea still exists: somewhere out past the fade there is open water, or the
+  // guarantee has quietly flattened the whole world.
+  for (let x = 0; x < 30000 && nearestSea === 1e9; x += 3) {
+    if (gen.columnOf(seed, x).biome.key === 'ocean') nearestSea = x;
+    else if (gen.columnOf(seed, -x).biome.key === 'ocean') nearestSea = x;
+  }
+  check(nearestSea < 30000, 'seed ' + seed + ' has no ocean anywhere in 30,000 tiles');
+  driestShore = Math.min(driestShore, nearestSea);
+}
+check(driestShore > gen.HOME_FLAT,
+  'the nearest ocean across every seed was ' + driestShore + ' tiles from spawn');
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()

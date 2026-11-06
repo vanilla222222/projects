@@ -91,7 +91,10 @@ function makeVillager(spec, home) {
     width: 0.78,
     height: 1.72,
     onGround: false,
-    pause: 0
+    pause: 0,
+    // Gait phase, advanced by distance walked, so the renderer can step their legs at
+    // the speed their legs would actually have to move.
+    anim: 0
   };
 }
 
@@ -169,7 +172,7 @@ function makeVillage(world, tiles, deps) {
         continue;
       }
       const nextX = v.x + v.vx * dt;
-      if (!overlaps(v, nextX, v.y)) v.x = nextX;
+      if (!overlaps(v, nextX, v.y)) { v.anim += Math.abs(nextX - v.x) * 2.3; v.x = nextX; }
       else v.vx = -v.vx;
       v.facing = Math.sign(v.vx) || v.facing;
     }

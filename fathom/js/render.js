@@ -5,7 +5,7 @@
 // cost of one small canvas, instead of shading each tile individually.
 
 function makeRenderer(canvas, deps) {
-  const { tiles, texture, autotile, light, worldgen, noise } = deps;
+  const { tiles, texture, autotile, light, worldgen, noise, sprite } = deps;
   const ctx = canvas.getContext('2d');
   const lightCanvas = document.createElement('canvas');
   const lightCtx = lightCanvas.getContext('2d');
@@ -303,11 +303,93 @@ function makeRenderer(canvas, deps) {
         }
       }
     }
+    drawLiquidDetail(state, view);
   }
 
-  // Enemies are drawn as a body, a darker underside and a pair of eyes facing the way
-  // they are moving. Flat colour per species reads better at this scale than detail does,
-  // and the eyes are what make a shape look like it wants something.
+  // --- water -------------------------------------------------------------------------
+  // Everything that makes water look like water is drawn here rather than baked into the
+  // atlas, because the atlas repeats every tile and a body of water is the one place a
+  // repeat cannot hide: the old textured water read as blue brickwork. These are all
+  // continuous functions of world position and time, so they cross tile borders without
+  // a seam and they move.
+  const LIQUID_LOOK = {
+    water: { deep: '6,32,58', light: '198,234,255', wave: 1.9, crest: 0.5 },
+    lava: { deep: '58,8,2', light: '255,196,120', wave: 0.6, crest: 0.34 }
+  };
+
+  // What liquid, if any, stands in this cell: the tile if it is a liquid, or the water
+  // logged into a shell or a frond standing on the sea bed.
+  function liquidKindAt(state, x, y) {
+    const spec = tiles.tile(state.world.get(x, y));
+    if (spec.liquid) {
+      const level = state.world.getLevel ? state.world.getLevel(x, y) : 255;
+      return level > 0 ? (spec.hot ? 'lava' : 'water') : null;
+    }
+    if (spec.solid) return null;
+    const wet = state.world.getLevel ? state.world.getLevel(x, y) : 0;
+    return wet > 0 ? 'water' : null;
+  }
+
+  function drawLiquidDetail(state, view) {
+    const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const t = state.time || 0;
+    ctx.save();
+    for (let tx = 0; tx < cols; tx += 1) {
+      const wx = x0 + tx;
+      let ty = 0;
+      while (ty < rows) {
+        const kind = liquidKindAt(state, wx, y0 + ty);
+        if (!kind) { ty += 1; continue; }
+        let end = ty;
+        while (end < rows && liquidKindAt(state, wx, y0 + end) === kind) end += 1;
+
+        const look = LIQUID_LOOK[kind];
+        const sx = tx * size - offsetX;
+        // Where the surface of this body actually sits, including a part-filled top tile,
+        // so the wave rides on the water rather than on the tile grid.
+        const level = state.world.getLevel ? state.world.getLevel(wx, y0 + ty) : 255;
+        const brimming = level >= 250 || liquidKindAt(state, wx, y0 + ty - 1) === kind;
+        const frac = brimming ? 1 : Math.max(0.08, level / 255);
+        const topY = ty * size - offsetY + size * (1 - frac);
+        const botY = end * size - offsetY;
+
+        // Depth: light at the surface, dark some way down. One gradient over the whole
+        // run rather than a shade per tile, which is what keeps it smooth.
+        const g = ctx.createLinearGradient(0, topY, 0, topY + size * 13);
+        g.addColorStop(0, 'rgba(' + look.deep + ',0)');
+        g.addColorStop(1, 'rgba(' + look.deep + ',0.42)');
+        ctx.fillStyle = g;
+        ctx.fillRect(sx, topY, size + 1, botY - topY);
+
+        // A slow light roll under the surface. Its depth is a function of x and time only,
+        // so it undulates along the body instead of banding per row.
+        const rollY = topY + (2 + Math.sin(wx * 0.26 + t * look.wave * 0.5) * 1.1) * size;
+        if (rollY + size * 0.6 < botY) {
+          ctx.fillStyle = 'rgba(' + look.light + ',0.07)';
+          ctx.fillRect(sx, rollY, size + 1, size * 0.6);
+        }
+
+        // The surface itself, only where there is air above it.
+        if (!liquidKindAt(state, wx, y0 + ty - 1)
+          && !tiles.isSolid(state.world.get(wx, y0 + ty - 1))) {
+          const wave = Math.sin(wx * 0.5 + t * look.wave) * 0.9
+            + Math.sin(wx * 0.21 - t * look.wave * 0.6) * 0.6;
+          const crest = topY + wave * zoom;
+          const line = Math.max(1, Math.round(zoom));
+          ctx.fillStyle = 'rgba(' + look.light + ',' + look.crest + ')';
+          ctx.fillRect(sx, crest, size + 1, line);
+          ctx.fillStyle = 'rgba(' + look.light + ',0.14)';
+          ctx.fillRect(sx, crest + line, size + 1, line * 2);
+        }
+        ty = end;
+      }
+    }
+    ctx.restore();
+  }
+
+  // Enemies. The shape, the limbs and the gait all live in sprite.js; what belongs here
+  // is where on the screen the creature goes, the hurt flash, and the health bar.
   function drawEnemies(state, view) {
     if (!state.enemies || state.enemies.length === 0) return;
     const { x0, y0, offsetX, offsetY, zoom } = view;
@@ -319,24 +401,29 @@ function makeRenderer(canvas, deps) {
       const h = enemy.height * size;
       ctx.save();
       if (enemy.hurt > 0) ctx.globalAlpha = 0.55 + 0.45 * Math.sin(enemy.hurt * 90);
-      ctx.fillStyle = enemy.spec.colour;
-      ctx.fillRect(sx, sy, w, h);
-      ctx.fillStyle = 'rgba(0,0,0,0.26)';
-      ctx.fillRect(sx, sy + h * 0.66, w, h * 0.34);
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(sx, sy, w, Math.max(1, h * 0.12));
-
-      const eye = Math.max(2, Math.round(size * 0.13));
-      const ey = sy + h * 0.28;
-      const ex = enemy.facing > 0 ? sx + w * 0.56 : sx + w * 0.44 - eye;
-      ctx.fillStyle = '#f6f1e2';
-      ctx.fillRect(ex, ey, eye, eye);
-      ctx.fillStyle = '#231c22';
-      ctx.fillRect(ex + (enemy.facing > 0 ? eye * 0.4 : 0), ey + eye * 0.25, eye * 0.6, eye * 0.6);
+      // A contact shadow for anything that stands on the ground, so it is not floating.
+      if (enemy.onGround) {
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(sx + w / 2, sy + h, w * 0.46, Math.max(1, size * 0.1), 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      sprite.drawCreature(ctx, { x: sx, y: sy, w, h }, enemy.spec.body || 'slime', {
+        colour: enemy.spec.colour,
+        glow: enemy.spec.emit ? '#ffcf7a' : null,
+        anim: enemy.anim || 0,
+        phase: (enemy.spec.key.length * 1.7) % 6.28,
+        facing: enemy.facing,
+        vx: enemy.vx,
+        vy: enemy.vy,
+        onGround: enemy.onGround,
+        time: state.time
+      });
 
       // A health bar, but only once it has been hurt: an untouched enemy needs no UI.
       if (enemy.hp < enemy.maxHp) {
         const frac = Math.max(0, enemy.hp / enemy.maxHp);
+        ctx.globalAlpha = 1;
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(sx, sy - 7, w, 4);
         ctx.fillStyle = '#d2564e';
@@ -346,7 +433,9 @@ function makeRenderer(canvas, deps) {
     }
   }
 
-  // Villagers, drawn like the player rather than like an enemy: they are people.
+  // Villagers, drawn with the player's own body plan rather than a plan of their own:
+  // they are people, and a villager that moved differently from the player would read as
+  // an enemy that cannot be hit.
   function drawVillagers(state, view) {
     if (!state.villagers || state.villagers.length === 0) return;
     const { x0, y0, offsetX, offsetY, zoom } = view;
@@ -357,17 +446,25 @@ function makeRenderer(canvas, deps) {
       const w = v.width * size;
       const h = v.height * size;
       ctx.save();
-      ctx.fillStyle = v.spec.colour;
-      ctx.fillRect(sx, sy + h * 0.3, w, h * 0.7);           // body
-      ctx.fillStyle = '#d7b091';
-      ctx.fillRect(sx + w * 0.12, sy + h * 0.06, w * 0.76, h * 0.26);   // head
-      ctx.fillStyle = v.spec.hair;
-      ctx.fillRect(sx + w * 0.12, sy + h * 0.04, w * 0.76, h * 0.1);    // hair
-      ctx.fillStyle = 'rgba(0,0,0,0.7)';
-      const ex = v.facing > 0 ? sx + w * 0.58 : sx + w * 0.26;
-      ctx.fillRect(ex, sy + h * 0.16, Math.max(1, w * 0.1), Math.max(1, h * 0.06));
       ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(sx, sy + h * 0.86, w, h * 0.14);
+      ctx.beginPath();
+      ctx.ellipse(sx + w / 2, sy + h, w * 0.5, w * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (v.facing < 0) {
+        ctx.translate(sx + w / 2, 0);
+        ctx.scale(-1, 1);
+        ctx.translate(-(sx + w / 2), 0);
+      }
+      sprite.drawPerson(ctx, { x: sx, y: sy, w, h }, {
+        skin: '#d7b091', shirt: v.spec.colour, hair: v.spec.hair,
+        pants: sprite.spriteShade(v.spec.colour, -0.4)
+      }, {
+        anim: v.anim || 0,
+        walking: Math.abs(v.vx) > 0.05 && v.onGround,
+        airborne: !v.onGround,
+        time: state.time,
+        phase: v.home ? v.home.x % 6.28 : 0
+      });
       ctx.restore();
     }
   }
@@ -466,21 +563,21 @@ function makeRenderer(canvas, deps) {
     ctx.beginPath();
     ctx.ellipse(sx + w / 2, sy + h, w * 0.5, w * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
-    const bob = p.onGround ? Math.sin(state.time * 11) * (Math.abs(p.vx) > 0.02 ? zoom : 0) : 0;
-    ctx.translate(sx + w / 2, sy + h / 2 + bob);
-    if (p.facing < 0) ctx.scale(-1, 1);
-    const look = state.colours || {};
-    ctx.fillStyle = look.pants || '#2f3b52';
-    ctx.fillRect(-w * 0.34, -h * 0.06, w * 0.68, h * 0.46);
-    ctx.fillStyle = look.shirt || '#4a6fa5';
-    ctx.fillRect(-w * 0.4, -h * 0.42, w * 0.8, h * 0.38);
-    ctx.fillStyle = look.skin || '#e8c39a';
-    ctx.fillRect(-w * 0.26, -h * 0.5, w * 0.52, w * 0.52);
-    ctx.fillStyle = look.hair || '#23304a';
-    ctx.fillRect(-w * 0.3, -h * 0.56, w * 0.6, w * 0.2);
-    ctx.fillRect(-w * 0.3, -h * 0.56, w * 0.14, w * 0.46);
-    ctx.fillStyle = '#1d2437';
-    ctx.fillRect(w * 0.02, -h * 0.42, w * 0.1, w * 0.12);
+    if (p.facing < 0) {
+      ctx.translate(sx + w / 2, 0);
+      ctx.scale(-1, 1);
+      ctx.translate(-(sx + w / 2), 0);
+    }
+    sprite.drawPerson(ctx, { x: sx, y: sy, w, h }, state.colours || {}, {
+      anim: state.anim || 0,
+      walking: p.onGround && Math.abs(p.vx) > 0.05,
+      airborne: !p.onGround && !p.swimming,
+      swimming: !!p.swimming,
+      swingArm: state.swingArm === null ? undefined : state.swingArm,
+      held: state.held,
+      time: state.time,
+      phase: 0
+    });
     ctx.restore();
   }
 
