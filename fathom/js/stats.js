@@ -120,7 +120,10 @@ function raiseMaxMana(stats) {
   return true;
 }
 
-function stepStats(stats, dt, moving) {
+// `manaScale` multiplies mana regeneration only, so a charm that restores magic faster
+// does not also heal you. It is a separate argument rather than a scaled dt because the
+// caller already scales dt for health regeneration, and one dt cannot carry two rates.
+function stepStats(stats, dt, moving, manaScale) {
   stats.invulnerable = Math.max(0, stats.invulnerable - dt);
   stats.sinceDamage += dt;
   stats.sinceSpend += dt;
@@ -134,7 +137,8 @@ function stepStats(stats, dt, moving) {
 
   if (stats.sinceSpend >= MANA_SPEND_DELAY && stats.mana < stats.maxMana) {
     const pool = stats.maxMana / BASE_MANA;
-    const rate = MANA_REGEN_BASE * pool * (moving ? 1 : MANA_REGEN_STILL);
+    const rate = MANA_REGEN_BASE * pool * (moving ? 1 : MANA_REGEN_STILL)
+      * (manaScale || 1);
     stats.mana = Math.min(stats.maxMana, stats.mana + rate * dt);
   }
   return stats;

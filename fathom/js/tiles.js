@@ -111,7 +111,17 @@ const TILES = [
   { id: 63, key: 'skystone', name: 'Skystone', solid: true, opacity: 56, emit: 0, hardness: 1.1, colour: '#8d93a8', grain: 0.1, toughness: 140 },
   { id: 64, key: 'starrock', name: 'Starrock', solid: true, opacity: 58, emit: 2, hardness: 1.6, colour: '#4b4a63', grain: 0.12, require: 45, toughness: 200 },
   { id: 65, key: 'tin', name: 'Tin Ore', solid: true, opacity: 56, emit: 0, hardness: 1, colour: '#a9a79c', grain: 0.2, ore: true, toughness: 105 },
-  { id: 66, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 }
+  { id: 66, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 },
+
+  // Gems. Ores for every purpose that matters - they generate in the same banded blobs,
+  // they are drawn the same way, they take a pickaxe - but nothing smelts them: a gem is
+  // used as it comes out of the rock. They are what magic is made of.
+  { id: 67, key: 'amethyst', name: 'Amethyst', solid: true, opacity: 40, emit: 2, hardness: 1.1, colour: '#9b59d0', grain: 0.16, ore: true, gem: true, toughness: 110 },
+  { id: 68, key: 'topaz', name: 'Topaz', solid: true, opacity: 40, emit: 2, hardness: 1.3, colour: '#e0a63c', grain: 0.16, ore: true, gem: true, toughness: 125 },
+  { id: 69, key: 'sapphire', name: 'Sapphire', solid: true, opacity: 40, emit: 3, hardness: 1.6, colour: '#3f7fd8', grain: 0.16, ore: true, gem: true, require: 35, toughness: 145 },
+  { id: 70, key: 'emerald', name: 'Emerald', solid: true, opacity: 40, emit: 3, hardness: 1.9, colour: '#3fb56a', grain: 0.16, ore: true, gem: true, require: 35, toughness: 165 },
+  { id: 71, key: 'ruby', name: 'Ruby', solid: true, opacity: 40, emit: 4, hardness: 2.2, colour: '#d8344c', grain: 0.16, ore: true, gem: true, require: 45, toughness: 185 },
+  { id: 72, key: 'diamond', name: 'Diamond', solid: true, opacity: 30, emit: 5, hardness: 2.6, colour: '#bfe8f0', grain: 0.16, ore: true, gem: true, require: 55, toughness: 210 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is

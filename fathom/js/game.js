@@ -44,6 +44,7 @@ function makeGame(canvas, deps) {
     world: null,
     stations: new Set(),
     arrows: [],
+    stars: [],
     stats: null,
     player: null,
     colours: null,
@@ -116,6 +117,94 @@ function makeGame(canvas, deps) {
 
   // Mined blocks become items on the ground that fly to the player, rather than appearing in
   // the backpack from nowhere. A full backpack therefore leaves them lying there.
+  // Things that only ever drop. Each is tied to one species, so the way to get one is to
+  // go where that species lives and kill it - which turns a roster of enemies into a map
+  // of what is worth hunting. The table is derived from the items themselves rather than
+  // written out here, so an item cannot name a monster the monster does not know about.
+  const RARE_BY_ENEMY = {};
+  for (const entry of craft.dropOnly()) {
+    if (!RARE_BY_ENEMY[entry.from]) RARE_BY_ENEMY[entry.from] = [];
+    RARE_BY_ENEMY[entry.from].push(entry);
+  }
+  const RARE_CHANCE = 0.055;
+
+  function rareDrop(target) {
+    const table = RARE_BY_ENEMY[target.key];
+    if (!table || !table.length) return;
+    if (Math.random() > RARE_CHANCE) return;
+    const prize = table[Math.floor(Math.random() * table.length)];
+    dropItem(target.x, target.y, prize.key, prize.kind, 1);
+    say(craft.nameOf(prize.key, tiles) + '!', 2.4);
+  }
+
+  // Items that are used where they stand rather than worn or swung. One place for all of
+  // them, because the alternative is a branch per item in the place() path.
+  function useConsumable(item) {
+    const spec = craft.ITEMS[item.key];
+    if (!spec || !spec.use) return false;
+    const use = spec.use;
+    if (use.mana !== undefined) {
+      if (!statsModule.raiseMaxMana(stats)) {
+        say('Your mana is already as deep as it goes', 1.8);
+        return true;
+      }
+      say('Maximum mana is now ' + stats.maxMana, 2.2);
+    } else if (use.heal !== undefined) {
+      if (stats.health >= stats.maxHealth) { say('You are unhurt', 1.2); return true; }
+      statsModule.heal(stats, use.heal);
+    } else if (use.restore !== undefined) {
+      if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
+      stats.mana = Math.min(stats.maxMana, stats.mana + use.restore);
+    } else {
+      return false;
+    }
+    inventory.take(item.key, 1);
+    spawnParticles(state.player.x + 0.5, state.player.y + 0.5, spec.colour, 10);
+    return true;
+  }
+
+  // --- falling stars -------------------------------------------------------------------
+  // They fall at night, land on the surface, and lie there glowing until somebody picks
+  // one up. Five of them make a mana crystal, which is the only way maximum mana ever
+  // goes up - so a clear night is worth looking up at.
+  const STAR_EVERY = 7.5;
+  let starCooldown = STAR_EVERY;
+
+  function stepStars(dt) {
+    const night = state.dayPhase > 0.27 && state.dayPhase < 0.73;
+    const outside = worldgen.layerAt(Math.floor(state.player.y)).key;
+    starCooldown -= dt;
+    if (starCooldown <= 0) {
+      starCooldown = STAR_EVERY * (0.6 + Math.random() * 0.8);
+      // Only while the player is somewhere a falling star could be seen, and only at
+      // night. A star that fell into a cave the player is standing in would be absurd.
+      if (night && (outside === 'surface' || outside === 'sky')) {
+        const x = state.player.x + (Math.random() - 0.5) * 120;
+        const top = worldgen.surfaceHeight(seed, Math.floor(x)) - 90;
+        state.stars.push({ x, y: top, vx: (Math.random() - 0.5) * 3, vy: 16 + Math.random() * 8 });
+      }
+    }
+    for (let i = state.stars.length - 1; i >= 0; i -= 1) {
+      const star = state.stars[i];
+      star.vy = Math.min(46, star.vy + 22 * dt);
+      const steps = Math.ceil(star.vy * dt / 0.4) || 1;
+      let landed = false;
+      for (let k = 0; k < steps && !landed; k += 1) {
+        star.x += (star.vx * dt) / steps;
+        star.y += (star.vy * dt) / steps;
+        if (tiles.isSolid(world.get(Math.floor(star.x), Math.floor(star.y)))) landed = true;
+      }
+      // Anything that falls too far below the player is forgotten rather than tracked.
+      if (landed || star.y > state.player.y + 160) {
+        if (landed) {
+          dropItem(Math.floor(star.x), Math.floor(star.y) - 1, 'fallenstar', 'loot', 1);
+          spawnParticles(star.x, star.y, '#ffe9a0', 12);
+        }
+        state.stars.splice(i, 1);
+      }
+    }
+  }
+
   // What a heart restores when you walk over it.
   const HEART_HEAL = 20;
 
@@ -318,18 +407,48 @@ function makeGame(canvas, deps) {
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
   // it meets; spending the ammunition is what distinguishes it from a sword swing.
   function shoot(weapon) {
-    if (!inventory.countOf(weapon.ammo)) {
+    // The best arrow held, not the one in the selected slot: a second hotbar for
+    // ammunition is a chore, and Terraria does not ask for one either.
+    const ammo = craft.bestAmmo(key => inventory.countOf(key));
+    if (!ammo) {
       say('Out of ' + craft.nameOf(weapon.ammo, tiles), 1.0);
       return false;
     }
-    inventory.take(weapon.ammo, 1);
+    const kind = craft.AMMO[ammo];
+    inventory.take(ammo, 1);
+    const gear = state.gear || {};
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height * 0.4;
     const dx = pointer.x - cx;
     const dy = pointer.y - cy;
     const len = Math.hypot(dx, dy) || 1;
-    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * 42, vy: (dy / len) * 42,
-      damage: weapon.damage, life: 2.6 });
+    const speed = 42 * kind.speed * (gear.arrowSpeed || 1);
+    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * speed, vy: (dy / len) * speed,
+      damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1)),
+      life: 2.6 * (gear.arrowSpeed || 1), colour: kind.colour, gravity: 26,
+      burns: !!kind.burns });
+    return true;
+  }
+
+  // A staff spends mana rather than ammunition and throws a bolt that ignores gravity.
+  // Mana comes back by itself, so magic never runs out and never fires as fast as you
+  // would like - which is the whole trade against a bow.
+  function cast(weapon) {
+    const gear = state.gear || {};
+    const cost = Math.max(1, Math.round(weapon.mana * (gear.manaCost || 1)));
+    if (!statsModule.spendMana(stats, cost)) {
+      say('Not enough mana', 1.0);
+      return false;
+    }
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height * 0.4;
+    const dx = pointer.x - cx;
+    const dy = pointer.y - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * 34, vy: (dy / len) * 34,
+      damage: Math.round(weapon.damage * (gear.magic || 1)),
+      life: 1.8, colour: weapon.bolt, gravity: 0, magic: true });
+    spawnParticles(cx, cy, weapon.bolt, 4);
     return true;
   }
 
@@ -337,7 +456,7 @@ function makeGame(canvas, deps) {
     for (let i = state.arrows.length - 1; i >= 0; i -= 1) {
       const a = state.arrows[i];
       a.life -= dt;
-      a.vy += 26 * dt;
+      a.vy += (a.gravity === undefined ? 26 : a.gravity) * dt;
       const steps = Math.ceil(Math.hypot(a.vx, a.vy) * dt / 0.3) || 1;
       let hit = false;
       for (let s2 = 0; s2 < steps && !hit; s2 += 1) {
@@ -353,6 +472,7 @@ function makeGame(canvas, deps) {
               for (const [key, count] of target.spec.drops || []) {
                 dropItem(target.x, target.y, key, craft.kindOf(key), count);
               }
+              rareDrop(target);
             }
           }
         }
@@ -367,11 +487,15 @@ function makeGame(canvas, deps) {
     if (swingCooldown > 0) return false;
     const item = selectedItem();
     const weapon = item ? craft.WEAPONS[item.key] : null;
-    // A bow does not need something under the cursor: it fires where you point.
-    if (weapon && weapon.ranged) {
-      if (!shoot(weapon)) return true;
-      swingCooldown = weapon.useTime;
-      swingTotal = weapon.useTime;
+    // A bow or a staff does not need something under the cursor: it fires where you
+    // point. Both still cost their use time even when the shot fails, so spamming a
+    // staff with no mana does not also spam the message.
+    if (weapon && (weapon.ranged || weapon.magic)) {
+      const fired = weapon.magic ? cast(weapon) : shoot(weapon);
+      if (!fired) return true;
+      const swingScale = (state.gear && state.gear.swing) || 1;
+      swingCooldown = weapon.useTime * swingScale;
+      swingTotal = swingCooldown;
       return true;
     }
     if (!swarm) return false;
@@ -385,13 +509,15 @@ function makeGame(canvas, deps) {
     // A pickaxe will do, badly. That is the argument for making a sword.
     let hit = 3;
     let cooldown = 0.4;
+    const gear = state.gear || {};
     if (weapon) {
-      hit = weapon.damage;
+      hit = Math.round(weapon.damage * (gear.melee || 1));
       cooldown = weapon.useTime;
     } else if (mining.isTool(item)) {
-      hit = Math.max(3, Math.round(mining.powerOf(item) * 0.3));
+      hit = Math.max(3, Math.round(mining.powerOf(item) * 0.3 * (gear.melee || 1)));
       cooldown = mining.useTimeOf(item) * 1.5;
     }
+    cooldown *= gear.swing || 1;
     swingCooldown = cooldown;
     swingTotal = cooldown;
     target.vx += Math.sign(target.x - cx) * 6;
@@ -402,6 +528,7 @@ function makeGame(canvas, deps) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
       }
       spawnParticles(target.x, target.y, target.spec.colour, 14);
+      rareDrop(target);
       // Roughly one kill in five leaves a heart behind, and a hurt player sees them
       // more often: the drop is there to keep a fight going, so it arrives when the
       // fight is going badly.
@@ -671,6 +798,8 @@ function makeGame(canvas, deps) {
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
     if (!item) return;
+    // Something used rather than placed is used wherever you are standing.
+    if (useConsumable(item)) return;
     const aim = physics.aimTile(state.player, pointer);
     if (!aim.inReach) return;
     if (useBucket(item, aim)) return;
@@ -745,7 +874,8 @@ function makeGame(canvas, deps) {
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
-    statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving);
+    statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving,
+      (state.gear && state.gear.manaRegen) || 1);
     // A swing at something alive takes priority over a swing at the rock behind it.
     if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
     else if (input.dig && !ui.isOpen) mine(dt);
@@ -783,6 +913,7 @@ function makeGame(canvas, deps) {
     if (minimap) minimap.reveal(world, state.player.x, state.player.y);
 
     if (village) village.step(dt);
+    stepStars(dt);
     // What the player has done, which is what decides who is willing to move in.
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
     if (depth > state.progress.deepest) state.progress.deepest = depth;
@@ -1197,7 +1328,7 @@ function makeGame(canvas, deps) {
   }
 
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
-    useDoorAt, useChestAt, useBedAt, useCrystalAt, chestMove, checkHousing, talkTo, buyFrom,
+    useDoorAt, useChestAt, useBedAt, useCrystalAt, place, chestMove, checkHousing, talkTo, buyFrom,
     get village() { return village; }, get openChest() { return openChest; },
     swarmCount, attackAt, advance,
     get swarm() { return swarm; },

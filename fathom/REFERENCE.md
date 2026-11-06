@@ -600,3 +600,55 @@ one worth having - that every plan produces different frames at different phases
 that ignores its phase looks perfect in a screenshot and is a still photograph in motion.
 It caught two: the slime, which only deformed from its hop and so sat dead still on the
 ground, and the slime's gait, which never advanced at all.
+
+## Three ways of fighting
+
+Fathom had one: swing a sword at the thing in front of you. Metal armour is a ladder -
+each tier strictly better than the last - and a ladder has no room for a choice, so there
+was nothing to decide beyond how deep you had been.
+
+Now there are three classes, and the thing that makes them a choice is that specialising
+costs defence. The class sets are weaker than the metal of their depth and they are the
+only way to make one kind of weapon hit harder, so wearing one is a decision about how
+you intend to fight.
+
+| | weapons | set | set bonus |
+|---|---|---|---|
+| Melee | eight swords, plus four that only drop | Brigand (leather, chitin, iron) | melee +25% |
+| Ranged | seven bows and three kinds of arrow | Bone (bone, leather) | arrows +25% |
+| Magic | six gem staffs, plus the Imp Staff | Apprentice, then Adept | mana cost -20%, then magic +25% |
+
+**Gems** are ores for every purpose that matters: they generate in the same banded blobs,
+they take a pickaxe, and they are drawn the same way the ores are. Nothing smelts them -
+a gem is used as it comes out of the rock - so the first thing a new gem is good for is a
+staff, and finding a deeper gem is finding a better weapon. Amethyst from 40 tiles down,
+then topaz, sapphire, emerald, ruby, and diamond below 640.
+
+**A staff** spends mana instead of ammunition and throws a bolt that ignores gravity.
+That is the whole trade against a bow: mana comes back by itself, so magic never runs out
+and never fires as fast as you would like. **A bow** fires the best arrow in the backpack
+rather than the one in the selected slot - Terraria's rule, and it spares the player a
+second hotbar.
+
+**Fallen stars** fall at night, land on the surface, and lie there glowing until somebody
+picks one up. Five make a Mana Crystal, which is the only way maximum mana ever goes up,
+so a clear night is worth looking up at. They only fall while the player is somewhere one
+could be seen: a star falling into the cave you are standing in would be absurd.
+
+**Items used rather than worn** go through one path, because the alternative is a branch
+per item in the place handler. A use item does exactly one thing - raise maximum mana,
+restore health, restore mana - and the test checks exactly that.
+
+**Fourteen things only ever drop**, each from one species, so the roster of enemies is
+also a map of what is worth hunting: the Eye of Night from demon eyes, the Jelly Amulet
+from jellyfish, the Star Cloak from star jellies, the Talon Band from vultures, the Fang
+Pendant and Shark Fang from sharks, the Bat's Wing from giant bats, the Obsidian Shield
+from obsidian husks, the Stinger Brooch and Hornet Lance from hornets, the Imp Staff from
+fire imps, the Stone Fist from rock golems, the Bone Flail from armoured skeletons, the
+Demon Heart from demons, and the Talon Sling from harpies. The table that maps monster to
+prize is derived from the items themselves rather than written out separately, so an item
+cannot name a monster the monster does not know about - and the test checks every one of
+them names a real enemy and is not also craftable.
+
+Arrows and magic bolts are now drawn. They never were: the bow fired invisible arrows,
+and the only way to tell you had hit something was that it died.

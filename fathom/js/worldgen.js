@@ -620,7 +620,17 @@ const ORE_BANDS = [
   { key: 'silver', from: 180, to: 680, salt: 1401, rarity: 0.818, size: 0.072 },
   { key: 'gold', from: 300, to: 820, salt: 1501, rarity: 0.833, size: 0.068 },
   { key: 'cobalt', from: 520, to: 980, salt: 1601, rarity: 0.846, size: 0.064 },
-  { key: 'emberite', from: 740, to: Infinity, salt: 1701, rarity: 0.862, size: 0.058 }
+  { key: 'emberite', from: 740, to: Infinity, salt: 1701, rarity: 0.862, size: 0.058 },
+
+  // Gems. Rarer than metal and in smaller pockets, because a gem should be a find rather
+  // than a seam you work. Each sits deeper than the last, so what you are carrying says
+  // how far down you have been.
+  { key: 'amethyst', from: 40, to: 420, salt: 1801, rarity: 0.885, size: 0.135 },
+  { key: 'topaz', from: 90, to: 520, salt: 1811, rarity: 0.889, size: 0.135 },
+  { key: 'sapphire', from: 180, to: 700, salt: 1823, rarity: 0.893, size: 0.14 },
+  { key: 'emerald', from: 280, to: 820, salt: 1831, rarity: 0.897, size: 0.14 },
+  { key: 'ruby', from: 420, to: 1000, salt: 1847, rarity: 0.901, size: 0.145 },
+  { key: 'diamond', from: 640, to: Infinity, salt: 1861, rarity: 0.912, size: 0.15 }
 ];
 
 function oreAt(seed, x, y, depth) {

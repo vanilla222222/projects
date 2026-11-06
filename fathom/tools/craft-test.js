@@ -21,16 +21,18 @@ function ok(cond, label) {
 // by killing something rather than by making it.
 const enemyDrops = require('../js/enemy.js').ENEMIES
   .flatMap(e => (e.drops || []).map(([k]) => k));
-const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'tin', 'crystal', 'glowmoss',
-  'shell', 'obsidian', ...enemyDrops,
-  ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key),
-  'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite']);
+// Ores and gems come from the generator's own band table rather than from a list
+// written out here, which went stale the moment six gems were added to it.
+const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
+const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
+  'shell', 'obsidian', 'fallenstar', ...enemyDrops, ...ORES,
+  ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key)]);
 const produced = new Set(craft.RECIPES.map(r => r.out.key));
 
 for (const r of craft.RECIPES) {
   ok(r.out.count > 0, 'recipe for ' + r.out.key + ' yields something');
   ok(r.need.length > 0, 'recipe for ' + r.out.key + ' costs something');
-  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'accessory'].includes(r.out.kind),
+  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'accessory', 'use'].includes(r.out.kind),
     r.out.key + ' has a known kind');
   ok(craft.kindOf(r.out.key) === r.out.kind,
     r.out.key + ' kind agrees between recipe and registry');
@@ -185,6 +187,121 @@ for (const r of craft.RECIPES) {
 }
 for (const [station, items] of Object.entries(groups)) {
   console.log('  ' + station.padEnd(10) + items.join(', '));
+}
+
+// --- the three ways of fighting ------------------------------------------------------
+// Every weapon belongs to a class, every class can be specialised in, and everything that
+// only drops names a monster that really drops it. The last one is the check that matters:
+// an accessory tied to an enemy that does not exist is an item nobody can ever have.
+{
+  const enemies = require('../js/enemy.js');
+  const byClass = { melee: [], ranged: [], magic: [] };
+  for (const [key, w] of Object.entries(craft.WEAPONS)) {
+    const cls = craft.classOf(w);
+    ok(!!byClass[cls], key + ' has the unknown class ' + cls);
+    byClass[cls].push(key);
+    ok(w.damage > 0, key + ' does no damage');
+    ok(w.useTime > 0 && w.useTime < 2, key + ' has a nonsense use time of ' + w.useTime);
+    ok(w.reach > 0, key + ' has no reach');
+    ok(typeof w.name === 'string' && w.name.length > 0, key + ' has no name');
+    if (cls === 'magic') {
+      ok(w.mana > 0, key + ' is magic and costs no mana');
+      ok(typeof w.bolt === 'string' && w.bolt[0] === '#', key + ' has no bolt colour');
+      ok(w.reach > 10, key + ' is magic and has an arm\'s reach');
+    }
+    if (cls === 'ranged') {
+      ok(!!craft.AMMO[w.ammo], key + ' fires ' + w.ammo + ', which is not ammunition');
+      ok(w.reach > 10, key + ' is ranged and has an arm\'s reach');
+    }
+    if (cls === 'melee') ok(w.reach < 6, key + ' is melee and reaches ' + w.reach + ' tiles');
+  }
+  for (const cls of Object.keys(byClass)) {
+    ok(byClass[cls].length >= 5, 'only ' + byClass[cls].length + ' ' + cls + ' weapons');
+  }
+
+  // Everything that only drops must name a real enemy, and must not also be craftable:
+  // a drop-only item you can make at a bench is not drop-only.
+  const known = new Set(enemies.ENEMIES.map(e => e.key));
+  const drops = craft.dropOnly();
+  ok(drops.length >= 10, 'only ' + drops.length + ' things drop and cannot be made');
+  const fromWho = new Set();
+  for (const entry of drops) {
+    ok(known.has(entry.from),
+      entry.key + ' drops from ' + entry.from + ', which is not an enemy');
+    ok(!produced.has(entry.key), entry.key + ' is drop-only and also craftable');
+    ok(craft.nameOf(entry.key, tiles) !== entry.key, entry.key + ' has no readable name');
+    fromWho.add(entry.from);
+  }
+  ok(fromWho.size >= 8, 'everything that drops comes off only ' + fromWho.size + ' enemies');
+
+  // Every gem has a staff and every staff needs its own gem, so finding a deeper gem is
+  // always finding a better weapon.
+  const gems = tiles.TILES.filter(t => t.gem).map(t => t.key);
+  ok(gems.length === 6, gems.length + ' gems rather than six');
+  let last = 0;
+  for (const gem of gems) {
+    const staff = craft.WEAPONS[gem + '-staff'];
+    ok(!!staff, gem + ' has no staff');
+    const recipe = craft.RECIPES.find(r => r.out.key === gem + '-staff');
+    ok(!!recipe && recipe.need.some(([k]) => k === gem),
+      gem + '-staff does not need ' + gem);
+    ok(staff.damage > last, gem + '-staff does not beat the staff above it');
+    last = staff.damage;
+  }
+
+  // Each class can be specialised: a full set that names it, and an accessory for it.
+  // What counts as helping a class: damage for all three, and for magic also the two
+  // numbers that decide whether a staff is usable at all - what a spell costs and how
+  // fast the pool comes back. A mana flower helps a mage without touching its damage.
+  const HELPS = {
+    magic: ['magic', 'manaCost', 'manaRegen'],
+    ranged: ['ranged', 'arrowSpeed'],
+    melee: ['melee', 'swing']
+  };
+  for (const [cls, label] of [['magic', 'magic'], ['ranged', 'ranged'], ['melee', 'melee']]) {
+    const sets = craft.ARMOUR_TIERS.filter(t => t.bonus && t.bonus[cls]);
+    ok(sets.length >= 1, 'no armour set makes ' + label + ' hit harder');
+    const accs = Object.values(craft.ACCESSORIES)
+      .filter(a => HELPS[cls].some(f => a[f] !== undefined));
+    ok(accs.length >= 3, 'only ' + accs.length + ' accessories help ' + label);
+    const damaging = Object.values(craft.ACCESSORIES).filter(a => a[cls]);
+    ok(damaging.length >= 2, 'only ' + damaging.length + ' accessories raise ' + label
+      + ' damage itself');
+    // And the set bonus really arrives through equipEffects, not merely in the table.
+    for (const set of sets) {
+      const worn = craft.ARMOUR_PIECES.map(p => set.key + '-' + p.suffix);
+      const eff = craft.equipEffects(worn, []);
+      ok(eff[cls] > 1, 'wearing all of ' + set.key + ' does not raise ' + label);
+      ok(eff.bonus && eff.bonus.key === set.bonus.key,
+        'wearing all of ' + set.key + ' does not grant its own bonus');
+      // Three pieces is not a set.
+      const short = worn.slice(0, 3).concat([null]);
+      ok(craft.equipEffects(short, [])[cls] === 1,
+        'three pieces of ' + set.key + ' granted the set bonus');
+    }
+  }
+
+  // Ammunition: the best held is chosen, and better ammunition is better.
+  ok(craft.bestAmmo(() => 0) === null, 'an empty backpack still found an arrow');
+  ok(craft.bestAmmo(k => (k === 'arrow' ? 5 : 0)) === 'arrow', 'a plain arrow was not found');
+  ok(craft.bestAmmo(k => (k === 'arrow' || k === 'ember-arrow' ? 5 : 0)) === 'ember-arrow',
+    'a plain arrow was chosen over an ember arrow');
+  ok(craft.bestAmmo(k => (k === 'iron-arrow' || k === 'ember-arrow' ? 5 : 0)) === 'ember-arrow',
+    'the weaker of two arrows was chosen');
+  for (const [key, spec] of Object.entries(craft.AMMO)) {
+    ok(spec.bonus >= 0 && spec.speed > 0, key + ' has nonsense numbers');
+    ok(craft.kindOf(key) === 'ammo', key + ' is not ammunition');
+  }
+
+  // Items used rather than worn do exactly one thing.
+  const uses = Object.entries(craft.ITEMS).filter(([, v]) => v.use);
+  ok(uses.length >= 3, 'only ' + uses.length + ' items are used rather than worn');
+  for (const [key, item] of uses) {
+    const fields = ['mana', 'heal', 'restore'].filter(f => item.use[f] !== undefined);
+    ok(fields.length === 1, key + ' does ' + fields.length + ' things rather than one');
+    ok(item.use[fields[0]] > 0, key + ' does nothing when used');
+    ok(craft.kindOf(key) === 'use', key + ' is used but is not of kind use');
+  }
 }
 
 console.log('\n' + checks + ' checks, ' + failures + ' failures');

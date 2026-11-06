@@ -60,6 +60,11 @@ that a sealed box holds, that terminal velocity is enforced, and that reach is c
 that each produces different frames at different animation phases. A sprite that ignores
 its phase looks perfect in a screenshot and is a still photograph in motion.
 
+`node tools/craft-test.js` walks the whole crafting graph and, now, the three classes:
+every weapon belongs to one, every class has a set and accessories that really arrive
+through `equipEffects`, three pieces of a set is not a set, and everything that only
+drops names a real enemy and is not also craftable.
+
 `node tools/feature-test.js` checks that life crystals and pots generate in sane numbers
 in sane places, that what a pot holds is a function of where it is, and that weather
 arrives as fronts rather than flickering between wet and dry.
