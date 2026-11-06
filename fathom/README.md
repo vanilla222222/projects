@@ -56,6 +56,14 @@ that a sealed box holds, that terminal velocity is enforced, and that reach is c
 
 `node tools/autotile-test.js` exercises all 256 neighbour masks.
 
+`node tools/sprite-test.js` draws every body plan into a recording context and requires
+that each produces different frames at different animation phases. A sprite that ignores
+its phase looks perfect in a screenshot and is a still photograph in motion.
+
+`node tools/feature-test.js` checks that life crystals and pots generate in sane numbers
+in sane places, that what a pot holds is a function of where it is, and that weather
+arrives as fronts rather than flickering between wet and dry.
+
 Two real bugs came out of those tests rather than out of playing: biome height bias used to
 step discretely, so a desert meeting a tundra made a 26-tile cliff; and a player embedded in
 a tile had no way out, so spawning inside a tree trunk wedged you there permanently.
@@ -106,7 +114,8 @@ the cost of one small canvas.
 | `js/enemy.js` | 40 enemies, six behaviours, spawn pools per biome and layer |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
-| `js/render.js` | sky, parallax, walls, tiles, lighting, bloom, particles |
+| `js/sprite.js` | body plans for every creature, and the poses they are drawn in |
+| `js/render.js` | sky, weather, parallax, walls, tiles, water, lighting, bloom, particles |
 | `js/profile.js` | characters and worlds, kept apart, and seed parsing |
 | `js/menu.js` | title, character select and creation, world select and creation |
 | `js/inventory.js` | slots, stacking, splitting, equipment restrictions |

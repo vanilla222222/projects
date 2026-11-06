@@ -1,35 +1,36 @@
-import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=31';
-import {recordQuestAction} from './quest-content.mjs?v=31';
-import * as J from './journey.mjs?v=31';
-export * from './journey.mjs?v=31';
-import * as Builds from './class-builds.mjs?v=31';
-export * from './class-builds.mjs?v=31';
-import * as Books from './special-talents.mjs?v=31';
-export * from './special-talents.mjs?v=31';
-import * as Hunts from './boss-hunts.mjs?v=31';
-export * from './boss-hunts.mjs?v=31';
-import * as Dungeon from './dungeon.mjs?v=31';
-export * from './dungeon.mjs?v=31';
-import {roomLayout} from './layouts.mjs?v=31';
-export * from './exploration.mjs?v=31';
-export * from './item-economy.mjs?v=31';
-import * as S from './services.mjs?v=31';
-export * from './services.mjs?v=31';
-export * from './workshop.mjs?v=31';
-export * from './alchemy.mjs?v=31';
-import * as C from './chronicle.mjs?v=31';
-export * from './chronicle.mjs?v=31';
-import * as A from './adventure.mjs?v=31';
-export * from './adventure.mjs?v=31';
-import * as L from './legacy.mjs?v=31';
-export * from './legacy.mjs?v=31';
-import * as I from './inventory.mjs?v=31';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=31';
-import * as P from './progression.mjs?v=31';
-export * from './progression.mjs?v=31';
-export {initialize,validate} from './progression.mjs?v=31';
-export * from './inventory.mjs?v=31';
-export {canPay,pay} from './inventory.mjs?v=31';
+import * as Offline from './offline-progress.mjs?v=33';
+import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=33';
+import {recordQuestAction} from './quest-content.mjs?v=33';
+import * as J from './journey.mjs?v=33';
+export * from './journey.mjs?v=33';
+import * as Builds from './class-builds.mjs?v=33';
+export * from './class-builds.mjs?v=33';
+import * as Books from './special-talents.mjs?v=33';
+export * from './special-talents.mjs?v=33';
+import * as Hunts from './boss-hunts.mjs?v=33';
+export * from './boss-hunts.mjs?v=33';
+import * as Dungeon from './dungeon.mjs?v=33';
+export * from './dungeon.mjs?v=33';
+import {roomLayout} from './layouts.mjs?v=33';
+export * from './exploration.mjs?v=33';
+export * from './item-economy.mjs?v=33';
+import * as S from './services.mjs?v=33';
+export * from './services.mjs?v=33';
+export * from './workshop.mjs?v=33';
+export * from './alchemy.mjs?v=33';
+import * as C from './chronicle.mjs?v=33';
+export * from './chronicle.mjs?v=33';
+import * as A from './adventure.mjs?v=33';
+export * from './adventure.mjs?v=33';
+import * as L from './legacy.mjs?v=33';
+export * from './legacy.mjs?v=33';
+import * as I from './inventory.mjs?v=33';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=33';
+import * as P from './progression.mjs?v=33';
+export * from './progression.mjs?v=33';
+export {initialize,validate} from './progression.mjs?v=33';
+export * from './inventory.mjs?v=33';
+export {canPay,pay} from './inventory.mjs?v=33';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -48,11 +49,11 @@ export function skillXp(c,id,n){c.skills[id]+=n*(1+(c.profTalents.mastery||0)*.0
 export function areaUnlocked(s,id){if(id==='tree')return(s.kills['forest-3']||0)>=12;if(['town','forest','caves'].includes(id))return true;if(id==='jungle')return(s.kills['forest-4']||0)>=12;if(id==='deep')return(s.kills['caves-2']||0)>=12;if(id==='jungle-town')return s.outpostAccess||(s.kills['jungle-3']||0)>=J.PORTAL_GOALS.jungle[3];return false;}
 export function zoneUnlocked(s,area,index,c=selected(s)){return areaUnlocked(s,area)&&J.personalRouteOpen(s,c,area,index);}
 export function lockReason(s,area,index=0,c=selected(s)){return zoneUnlocked(s,area,index,c)?'':J.personalLock(s,c,area,index);}
-export function travel(s,c,area,index){const a=areaById(area);if(!a||!Number.isInteger(index)||index<0||index>=a.zones.length||!zoneUnlocked(s,area,index,c)||c.dungeon)return false;c.encounter=null;c.trial=null;c.position=null;c.entryPoint=null;c.area=area;c.zone=index;c.secret=null;c.activity='rest';c.resource=null;c.progress=0;c.recovering=false;s.visited[`${area}-${index}`]=true;c.journey.visited[`${area}-${index}`]=true;return true;}
+export function travel(s,c,area,index){const a=areaById(area);if(!a||!Number.isInteger(index)||index<0||index>=a.zones.length||!zoneUnlocked(s,area,index,c)||c.dungeon)return false;c.assignmentWarning=null;c.encounter=null;c.trial=null;c.position=null;c.entryPoint=null;c.area=area;c.zone=index;c.secret=null;c.activity='rest';c.resource=null;c.progress=0;c.recovering=false;s.visited[`${area}-${index}`]=true;c.journey.visited[`${area}-${index}`]=true;return true;}
 export const gatherSkill=resource=>['copper','iron','gold'].includes(resource)?'mining':'logging';
 export function toolTier(c,skill){const slot=skill==='mining'?'pick':'axe';return EQUIPMENT[c.loadout[slot]?.base]?.gatherTier??c.gear[slot]??0;}
 export function gatherRequirement(c,resource){const d=GATHER_NODES[resource];if(!d)return 'Unknown gathering resource';if(skillLevel(c,d.skill)<d.level)return `${SKILLS[d.skill]} level ${d.level} required`;if(toolTier(c,d.skill)<d.tier)return `${d.tier===2?'Iron':'Copper'} ${d.skill==='mining'?'Pickaxe':'Hatchet'} or better required`;return '';}
-export function start(s,c,activity,resource=null){if(c.dungeon)return false;const a=areaById(c.area);if(activity==='fight'&&!zoneEnemy(c.area,c.zone)&&!c.secret)return false;if(activity==='boss'&&(c.area!=='jungle-town'||c.zone!==2||!s.storyFlags.bossPermit))return false;if(activity==='gather'&&(!a.resources[c.zone].includes(resource)||gatherRequirement(c,resource)))return false;if(!['fight','boss','gather','rest'].includes(activity))return false;c.activity=activity;c.resource=resource;c.progress=0;return true;}
+export function start(s,c,activity,resource=null){if(c.dungeon)return false;const a=areaById(c.area);if(activity==='fight'&&!zoneEnemy(c.area,c.zone)&&!c.secret)return false;if(activity==='boss'&&(c.area!=='jungle-town'||c.zone!==2||!s.storyFlags.bossPermit))return false;if(activity==='gather'&&(!a.resources[c.zone].includes(resource)||gatherRequirement(c,resource)))return false;if(!['fight','boss','gather','rest'].includes(activity))return false;c.assignmentWarning=null;c.activity=activity;c.resource=resource;c.progress=0;return true;}
 export function gatherInterval(c,resource){const skill=gatherSkill(resource),specialist=c.class&&CLASSES[c.class].skill===skill,stat=P.stats(c),tool=skill==='mining'?'pick':'axe';return Math.max(.65,(3+(['iron','birch'].includes(resource)?1:['gold','jungle-wood'].includes(resource)?2:0))/(1+(skillLevel(c,skill)-1)*.06+(specialist?.65:0)+(c.loadout[tool]?stat[skill]:c.gear[tool]*.25)+(c.talents.industry||0)*.05+(c.profTalents.efficiency||0)*.05+(c.accountBonuses?.[skill]||0)+(specialist?(c.classTalents?.specialist||0)*.03:0)+P.potionValue(c,skill)));}
 export function gatherYield(c,n,rng=Math.random){return n+successes(n,Math.min(.5,(c.profTalents.prosperity||0)*.02),rng);}
 export function enemyFor(c){return c.activity==='boss'?ENEMIES.boss:c.secret?ENEMIES[SECRETS[c.secret]?.enemy]:zoneEnemy(c.area,c.zone);}
@@ -68,7 +69,7 @@ export function successes(n,p,rng=Math.random){if(p>=1)return n;if(p<=0||n<=0)re
 export function grantKills(s,c,e,n,rng=Math.random,{collect=true}={}){const loot=[];if(n<=0)return;A.addCards(s,e.id,successes(n,.025,rng));c.kills+=n;J.recordPersonalKills(c,e.id,n);s.kills[e.id]=(s.kills[e.id]||0)+n;const rawCoins=e.coins*n*(1+(P.bonusesFor(s,c).coins||0)+(c.classTalents?.fortune||0)*.02)+(c.coinRemainder||0),earned=Math.floor(rawCoins+1e-9);c.coinRemainder=Math.max(0,rawCoins-earned);s.coins+=earned;c.earnedCoins+=earned;c.hp=Math.min(maxHp(c),c.hp+maxHp(c)*(Books.specialBonuses(c).killHeal||0)*n);gainXp(c,e.xp*n);for(const drop of [...e.loot,...WORLD_LOOT,...GLOBAL_LOOT,...[{id:'statue-'+({forest:'power',caves:'guard',jungle:'heart',deep:e.index%2?'pace':'miner'}[e.area]||'power'),chance:.02}]]){const count=successes(n,drop.chance,rng);if(count){if(collect)I.give(c,drop.id,count);loot.push({id:drop.id,count});if(['legendary','mythical'].includes(ITEMS[drop.id].rarity))note(s,`${c.name} discovered ${ITEMS[drop.id].name} ×${count}!`);}}if(e.id==='boss'&&!s.bossDefeated){s.bossDefeated=true;note(s,'The Rootwarden falls. Return its heart to Hesta to complete the World One story.');}return loot;}
 function advanceCharacter(s,c,seconds,rng){
  if(c.dungeon){Dungeon.finishDungeon(s,c,'abandoned',false);return;}if(c.secret){c.activity='rest';c.encounter=null;return;}if(c.activity==='trial'){c.trial=null;c.activity='rest';c.position={x:2280,y:644,facing:1};note(s,'The solo trial ended while inactive. No idle trial rewards were granted.');return;}if(c.activity==='rest'){c.hp=Math.min(maxHp(c),c.hp+seconds*4);return;}
- if(c.activity==='gather'){if(gatherRequirement(c,c.resource)){c.activity='rest';return;}const interval=gatherInterval(c,c.resource),total=c.progress+seconds,n=Math.floor(total/interval);c.progress=total-n*interval;if(n){const odds=gatherOdds(c,c.resource),yielded=gatherYield(c,successes(n,odds.chance,rng),rng)*odds.multi;I.give(c,c.resource,yielded);recordGather(s,c,c.resource,yielded,rng);grantGatherStatues(c,c.resource,n,rng);skillXp(c,gatherSkill(c.resource),n*2);gainXp(c,n*.4);}c.hp=Math.min(maxHp(c),c.hp+seconds);return;}
+ if(c.activity==='gather'){if(gatherRequirement(c,c.resource)){c.assignmentWarning='gathering';c.activity='rest';return;}const interval=gatherInterval(c,c.resource),total=c.progress+seconds,n=Math.floor(total/interval);c.progress=total-n*interval;if(n){const odds=gatherOdds(c,c.resource),yielded=gatherYield(c,successes(n,odds.chance,rng),rng)*odds.multi;I.give(c,c.resource,yielded);recordGather(s,c,c.resource,yielded,rng);grantGatherStatues(c,c.resource,n,rng);skillXp(c,gatherSkill(c.resource),n*2);gainXp(c,n*.4);}c.hp=Math.min(maxHp(c),c.hp+seconds);return;}
  if(c.activity==='boss'){c.encounter=null;c.activity='rest';note(s,'Boss encounters require active play. Return to the gate when ready.');return;}
  let remaining=seconds;const speed=1+(s.merits.afk||0)*.05+(c.accountBonuses?.afk||0)+(Books.specialBonuses(c).combatAFK||0);
  while(remaining>1e-8){
@@ -77,7 +78,7 @@ function advanceCharacter(s,c,seconds,rng){
   const strikeInterval=f.strikes?f.attackTime/(f.strikes+1):Infinity,nextStrike=(Math.floor((c.progress+1e-7)/strikeInterval)+1)*strikeInterval,boundary=Math.min(f.duration,nextStrike<=f.attackTime-1e-7?nextStrike:Infinity),t=Math.min(remaining,Math.max(0,boundary-c.progress));
   c.progress+=t;remaining-=t;A.useFood(c,maxHp(c),t/speed);
   if(c.progress<boundary-1e-7)break;
-  if(boundary<f.duration-1e-7){c.hp-=f.incoming/Math.max(1,f.strikes);if(c.hp<=0){c.hp=1;c.progress=0;if(!A.foodSupply(c)&&f.incoming>=maxHp(c)){c.activity='rest';note(s,`${c.name} retreated from ${e.name}: insufficient survival.`);break;}c.recovering=true;}else A.useFood(c,maxHp(c));}
+  if(boundary<f.duration-1e-7){c.hp-=f.incoming/Math.max(1,f.strikes);if(c.hp<=0){c.hp=1;c.progress=0;if(!A.foodSupply(c)&&f.incoming>=maxHp(c)){c.assignmentWarning='survival';c.activity='rest';note(s,`${c.name} retreated from ${e.name}: insufficient survival.`);break;}c.recovering=true;}else A.useFood(c,maxHp(c));}
   else{c.progress=0;grantKills(s,c,e,1,rng);}
  }
 
@@ -100,8 +101,15 @@ export function restoreSave(raw,now=Date.now()){
  s.characters=s.characters.map(c=>{if(!Number.isInteger(c.id)||!c.id||typeof c.name!=='string'||c.name.length>24||!finite(c.level)||c.level<1||!finite(c.xp)||!finite(c.hp)||!finite(c.progress)||!finite(c.kills)||!(c.class===null||CLASSES[c.class])||!areaById(c.area)||!Number.isInteger(c.zone)||c.zone<0||c.zone>=areaById(c.area).zones.length||!['rest','fight','gather','boss','trial','dungeon'].includes(c.activity))throw Error('Invalid character data.');const copy={...makeCharacter(c.id,c.name),...c};if(!copy.skills||!copy.gear)throw Error('Invalid character stats.');P.initializeCharacter(copy,s,true);if(Object.values(copy.talents).some(n=>!Number.isInteger(n)||n<0)||Object.values(copy.talents).reduce((a,b)=>a+b,0)>(copy.level-1)*3)throw Error('Invalid talent points.');for(const k of Object.keys(SKILLS))if(!finite(copy.skills[k]))throw Error('Invalid skills.');for(const k of Object.keys(makeCharacter(0,'').gear))if(!finite(copy.gear[k]))throw Error('Invalid equipment.');if(!copy.quests||Object.values(copy.quests).some(n=>!Number.isInteger(n)||n<0||n>3))throw Error('Invalid quest data.');if(copy.activity==='gather'&&!areaById(copy.area).resources[copy.zone].includes(copy.resource))throw Error('Invalid gathering task.');if(copy.activity==='fight'&&!zoneEnemy(copy.area,copy.zone)&&!copy.secret||copy.activity==='boss'&&(copy.area!=='jungle-town'||copy.zone!==2))throw Error('Invalid combat task.');return copy;});
  if(new Set(s.characters.map(c=>c.id)).size!==s.characters.length)throw Error('Duplicate characters.');s.nextId=Math.max(...s.characters.map(c=>c.id))+1;s.active=selected(s).id;s.log=Array.isArray(s.log)?s.log.filter(t=>typeof t==='string').slice(0,30):[];P.initialize(s,true);P.validate(s);for(const c of s.characters)if(c.dungeon)Dungeon.finishDungeon(s,c,'reload',false);for(const c of s.characters)if(c.trial){c.trial=null;c.activity='rest';c.position={x:2280,y:644,facing:1};}for(const c of s.characters)c.hp=Math.min(c.hp,maxHp(c));return s;
 }
-function offlineSnapshot(c){return{coins:c.earnedCoins,kills:c.kills,xp:c.lifetimeXp,skills:{...c.skills},food:c.foodEaten,items:Object.fromEntries([...new Set([...Object.keys(c.bag),...Object.keys(c.overflow)])].map(id=>[id,(c.bag[id]||0)+(c.overflow[id]||0)]))};}
-export function claimOffline(s,now=Date.now(),rng=Math.random){const elapsed=Math.max(0,(now-s.savedAt)/1000),seconds=Math.min(elapsed,OFFLINE_CAP),before=s.characters.map(offlineSnapshot),total=totalMaterials(s),coins=s.coins;const limits=s.characters.map(c=>rates(s,c).breakdown?.limiter||rates(s,c).label);advance(s,seconds,rng);s.savedAt=Math.max(s.savedAt,now);const characters=s.characters.map((c,i)=>{const p=before[i],after=offlineSnapshot(c);return{id:c.id,name:c.name,coins:after.coins-p.coins,kills:after.kills-p.kills,xp:after.xp-p.xp,food:after.food-p.food,skills:Object.fromEntries(Object.entries(c.skills).map(([id,n])=>[id,n-p.skills[id]]).filter(([,n])=>n>0)),items:Object.fromEntries(Object.entries(after.items).map(([id,n])=>[id,Math.max(0,n-(p.items[id]||0))]).filter(([,n])=>n)),limiter:limits[i]};});const report={seconds,capped:elapsed>OFFLINE_CAP,coins:s.coins-coins,kills:characters.reduce((n,c)=>n+c.kills,0),items:totalMaterials(s)-total,characters};if(seconds>60){if(s.afkReport){const old=s.afkReport;old.seconds+=seconds;old.capped||=report.capped;for(const k of ['coins','kills','items'])old[k]+=report[k];for(const row of characters){const r=old.characters.find(c=>c.id===row.id);if(!r){old.characters.push(row);continue;}for(const k of ['coins','kills','xp','food'])r[k]+=row[k];for(const k of ['items','skills'])for(const[id,n]of Object.entries(row[k]))r[k][id]=(r[k][id]||0)+n;r.limiter=row.limiter;}}else s.afkReport=structuredClone(report);}return report;}
+export function claimOffline(s,now=Date.now(),rng=Math.random){
+ const elapsed=Math.max(0,(now-s.savedAt)/1000),seconds=Math.min(elapsed,OFFLINE_CAP),before=s.characters.map(c=>Offline.offlineSnapshot(s,c,rates)),total=totalMaterials(s),coins=s.coins;
+ advance(s,seconds,rng);s.savedAt=Math.max(s.savedAt,now);
+ const characters=s.characters.map((c,i)=>Offline.offlineRow(s,c,before[i],seconds,rates));
+ const report={seconds,capped:elapsed>OFFLINE_CAP,coins:s.coins-coins,kills:characters.reduce((n,c)=>n+c.kills,0),items:totalMaterials(s)-total,characters};
+ if(seconds>60){if(s.afkReport){const old=s.afkReport;old.seconds+=seconds;old.capped||=report.capped;for(const k of ['coins','kills','items'])old[k]+=report[k];
+  for(const row of characters){const r=old.characters.find(c=>c.id===row.id);if(!r){old.characters.push(row);continue;}for(const k of ['coins','kills','xp','food'])r[k]+=row[k];for(const k of ['items','skills'])for(const[id,n]of Object.entries(row[k]))r[k][id]=(r[k][id]||0)+n;r.details=Offline.mergeOfflineDetails(r.details,row.details);}
+ }else s.afkReport=structuredClone(report);}return report;
+}
 export function acknowledgeOffline(s){s.afkReport=null;}
 export const talentPoints=P.combatPoints;
 export function trainTalent(c,id,count=1){const ok=P.train(c,id,'combat',count);if(ok&&id==='vitality')c.hp=Math.min(maxHp(c),c.hp+10);return ok;}

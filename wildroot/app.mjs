@@ -1,22 +1,23 @@
-import * as Talk from './conversations.mjs?v=31';
-import {npcDialogue} from './dialogue-panels.mjs?v=31';
-import * as Parity from './parity-panels.mjs?v=31';
-import * as EconomyUI from './economy-panels.mjs?v=31';
-import * as Prof from './profession-panels.mjs?v=31';
-import * as UI from './ui-panels.mjs?v=31';
-import {icon,portrait} from './ui-art.mjs?v=31';
-import * as AUI from './adventure-panels.mjs?v=31';
-import * as T from './town-panels.mjs?v=31';
-import * as U from './panels.mjs?v=31';
-import {GameAudio} from './audio.mjs?v=31';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=31';
-import * as E from './engine.mjs?v=31';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=31';
-import {drawWorld,viewFor} from './scene.mjs?v=32';
+import * as Roster from './roster.mjs?v=33';
+import * as Talk from './conversations.mjs?v=33';
+import {npcDialogue} from './dialogue-panels.mjs?v=33';
+import * as Parity from './parity-panels.mjs?v=33';
+import * as EconomyUI from './economy-panels.mjs?v=33';
+import * as Prof from './profession-panels.mjs?v=33';
+import * as UI from './ui-panels.mjs?v=33';
+import {icon,portrait} from './ui-art.mjs?v=33';
+import * as AUI from './adventure-panels.mjs?v=33';
+import * as T from './town-panels.mjs?v=33';
+import * as U from './panels.mjs?v=33';
+import {GameAudio} from './audio.mjs?v=33';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=33';
+import * as E from './engine.mjs?v=33';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=33';
+import {drawWorld,viewFor} from './scene.mjs?v=33';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
-let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null;
+let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null,assignmentView={};
 let uiView={},panelHistory=[],trialResult=null;
 let dungeonResult=null,conversation=null;
 let talentView={tab:"beginner",count:1},shopView={};
@@ -76,7 +77,7 @@ function renderPanel(){
  if(kind==='world-gate'){title='The World Gate';body=`<div class="world-gate-card"><span>⌖</span><h3>World 2 · Not yet built</h3><p>${state.storyFlags.complete?(state.worldCompletionCrafted?'The gate recognises your Greenreach Completion Token. World Two will arrive in a future update.':'The Rootwarden is defeated. Complete each NPC’s three quests and combine all six tokens at the anvil for World One completion.'):'Complete the World One story and restore the Greenreach to prepare this gate.'}</p><p>World One remains the active world. The gate has no destination yet.</p></div>`;}
  if(kind==='town'){title='Town services';body='<p class="intro">Hearthstead’s Village Green connects to Legacy Square by its upper portal. Visit the square for stamps, statues and the future World Gate. Pip’s shop is on the Green; Nori’s stall is in Canopy Market.</p><div class="save-actions"><button data-panel="cards">Cards</button><button data-panel="afk">AFK & gathering</button><button data-panel="tasks">Tasks & merits</button><button data-find-facility="tasks">Task board</button><button data-find-facility="stamps">Stamp Registry</button><button data-find-facility="statues">Statue Keeper</button><button data-find-shop="town">Pip’s Shop</button><button data-find-shop="jungle-town">Nori’s Shop</button></div>';}
  if(kind==='roster'){title='Roster management';body=UI.roster(state);}
- if(kind==='assignment'){title='Change assignment';body=U.assignment(state,state.characters.find(c=>c.id===assignmentId));}
+ if(kind==='assignment'){title='Change assignment';body=U.assignment(state,state.characters.find(c=>c.id===assignmentId),assignmentView);}
  if(kind==='settings'){title='Options & Save';body=UI.options(state,audio);}
  if(['codex','quick'].includes(kind)){title='Codex';body=Prof.quick(state,c);}
  if(kind==='menu'){title='Menu';body=UI.menu(state,c);}
@@ -88,7 +89,7 @@ function renderPanel(){
  if(kind==='trial'){title='Solo Trials';body=UI.trials(state,c);}
  if(kind==='trial-result'&&trialResult){title=trialResult.completed?'All Waves Cleared':'Trial Complete';body=`<div class="trial-banner">${icon('trophy')}<h3>${trialResult.score} POINTS</h3></div><div class="offline-grid"><div>${trialResult.wave+1}<small>WAVE REACHED</small></div><div>${trialResult.kills}<small>FOES DEFEATED</small></div><div>${E.money(trialResult.coins)}<small>COINS EARNED</small></div></div><button data-panel="trial">Trial records</button><button data-close="">Return to town</button>`;}
  if(kind==='new'){title='A new adventurer';body=`<p class="intro">${state.characters.length} / ${E.slots(state)} character slots used. Each character chooses a class individually through their quest line.</p><label for="character-name">Name your adventurer</label><input id="character-name" class="name-input" maxlength="24" autocomplete="off" placeholder="Adventurer name"><button class="primary" data-create="">Join the roster</button>`;}
- if(kind==='offline'){title='Your roster kept adventuring';body=Parity.offlineReport(state.afkReport);}
+ if(kind==='offline'){title='Your roster kept adventuring';body=Parity.offlineReport(state.afkReport,state);}
  if(kind==='books'){title='Special talent books';body=Parity.books(state,c);}
  if(kind==='journey'){title='Personal World One progress';body=Parity.journey(state,c);}
  if(kind==='bossboard'){title='Boss hunts';body=Parity.hunts(state,c);}
@@ -224,7 +225,7 @@ document.addEventListener('click',event=>{
  if(d.close!==undefined){closePanel();return;}
  if(d.target){if(d.target.startsWith('loot-'))world.pickLoot(d.target);else world.select(d.target);refresh();save();return;}
  if(d.panel){openPanel(d.panel);return;}
- if(d.character){world.collectAll();state.active=Number(d.character);world.switchCheck();buildTargets();save();refresh();return;}
+ if(d.character){if(!world.switchCharacter(Number(d.character)))return;input={};targetKey='';if(panelKind)closePanel();buildTargets();save();refresh();return;}
  if(d.travel){travel(d.travel,Number(d.zone));return;}
  if(d.findNpc){findNpc(d.findNpc);return;}
  if(d.findStation){findStation(d.findStation);return;}
@@ -275,8 +276,10 @@ document.addEventListener('click',event=>{
 
  if(d.track){if(!E.questStatus(state,d.track)?.accepted)return;state.trackedQuest=d.track;save();renderPanel();refresh();return;}
 
- if(d.assignment){assignmentId=Number(d.assignment);openPanel('assignment');return;}
- if(d.applyAssignment){const worker=state.characters.find(c=>c.id===Number(d.applyAssignment)),[area,index]=$('assignment-route').value.split(':'),activity=$('assignment-task').value;if(worker.id===state.active)world.collectAll();else{for(const drop of worker.groundLoot||[]){if(drop.itemId==='coins')state.coins+=drop.count;else E.give(worker,drop.itemId,drop.count);}worker.groundLoot=[];}if(!E.travel(state,worker,area,Number(index))){toast('Route is locked.');return;}const resource=activity==='gather'?areaById(area).resources[Number(index)][0]:null;if(!E.start(state,worker,activity,resource))toast(resource?E.gatherRequirement(worker,resource):'That task is unavailable.');if(worker.id===state.active){world.enter();targetKey='';}save();openPanel('roster');refresh();return;}
+ if(d.workerAfk||d.workerGoal){const id=Number(d.workerAfk||d.workerGoal);if(!world.switchCharacter(id))return;input={};targetKey='';const chosen=world.c;save();refresh();if(d.workerAfk){openPanel('afk');return;}const g=Roster.nextGoal(state,chosen);if(g.action==='assignment'){assignmentId=id;assignmentView={};openPanel('assignment');}else if(g.action==='recipe'){const r=RECIPES.find(r=>r.id===g.value);uiView.profession=r.station;uiView.anvilTab='craft';uiView.foundryTab='craft';uiView.alchemyTab='supplies';uiView.enchantTab='supplies';uiView.recipe=r.id;uiView.recipePage=E.recipePage(r);uiView.recipeFilter='all';uiView.recipeSearch='';openPanel('craft');}else if(g.action==='inventory'){const slots=E.bagSlots(chosen),index=slots.findIndex(t=>g.value.startsWith('gear:')?t?.uid===Number(g.value.slice(5)):g.value.startsWith('item:')?t?.id===g.value.slice(5):false);inventoryView={tab:g.value==='food'?'food':'equipment',source:'bag',...(index>=0?{index,page:Math.floor(index/16)}:{})};openPanel('inventory');}else openPanel(g.action);return;}
+ if(d.assignment){assignmentId=Number(d.assignment);assignmentView={};openPanel('assignment');return;}
+ if(d.applyAssignment){const worker=state.characters.find(c=>c.id===Number(d.applyAssignment)),[area,index]=$('assignment-route').value.split(':'),task=$('assignment-task').value,reason=Roster.assignmentReason(state,worker,area,Number(index),task);if(reason){toast(reason);return;}if(worker?.id===state.active)worker.position={x:world.player.x,y:world.player.y,facing:world.player.facing,climbing:world.player.climbing,climbTo:world.player.climbTo};if(!Roster.assignCharacter(state,worker,area,Number(index),task)){toast('Assignment unavailable.');return;}if(worker.id===state.active){world.enter();input={};targetKey='';}save();openPanel('roster');refresh();return;}
+
  if(d.audio!==undefined){audio.enable(!audio.enabled);state.settings={...state.settings,audio:audio.enabled,volume:audio.volume};save();renderPanel();return;}
  if(d.quest){return;}
 
@@ -300,7 +303,7 @@ $('skill-button').addEventListener('click',()=>{world.useSkill(0);refresh();});
 $('secondary-button').addEventListener('click',()=>{world.useSkill(1);refresh();});
 $('utility-button').addEventListener('click',()=>{world.useSkill(2);refresh();});
 $('manage-roster').addEventListener('click',()=>openPanel('roster'));
-document.addEventListener('change',e=>{if(e.target.id==='infusion-material'){uiView.infusionMaterial=e.target.value;uiView.infusionConfirm=false;renderPanel();return;}if(e.target.dataset.cauldronWorker){const ok=E.assignCauldron(state,world.c,Number(e.target.dataset.cauldronWorker),e.target.value);if(!ok)toast('That cauldron is full or locked.');save();renderPanel();}});
+document.addEventListener('change',e=>{if(e.target.id==='assignment-route'){assignmentView={route:e.target.value,task:null};renderPanel();return;}if(e.target.id==='assignment-task'){assignmentView={route:$('assignment-route').value,task:e.target.value};renderPanel();return;}if(e.target.id==='infusion-material'){uiView.infusionMaterial=e.target.value;uiView.infusionConfirm=false;renderPanel();return;}if(e.target.dataset.cauldronWorker){const ok=E.assignCauldron(state,world.c,Number(e.target.dataset.cauldronWorker),e.target.value);if(!ok)toast('That cauldron is full or locked.');save();renderPanel();}});
 document.addEventListener('input',e=>{if(['recipe-search','item-search'].includes(e.target.id)){const id=e.target.id,key=id==='recipe-search'?'recipeSearch':'itemSearch',start=e.target.selectionStart;uiView[key]=e.target.value;renderPanel();const input=$(id);input.focus();input.setSelectionRange(start,start);return;}if(e.target.id==='audio-volume'){audio.volume=Number(e.target.value);state.settings={...state.settings,volume:audio.volume};save();}});
 document.addEventListener('pointerdown',()=>{if(state.settings?.audio&&!audio.enabled){audio.volume=state.settings.volume??.2;audio.enable(true);}},{once:true});
 $('interact-button').addEventListener('click',()=>world.interact());

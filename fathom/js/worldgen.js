@@ -119,6 +119,28 @@ const CLIMATE_BIOMES = BIOMES.filter(b => !b.overlay);
 const SEA_LEVEL = SKY_H + 104;
 const BEACH_BAND = 10;
 
+// Spawn is always on dry land. Terraria guarantees this too, and for the same reason: the
+// first thing a new world has to do is give you somewhere to stand. Without it the
+// continent field decides, and roughly a fifth of seeds opened with the player treading
+// water over an abyss with no wood in reach.
+//
+// It is done by pulling the surface up towards a dry ceiling rather than by biasing the
+// continent field, because the continent field is only one of the terms in the height and
+// a column with land above zero can still be submerged by its own hills. Within
+// HOME_FLAT tiles of origin the pull is total and the ground cannot be sea; from there it
+// eases out to nothing over HOME_FADE, so the coastline is pushed away from spawn rather
+// than deleted. Everything stays a pure function of x.
+const HOME_FLAT = 420;
+const HOME_FADE = 1100;
+
+function homeFactor(x) {
+  const d = Math.abs(x);
+  if (d <= HOME_FLAT) return 1;
+  if (d >= HOME_FLAT + HOME_FADE) return 0;
+  const t = 1 - (d - HOME_FLAT) / HOME_FADE;
+  return t * t * (3 - 2 * t);
+}
+
 // --- the fields -------------------------------------------------------------------------
 // All three are pure in x, so two chunks asking about the same column get the same answer.
 
@@ -356,6 +378,14 @@ function buildColumn(seed, x) {
   const abyss = Math.pow(Math.max(0, shelf - 0.14), 1.4) * 2600;
   let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
     + abyss - Math.max(0, land) * 12;
+  // Pull the ground up towards dry land near the origin. Below the ceiling nothing
+  // happens at all, so the homeland keeps its own hills and valleys; only a column that
+  // would have been shore or sea is lifted, and only as far as the factor says.
+  const home = homeFactor(x);
+  if (home > 0) {
+    const ceiling = SEA_LEVEL - BEACH_BAND - 8;
+    if (h > ceiling) h += (ceiling - h) * home;
+  }
   h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 900, Math.round(h)));
 
   // Identity. Sea and shore override climate; a blight overrides everything but the sea.
@@ -780,6 +810,111 @@ function structureWallAt(seed, x, y) {
   return null;
 }
 
+// --- things standing on cave floors ------------------------------------------------------
+// Life crystals and pots. Both are answered from (x, y) alone, like everything else in
+// this file, so a crystal that straddles a chunk seam cannot half-generate.
+//
+// The order matters for cost. baseTileAt runs for every cell of the world, so the cheap
+// hash is tested first and the geometry - which needs six isCarved calls for a two-by-two
+// object - only runs for the few thousandths of cells that pass it.
+
+const CRYSTAL_ODDS = 0.00042;       // per candidate origin, below the crystal's depth
+const CRYSTAL_MIN_DEPTH = 120;
+const POT_ODDS = 0.0075;
+
+// Does a two-by-two object fit with its origin here: four open cells with solid ground
+// under both columns?
+function standsOn(seed, ox, oy, w, h) {
+  for (let dy = 0; dy < h; dy += 1) {
+    for (let dx = 0; dx < w; dx += 1) {
+      const col = columnOf(seed, ox + dx);
+      const d = oy + dy - col.height;
+      if (d <= 4) return false;
+      if (!isCarved(seed, ox + dx, oy + dy, d, col)) return false;
+      if (submergedVoid(seed, ox + dx, oy + dy, col)) return false;
+      if (lavaFloor(seed, ox + dx, oy + dy)) return false;
+    }
+  }
+  for (let dx = 0; dx < w; dx += 1) {
+    const col = columnOf(seed, ox + dx);
+    const d = oy + h - col.height;
+    if (isCarved(seed, ox + dx, oy + h, d, col)) return false;
+  }
+  return true;
+}
+
+// The crystal cell at this position, if one stands here. Checked against all four
+// origins a two-by-two object could have and still cover (x, y).
+function crystalTileAt(seed, x, y, depth) {
+  if (depth < CRYSTAL_MIN_DEPTH) return null;
+  if (altitudeOf(y) >= 1250) return null;
+  for (let dy = 0; dy <= 1; dy += 1) {
+    for (let dx = 0; dx <= 1; dx += 1) {
+      const ox = x - dx;
+      const oy = y - dy;
+      if (unit(seed, ox, oy, 8101) > CRYSTAL_ODDS) continue;
+      if (!standsOn(seed, ox, oy, 2, 2)) continue;
+      return cellOf('lifecrystal', dx, dy).id;
+    }
+  }
+  return null;
+}
+
+function potTileAt(seed, x, y, depth, column) {
+  if (depth < 12) return null;
+  if (unit(seed, x, y, 8209) > POT_ODDS) return null;
+  if (!standsOn(seed, x, y, 1, 1)) return null;
+  return cellOf('pot', 0, 0).id;
+}
+
+// What a pot holds, decided by where it is: the same pot always breaks into the same
+// things, so a pot is a place rather than a dice roll.
+const POT_TABLE = [
+  { key: 'coin', min: 4, max: 22, chance: 1 },
+  { key: 'torch', min: 2, max: 7, chance: 0.5 },
+  { key: 'arrow', min: 5, max: 14, chance: 0.18 },
+  { key: 'gel', min: 1, max: 3, chance: 0.22 },
+  { key: 'crystal', min: 1, max: 2, chance: 0.1 },
+  { key: 'bone', min: 1, max: 3, chance: 0.12 }
+];
+
+function potContents(seed, x, y) {
+  const out = [];
+  for (let i = 0; i < POT_TABLE.length; i += 1) {
+    const entry = POT_TABLE[i];
+    if (unit(seed, x, y, 8301 + i * 7) > entry.chance) continue;
+    const count = entry.min
+      + Math.floor(unit(seed, x, y, 8401 + i * 7) * (entry.max - entry.min + 1));
+    out.push({ key: entry.key, count: Math.max(1, count) });
+    if (out.length >= 2) break;
+  }
+  if (out.length === 0) out.push({ key: 'coin', count: 5 });
+  return out;
+}
+
+// --- weather ------------------------------------------------------------------------------
+// A pure function of the world clock, like everything else here: nothing to save, and the
+// same world has the same weather at the same hour in every session.
+//
+// Rain arrives as fronts rather than as a coin flip, which is why the field is very low
+// frequency with a high threshold: most of the time it is dry, and when it rains it rains
+// for half an hour. A faster field crossed its own threshold every few minutes and the
+// sky flickered between wet and dry, which is the one thing weather must not do.
+const RAIN_FIELD = 0.0006;
+const RAIN_THRESHOLD = 0.66;
+const RAIN_BAND = 0.12;
+const GUST_FIELD = 0.012;
+
+function weatherAt(seed, at, biomeKey) {
+  const front = fbm1(seed, at * RAIN_FIELD, 9001, 2, 2, 0.35);
+  const rain = Math.max(0, Math.min(1, (front - RAIN_THRESHOLD) / RAIN_BAND));
+  const gust = fbm1(seed, at * GUST_FIELD, 9103, 2, 2, 0.5);
+  // The wind blows a little always and hard in a storm, so foliage is never quite still.
+  const wind = (gust - 0.5) * 2 * (0.3 + rain * 0.7);
+  const cold = biomeKey === 'tundra' || biomeKey === 'taiga';
+  return { rain, wind, snow: cold ? 1 : 0 };
+}
+
 function baseTileAt(seed, x, y) {
   const column = columnOf(seed, x);
   const surface = column.height;
@@ -821,6 +956,10 @@ function baseTileAt(seed, x, y) {
     // Hell's caverns hold lava in their floors rather than water in their ceilings.
     const lava = lavaFloor(seed, x, y);
     if (lava) return idOf('lava');
+    const prize = crystalTileAt(seed, x, y, depth);
+    if (prize !== null) return prize;
+    const pot = potTileAt(seed, x, y, depth, column);
+    if (pot !== null) return pot;
     return AIR;
   }
 
@@ -1318,6 +1457,7 @@ const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
+    homeFactor, HOME_FLAT, HOME_FADE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
@@ -1325,6 +1465,7 @@ const EXPORTS_worldgen = {
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
     STRUCTURE_SPACING, structureAt, structureRect, structurePlaced, structureTileAt, structureWallAt,
+    crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
     structureChest, chestTileAt, baseContainerAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,

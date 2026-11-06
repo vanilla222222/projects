@@ -264,6 +264,21 @@ for (const c of CHESTS) {
   }));
 }
 
+// A life crystal: two by two, glowing, and the only thing in the world that makes the
+// player permanently stronger. Terraria's, and worth copying exactly because it is the
+// reward that makes going down worth doing.
+defineMulti('lifecrystal', 'Life Crystal', 2, 2, () => ({
+  solid: false, opacity: 0, emit: 6, hardness: 0.3, colour: '#e0405c', grain: 0,
+  toughness: 50, crystal: 'life', drops: null
+}));
+
+// Pots. They stand on cave floors, they break in one hit, and what is in them is decided
+// by where they are, so the same pot always holds the same thing.
+defineMulti('pot', 'Clay Pot', 1, 1, () => ({
+  solid: false, opacity: 2, emit: 0, hardness: 0.05, colour: '#9a6a48', grain: 0.08,
+  toughness: 10, pot: true, drops: null
+}));
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

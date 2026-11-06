@@ -521,3 +521,82 @@ it, walk rather than chase, turn back at drops, and cannot be hit.
 **Coins** come from everything that dies, scaled to what it was - a slime is pocket
 change, an obsidian husk is a day's wages - and from chests. What you kill is what pays
 for what you buy.
+
+## Spawn, weather, and three things worth finding
+
+**Spawn is never at sea.** The continent field used to decide this on its own, and roughly
+a fifth of seeds opened with the player treading water over an abyss with no wood in
+reach. Within 420 tiles of the origin the surface is pulled up to a dry ceiling; from
+there it eases back out to nothing over the next 1,100, so the coast is pushed away from
+spawn rather than deleted, and the homeland keeps its own hills and valleys because a
+column already above the ceiling is not touched at all.
+
+It is applied to the **height**, not to the continent field, because a column whose land
+is above zero can still be drowned by its own hills - which is exactly how the old
+version let oceans in. The test measures what the player meets: across sixty seeds, every
+column within the flat radius is above the water line and is neither ocean nor beach, and
+each of those seeds still has an ocean somewhere within 30,000 tiles.
+
+**Weather** is a pure function of the world clock, so there is nothing to save and the
+same world has the same weather at the same hour in every session. Rain arrives as
+fronts: a very low frequency field with a high threshold, which means it is dry most of
+the time and when it rains it rains for half an hour. A faster field crossed its own
+threshold every few minutes and the sky flickered between wet and dry, which is the one
+thing weather must not do. Measured across four seeds: 6-19% of the time wet, and three
+to twelve changes over eleven hours of world time.
+
+Wind comes with it - a little always, hard in a storm - and it is not decoration: cloud
+banks drift with it, rain slants with it, and every piece of foliage bends under it. Over
+tundra and taiga the rain falls as snow.
+
+**Life crystals** are the only thing in the world that makes the player permanently
+stronger: two by two, glowing, standing on cave floors below 120 tiles deep, and
+consumed where they stand rather than carried away. +20 maximum health each, to a
+ceiling of 400.
+
+**Pots** stand on cave floors from 12 tiles down and break in one hit. What is in one is
+a function of where it is, so the same pot always holds the same things - a place rather
+than a dice roll.
+
+Both are answered from (x, y) alone, like everything else in the generator, so one that
+straddles a chunk seam cannot half-generate. The order inside `baseTileAt` matters for
+cost rather than for correctness: it runs for every cell of the world, so the cheap hash
+is tested first and the geometry - six `isCarved` calls for a two-by-two object - only
+runs for the few thousandths of cells that pass it.
+
+**Hearts** drop from roughly one kill in five, and more often the worse the fight is
+going. They are used where they are picked up rather than carried, which is what lets a
+fight you are losing be turned around by pushing forward into what you just killed.
+
+## Sprites
+
+Every living thing used to be a rectangle with two eyes on it, at which point the only
+thing telling a shark from a skeleton was its colour. `js/sprite.js` holds twenty body
+plans - slime, humanoid, skeleton, imp, golem, bat, eye, bird, wasp, beetle, spider,
+crab, jelly, fish, leech, maw, worm, demon, lizard, cloud - shared across all forty
+enemies by a `body` tag on the species, plus one plan for people that the player and the
+villagers share.
+
+There are no image assets anywhere in Fathom, and a sprite sheet for forty enemies in a
+dozen poses is not something you write by hand. Drawing each body from primitives means a
+pose is a number, so animation costs nothing extra: the same code draws every frame of a
+walk cycle.
+
+Plans place their parts in fractions of the creature's own box, so the same spider plan
+draws a one-tile cave crawler and a two-tile magma crawler without a special case. Round
+details - eyes, teeth, rivets - are sized against the smaller dimension instead, so a long
+flat shark does not get oval eyes.
+
+**Gait is driven by distance, not by the clock.** Each enemy carries an `anim` phase
+advanced by how far it actually travels, so a walker shoved against a wall stops moving
+its legs instead of running on the spot; wings and fins, which beat whether or not they
+are getting anywhere, add a steady term as well. The player gains a walk cycle, a jump
+pose, a swim stroke, a breathing idle, a blink, and a swing arc that drives mining and
+fighting alike, with whatever is in hand drawn on the end of the arm.
+
+`node tools/sprite-test.js` checks that every enemy names a plan that exists, that every
+plan is drawn by something, that each draws real detail inside a sane envelope, and - the
+one worth having - that every plan produces different frames at different phases. A plan
+that ignores its phase looks perfect in a screenshot and is a still photograph in motion.
+It caught two: the slime, which only deformed from its hop and so sat dead still on the
+ground, and the slime's gait, which never advanced at all.
