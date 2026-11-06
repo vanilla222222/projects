@@ -409,6 +409,12 @@ function makeGame(canvas, deps) {
     }
   }
 
+  // What last took health off the player, so death can say what killed them. Terraria
+  // does this and it matters for the same reason a stack trace matters: dying without
+  // being told why teaches nothing.
+  let lastHurt = null;
+  const deathsBy = {};
+
   // What a heart restores when you walk over it.
   const HEART_HEAL = 20;
 
@@ -771,7 +777,10 @@ function makeGame(canvas, deps) {
     if (swarm) swarm.clear();
     releaseHook();
     sfx('death');
-    say('You died', 2.2);
+    const blame = lastHurt || 'something';
+    deathsBy[blame] = (deathsBy[blame] || 0) + 1;
+    say('Killed by ' + blame, 2.6);
+    lastHurt = null;
   }
 
   // A life crystal is used where it stands rather than carried away: it is the one
@@ -1200,6 +1209,7 @@ function makeGame(canvas, deps) {
         && state.gear && state.gear.slimeFriend;
       if (hit && !friendly) {
         const dealt = statsModule.damage(stats, hit.spec.damage);
+        lastHurt = hit.spec.name;
         if (dealt > 0) {
           // Knocked away from whatever hit you, so contact damage is not a death loop.
           const away = Math.sign(state.player.x - hit.x) || 1;
@@ -1219,6 +1229,7 @@ function makeGame(canvas, deps) {
       if (hurt > 0) {
         // Armour does not soften a fall, so the mitigation is explicitly skipped.
         const dealt = statsModule.damage(stats, hurt, 0);
+        lastHurt = 'the fall';
         if (dealt > 0) {
           say('Hard landing', 1.2);
           spawnParticles(state.player.x, state.player.y + state.player.height, '#9a8878', 8);
@@ -1232,6 +1243,7 @@ function makeGame(canvas, deps) {
     if (drowning > 0) {
       stats.invulnerable = 0;
       const dealt = statsModule.damage(stats, drowning, 0);
+      lastHurt = 'the water';
       if (dealt > 0 && Math.random() < 0.08) say('Drowning!', 0.8);
     }
 
@@ -1240,6 +1252,7 @@ function makeGame(canvas, deps) {
       Math.floor(state.player.y + state.player.height * 0.6)));
     if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24);
+      lastHurt = feet.key === 'lava' ? 'the lava' : 'the heat';
       if (burnt > 0) say('Burning!', 0.9);
     }
 
@@ -1630,6 +1643,8 @@ function makeGame(canvas, deps) {
     get profiles() { return profiles; },
     get audio() { return audio; },
     get controls() { return CONTROLS; },
+    // What has been killing this character, which is worth knowing when tuning.
+    get deathsBy() { return deathsBy; },
     // Test seams: what the keyboard and the mouse would set, so a long
     // automated session can play the game through the same path a person does.
     get input() { return input; },

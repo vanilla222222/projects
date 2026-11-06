@@ -109,7 +109,7 @@ const { chromium } = require('playwright');
       savedOk = true;
     } catch (e) { say(0, 'saving threw: ' + e.message); }
     return { problems, peak, savedBytes: saved ? saved.length : 0, savedOk,
-      deaths: g.state.progress.deaths, nights: g.state.nights,
+      deaths: g.state.progress.deaths, deathsBy: g.deathsBy, nights: g.state.nights,
       finalDepth: Math.round(g.state.player.y) };
   }, minutes);
   console.log(JSON.stringify(res, null, 1));

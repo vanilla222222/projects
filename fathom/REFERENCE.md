@@ -896,3 +896,22 @@ no GPU and software-rasterises the whole 1.44-megapixel canvas. That is a proper
 measuring environment rather than of the game, and contorting the renderer around it
 would be optimising for a browser nobody plays in. The measurements are kept here so the
 next person does not repeat the investigation.
+
+## What kills you
+
+Death used to say "You died" and nothing else. It now names what did it, which matters
+for the same reason a stack trace matters: dying without being told why teaches nothing.
+Every source of damage records itself - the enemy by name, the fall, the water, the lava -
+and the tally is kept so the game can be asked what has been killing a character.
+
+The soak test asks exactly that. Ten minutes of randomised play: 51 deaths, 36 of them
+falls, then vultures, demon eyes and an antlion. That is a statement about random input
+rather than about the game - a player who walks off every ledge they meet dies of falling -
+but it is the kind of number worth being able to get.
+
+It also prompted a check of a rule that turned out to be already there and never tested:
+water arrests a fall. The physics zeroes the fall distance while swimming, so diving into
+a pool is a way down rather than a death, and `tools/physics-test.js` now drops the same
+body down the same shaft twice, once onto rock and once into water, and requires one to
+hurt and the other not to. It is exactly the kind of line that disappears in a refactor
+and is not noticed until someone dies at the bottom of a shaft they have used fifty times.
