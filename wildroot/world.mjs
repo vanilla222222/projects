@@ -1,6 +1,7 @@
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=17';
-import {roomLayout,pointFor} from './layouts.mjs?v=17';
-import * as E from './engine.mjs?v=17';
+import {surveyPoint} from './exploration.mjs?v=19';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=19';
+import {roomLayout,pointFor} from './layouts.mjs?v=19';
+import * as E from './engine.mjs?v=19';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -29,6 +30,7 @@ export function createMap(area,index,boss=false,secret=null,trial=false){
  const facilities=town?(area==='town'&&index===3?[{id:'stamps',kind:'stamps',name:'Stamp Registry',x:350,y:GROUND},{id:'statues',kind:'statues',name:'Statue Keeper',x:650,y:GROUND},{id:'vault',kind:'vault',name:'Upgrade Vault',x:1670,y:GROUND},{id:'tasks',kind:'tasks',name:'World Task Board',x:1990,y:GROUND},{id:'world-gate',kind:'worldgate',name:'World 2 Gate · dormant',x:1030,y:GROUND}]:index===0?[{id:'shop',kind:'shop',name:area==='town'?'Pip’s General Store':'Nori’s Supply Stall',x:area==='town'?680:565,y:GROUND}]:[]):[];
  for(const e of facilities)Object.assign(e,pointFor(layout,e.id));
  if(area===TELESCOPE.area&&index===TELESCOPE.zone&&!boss&&!secret)facilities.push({id:'telescope',kind:'telescope',name:'Crown Telescope',...pointFor(layout,'telescope')});if(town&&area==='town'&&index===3)facilities.push({id:'arena',kind:'arena',name:'Solo Trial Board',...pointFor(layout,'arena')});for(const d of CONSTELLATIONS)if(d.area===area&&d.zone===index&&(d.secret||null)===(secret||null)&&!boss)facilities.push({id:'constellation-'+d.id,kind:'constellation',constellation:d.id,name:d.name,x:d.x,y:d.y});
+ if(!boss)facilities.push({id:'survey',kind:'survey',name:'High-route Survey Cache',...surveyPoint(layout)});
  const portals=roomPortals(area,index,boss,secret);
  const storage=town&&!secret?[{id:'storage',kind:'storage',name:'Storage Chest',x:160,y:GROUND}]:[];
  const discoveries=!secret&&!boss?Object.entries(SECRETS).filter(([id,d])=>d.area===area&&d.zone===index).map(([id,d])=>({id:'secret-'+id,kind:'discovery',secret:id,name:d.name,...pointFor(layout,'secret-'+id)})):[];

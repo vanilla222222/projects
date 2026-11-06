@@ -156,3 +156,17 @@ Enemy HP and damage use authored, accelerating curves rather than the former lin
 Validation: `node --test wildroot/*.test.mjs` (148 passing tests) and `node wildroot/world1-sim.mjs`. Tests cover physical access, separate remote permissions, page consumption, migration, exact costs, enchant replacement, assignments, offline caps, bubble discovery safety nets, vials, malformed saves and combat progression.
 
 Live QA confirmed page-book crafting/consumption, production claiming, point menus, station navigation, assignments, bubble upgrading and vial discovery. Follow-up polish separates the three recipe-page galleries, keeps station recipes focused, bounds gallery scrolling and corrects first-visit tips.
+
+## v19 — room identity and connected item uses
+
+All 29 rooms have separate art direction: distinct skies, platform materials, ambient effects and large original canvas setpieces. The forest ranges from a morning oak glade through birch waterfalls and a lantern-lit night climb; mines, cathedral caverns, chain works, a reservoir, a clockwork engine, jungle ropeways, monsoon falls, sunstone terraces and hanging orchid gardens use different silhouettes. Town roofs, kilns, market stilts, greenhouse terraces and bell towers add vertical exploration. The three Elder Tree zones retain their full ascents and summit telescope.
+
+New upper shelves connect through a real ladder graph. Normal combat exits move onto upper routes; reciprocal arrivals and knockout respawns use those exact doorways. Existing shelves, service positions and saved floor coordinates remain supported. Every non-boss room has a one-time survey cache at its highest route, rewarding useful materials and coins. Map overview, camera tracking and touch navigation support the new heights. Offscreen platform/enemy art is culled.
+
+Every one of the 171 inventory items has at least three implemented purposes; see `ITEM-USES.md`. Ordinary spare items can be reclaimed at the foundry for salvage (exchanged for crafting materials), or contributed at the Legacy Square vault to the Village Arsenal, Supply Depot or Field Academy. Projects grant small capped roster damage, capacity or profession-XP bonuses. These are independent choices, not automatic disposal; both have explicit confirmation and protect locked/equipped items and final unlearned unlocks. Exchange prices prevent profitable reclamation loops.
+
+Material research drops also infuse gear with permanent, material-specific stats. One infusion slot is separate from runes and stones, travels with the equipment instance and supports a before/after preview with explicit replacement confirmation. Rare/mythical infusions are optional; none gates the story.
+
+NPC tokens, the Rootbound Seal and the completion token have non-consuming attunements and unlock eight signature gear patterns. Earned proof remains valid after token combination, so these benefits cannot be missed. Their original quest/completion/trophy functions remain intact. New gear follows the same equipment/reclamation/project rules.
+
+Validation covers all item transactions, protected last copies, no-profit salvage loops, project caps, badge proofs, signature crafting, infusion costs/replacement, malformed saves, all 29 scenery renderings, floor/ladder navigation, elevated reciprocal portals, survey claims and desktop/phone camera aspect ratios. Local preview infrastructure remained unavailable; live browser checks are performed after Pages deployment.

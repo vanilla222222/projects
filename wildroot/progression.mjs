@@ -1,11 +1,13 @@
-import * as S from './services.mjs?v=17';
-import * as B from './workshop.mjs?v=17';
-import * as H from './alchemy.mjs?v=17';
-import * as C from './chronicle.mjs?v=17';
-import * as A from './adventure.mjs?v=17';
-import * as L from './legacy.mjs?v=17';
-import * as I from './inventory.mjs?v=17';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=17';
+import {validateSurveys} from './exploration.mjs?v=19';
+import * as X from './item-economy.mjs?v=19';
+import * as S from './services.mjs?v=19';
+import * as B from './workshop.mjs?v=19';
+import * as H from './alchemy.mjs?v=19';
+import * as C from './chronicle.mjs?v=19';
+import * as A from './adventure.mjs?v=19';
+import * as L from './legacy.mjs?v=19';
+import * as I from './inventory.mjs?v=19';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=19';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
@@ -21,18 +23,18 @@ export function initializeCharacter(c,s,migrate=false){
  c.bigBubbles??=[];c.starSigns??=[];c.foodEaten??=0;c.cardSetBonuses??={combat:null,skilling:null};c.trial??=null;I.initBag(c);A.initCharacter(c);return c;
 }
 export function initialize(s,migrate=false){
- s.usedChestExpansions??=[];s.progressionVersion=2;s.armory??=[];s.nextEquipmentId??=1;s.jobs??=[];s.nextJobId??=1;s.alchemy??={liquid:10,research:{}};s.alchemy.research??={};
+ s.surveys??=[];s.usedChestExpansions??=[];s.progressionVersion=2;s.armory??=[];s.nextEquipmentId??=1;s.jobs??=[];s.nextJobId??=1;s.alchemy??={liquid:10,research:{}};s.alchemy.research??={};
  s.guild??={};s.story??={};s.storyFlags??={bossPermit:false,complete:false};s.recipeUnlocks??=[];s.secretUnlocks??=[];s.visited??={};
  for(const c of s.characters)initializeCharacter(c,s,migrate);
  if(migrate){if(s.characters.some(c=>(c.gear.weapon||0)>=2||(c.gear.pick||0)>=2))unlock(s,'ironworking');if(s.characters.some(c=>(c.gear.weapon||0)>=3))unlock(s,'gilding');if(s.bossDefeated||s.characters.some(c=>c.activity==='boss'))s.storyFlags.bossPermit=true;}
- L.initializeTown(s);A.initialize(s);C.initialize(s);S.initializeAccess(s);B.initializeWorkshop(s);H.initializeAlchemy(s);const ids=[...s.armory,...s.characters.flatMap(c=>[...Object.values(c.loadout),...c.packGear,...(c.groundLoot||[]).filter(d=>d.gear).map(d=>d.gear)])].filter(Boolean).map(e=>e.uid);s.nextEquipmentId=Math.max(s.nextEquipmentId,1,...ids.map(n=>n+1));syncAccount(s);I.validateBags(s);return s;
+ L.initializeTown(s);A.initialize(s);C.initialize(s);S.initializeAccess(s);B.initializeWorkshop(s);H.initializeAlchemy(s);X.initializeEconomy(s);const ids=[...s.armory,...s.characters.flatMap(c=>[...Object.values(c.loadout),...c.packGear,...(c.groundLoot||[]).filter(d=>d.gear).map(d=>d.gear)])].filter(Boolean).map(e=>e.uid);s.nextEquipmentId=Math.max(s.nextEquipmentId,1,...ids.map(n=>n+1));syncAccount(s);I.validateBags(s);return s;
 }
 export function unlock(s,id){if(!s.recipeUnlocks.includes(id))s.recipeUnlocks.push(id);}
 export function recipeOpen(s,r){return !r.retired&&B.blueprintOpen(s,r)&&(!r.unlock||s.recipeUnlocks.includes(r.unlock))&&(!r.requiresCompletion||s.worldCompletionCrafted);}
-export function equipmentStats(instance){const result={};const def=EQUIPMENT[instance?.base];if(!def)return result;for(const[k,v]of Object.entries(def.stats))result[k]=(result[k]||0)+v;for(const id of instance.runes||[])for(const[k,v]of Object.entries(RUNES[id]?.stats||{}))result[k]=(result[k]||0)+v;for(const id of instance.upgrades||[])for(const[k,v]of Object.entries(STONES[id]?.stats||{}))result[k]=(result[k]||0)+v;return result;}
+export function equipmentStats(instance){const result={};const def=EQUIPMENT[instance?.base];if(!def)return result;for(const[k,v]of Object.entries(def.stats))result[k]=(result[k]||0)+v;for(const id of instance.runes||[])for(const[k,v]of Object.entries(RUNES[id]?.stats||{}))result[k]=(result[k]||0)+v;for(const[k,v]of Object.entries(X.infusionStats(instance.infusion)))result[k]=(result[k]||0)+v;for(const id of instance.upgrades||[])for(const[k,v]of Object.entries(STONES[id]?.stats||{}))result[k]=(result[k]||0)+v;return result;}
 export function stats(c){const result={attack:0,defense:0,health:0,mining:0,logging:0,crafting:0,crit:0,haste:0,speed:0,skill:0,alchemy:0};for(const item of Object.values(c.loadout||{}))for(const[k,v]of Object.entries(equipmentStats(item)))result[k]=(result[k]||0)+v;return result;}
 export function studyType(id){if(id==='moss-slime')return'health';const types=['mining','logging','crafting','health','crit','speed','skillXP','attack'];let hash=0;for(const ch of id)hash=(hash+ch.charCodeAt(0))%997;return types[hash%types.length];}
-export function accountBonuses(s){const b={attack:0,health:0,defense:0,mining:0,logging:0,crafting:0,crit:0,speed:0,skillXP:0,liquid:0};for(const[id,n]of Object.entries(s.guild||{})){const d=GUILD[id];if(d)b[d.effect]+=d.amount*n;}for(const[id,n]of Object.entries(s.alchemy?.research||{})){const d=ALCHEMY[id];if(d)b[d.effect]+=d.amount*n;}for(const[id,n]of Object.entries(s.archive||{})){const type=studyType(id);b[type]+=(type==='crit'?.003:type==='health'?.015:.01)*n;}for(const[k,v]of Object.entries(L.stampBonuses(s)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(C.vaultBonuses(s)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(H.alchemyBonuses(s)))b[k]=(b[k]||0)+v;b.carry=(b.carry||0)+(s.merits?.capacity||0)*.05;return b;}
+export function accountBonuses(s){const b={attack:0,health:0,defense:0,mining:0,logging:0,crafting:0,crit:0,speed:0,skillXP:0,liquid:0};for(const[id,n]of Object.entries(s.guild||{})){const d=GUILD[id];if(d)b[d.effect]+=d.amount*n;}for(const[id,n]of Object.entries(s.alchemy?.research||{})){const d=ALCHEMY[id];if(d)b[d.effect]+=d.amount*n;}for(const[id,n]of Object.entries(s.archive||{})){const type=studyType(id);b[type]+=(type==='crit'?.003:type==='health'?.015:.01)*n;}for(const[k,v]of Object.entries(L.stampBonuses(s)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(C.vaultBonuses(s)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(H.alchemyBonuses(s)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(X.economyBonuses(s)))b[k]=(b[k]||0)+v;b.carry=(b.carry||0)+(s.merits?.capacity||0)*.05;return b;}
 export function bonusesFor(s,c){const b=accountBonuses(s);const all=H.alchemyBonuses(s),personal=H.alchemyBonuses(s,c);for(const[k,v]of Object.entries(personal))b[k]=(b[k]||0)+v-(all[k]||0);for(const[k,v]of Object.entries(C.starBonuses(s,c)))b[k]=(b[k]||0)+v;for(const[k,v]of Object.entries(L.personalBonuses(c)))b[k]=(b[k]||0)+v;return b;}
 export function syncAccount(s){const b=accountBonuses(s);for(const c of s.characters)c.accountBonuses=bonusesFor(s,c);A.syncCards(s);}
 export function createEquipment(s,base,autoCharacter=null,owner=s.characters.find(c=>c.id===s.active)||s.characters[0]){if(!EQUIPMENT[base])return null;const def=EQUIPMENT[base];if(!autoCharacter&&I.bagUsed(owner)>=I.bagCapacity(owner))return null;const item={uid:s.nextEquipmentId++,base,runes:[]};if(autoCharacter){autoCharacter.loadout[def.slot]=item;}else owner.packGear.push(item);return item;}
@@ -74,5 +76,5 @@ export function validate(s){
  for(const job of s.jobs){const r=RECIPES.find(r=>r.id===job.recipe);if(!r||r.station!=='foundry'||!s.characters.some(c=>c.id===job.owner)||!Number.isInteger(job.remaining)||job.remaining<1||job.remaining>20||!finite(job.progress)||!finite(job.yield)||job.yield>r.count*2||!job.reserved||Object.entries(r.cost).some(([k,n])=>job.reserved[k]!==n)||job.fee!==2)throw Error('Invalid production queue.');}
  for(const[id,n]of Object.entries(s.guild))if(!GUILD[id]||!Number.isInteger(n)||n<0||n>GUILD[id].max)throw Error('Invalid guild upgrade.');for(const[id,n]of Object.entries(s.alchemy.research))if(!ALCHEMY[id]||!Number.isInteger(n)||n<0||n>5)throw Error('Invalid alchemy research.');
  for(const c of s.characters){if(!Array.isArray(c.metMentors)||c.metMentors.some(id=>!CLASSES[id]))throw Error('Invalid mentor journal.');if(!c.classTalents||Object.entries(c.classTalents).some(([id,n])=>!CLASS_TALENTS[id]||!Number.isInteger(n)||n<0||n>CLASS_TALENTS[id].max||n>0&&c.level<(CLASS_TALENTS[id].level||1))||Object.values(c.classTalents).reduce((a,b)=>a+b,0)>(c.class?(c.level-1)*3:0)||!Array.isArray(c.hotbar)||c.hotbar.length!==3||new Set(c.hotbar).size!==3||c.hotbar.some(n=>![0,1,2].includes(n)))throw Error('Invalid class talents or hotbar.');}
- L.validateTown(s);I.validateBags(s);A.validate(s);C.validate(s);S.validateAccess(s);B.validateWorkshop(s);H.validateAlchemy(s);return s;
+ L.validateTown(s);I.validateBags(s);A.validate(s);C.validate(s);S.validateAccess(s);B.validateWorkshop(s);H.validateAlchemy(s);X.validateEconomy(s);validateSurveys(s);return s;
 }

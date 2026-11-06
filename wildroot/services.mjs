@@ -1,5 +1,5 @@
-import {TELESCOPE} from './content.mjs?v=17';
-import {roomLayout,pointFor} from './layouts.mjs?v=17';
+import {TELESCOPE} from './content.mjs?v=19';
+import {roomLayout,pointFor} from './layouts.mjs?v=19';
 
 export const SERVICES={
  shop:{area:'town',zone:0,point:'shop',name:'Town Shop',place:'Village Green or Canopy Market',lesson:'Buy supplies and sell unlocked carried items at the stall. Stock is shared by your roster and refreshes each UTC day.'},

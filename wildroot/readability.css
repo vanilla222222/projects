@@ -58,3 +58,5 @@
 /* Keep recipe browsing beside its details rather than extending the entire dialog. */
 #panel-content .recipe-icon-grid {max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 8px 2px;}
 @media(max-width:800px){#panel-content .recipe-icon-grid {max-height:300px;}}
+.alchemy-material {display:flex;flex-direction:column;gap:8px;font:14px/1.5 system-ui,sans-serif;min-width:0;margin-bottom:14px;}
+.alchemy-material select {min-width:0;max-width:100%;padding:10px;background:#fff0c8;color:#342c22;font:14px system-ui;}

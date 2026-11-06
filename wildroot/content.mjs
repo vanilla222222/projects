@@ -1,4 +1,5 @@
-import {roomLayout} from './layouts.mjs?v=17';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=19';
+import {roomLayout} from './layouts.mjs?v=19';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -61,7 +62,7 @@ export const RECIPES = [
 // Every material has a real sink. Rare discoveries create permanent account growth.
 export const OFFERINGS=Object.keys(ITEMS).filter(id=>!['copper','iron','gold','oak','birch','jungle-wood','copper-bar','iron-bar','gold-bar','plank','dust','tonic'].includes(id));
 export function purposes(id){
- const uses=[];if(id.startsWith('anvil-expansion-'))uses.push('Consume once at the anvil to unlock account recipe page '+id.slice(-1));if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>r.cost[id]).map(r=>r.name));
+ const uses=[];if(id.startsWith('anvil-expansion-'))uses.push('Consume once at the anvil to unlock account recipe page '+id.slice(-1));if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>!r.retired&&r.cost[id]).map(r=>r.name));
  for(const c of Object.values(CLASSES))if(c.needs[id])uses.push(`${c.name} initiation`);
  if(OFFERINGS.includes(id))uses.push('Material research at the Stamp Registry');
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
@@ -72,7 +73,7 @@ export function purposes(id){
  if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
  if(POTIONS[id])uses.push('Drink: 20 minute profession or combat boost');
  if(id==='rootbound-key')uses.push('Permanent access to the Rootwarden');
- if(id==='world-one-completion')uses.push('World One completion keepsake; recognised by the dormant World Gate');
+ if(id==='world-one-completion')uses.push('Required to craft the Greenreach Trophy; proof of World One completion');
  if(id==='tonic')uses.push('Recover health');
  if(id.startsWith('stamp-'))uses.push('Register at Legacy Square; account-wide stamp upgrades');
  if(id.startsWith('statue-'))uses.push('Deposit at Legacy Square for permanent character bonuses');
@@ -80,7 +81,7 @@ export function purposes(id){
  if(id==='reset-fragment')uses.push('Assemble 5 fragments into a Talent Reset Potion');
  if(id==='reset-potion')uses.push('Reset the current talent build in town');
  if(id==='sculpting-tool')uses.push('Unlock statues for this character at Legacy Square');
- return [...new Set(uses)];
+ uses.push(...extraItemRoles(id,!!EQUIPMENT[id]).map(r=>r.text));if(OFFERINGS.includes(id))uses.push('Infuse gear at the enchanting bench: permanent item-specific stat bonus');return [...new Set(uses)];
 }
 export function areaById(id){return AREAS.find(a=>a.id===id);}
 export function zoneEnemy(area,index){return ENEMIES[`${area}-${index}`];}
@@ -354,3 +355,6 @@ ENEMIES.boss.hp=2600;ENEMIES.boss.attack=24;
 
 // Preserve legacy permanent bonuses; new progress uses equipment enchantments and bubbles.
 for(const r of RECIPES)if(['rune','elixir'].includes(r.id))r.retired=true;
+
+// Token presentation is non-consuming: completion can never destroy these unlocks.
+for(const [id,d]of Object.entries(BADGES)){EQUIPMENT[d.base]={name:d.gear,slot:d.slot,stats:d.stats,...(d.class?{class:d.class}:{})};item(d.base,d.gear,'rare','◆');RECIPES.push({id:'gear-'+d.base,name:d.gear,station:'anvil',skill:'smithing',equipment:d.base,cost:d.cost,unlock:'badge-'+id});}
