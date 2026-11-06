@@ -254,3 +254,7 @@ World One balance pass (runtime 34): every class has a common-material verdant w
 The selected map room shows non-mutating combat preparation estimates, class-specific accuracy investment, food guidance and gated equipment steps. The hunt board shows real recipe costs, accessible scales and remaining clears per difficulty. These are estimates, not victory guarantees.
 
 Validation includes all five classes sustaining the final cavern with a level-20 common-material build, real crafting and save restoration, and the fresh-save campaign crafting all five verdant weapons through actual gathering, banking and foundry queues. The scripted campaign takes about 221 simulated minutes; this excludes human navigation/reading time and is not a playtime promise.
+
+Randomized campaign checks (seeds 3187, 713503, 90210) also complete, in about 222 simulated minutes. The playthrough consumes earned capacity upgrades and takes optional spare drops to the foundry for real reclamation rather than hoarding them in the shared chest. Quest deliveries and common crafting materials are retained. This exercises storage pressure without deleting loot or granting extra slots/resources.
+
+The main campaign is also exercised with Mage and Blacksmith as the first chosen class, rather than assuming a Warrior-led account. Skill training checks the actual skill level after each gathering session, because multi-resource hits can yield more items without proportionally more XP.
