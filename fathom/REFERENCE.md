@@ -832,3 +832,36 @@ damage classes, mana cost, mana regeneration, arrow speed, swing speed and picku
 Icons too: twenty-five accessories were all the same grey square. Accessories are a tinted
 pendant, staffs are a shaft with their own bolt colour on the end, use items are a flask,
 and hooks are a barbed head on a chain.
+
+## Can the ladder be climbed?
+
+The crafting test proves the recipe graph is well formed. That is a different question
+from whether it can be climbed, because mining is gated: a tile carries a `require` and
+only a pickaxe of at least that power can break it. The failure that matters is circular -
+a gem that needs a pickaxe that needs that gem - and it is invisible to a check that
+begins by assuming every raw material is already in the bag, which is what the
+reachability check in craft-test does.
+
+`node tools/progress-test.js` walks the real ladder instead. Start with what a new
+character is handed, then repeat: mine everything the best pickaxe held can break, craft
+everything whose ingredients **and whose station** are both in hand, and see what that
+makes possible next. Everything in a round is decided against a snapshot of what was held
+when the round began - a single growing set collapses log to plank to door to house into
+one pass, and the round number is only worth having because it is the depth of the
+dependency.
+
+Loot is deliberately left out of the starting pile. Chests hold pickaxes and swords, and a
+ladder that begins by being handed one is not the ladder being tested: the question is
+whether a player who makes their own equipment can climb it. A shortcut cannot be what
+makes the route passable.
+
+The ladder runs 13 rounds deep and ends holding the best pickaxe in the game: wood, then
+benches and furniture, then the first staffs and the Apprentice set, then bars, then the
+anvil, then fifty-eight things at once, then the deep gems and meteorite, then cobalt, then
+emberite.
+
+The first version of this test reported the entire game as unreachable and sent me off to
+add a work bench recipe that was not missing. A station is a property of a tile, not a
+key: every wood species already has its own, and `oakbench` is an Oak Work Bench providing
+the station `workbench`. The test had compared a station's name against item keys. The
+craft test caught the spurious recipe immediately, which is the argument for having both.

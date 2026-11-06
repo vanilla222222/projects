@@ -266,3 +266,5 @@ Class attacks have brief, non-damaging canvas effects (staff beam, hammer impact
 Rootwarden health is 3,900 before difficulty multipliers. Phase three sends sweeps in both directions and marks two fixed eruption areas with a safe gap away from platform edges; the same areas drive drawing and damage. Phase changes still clear existing hazards and provide a breather. Scripted starter campaign results before the final skill-range correction were approximately 219 minutes (Warrior), 263 (Mage), 280 (Blacksmith), versus 221/275/344 before this pass. These are simulations, not promised player completion times.
 
 A live phone check caught boss HUD overlap with the room title and quest tracker. Runtime 36 reserves space below the title for the boss panel, uses a contrasting panel background, and hides the quest tracker only during boss encounters.
+
+Runtime entry 37 also suppresses the boss's duplicate local name caption during an attack windup, keeping it out of the dodge instruction; the main boss panel retains the name and phase. Unchanged dependencies retain runtime-36 cache keys.
