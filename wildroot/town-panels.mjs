@@ -1,5 +1,5 @@
-import * as D from './content.mjs?v=21';
-import * as E from './engine.mjs?v=21';
+import * as D from './content.mjs?v=23';
+import * as E from './engine.mjs?v=23';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString();
 const bonus=d=>`${d.effect==='defense'?d.amount:Math.round(d.amount*100)+'%'} ${d.effect} / level`;

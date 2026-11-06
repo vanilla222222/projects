@@ -175,11 +175,26 @@ function makeRenderer(canvas, deps) {
         const wx = x0 + tx;
         const wy = y0 + ty;
         const id = state.world.get(wx, wy);
-        if (id === tiles.AIR) continue;
         const sx = tx * size - offsetX;
         const sy = ty * size - offsetY;
-        const variant = texture.variantFor(wx, wy);
         const spec = tiles.tile(id);
+
+        // A tile that is not solid can still hold water: a shell or a frond on the sea
+        // bed is waterlogged, not a hole in the ocean. Draw the water first and the thing
+        // standing in it on top.
+        if (id === tiles.AIR || (!spec.solid && !spec.liquid)) {
+          const wet = state.world.getLevel ? state.world.getLevel(wx, wy) : 0;
+          if (wet > 0) {
+            const frac = Math.max(0.08, wet / 255);
+            const hPix = Math.round(size * frac);
+            const srcH = Math.max(1, Math.round(TILE * frac));
+            const wid = tiles.idOf('water');
+            ctx.drawImage(atlas, texture.variantFor(wx, wy) * TILE, wid * TILE + (TILE - srcH),
+              TILE, srcH, sx, sy + size - hPix, size, hPix);
+          }
+        }
+        if (id === tiles.AIR) continue;
+        const variant = texture.variantFor(wx, wy);
 
         // Water is drawn at the height it actually holds, measured from the bottom of the
         // tile. A tile that is a third full looks a third full, which is the only way a

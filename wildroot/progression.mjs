@@ -1,20 +1,20 @@
-import * as J from './journey.mjs?v=21';
-import * as Builds from './class-builds.mjs?v=21';
-import * as Books from './special-talents.mjs?v=21';
-import * as Hunts from './boss-hunts.mjs?v=21';
-import * as Dungeon from './dungeon.mjs?v=21';
-import {validateSurveys} from './exploration.mjs?v=21';
-import * as X from './item-economy.mjs?v=21';
-import * as S from './services.mjs?v=21';
-import * as B from './workshop.mjs?v=21';
-import * as H from './alchemy.mjs?v=21';
-import * as C from './chronicle.mjs?v=21';
-import * as A from './adventure.mjs?v=21';
-import * as L from './legacy.mjs?v=21';
-import * as I from './inventory.mjs?v=21';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=21';
+import * as J from './journey.mjs?v=23';
+import * as Builds from './class-builds.mjs?v=23';
+import * as Books from './special-talents.mjs?v=23';
+import * as Hunts from './boss-hunts.mjs?v=23';
+import * as Dungeon from './dungeon.mjs?v=23';
+import {validateSurveys} from './exploration.mjs?v=23';
+import * as X from './item-economy.mjs?v=23';
+import * as S from './services.mjs?v=23';
+import * as B from './workshop.mjs?v=23';
+import * as H from './alchemy.mjs?v=23';
+import * as C from './chronicle.mjs?v=23';
+import * as A from './adventure.mjs?v=23';
+import * as L from './legacy.mjs?v=23';
+import * as I from './inventory.mjs?v=23';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=23';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
-export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;c.hp+=6;}}
+export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;if(c.dungeon)c.dungeon.home.hp+=6;else c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
 const add=(s,id,n=1)=>s.inventory[id]=(s.inventory[id]||0)+n;
 export const canPay=I.canPay;

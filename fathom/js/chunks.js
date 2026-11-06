@@ -106,16 +106,23 @@ function makeWorld(seed, generator) {
   // --- water levels ---------------------------------------------------------------
   // A level is meaningless without water in the tile, so these two always agree: setting
   // a level of zero removes the water, and removing the water forgets the level.
+  // Water can occupy any tile that is not solid, not only a water tile: a shell or a
+  // frond on the sea bed is waterlogged rather than a hole in the ocean. The stored map
+  // is an override over the generator's answer, the same shape as tile and wall edits.
   function getLevel(x, y) {
-    if (!generator.isLiquidId(get(x, y))) return 0;
+    const id = get(x, y);
+    if (generator.isSolidId(id)) return 0;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
     const slot = levels.get(chunkKey(cx, cy));
-    if (!slot) return LEVEL_FULL;
-    const lx = x - cx * generator.CHUNK;
-    const ly = y - cy * generator.CHUNK;
-    const found = slot.get(ly * generator.CHUNK + lx);
-    return found === undefined ? LEVEL_FULL : found;
+    if (slot) {
+      const lx = x - cx * generator.CHUNK;
+      const ly = y - cy * generator.CHUNK;
+      const found = slot.get(ly * generator.CHUNK + lx);
+      if (found !== undefined) return found;
+    }
+    if (generator.isLiquidId(id)) return LEVEL_FULL;
+    return generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
   }
 
   // `liquidId` says which liquid is being placed. It matters because the level map stores
@@ -130,19 +137,33 @@ function makeWorld(seed, generator) {
     const index = ly * generator.CHUNK + lx;
     let slot = levels.get(key);
 
+    const base = generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
     if (amount === 0) {
       if (generator.isLiquidId(get(x, y))) set(x, y, 0);
-      if (slot) {
-        slot.delete(index);
-        if (slot.size === 0) levels.delete(key);
+      // Only store a zero when the generator would have said otherwise: draining a tile
+      // that was never wet costs nothing.
+      if (base === 0) {
+        if (slot) {
+          slot.delete(index);
+          if (slot.size === 0) levels.delete(key);
+        }
+        return true;
       }
+      if (!slot) {
+        slot = new Map();
+        levels.set(key, slot);
+      }
+      slot.set(index, 0);
+      dirty.add(key);
       return true;
     }
-    if (!generator.isLiquidId(get(x, y))) {
-      if (generator.isSolidId(get(x, y))) return false;
+    const here = get(x, y);
+    if (generator.isSolidId(here)) return false;
+    // Air becomes water; a frond or a shell simply gets wet and stays what it is.
+    if (!generator.isLiquidId(here) && here === 0) {
       set(x, y, liquidId || generator.WATER_ID);
     }
-    if (amount >= LEVEL_FULL) {
+    if (amount >= LEVEL_FULL && base >= LEVEL_FULL) {
       if (slot) {
         slot.delete(index);
         if (slot.size === 0) levels.delete(key);

@@ -252,3 +252,45 @@ outpaced the damage. Six and 2.8 seconds keeps the pressure without the crowd.
 
 Swords are separate from pickaxes. A pickaxe will hurt something, at 30% of its power and
 one and a half times its swing time, which is the argument for making a sword.
+
+## Caves, and what measurement found
+
+The caves were noise, and noise makes pockets rather than caves. A flood fill from the
+sky over 600x700 tiles measured **1% to 11% of the underground reachable** across three
+seeds, in 300 to 460 separate sealed voids, with the deepest reachable point 31 tiles
+down. The world was full of caverns nobody could ever walk into.
+
+The fix is a skeleton that is connected by construction rather than by luck:
+
+- **Galleries** run horizontally at intervals of depth, each a wandering line continuing
+  forever in x.
+- **Shafts** wander down across many galleries. A shaft crosses every gallery it passes,
+  so the two families form one network, and shafts whose top is depth zero are its doors.
+- Both take their width from the biome's own cave profile, so a desert gallery is a broad
+  hall and a tundra one is a crawl. Without that the uniform network washed the biome
+  character out of the very undergrounds it was meant to connect.
+
+Reachability is now 93-96% with the deepest point at the bottom of the sample, on every
+seed tested, and `tools/worldgen-test.js` keeps the flood fill as a permanent check.
+
+One bug accounted for most of the remaining failures after the network existed: the carve
+was gated behind `depth > 2`, the same guard the noise caves use, which capped every
+surface shaft with two tiles of soil. Every door was generated and then sealed.
+
+## Waterlogging, deeper oceans, larger biomes
+
+- **Waterlogging.** A tile holds one block id, so a shell or a frond on the sea bed was
+  winning against the water and punching an air pocket in the ocean - 3,785 of them in
+  one sampled stretch. Water level is now a property of any non-solid tile, derived from
+  a base function the same way tiles and walls are, so an ocean still costs no storage.
+- **Deeper oceans.** The drop off the shelf is now exponential rather than linear: median
+  depth 80 tiles and 478 at the 90th percentile, against a previous maximum of 63. A
+  shelf offset keeps the shoreline where it was; without it the steeper curve turned
+  almost a third of the world into sea.
+- **Larger biomes.** Climate frequencies divided by about three. A biome you cross in two
+  screens reads as terrain variation rather than as a place.
+- **Biome blend.** Taking the strongest climate weight outright puts a ruled line between
+  two biomes. Where the top two weights are within 40% of each other, a coherent noise
+  field decides per patch which wins, so a border becomes interleaved tongues of each.
+  The kernels had to be narrowed first: at their original width the blend fired on 86% of
+  all columns, because no biome had a core where it was clearly dominant.

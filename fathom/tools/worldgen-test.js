@@ -244,8 +244,9 @@ for (const s of SURVEY_SEEDS) {
       undergroundWater += 1;
       check(flood > 0, 'flooded cave at ' + x + ',' + y + ' in a column with no water table');
       check(y <= flood, 'water below the water table at ' + x + ',' + y);
-      check(gen.caveDensity(s, x, y, y - surface, gen.columnOf(s, x))
-        > gen.caveThreshold(gen.columnOf(s, x)),
+      // The generator's own carving predicate, not a restatement of it: a second copy
+      // here would make this oracle agree with itself rather than with the game.
+      check(gen.isCarved(s, x, y, y - surface, gen.columnOf(s, x)),
         'water inside solid rock at ' + x + ',' + y);
     }
   }
@@ -269,14 +270,30 @@ for (const s of SURVEY_SEEDS) {
 
 // 13. Climate placement is coherent: the biome a column reports really is the one whose
 // climate weight is highest, so identity and the blended height bias cannot disagree.
-for (let x = -9000; x < 9000; x += 29) {
+// Identity is the strongest weight, OR the runner-up inside a blend band - and when it
+// is the runner-up the two must genuinely be close. This check used to demand the
+// strongest weight outright; the blend made that false by design, so it now asserts what
+// the blend actually promises rather than what the generator did before it existed.
+let blended = 0;
+for (let x = -9000; x < 9000; x += 7) {
   const column = gen.columnOf(SEED, x);
   const weights = gen.climateWeights(SEED, x);
   let best = 0;
-  for (let i = 0; i < weights.length; i += 1) if (weights[i] > weights[best]) best = i;
-  check(gen.CLIMATE_BIOMES[best].key === column.climate.key,
-    'column ' + x + ' climate disagrees with its own weights');
+  let second = -1;
+  for (let i = 0; i < weights.length; i += 1) {
+    if (weights[i] > weights[best]) { second = best; best = i; }
+    else if (second === -1 || weights[i] > weights[second]) second = i;
+  }
+  const key = column.climate.key;
+  if (key === gen.CLIMATE_BIOMES[best].key) continue;
+  blended += 1;
+  check(key === gen.CLIMATE_BIOMES[second].key,
+    'column ' + x + ' chose ' + key + ', neither its strongest nor its second climate');
+  const share = weights[second] / (weights[best] + weights[second]);
+  check(share > 0.39,
+    'column ' + x + ' blended to ' + key + ' at a share of only ' + share.toFixed(3));
 }
+check(blended > 0, 'the biome blend never fires: borders are hard lines');
 
 // 14. Each biome's underground has its own character. Materials alone are just a palette;
 // what makes a jungle cavern feel unlike a tundra tunnel is how much of the rock is open
@@ -463,6 +480,62 @@ for (const [key, a0, a1] of [['hell', 1260, 1740], ['hellcaves', 1760, 2160]]) {
   check(air / n > 0.04, key + ' is only ' + (100 * air / n).toFixed(1) + '% walkable');
 }
 
+// 17. Caves must be reachable. This is the check that caught the worst defect in the
+// generator: noise alone made pockets, not caves, and measured over three seeds only 1%
+// to 11% of the open space underground could be walked to from the sky, in 300 to 460
+// separate sealed voids. A cave nobody can enter is indistinguishable from no cave.
+//
+// The measurement is a flood fill from everything open in the top two rows. It is the
+// only test here that asks a question about the world as a whole rather than about one
+// tile, and it is the one worth the time it costs.
+const CAVE_SEEDS = [SEED, 4242, 777, 31337];
+const reachability = [];
+for (const s of CAVE_SEEDS) {
+  const x0 = -260;
+  const w = 520;
+  const h = 620;
+  const top = gen.surfaceHeight(s, 0) - 10;
+  const open = new Uint8Array(w * h);
+  let airCells = 0;
+  for (let j = 0; j < h; j += 1) {
+    for (let i = 0; i < w; i += 1) {
+      if (tiles.isSolid(gen.baseTileAt(s, x0 + i, top + j))) continue;
+      open[j * w + i] = 1;
+      airCells += 1;
+    }
+  }
+  const seen = new Uint8Array(w * h);
+  const stack = [];
+  for (let i = 0; i < w; i += 1) {
+    for (let j = 0; j < 2; j += 1) {
+      if (open[j * w + i] && !seen[j * w + i]) { seen[j * w + i] = 1; stack.push(j * w + i); }
+    }
+  }
+  let reached = 0;
+  let deepest = 0;
+  while (stack.length) {
+    const idx = stack.pop();
+    reached += 1;
+    const j = (idx / w) | 0;
+    const i = idx - j * w;
+    if (j > deepest) deepest = j;
+    const push = (ni, nj) => {
+      if (ni < 0 || ni >= w || nj < 0 || nj >= h) return;
+      const n = nj * w + ni;
+      if (!open[n] || seen[n]) return;
+      seen[n] = 1;
+      stack.push(n);
+    };
+    push(i - 1, j); push(i + 1, j); push(i, j - 1); push(i, j + 1);
+  }
+  const pct = reached / Math.max(1, airCells);
+  reachability.push({ seed: s, pct, deepest, airCells });
+  check(pct > 0.75, 'seed ' + s + ': only ' + (100 * pct).toFixed(1)
+    + '% of underground space can be reached from the surface');
+  check(deepest > h - 40, 'seed ' + s + ': the deepest reachable point is only '
+    + deepest + ' tiles down, of ' + h);
+}
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
@@ -476,6 +549,13 @@ console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleStrin
 console.log('foliage stamped at the surface across 3 seeds:');
 for (const [key, n] of Object.entries(propCounts).sort((a, b) => b[1] - a[1])) {
   console.log('  ' + key.padEnd(13) + n.toLocaleString());
+}
+
+console.log('cave reachability (flood fill from the sky, 520x620 tiles):');
+for (const r of reachability) {
+  console.log('  seed ' + String(r.seed).padStart(7) + '  '
+    + (100 * r.pct).toFixed(1).padStart(5) + '% of open space reachable, deepest '
+    + r.deepest + ' tiles down');
 }
 
 console.log('underground openness (depth 40-300):');

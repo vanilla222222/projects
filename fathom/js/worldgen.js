@@ -50,7 +50,7 @@ const BIOMES = [
     surface: 'snow', filler: 'snow', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
   { key: 'taiga', name: 'Taiga', temp: 0.2, moist: 0.72, bias: 2, rock: 'ice', rockMix: 0.18, cave: 'narrow',
     surface: 'snow', filler: 'dirt', sub: 'dirt', wall: 'snowwall', tree: 'pine', grass: false },
-  { key: 'highlands', name: 'Highlands', temp: 0.3, moist: 0.18, bias: -26, rock: 'granite', rockMix: 0.42, cave: 'shafts',
+  { key: 'highlands', name: 'Highlands', temp: 0.26, moist: 0.13, bias: -26, rock: 'granite', rockMix: 0.42, cave: 'shafts',
     surface: 'stone', filler: 'stone', sub: 'stone', wall: 'stonewall', tree: 'none', grass: false },
   { key: 'plains', name: 'Plains', temp: 0.5, moist: 0.42, bias: 0, cave: 'normal',
     surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
@@ -58,13 +58,13 @@ const BIOMES = [
     surface: 'grass', filler: 'dirt', sub: 'dirt', wall: 'dirtwall', tree: 'oak', grass: true },
   { key: 'marsh', name: 'Mire', temp: 0.55, moist: 0.93, bias: 18, rock: 'mud', rockMix: 0.3, cave: 'rooms', aquifer: true,
     surface: 'peat', filler: 'peat', sub: 'mud', wall: 'mudwall', tree: 'oak', grass: true },
-  { key: 'savanna', name: 'Savanna', temp: 0.8, moist: 0.45, bias: 2, rock: 'redclay', rockMix: 0.2, cave: 'normal',
+  { key: 'savanna', name: 'Savanna', temp: 0.82, moist: 0.44, bias: 2, rock: 'redclay', rockMix: 0.2, cave: 'normal',
     surface: 'grass', filler: 'dirt', sub: 'redclay', wall: 'dirtwall', tree: 'acacia', grass: true },
   { key: 'jungle', name: 'Jungle', temp: 0.85, moist: 0.86, bias: 8, rock: 'mud', rockMix: 0.46, cave: 'caverns', aquifer: true,
     surface: 'junglegrass', filler: 'mud', sub: 'mud', wall: 'mudwall', tree: 'jungle', grass: true },
-  { key: 'badlands', name: 'Badlands', temp: 0.66, moist: 0.08, bias: -14, rock: 'sandstone', rockMix: 0.5, cave: 'shafts',
+  { key: 'badlands', name: 'Badlands', temp: 0.62, moist: 0.10, bias: -14, rock: 'sandstone', rockMix: 0.5, cave: 'shafts',
     surface: 'redclay', filler: 'redclay', sub: 'sandstone', wall: 'redclaywall', tree: 'none', grass: false },
-  { key: 'desert', name: 'Dunes', temp: 0.94, moist: 0.13, bias: 14, rock: 'sandstone', rockMix: 0.58, cave: 'halls',
+  { key: 'desert', name: 'Dunes', temp: 0.88, moist: 0.11, bias: 14, rock: 'sandstone', rockMix: 0.58, cave: 'halls',
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false },
 
   // Overlays. These are never selected by climate; they replace whatever climate chose,
@@ -133,15 +133,18 @@ function stretch(v) {
   return Math.min(1, Math.max(0, (v - 0.5) * CLIMATE_STRETCH + 0.5));
 }
 
+// Frequencies divided by about three from the first version: a biome you cross in a
+// couple of screens reads as terrain variation rather than as a place, and the whole
+// point of fourteen of them is that arriving somewhere feels like arriving.
 function temperature(seed, x) {
-  const broad = fbm1(seed, x * 0.00042, 311, 3, 2, 0.52);
-  const local = fbm1(seed, x * 0.0036, 733, 2, 2, 0.5);
+  const broad = fbm1(seed, x * 0.00014, 311, 3, 2, 0.52);
+  const local = fbm1(seed, x * 0.0012, 733, 2, 2, 0.5);
   return stretch(broad * 0.78 + local * 0.22);
 }
 
 function moisture(seed, x) {
-  const broad = fbm1(seed, x * 0.00051, 419, 3, 2, 0.5);
-  const local = fbm1(seed, x * 0.0041, 821, 2, 2, 0.5);
+  const broad = fbm1(seed, x * 0.00017, 419, 3, 2, 0.5);
+  const local = fbm1(seed, x * 0.0014, 821, 2, 2, 0.5);
   return stretch(broad * 0.74 + local * 0.26);
 }
 
@@ -161,8 +164,8 @@ function climateWeights(seed, x) {
   const weights = new Array(CLIMATE_BIOMES.length);
   for (let i = 0; i < CLIMATE_BIOMES.length; i += 1) {
     const b = CLIMATE_BIOMES[i];
-    const dt = (t - b.temp) / 0.26;
-    const dm = (m - b.moist) / 0.3;
+    const dt = (t - b.temp) / 0.19;
+    const dm = (m - b.moist) / 0.21;
     weights[i] = Math.exp(-(dt * dt + dm * dm));
   }
   return weights;
@@ -204,17 +207,38 @@ function blightAt(seed, x) {
   return unit(seed, band, 0, 3323) < 0.5 ? 'blight' : 'crimson';
 }
 
+// How wide the interleaved band between two biomes is. The dither field's frequency sets
+// the size of each patch within it; at 0.055 a patch is roughly fifteen tiles, which is
+// large enough to read as a tongue of forest reaching into the plains rather than as
+// single-column speckle.
+const BLEND_FIELD = 0.055;
+
 function buildColumn(seed, x) {
   const weights = climateWeights(seed, x);
   let best = 0;
+  let second = -1;
   let total = 0;
   let blended = 0;
   for (let i = 0; i < weights.length; i += 1) {
-    if (weights[i] > weights[best]) best = i;
+    if (weights[i] > weights[best]) { second = best; best = i; }
+    else if (second === -1 || weights[i] > weights[second]) second = i;
     total += weights[i];
     blended += weights[i] * CLIMATE_BIOMES[i].bias;
   }
   const bias = total > 0 ? blended / total : 0;
+
+  // Blend. Taking the strongest weight outright puts a ruled line between two biomes,
+  // which is the one place a generated world always looks generated. Where the top two
+  // weights are close, a coherent noise field decides per patch which of the pair wins,
+  // so the border becomes interleaved tongues of each. Height already blends across every
+  // weight, so only identity needed this.
+  if (second >= 0 && weights[best] > 0) {
+    const share = weights[second] / (weights[best] + weights[second]);
+    if (share > 0.40) {
+      const dither = fbm1(seed, x * BLEND_FIELD, 4401, 2, 2, 0.5);
+      if (dither < share) best = second;
+    }
+  }
   const land = continent(seed, x);
 
   // Height first, because whether this column is shore or sea depends on where it lands.
@@ -228,9 +252,15 @@ function buildColumn(seed, x) {
   // ocean bed reads as a bed rather than as drowned countryside.
   const shelf = Math.max(0, -land);
   const relief = Math.max(0, 1 - shelf * 2.2);
+  // The drop accelerates: a gentle shelf near the shore, then an abyss. A linear term
+  // gave oceans about 60 tiles deep, which is a pond you can see the bottom of from the
+  // surface; the exponent is what turns the deep ocean into somewhere you have to dive.
+  // The first slice of negative continent is still coast, not sea: without that offset
+  // the steeper curve turned almost a third of the world into ocean.
+  const abyss = Math.pow(Math.max(0, shelf - 0.14), 1.4) * 2600;
   let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
-    + shelf * 265 - Math.max(0, land) * 12;
-  h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 220, Math.round(h)));
+    + abyss - Math.max(0, land) * 12;
+  h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 900, Math.round(h)));
 
   // Identity. Sea and shore override climate; a blight overrides everything but the sea.
   let biome = CLIMATE_BIOMES[best];
@@ -270,23 +300,99 @@ function surfaceHeight(seed, x) {
 // dominates, which is what turns a cave system into shafts or into chasms. This is where
 // an underground actually gets its character; the materials alone are just a palette.
 const CAVE_PROFILES = {
-  normal:  { scale: 0.028, rooms: 0.38, threshold: 0.605, vertical: 0, roomScale: 0.016 },
+  normal:  { scale: 0.028, rooms: 0.38, threshold: 0.605, vertical: 0, roomScale: 0.016 , bore: 1.0 },
   // Tundra: tight, winding, little open space.
-  narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 },
+  narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 , bore: 0.66 },
   // Desert: broad flat halls carved along the bedding planes of the sandstone.
-  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 },
+  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.8 },
   // Jungle: enormous chambers, the largest in the world.
-  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 },
+  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 , bore: 1.55 },
   // Highlands and badlands: vertical shafts punched through the rock.
-  shafts:  { scale: 0.03, rooms: 0.24, threshold: 0.6, vertical: 0.42, roomScale: 0.018 },
+  shafts:  { scale: 0.03, rooms: 0.24, threshold: 0.6, vertical: 0.42, roomScale: 0.018 , bore: 1.05 },
   // The blights: narrow vertical chasms that run a long way down.
-  chasms:  { scale: 0.026, rooms: 0.2, threshold: 0.58, vertical: 0.66, roomScale: 0.017 },
-  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 }
+  chasms:  { scale: 0.026, rooms: 0.2, threshold: 0.58, vertical: 0.66, roomScale: 0.017 , bore: 0.82 },
+  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 , bore: 1.3 }
 };
 
 function caveProfile(column) {
   const key = (column.biome.cave) || (column.climate && column.climate.cave) || 'normal';
   return CAVE_PROFILES[key] || CAVE_PROFILES.normal;
+}
+
+// --- the tunnel network ------------------------------------------------------------
+// Noise alone makes pockets, not caves. Measured over three seeds, only 1% to 11% of the
+// open space underground could be reached from the sky without mining, in 300 to 460
+// separate sealed voids: the world was full of caverns nobody could ever walk into.
+//
+// The fix is a skeleton that is connected by construction rather than by luck. Long
+// horizontal galleries run at intervals of depth, each a sine-free wandering line that
+// continues forever in x. Vertical shafts wander down across many of those depths. A
+// shaft crosses every gallery it passes, so the two families form one network, and the
+// shafts that start at depth zero are its doors.
+//
+// Both are pure functions of (x, y), so like the sky islands they cannot disagree at a
+// chunk seam and need no stamping margin.
+const GALLERY_SPACING = 64;
+const SHAFT_SPACING = 108;
+
+// A horizontal gallery near this depth, if any.
+function inGallery(seed, x, depth, bore) {
+  const band = Math.round(depth / GALLERY_SPACING);
+  for (let b = band - 1; b <= band + 1; b += 1) {
+    if (b < 1) continue;
+    const base = b * GALLERY_SPACING + (unit(seed, b, 0, 5201) - 0.5) * 38;
+    const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
+    const radius = (2.2 + unit(seed, b, 0, 5207) * 3.0
+      + (fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5) - 0.5) * 2.4) * bore;
+    if (Math.abs(depth - (base + wander)) < radius) return true;
+  }
+  return false;
+}
+
+// A vertical shaft near this column, if any. Shafts whose top is depth 0 break the
+// surface, and those are what make the cave system findable without a pickaxe.
+function inShaft(seed, x, depth, bore) {
+  const slot = Math.round(x / SHAFT_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    if (unit(seed, s, 0, 5301) > 0.7) continue;
+    // Most shafts break the surface. The cave system was already one connected mass in
+    // every seed measured - up to 120,000 tiles of it - but with doors every 480 tiles
+    // on average, two of three sample windows contained none at all, and a cave with no
+    // door is indistinguishable from no cave.
+    const top = unit(seed, s, 0, 5313) < 0.62 ? -2 : 30 + unit(seed, s, 0, 5317) * 180;
+    const bottom = 320 + unit(seed, s, 0, 5319) * 560;
+    if (depth < top || depth > bottom) continue;
+    const base = s * SHAFT_SPACING + (unit(seed, s, 0, 5303) - 0.5) * SHAFT_SPACING * 0.72;
+    const wander = (fbm1(seed, depth * 0.0062 + s * 23, 5307, 3, 2, 0.5) - 0.5) * 76;
+    const radius = (1.7 + unit(seed, s, 0, 5311) * 2.3
+      + (fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5) - 0.5) * 1.4) * bore;
+    // The mouth flares, so an entrance reads as an entrance rather than as a drilled hole.
+    const flare = top < 0 && depth < 14 ? (14 - depth) * 0.22 : 0;
+    if (Math.abs(x - (base + wander)) < radius + flare) return true;
+  }
+  return false;
+}
+
+// The network takes its width from the biome's own cave profile, so a desert gallery is
+// a broad hall and a tundra one is a crawl. Without that the uniform network washed the
+// biome character straight out of the undergrounds it was meant to connect.
+function inNetwork(seed, x, depth, column) {
+  const bore = column ? caveProfile(column).bore || 1 : 1;
+  return inGallery(seed, x, depth, bore) || inShaft(seed, x, depth, bore);
+}
+
+// Whether this tile is open space rather than rock. One predicate, exported, so the
+// generator and the tests cannot drift apart about what counts as a cave - the same
+// mistake the stamping rule made once already, where a second copy in the seam test made
+// the oracle agree with itself and not with the game.
+//
+// The network carves from the very first tile down. Gating it behind `depth > 2`, as the
+// noise caves are, capped every surface shaft with two tiles of soil: the doors were all
+// generated and then all sealed, and measured reachability stayed near zero in half the
+// seeds for that one reason.
+function isCarved(seed, x, y, depth, column) {
+  if (depth >= 0 && inNetwork(seed, x, depth, column)) return true;
+  return depth > 4 && caveDensity(seed, x, y, depth, column) > caveThreshold(column);
 }
 
 function caveDensity(seed, x, y, depth, column) {
@@ -389,7 +495,9 @@ function baseTileAt(seed, x, y) {
   const depth = y - surface;
   const biome = column.biome;
 
-  if (depth > 4 && caveDensity(seed, x, y, depth, column) > caveThreshold(column)) {
+  // The network is cut first and unconditionally: it is the thing that makes the noise
+  // caves reachable, so it must not be subject to the same noise that sealed them.
+  if (isCarved(seed, x, y, depth, column)) {
     const glow = fbm2(seed, x * 0.09, y * 0.09, 1901, 2, 2, 0.5);
     if (depth > 120 && glow > 0.895) return idOf('crystal');
     // A cave below the water table is not a cave, it is a flooded one. Everything above
@@ -828,6 +936,23 @@ function altitudeOf(y) {
   return y - SEA_LEVEL;
 }
 
+// How much water a tile holds before anyone has touched it. Anything non-solid below the
+// local water surface is wet, including the shells, seaweed and coral that grow down
+// there: without this they punch air pockets in the sea, because a tile can hold only one
+// block id and the decor was winning. Stored levels override this, exactly as tile and
+// wall edits override their own base functions, so nothing has to be saved for an ocean.
+function baseLevelAt(seed, x, y) {
+  const id = baseTileAt(seed, x, y);
+  const spec = tile(id);
+  if (spec.liquid) return 255;
+  if (spec.solid) return 0;
+  const column = columnOf(seed, x);
+  if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
+  const flood = floodFloor(seed, x, column);
+  if (flood > 0 && y <= flood && y >= SEA_LEVEL) return 255;
+  return 0;
+}
+
 function isLiquidId(id) {
   return !!tile(id).liquid;
 }
@@ -873,7 +998,8 @@ const EXPORTS_worldgen = {
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
-    isLiquidId, isSolidId, get WATER_ID() { return idOf('water'); },
+    inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
+    isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };
