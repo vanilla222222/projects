@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=33';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=33';
-import {roomLayout} from './layouts.mjs?v=33';
+import {QUEST_REFORMS} from './quest-content.mjs?v=34';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=34';
+import {roomLayout} from './layouts.mjs?v=34';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -154,7 +154,7 @@ export const GUILD={
  bestiary:{name:'Guild Bestiary',effect:'crit',amount:.015,max:5,description:'+1.5% critical chance per level',cost:{'moss-slime':20,'crawler-shell':10,'scale':8}},
  arsenal:{name:'Guild Arsenal',effect:'attack',amount:.04,max:5,description:'+4% account attack per level',cost:{'iron-bar':8,'grove-seed':10,'wisp-ember':8}}
 };
-export const TALENTS={power:{name:'Strength',description:'+2 base attack',max:30},vitality:{name:'Vitality',description:'+10 maximum health',max:30},industry:{name:'Versatility',description:'+5% gathering speed (legacy combat talent)',max:30},precision:{name:'Precision',description:'+1.5% critical chance',max:15},haste:{name:'Tempo',description:'+2% attack speed',max:15},signature:{name:'Class Mastery',description:'+8% active ability damage',max:20}};
+export const TALENTS={power:{name:'Strength',description:'+2 base attack',max:30},vitality:{name:'Vitality',description:'+10 maximum health',max:30},industry:{name:'Versatility',description:'+5% gathering speed (legacy combat talent)',max:30},precision:{name:'Precision',description:'+2 accuracy, +1.5% critical chance',max:15},haste:{name:'Tempo',description:'+2% attack speed',max:15},signature:{name:'Class Mastery',description:'+8% active ability damage',max:20}};
 export const PROF_TALENTS={efficiency:{name:'Efficient Hands',description:'+5% gathering speed',max:20},prosperity:{name:'Careful Harvest',description:'+2% chance of an extra resource',max:15},mastery:{name:'Patient Study',description:'+5% profession XP',max:20},workmanship:{name:'Workmanship',description:'+5% foundry speed',max:20}};
 export const STORY=[
  {id:'first-roots',name:'A Foot in the Greenreach',giver:'steward',text:'Hesta has found blackened roots in the village well. Find out what is stirring in the forest.',requires:[],kills:{'forest-0':8},reward:{coins:35,items:{oak:12}}},
@@ -362,8 +362,8 @@ for(const [id,d]of Object.entries(BADGES)){EQUIPMENT[d.base]={name:d.gear,slot:d
 
 item('rootwarden-scale','Rootwarden Scale','rare','◆');
 for(const [tier,id,name,slot,stats,cost] of [
- [0,'rootbound-helm','Rootbound Helm','head',{health:20,defense:3},{'rootwarden-scale':4,'iron-bar':8}],
- [1,'rootbound-mail','Challenger Rootmail','body',{health:45,defense:6},{'rootwarden-scale':8,'tempered-bar':5}],
+ [0,'rootbound-helm','Rootbound Helm','head',{health:40,defense:5,accuracy:8},{'rootwarden-scale':4,'iron-bar':8}],
+ [1,'rootbound-mail','Challenger Rootmail','body',{health:110,defense:12,accuracy:10},{'rootwarden-scale':8,'tempered-bar':5}],
  [2,'ancient-greaves','Ancient Root Greaves','legs',{health:60,defense:8,attack:6},{'rootwarden-scale':12,'tempered-bar':8}]
 ]){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,station:'anvil',skill:'smithing',equipment:id,cost,bossTier:tier});}
 
@@ -438,3 +438,14 @@ Object.assign(RUNES,{
 // One successful guardian encounter is enough for Willow's story, rather than
 // requiring several real-time cooldown cycles to earn her completion token.
 STORY.find(q=>q.id==='spring').deliver['sap-essence']=1;
+
+// Each calling has a common-material weapon step before the Rootwarden.
+export const VERDANT_WEAPONS={warrior:'warden-blade',mage:'verdant-staff',blacksmith:'verdant-hammer',enchanter:'verdant-focus',alchemist:'verdant-retort'};
+for(const[id,name,calling,stats,cost]of [
+ ['verdant-staff','Verdant Spire Staff','mage',{attack:30,skill:.24,logging:.18},{'tempered-bar':6,'binding-resin':5,'grove-seed':12}],
+ ['verdant-hammer','Verdant Forgehammer','blacksmith',{attack:32,defense:2,crafting:.2},{'tempered-bar':7,'binding-resin':4,'iron-shell':12}],
+ ['verdant-focus','Verdant Rune Focus','enchanter',{attack:30,skill:.3,accuracy:6},{'tempered-bar':6,dust:16,'wisp-ember':12}],
+ ['verdant-retort','Verdant Battle Retort','alchemist',{attack:32,skill:.2,alchemy:.25},{'tempered-bar':6,tonic:6,'frog-dew':12}]
+]){EQUIPMENT[id]={name,slot:'weapon',class:calling,stats};item(id,name,'rare','⚔');RECIPES.push({id:'gear-'+id,name,skill:'smithing',station:'anvil',equipment:id,cost,unlock:'verdant-steel'});}
+// The first supply lesson introduces food before the copper route.
+STORY.find(q=>q.id==='first-roots').reward.items.bread=6;

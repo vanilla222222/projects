@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=33';
-import * as D from './content.mjs?v=33';
-import {World} from './world.mjs?v=33';
+import * as E from './engine.mjs?v=34';
+import * as D from './content.mjs?v=34';
+import {World} from './world.mjs?v=34';
 export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -64,7 +64,7 @@ export function runWorldOne({rng=()=>.5,completeNpcChains=false}={}){
  story('under-roots');expand('iron-lockbox');gear('iron-sword',hero);gear('iron-pick',hero);gear('iron-mail',hero);gear('iron-helm',hero);gear('birch-boots',hero);story('canopy-letter');
  E.createCharacter(s,'Flint’s Apprentice');initiation(E.selected(s),'blacksmith');
  for(const area of ['jungle','deep'])for(let zone=0;zone<D.areaById(area).zones.length;zone++)if((s.kills[`${area}-${zone}`]||0)<16)fight(hero,area,zone,16-(s.kills[`${area}-${zone}`]||0));
- E.createCharacter(s,'Mira’s Apprentice');initiation(E.selected(s),'enchanter');E.createCharacter(s,'Fern’s Apprentice');initiation(E.selected(s),'alchemist');story('outpost');expand('runed-cabinet');story('seal');
+ E.createCharacter(s,'Mira’s Apprentice');initiation(E.selected(s),'enchanter');E.createCharacter(s,'Fern’s Apprentice');initiation(E.selected(s),'alchemist');story('outpost');expand('runed-cabinet');for(const c of s.characters)if(c!==hero)gear(D.VERDANT_WEAPONS[c.class],c);story('seal');
  gear('warden-blade',hero);gear('tempered-mail',hero);gear('iron-helm',hero);gear('birch-boots',hero);
  material('mining-tonic',1);bank(hero);E.withdraw(s,hero,'mining-tonic',1);assert.ok(E.drink(s,hero,'mining-tonic'));
  material('dust',8);material('bat-fang',6);use(hero);E.travel(s,hero,'jungle-town',0);hero.position={x:1700,y:644};assert.ok(E.enchant(s,hero,'weapon','force',0));assert.ok(E.enchant(s,hero,'weapon','force',1));

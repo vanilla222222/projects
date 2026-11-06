@@ -150,6 +150,39 @@ BODIES.slime = function (ctx, g, c) {
   ctx.restore();
 };
 
+// The king: the same gel, four times the size, with a crown on it and something
+// unfortunate suspended inside. Terraria's joke, and a good one - a boss that is
+// visibly the same thing you have been stepping on all game is funnier and more
+// alarming than a new monster would be.
+BODIES.kingslime = function (ctx, g, c) {
+  const stretch = clamp(c.vy * 0.016 + Math.sin(c.anim) * 0.04, -0.26, 0.3);
+  const rx = 0.5 - stretch * 0.5;
+  const ry = 0.5 + stretch * 0.5;
+  ctx.save();
+  ctx.globalAlpha *= 0.86;
+  ell(ctx, g, 0, -ry, rx, ry, c.colour);
+  ctx.globalAlpha /= 0.86;
+  ell(ctx, g, -0.1, -ry * 1.4, rx * 0.46, ry * 0.3, spriteShade(c.colour, 0.3));
+  ell(ctx, g, 0, -ry * 0.24, rx * 0.84, ry * 0.24, spriteShade(c.colour, -0.3));
+  // The ninja inside, drawn small and dark so it reads as a silhouette in the gel.
+  const dark = spriteShade(c.colour, -0.55);
+  rect(ctx, g, -0.07, -ry * 1.12, 0.14, ry * 0.4, dark);
+  ell(ctx, g, 0, -ry * 1.2, 0.08, ry * 0.1, dark);
+  limb(ctx, g, -0.06, -ry * 1.0, -0.14, -ry * 0.72, 0.1, dark);
+  limb(ctx, g, 0.06, -ry * 1.0, 0.15, -ry * 0.74, 0.1, dark);
+  // Eyes, large and low, which is what makes it look like it is deciding about you.
+  eyes(ctx, g, 0.17, -ry * 1.05, 0.13);
+  eyes(ctx, g, -0.12, -ry * 1.05, 0.12);
+  // The crown, riding on top and tipping with the squash.
+  const top = -ry * 1.86;
+  poly(ctx, g, [-0.2, top, -0.14, top - 0.1, -0.08, top - 0.03, 0, top - 0.13,
+    0.08, top - 0.03, 0.14, top - 0.1, 0.2, top, 0.2, top + 0.06, -0.2, top + 0.06],
+    '#e0c054');
+  rect(ctx, g, -0.2, top + 0.04, 0.4, 0.035, '#a8882c');
+  dot(ctx, g, 0, top - 0.02, 0.07, '#d8344c');
+  ctx.restore();
+};
+
 // The walk cycle every two-legged plan shares: one swing value per limb, in box units.
 function gaitOf(c, reach) {
   const swing = Math.sin(c.anim);

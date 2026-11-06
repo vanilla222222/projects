@@ -447,6 +447,38 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  // A boss gets a bar across the top of the screen rather than the small one that floats
+  // over an ordinary enemy's head. The difference is the point: this is a fight you chose
+  // and the only number that matters for the next minute is this one.
+  function drawBossBar(state) {
+    const boss = (state.enemies || []).find(e => e.boss);
+    if (!boss) return;
+    const w = Math.min(620, canvas.width * 0.6);
+    const h = 16;
+    const x = (canvas.width - w) / 2;
+    const y = 54;
+    const frac = Math.max(0, boss.hp / boss.maxHp);
+    ctx.save();
+    ctx.fillStyle = 'rgba(12,14,20,0.72)';
+    ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(x, y, w, h);
+    const g = ctx.createLinearGradient(x, y, x, y + h);
+    g.addColorStop(0, '#e2645c');
+    g.addColorStop(1, '#8e2a2a');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, w * frac, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(x, y, w * frac, Math.max(1, h * 0.3));
+    ctx.fillStyle = '#efe7d6';
+    ctx.font = '13px ui-monospace, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(boss.spec.name + '  ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp,
+      canvas.width / 2, y + h + 16);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
   // Villagers, drawn with the player's own body plan rather than a plan of their own:
   // they are people, and a villager that moved differently from the player would read as
   // an enemy that cannot be hit.
@@ -646,6 +678,99 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  // Arrows and magic bolts in flight. These were never drawn at all: the bow fired
+  // invisible arrows and the only way to tell you had hit something was that it died.
+  function drawShots(state, view) {
+    if (!state.arrows || state.arrows.length === 0) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    ctx.save();
+    for (const a of state.arrows) {
+      const sx = (a.x - x0) * size - offsetX;
+      const sy = (a.y - y0) * size - offsetY;
+      const len = Math.hypot(a.vx, a.vy) || 1;
+      const ux = a.vx / len;
+      const uy = a.vy / len;
+      if (a.magic) {
+        // A bolt is a glowing head with a tail behind it, drawn as a gradient so it
+        // reads as light rather than as a painted lozenge.
+        const r = size * 0.3;
+        const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r * 2.2);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.35, a.colour || '#9b59d0');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(sx, sy, r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = a.colour || '#9b59d0';
+        ctx.lineWidth = Math.max(1, zoom * 1.4);
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - ux * size * 0.9, sy - uy * size * 0.9);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        continue;
+      }
+      // An arrow is a shaft with a head and a fletching, turned to face its flight.
+      const shaft = size * 0.8;
+      ctx.strokeStyle = a.colour || '#b9a271';
+      ctx.lineWidth = Math.max(1, zoom * 1.1);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx - ux * shaft, sy - uy * shaft);
+      ctx.stroke();
+      ctx.fillStyle = a.burns ? '#ffb05a' : '#cfd6e0';
+      ctx.beginPath();
+      ctx.moveTo(sx + ux * size * 0.16, sy + uy * size * 0.16);
+      ctx.lineTo(sx - uy * size * 0.1, sy + ux * size * 0.1);
+      ctx.lineTo(sx + uy * size * 0.1, sy - ux * size * 0.1);
+      ctx.closePath();
+      ctx.fill();
+      if (a.burns) {
+        ctx.fillStyle = 'rgba(255,140,60,0.4)';
+        ctx.beginPath();
+        ctx.arc(sx, sy, size * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Stars falling at night: a bright head with a long tail behind it.
+  function drawStars(state, view) {
+    if (!state.stars || state.stars.length === 0) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    ctx.save();
+    for (const star of state.stars) {
+      const sx = (star.x - x0) * size - offsetX;
+      const sy = (star.y - y0) * size - offsetY;
+      const len = Math.hypot(star.vx, star.vy) || 1;
+      const tail = size * 2.6;
+      const g = ctx.createLinearGradient(sx, sy, sx - (star.vx / len) * tail,
+        sy - (star.vy / len) * tail);
+      g.addColorStop(0, 'rgba(255,245,200,0.95)');
+      g.addColorStop(1, 'rgba(255,230,150,0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = Math.max(1.5, zoom * 1.8);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx - (star.vx / len) * tail, sy - (star.vy / len) * tail);
+      ctx.stroke();
+      const head = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * 0.6);
+      head.addColorStop(0, '#ffffff');
+      head.addColorStop(0.4, '#ffe9a0');
+      head.addColorStop(1, 'rgba(255,233,160,0)');
+      ctx.fillStyle = head;
+      ctx.beginPath();
+      ctx.arc(sx, sy, size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawParticles(state, view) {
     const { x0, y0, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
@@ -777,10 +902,13 @@ function makeRenderer(canvas, deps) {
     drawLighting(state, view);
     drawCarriedLight(state, view);
     drawBloom(state, view);
+    drawShots(state, view);
+    drawStars(state, view);
     drawParticles(state, view);
     drawWeather(state, view);
     drawUnderwater(state);
     drawVignette();
+    drawBossBar(state);
     return view;
   }
 

@@ -1,4 +1,4 @@
-import {CLASSES,CLASS_TALENTS} from './content.mjs?v=33';
+import {CLASSES,CLASS_TALENTS} from './content.mjs?v=34';
 export const CLASS_DESIGNS={
  warrior:{name:'Stoneguard',primary:'might',accuracy:'focus',weapon:'Heavy cleave',family:{effect:'defense',amount:.08},talents:{bulwark:{name:'Bulwark',description:'+0.3 defense per point',effect:'defense',amount:.3,max:20},deepstrike:{name:'Deep Strike',description:'+2% mining efficiency per point',effect:'mining',amount:.02,max:25},crusher:{name:'Crusher',description:'+1% damage per point',effect:'attack',amount:.01,max:25}}},
  mage:{name:'Briarweaver',primary:'focus',accuracy:'finesse',weapon:'Ranged staff bolts',family:{effect:'logging',amount:.003},talents:{canopy:{name:'Canopy Lore',description:'+2% logging efficiency per point',effect:'logging',amount:.02,max:25},arcana:{name:'Arcane Flow',description:'+1% skill power per point',effect:'skill',amount:.01,max:25},quickcast:{name:'Quickcast',description:'+1% attack speed per point',effect:'haste',amount:.01,max:20}}},

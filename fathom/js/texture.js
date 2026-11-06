@@ -156,6 +156,51 @@ function materialOf(spec) {
   return 'plain';
 }
 
+// A gem in its matrix: a cut stone embedded in rock, drawn with a hard highlight and a
+// dark girdle so it catches the eye against the stone it is sitting in. Gems use the ore
+// placement machinery but must not look like ore - a seam of metal and a gem you find
+// once an hour should not read the same.
+function paintGem(ctx, spec, variant, ox, oy) {
+  ctx.fillStyle = '#595762';
+  ctx.fillRect(ox, oy, TILE, TILE);
+  paintGrain(ctx, { id: spec.id, colour: '#595762', grain: 0.12, key: 'stone' }, variant, ox, oy);
+  // Two or three stones per tile, each a diamond with a lit top-left facet.
+  const n = 2 + (hashPixel(spec.id, variant, 77, 3) > 0.6 ? 1 : 0);
+  for (let i = 0; i < n; i += 1) {
+    const cx = 3 + hashPixel(spec.id, variant, i, 13) * (TILE - 6);
+    const cy = 3 + hashPixel(spec.id, variant, i, 31) * (TILE - 6);
+    const r = 2.2 + hashPixel(spec.id, variant, i, 47) * 2;
+    ctx.save();
+    ctx.translate(ox, oy);
+    // A dark girdle first, then the stone on top of it, so the gem has an outline
+    // without drawing one.
+    ctx.fillStyle = shade(spec.colour, -0.45);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r - 0.8);
+    ctx.lineTo(cx + r + 0.8, cy);
+    ctx.lineTo(cx, cy + r + 0.8);
+    ctx.lineTo(cx - r - 0.8, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = spec.colour;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx + r, cy);
+    ctx.lineTo(cx, cy + r);
+    ctx.lineTo(cx - r, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = shade(spec.colour, 0.45);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx - r, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 function paintOre(ctx, spec, variant, ox, oy) {
   ctx.fillStyle = '#5f5f69';
   ctx.fillRect(ox, oy, TILE, TILE);
@@ -792,7 +837,8 @@ function bakeAtlas(document, tiles) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
       const band = Math.floor(v / PATTERNS);
-      if (spec.ore) paintOre(ctx, spec, v, ox, oy);
+      if (spec.gem) paintGem(ctx, spec, v, ox, oy);
+      else if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
       else if (spec.bed) paintBed(ctx, spec, v, ox, oy);
       else if (spec.chest) paintChest(ctx, spec, v, ox, oy);

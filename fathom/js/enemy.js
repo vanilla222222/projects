@@ -29,7 +29,20 @@ const ARCHETYPES = {
   // Clings to solid surfaces and runs along them, including ceilings.
   crawler: { gravity: 30, maxFall: 30, speed: 5.0, clings: true },
   // Travels through solid rock as easily as air, surfacing to strike.
-  worm: { gravity: 0, speed: 4.6, burrows: true }
+  worm: { gravity: 0, speed: 4.6, burrows: true },
+
+  // A boss. Everything else in this table moves toward the player and that is the whole
+  // of it, which is fine for something you meet by accident and useless for something you
+  // summon on purpose: a fight with one idea in it is over before it is a fight.
+  //
+  // The king hops like a slime and then breaks the three rules a slime obeys. It
+  // teleports when you run, so distance is not an answer. It throws off minions, so
+  // ignoring the room is not an answer. And it shrinks as it is hurt, getting faster and
+  // harder to land a hit on exactly as it becomes killable, so the fight gets more
+  // dangerous as you win it.
+  king: { gravity: 50, maxFall: 42, hop: 13.5, hopEvery: 1.5, speed: 4.2, air: 0.62,
+    boss: true, teleportAfter: 3.4, teleportRange: 26, spawnEvery: 3.2, minion: 'greenslime',
+    minions: 4, shrinkTo: 0.52 }
 };
 
 // Every enemy drops coins, scaled to what it was: a slime is pocket change, an obsidian
@@ -157,6 +170,16 @@ const ENEMIES = [
     w: 1.4, h: 1.0, colour: '#dfe7f2', layers: ['sky'], drops: [['feather', 1], ['coin', 4]] },
   { key: 'voidwyrm', name: 'Void Wyrm', kind: 'worm', body: 'worm', hp: 180, damage: 36, weight: 6,
     w: 1.3, h: 1.3, colour: '#3c3a58', layers: ['space'], drops: [['stardust', 2], ['coin', 16]] },
+  // --- the king --------------------------------------------------------------------------
+  // Summoned, never spawned. `summonOnly` is checked by matches(), so no pool anywhere
+  // can contain it - which is stronger and more honest than giving it a layer filter
+  // that happens never to match.
+  { key: 'kingslime', name: 'King Slime', kind: 'king', body: 'kingslime', hp: 1400,
+    damage: 34, weight: 0, w: 4.2, h: 3.0, colour: '#58b05a',
+    boss: true, summonOnly: true, emit: 3,
+    drops: [['gel', 40], ['coin', 260]],
+    bossDrops: ['royal-gel', 'kings-crown'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -167,6 +190,7 @@ for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 // --- spawn selection --------------------------------------------------------------------
 
 function matches(spec, ctx) {
+  if (spec.summonOnly) return false;
   if (spec.layers && spec.layers.indexOf(ctx.layer) === -1) return false;
   if (spec.biomes && spec.biomes.indexOf(ctx.biome) === -1) return false;
   if (spec.wet && !ctx.wet) return false;
@@ -211,6 +235,13 @@ function makeEnemy(spec, x, y) {
     hurt: 0,
     onGround: false,
     dead: false,
+    boss: !!spec.boss,
+    // A boss shrinks as it is hurt. Kept as a scale rather than as a second pair of
+    // dimensions so that everything else - collision, drawing, the hit test - keeps
+    // reading width and height and nothing has to know a boss is special.
+    scale: 1,
+    minionCooldown: 0,
+    sinceSeen: 0,
     // How far through its own gait this creature is. Advanced by the distance it actually
     // covers rather than by the clock, so a shambling walker's legs move at the speed its
     // legs would have to move, and something stopped against a wall stops moving its legs
@@ -230,7 +261,9 @@ const GAIT = {
   flyer: { perTile: 0.4, perSecond: 7.5 },
   swimmer: { perTile: 0.9, perSecond: 2.6 },
   crawler: { perTile: 3.2, perSecond: 0 },
-  worm: { perTile: 1.4, perSecond: 1.2 }
+  worm: { perTile: 1.4, perSecond: 1.2 },
+  // The king quivers faster than its subjects, and visibly faster as it shrinks.
+  king: { perTile: 0.5, perSecond: 3.1 }
 };
 
 // --- the live population ------------------------------------------------------------------
@@ -316,7 +349,34 @@ function makeSwarm(world, tiles, deps) {
     return found;
   }
 
+  // Put a boss into the world beside the player. Summoned rather than spawned: nothing
+  // in the spawn table can ever choose one, so this is the only way one arrives.
+  function summon(key, player) {
+    const spec = ENEMY_BY_KEY[key];
+    if (!spec || !spec.boss) return null;
+    if (list.some(e => e.boss)) return null;        // one at a time
+    for (const side of [1, -1]) {
+      for (let away = 7; away < 26; away += 1) {
+        const x = Math.floor(player.x + side * away);
+        const probe = { width: spec.w, height: spec.h };
+        const y = findFloor(x, Math.floor(player.y) - 14, Math.floor(player.y) + 10, probe);
+        if (y === null) continue;
+        const boss = makeEnemy(spec, x, y);
+        list.push(boss);
+        return boss;
+      }
+    }
+    return null;
+  }
+
+  function bossAlive() {
+    return list.find(e => e.boss) || null;
+  }
+
   function trySpawn(player, dayPhase) {
+    // A boss and its minions do not count against the ordinary cap, and nothing
+    // ordinary spawns while one is alive: the fight is the fight.
+    if (list.some(e => e.boss)) return null;
     if (list.length >= MAX_ALIVE) return null;
     // A few columns per attempt, so one unlucky column does not cost a whole tick.
     for (let attempt = 0; attempt < 4; attempt += 1) {
@@ -406,6 +466,11 @@ function makeSwarm(world, tiles, deps) {
       return;
     }
 
+    if (arch.boss) {
+      stepBoss(enemy, arch, player, dt, toward);
+      return;
+    }
+
     // Ground-bound: slimes hop on a timer, everything else walks.
     enemy.vy = Math.min(arch.maxFall, enemy.vy + arch.gravity * dt);
     if (arch.hop) {
@@ -437,6 +502,90 @@ function makeSwarm(world, tiles, deps) {
     enemy.onGround = false;
     moveAxis(enemy, 0, enemy.vy * dt);
     enemy.facing = toward;
+  }
+
+  // The king. Hops like a slime, then breaks every rule a slime obeys.
+  function stepBoss(enemy, arch, player, dt, toward) {
+    // Shrink with the health that is left. Smaller is faster and harder to hit, so the
+    // fight tightens as it is won rather than petering out.
+    const left = Math.max(0, enemy.hp / enemy.maxHp);
+    const want = arch.shrinkTo + (1 - arch.shrinkTo) * left;
+    if (Math.abs(want - enemy.scale) > 0.001) {
+      // Shrink about the feet, not the top-left corner, or the king rises off the floor
+      // every time it is hit.
+      const base = enemy.y + enemy.height;
+      const mid = enemy.x + enemy.width / 2;
+      enemy.scale = want;
+      enemy.width = enemy.spec.w * enemy.scale;
+      enemy.height = enemy.spec.h * enemy.scale;
+      enemy.x = mid - enemy.width / 2;
+      enemy.y = base - enemy.height;
+    }
+    const rush = 2 - enemy.scale;          // 1 at full size, ~1.5 at its smallest
+
+    // Teleport when the player runs. Distance is not an answer to this fight.
+    enemy.sinceSeen += dt;
+    const away = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+    if (away > arch.teleportRange && enemy.sinceSeen > arch.teleportAfter) {
+      const side = Math.sign(player.x - enemy.x) || 1;
+      const landing = findFloor(Math.floor(player.x - side * 6), Math.floor(player.y) - 10,
+        Math.floor(player.y) + 14, enemy);
+      if (landing !== null) {
+        enemy.teleported = { from: { x: enemy.x, y: enemy.y } };
+        enemy.x = Math.floor(player.x - side * 6);
+        enemy.y = landing;
+        enemy.vx = 0;
+        enemy.vy = 0;
+        enemy.sinceSeen = 0;
+      }
+    } else if (away < arch.teleportRange * 0.7) {
+      enemy.sinceSeen = 0;
+    }
+
+    // Throw off minions, so ignoring the room is not an answer either.
+    enemy.minionCooldown -= dt;
+    if (enemy.minionCooldown <= 0) {
+      enemy.minionCooldown = arch.spawnEvery;
+      const spec = ENEMY_BY_KEY[arch.minion];
+      const alive = list.filter(e => e.summonedBy === enemy.key).length;
+      if (spec && alive < arch.minions) {
+        const child = makeEnemy(spec, enemy.x + enemy.width / 2 - spec.w / 2,
+          enemy.y + enemy.height * 0.4);
+        child.summonedBy = enemy.key;
+        child.vy = -8;
+        child.vx = (Math.random() - 0.5) * 8;
+        list.push(child);
+      }
+    }
+
+    enemy.vy = Math.min(arch.maxFall, enemy.vy + arch.gravity * dt);
+    if (enemy.onGround && enemy.timer > arch.hopEvery / rush) {
+      enemy.timer = 0;
+      enemy.vy = -arch.hop;
+      enemy.vx = toward * arch.speed * rush;
+    } else if (!enemy.onGround) {
+      enemy.vx += toward * arch.speed * arch.air * dt;
+    } else {
+      enemy.vx *= 0.78;
+    }
+    moveAxis(enemy, enemy.vx * dt, 0);
+    enemy.onGround = false;
+    moveAxis(enemy, 0, enemy.vy * dt);
+    enemy.facing = toward;
+  }
+
+  // The first row in a column range where this body would stand on solid ground. Used
+  // for the teleport, which must not land the king inside the rock.
+  function findFloor(x, y0, y1, body) {
+    for (let y = y0; y <= y1; y += 1) {
+      if (overlaps(body, x, y)) continue;
+      let floor = false;
+      for (let dx = 0; dx < Math.ceil(body.width); dx += 1) {
+        if (solid(x + dx, y + body.height + 0.1)) floor = true;
+      }
+      if (floor) return y;
+    }
+    return null;
   }
 
   function overlaps(enemy, x, y) {
@@ -481,7 +630,8 @@ function makeSwarm(world, tiles, deps) {
       const enemy = list[i];
       if (enemy.dead) { list.splice(i, 1); continue; }
       // Anything the player has walked away from is forgotten rather than simulated.
-      if (Math.hypot(enemy.x - player.x, enemy.y - player.y) > DESPAWN) {
+      // A boss is not: it teleports to you instead, so running away is not a way out.
+      if (!enemy.boss && Math.hypot(enemy.x - player.x, enemy.y - player.y) > DESPAWN) {
         list.splice(i, 1);
         continue;
       }
@@ -520,7 +670,8 @@ function makeSwarm(world, tiles, deps) {
     list.length = 0;
   }
 
-  return { list, step, trySpawn, touching, at, damage, contextAt, poolFor, clear, candidatesIn,
+  return { list, step, trySpawn, summon, bossAlive, touching, at, damage, contextAt,
+    poolFor, clear, candidatesIn,
     get count() { return list.length; } };
 }
 

@@ -1,8 +1,8 @@
-import * as EconomyUI from './economy-panels.mjs?v=33';
-import * as E from './engine.mjs?v=33';
-import * as D from './content.mjs?v=33';
-import * as UI from './ui-panels.mjs?v=33';
-import {icon,itemArt,esc,tabs,section,fmt} from './ui-art.mjs?v=33';
+import * as EconomyUI from './economy-panels.mjs?v=34';
+import * as E from './engine.mjs?v=34';
+import * as D from './content.mjs?v=34';
+import * as UI from './ui-panels.mjs?v=34';
+import {icon,itemArt,esc,tabs,section,fmt} from './ui-art.mjs?v=34';
 const button=(text,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
 const costs=cost=>Object.entries(cost).map(([id,n])=>`${n} ${D.ITEMS[id].name}`).join(' · ');
