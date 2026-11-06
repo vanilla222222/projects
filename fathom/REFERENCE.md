@@ -200,3 +200,31 @@ stricter claim that would be false.
 Only partial tiles are stored. A water tile with no entry is full, which is what generation
 produces, so an entire ocean costs nothing to represent and a save holds only the tiles a
 player has actually disturbed.
+
+## Vertical layers
+
+The world has no floor and no ceiling. Everything is measured against sea level, which is
+the one altitude that does not move: surface height varies by a couple of hundred tiles
+between a highland and an ocean bed, so a layer defined against the ground would wander.
+
+| altitude | layer | what is there |
+| --- | --- | --- |
+| -750 and above | Space | planetoids of skystone and starrock, black sky, no horizon |
+| -750 to -250 | Sky | floating islands - grass over soil over a skystone keel - and cloud banks |
+| -250 to +50 | Surface | the fourteen biomes |
+| +50 to +750 | Caves | per-biome cave profiles and strata |
+| +750 to +1250 | Deep Caverns | basalt into deep slate |
+| +1250 to +1750 | Hell | the great hall: ash ceiling, ash floor, standing columns, lava lakes |
+| +1750 to +2170 | Hell Caves | brimstone, cinderstone and obsidian, heavily flooded with lava |
+| +2170 and below | the hall again, repeating without end |
+
+Below the hell caves the great hall repeats every 500 tiles, with a slab of rock between
+one hall and the next and passages bored through it. A new palette every thousand tiles
+would be a promise the generator cannot keep; one enormous recognisable place that goes
+on forever is a journey instead.
+
+Sky islands and planetoids are computed from (x, y) rather than stamped like trees. A
+stamped structure has to be scanned for from neighbouring chunks and the margin has to
+exceed its half-width; an island forty tiles wide would need a margin three times the
+trees'. A structure that is a pure function of position cannot disagree across a seam at
+all.

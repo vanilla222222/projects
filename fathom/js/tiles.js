@@ -83,7 +83,23 @@ const TILES = [
 
   // Blighted wood, so a blighted tree stops looking like an ordinary one.
   { id: 56, key: 'blighttrunk', name: 'Blighted Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#564770', grain: 0.1, drops: 'wood', toughness: 90 },
-  { id: 57, key: 'fleshtrunk', name: 'Crimson Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#6d3338', grain: 0.1, drops: 'wood', toughness: 90 }
+  { id: 57, key: 'fleshtrunk', name: 'Crimson Trunk', solid: false, opacity: 26, emit: 0, hardness: 0.5, colour: '#6d3338', grain: 0.1, drops: 'wood', toughness: 90 },
+
+  // The deep layers. Ash and brimstone are hell's rock; obsidian is what lava leaves
+  // where it meets water, and is the hardest thing in the world to cut.
+  { id: 58, key: 'ash', name: 'Ash', solid: true, opacity: 52, emit: 0, hardness: 0.6, colour: '#4a4247', grain: 0.14, toughness: 120 },
+  { id: 59, key: 'brimstone', name: 'Brimstone', solid: true, opacity: 62, emit: 3, hardness: 2, colour: '#6b3326', grain: 0.13, require: 65, toughness: 280 },
+  { id: 60, key: 'obsidian', name: 'Obsidian', solid: true, opacity: 66, emit: 0, hardness: 2.6, colour: '#241f2e', grain: 0.06, require: 100, toughness: 420 },
+  { id: 61, key: 'cinderstone', name: 'Cinderstone', solid: true, opacity: 60, emit: 1, hardness: 1.5, colour: '#3b2f33', grain: 0.12, require: 45, toughness: 240 },
+
+  // Lava. A liquid like water, so it flows through the same simulation, but it burns and
+  // it lights its own caverns. `hot` is what tells the rest of the game it hurts.
+  { id: 62, key: 'lava', name: 'Lava', solid: false, opacity: 10, emit: 11, hardness: 0, colour: '#d2502a', grain: 0, liquid: true, hot: true, toughness: 20 },
+
+  // Sky and space.
+  { id: 63, key: 'skystone', name: 'Skystone', solid: true, opacity: 56, emit: 0, hardness: 1.1, colour: '#8d93a8', grain: 0.1, toughness: 140 },
+  { id: 64, key: 'starrock', name: 'Starrock', solid: true, opacity: 58, emit: 2, hardness: 1.6, colour: '#4b4a63', grain: 0.12, require: 45, toughness: 200 },
+  { id: 65, key: 'cloud', name: 'Cloud', solid: true, opacity: 18, emit: 0, hardness: 0.15, colour: '#e8eef6', grain: 0.04, toughness: 40 }
 ];
 
 // Walls are the background layer. A tile can hold a wall and a block at once: the block is
@@ -106,7 +122,10 @@ const WALLS = [
   { id: 12, key: 'blightwall', name: 'Blight Wall', colour: '#2c2440', opacity: 7, natural: true },
   { id: 13, key: 'fleshwall', name: 'Flesh Wall', colour: '#401c20', opacity: 7, natural: true },
   { id: 14, key: 'redclaywall', name: 'Red Clay Wall', colour: '#5e2f1e', opacity: 7, natural: true },
-  { id: 15, key: 'sandstonewall', name: 'Sandstone Wall', colour: '#5a4a2e', opacity: 7, natural: true }
+  { id: 15, key: 'sandstonewall', name: 'Sandstone Wall', colour: '#5a4a2e', opacity: 7, natural: true },
+  { id: 16, key: 'ashwall', name: 'Ash Wall', colour: '#2b2529', opacity: 7, natural: true },
+  { id: 17, key: 'brimstonewall', name: 'Brimstone Wall', colour: '#3d1d16', opacity: 7, natural: true },
+  { id: 18, key: 'skywall', name: 'Sky Wall', colour: '#4c5266', opacity: 6, natural: true }
 ];
 
 const WALL_BY_KEY = {};

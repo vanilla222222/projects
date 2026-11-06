@@ -24,6 +24,9 @@ const DEFAULT_BUDGET = 1400;
 
 function makeLiquid(world, tiles, options) {
   const opts = options || {};
+  // What a liquid becomes when it meets a different one. Lava quenched by water is the
+  // only pair for now, and it leaves the hardest rock in the world behind.
+  const QUENCH = opts.quench === undefined ? 'obsidian' : opts.quench;
   const full = world.LEVEL_FULL;
   const minFlow = opts.minFlow === undefined ? MIN_FLOW : opts.minFlow;
   const active = new Set();
@@ -39,6 +42,23 @@ function makeLiquid(world, tiles, options) {
 
   function passable(x, y) {
     return !tiles.isSolid(world.get(x, y));
+  }
+
+  function liquidIdAt(x, y) {
+    const id = world.get(x, y);
+    return tiles.tile(id).liquid ? id : 0;
+  }
+
+  // Two different liquids meeting is not a transfer. Both are consumed at the boundary
+  // and leave rock, which is what stops a lava flow and a sea from interleaving forever.
+  function quench(x, y, otherX, otherY) {
+    if (!QUENCH || !tiles.BY_KEY[QUENCH]) return false;
+    world.setLevel(otherX, otherY, 0);
+    world.setLevel(x, y, 0);
+    world.set(otherX, otherY, tiles.idOf(QUENCH));
+    activateAround(x, y);
+    activateAround(otherX, otherY);
+    return true;
   }
 
   function levelAt(x, y) {
@@ -63,10 +83,15 @@ function makeLiquid(world, tiles, options) {
     if (amount < 1) return 0;
     const fromLevel = levelAt(fromX, fromY);
     const toLevel = levelAt(toX, toY);
+    const kind = liquidIdAt(fromX, fromY);
+    const other = liquidIdAt(toX, toY);
+    if (other && kind && other !== kind) {
+      return quench(fromX, fromY, toX, toY) ? 1 : 0;
+    }
     const room = full - toLevel;
     const moved = Math.min(amount, fromLevel, room);
     if (moved < 1) return 0;
-    if (!world.setLevel(toX, toY, toLevel + moved)) return 0;
+    if (!world.setLevel(toX, toY, toLevel + moved, kind)) return 0;
     world.setLevel(fromX, fromY, fromLevel - moved);
     activateAround(fromX, fromY);
     activateAround(toX, toY);

@@ -11,6 +11,9 @@ function chunkKey(cx, cy) {
   return cx + ':' + cy;
 }
 
+// The world has no floor and no ceiling. y is any integer: negative is sky and space,
+// large positive is hell and the trench below it. Nothing here clamps, so a chunk at any
+// altitude generates the same way as any other.
 function makeWorld(seed, generator) {
   const loaded = new Map();
   const edits = new Map();
@@ -35,7 +38,6 @@ function makeWorld(seed, generator) {
   }
 
   function get(x, y) {
-    if (y < 0 || y >= generator.WORLD_H) return 0;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
     const chunk = chunkAt(cx, cy);
@@ -45,7 +47,6 @@ function makeWorld(seed, generator) {
   }
 
   function getWall(x, y) {
-    if (y < 0 || y >= generator.WORLD_H) return 0;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
     const chunk = chunkAt(cx, cy);
@@ -55,7 +56,6 @@ function makeWorld(seed, generator) {
   }
 
   function setWall(x, y, id) {
-    if (y < 0 || y >= generator.WORLD_H) return false;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
     const key = chunkKey(cx, cy);
@@ -78,7 +78,6 @@ function makeWorld(seed, generator) {
   }
 
   function set(x, y, id) {
-    if (y < 0 || y >= generator.WORLD_H) return false;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
     const key = chunkKey(cx, cy);
@@ -119,8 +118,9 @@ function makeWorld(seed, generator) {
     return found === undefined ? LEVEL_FULL : found;
   }
 
-  function setLevel(x, y, value) {
-    if (y < 0 || y >= generator.WORLD_H) return false;
+  // `liquidId` says which liquid is being placed. It matters because the level map stores
+  // only an amount: without it, lava flowing into an empty tile would arrive as water.
+  function setLevel(x, y, value, liquidId) {
     const amount = Math.max(0, Math.min(LEVEL_FULL, Math.round(value)));
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
@@ -140,7 +140,7 @@ function makeWorld(seed, generator) {
     }
     if (!generator.isLiquidId(get(x, y))) {
       if (generator.isSolidId(get(x, y))) return false;
-      set(x, y, generator.WATER_ID);
+      set(x, y, liquidId || generator.WATER_ID);
     }
     if (amount >= LEVEL_FULL) {
       if (slot) {

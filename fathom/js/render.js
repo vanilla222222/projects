@@ -45,6 +45,15 @@ function makeRenderer(canvas, deps) {
     return 'rgb(' + r + ',' + g + ',' + bl + ')';
   }
 
+  // How far into space the camera is: 0 at and below the sky layer's floor, 1 once the
+  // camera is properly in vacuum. Used to black out the sky and hide the horizon, because
+  // a planetoid against a blue sky with mountains behind it reads as a hill, not a world.
+  function spaceFactor(state) {
+    if (!worldgen || !worldgen.SEA_LEVEL) return 0;
+    const alt = state.camera.y - worldgen.SEA_LEVEL;
+    return Math.max(0, Math.min(1, (-alt - 300) / 450));
+  }
+
   function drawSky(state) {
     const [top, mid, low] = skyColours(state.dayPhase);
     const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -54,7 +63,17 @@ function makeRenderer(canvas, deps) {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const night = Math.max(0, -light.solarElevation(state.dayPhase));
+    // In space the sky goes black whatever the hour.
+    const vacuum = spaceFactor(state);
+    if (vacuum > 0) {
+      ctx.save();
+      ctx.globalAlpha = vacuum;
+      ctx.fillStyle = '#05060e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    const night = Math.max(0, Math.max(-light.solarElevation(state.dayPhase), vacuum));
     if (night > 0.02) {
       ctx.save();
       ctx.globalAlpha = Math.min(1, night * 1.6);
@@ -89,6 +108,11 @@ function makeRenderer(canvas, deps) {
   }
 
   function drawParallax(state) {
+    // The horizon fades out as the camera climbs: there is nothing to see from space.
+    const vacuum = spaceFactor(state);
+    if (vacuum >= 1) return;
+    ctx.save();
+    ctx.globalAlpha = 1 - vacuum;
     const layers = [
       { depth: 0.12, scale: 0.0045, amp: 70, base: 0.52, tint: 'rgba(120,150,180,0.40)' },
       { depth: 0.24, scale: 0.0075, amp: 54, base: 0.62, tint: 'rgba(96,124,152,0.52)' },
@@ -110,6 +134,7 @@ function makeRenderer(canvas, deps) {
       ctx.fillStyle = night > 0.2 ? 'rgba(26,34,54,0.72)' : layer.tint;
       ctx.fill();
     }
+    ctx.restore();
   }
 
   // The wall layer, drawn behind the blocks. This is real per-tile data rather than a painted

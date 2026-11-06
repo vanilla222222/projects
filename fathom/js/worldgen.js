@@ -6,9 +6,34 @@
 // appears in its neighbour; STRUCTURE_MARGIN must exceed the widest structure's half-width.
 
 const CHUNK = 48;
-const WORLD_H = 1056;
 const SKY_H = 192;
 const STRUCTURE_MARGIN = 14;
+
+// The world is unbounded in both vertical directions as well as horizontally. Everything
+// is measured against sea level, which is the one altitude that does not move: surface
+// height varies by a couple of hundred tiles between a highland and an ocean bed, so a
+// layer defined against it would wander. Negative offsets are above sea level.
+//
+//   -750 and up   space        planetoids in vacuum
+//   -250 to -750  sky          floating islands
+//   -250 to +50   surface      the biomes
+//    +50 to +750  caves
+//   +750 to +1250 deep caverns
+//  +1250 to +1750 hell
+//  +1750 and down hell caves, then the trench, which continues without end
+const LAYERS = [
+  { key: 'space', name: 'Space', from: -Infinity, to: -750 },
+  { key: 'sky', name: 'Sky', from: -750, to: -250 },
+  { key: 'surface', name: 'Surface', from: -250, to: 50 },
+  { key: 'caves', name: 'Caves', from: 50, to: 750 },
+  { key: 'deep', name: 'Deep Caverns', from: 750, to: 1250 },
+  { key: 'hell', name: 'Hell', from: 1250, to: 1750 },
+  { key: 'hellcaves', name: 'Hell Caves', from: 1750, to: Infinity }
+];
+
+// Kept as the depth past which the generator stops inventing new strata and the trench
+// takes over. It is no longer a bound on the world: nothing clamps to it.
+const WORLD_H = 1056;
 
 // Biomes sit in a climate space rather than a line. The old model picked a biome by
 // flooring a single 1-D field, which forces every biome into a fixed order: tundra could
@@ -205,7 +230,7 @@ function buildColumn(seed, x) {
   const relief = Math.max(0, 1 - shelf * 2.2);
   let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
     + shelf * 265 - Math.max(0, land) * 12;
-  h = Math.max(SKY_H + 24, Math.min(WORLD_H - 420, Math.round(h)));
+  h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 220, Math.round(h)));
 
   // Identity. Sea and shore override climate; a blight overrides everything but the sea.
   let biome = CLIMATE_BIOMES[best];
@@ -305,10 +330,27 @@ function stratum(seed, x, y, depth, column) {
   if (column && (column.biome.key === 'blight' || column.biome.key === 'crimson')
     && depth < 66 + jitter) return 'blighted';
   if (depth < 46 + jitter) return 'filler';
+
+  // Past the near-surface strata the layer decides, not the depth below this column: hell
+  // is at an altitude, so it is flat across the world rather than following the terrain.
+  const layer = layerAt(y).key;
+  if (layer === 'hellcaves') {
+    // Mixed, so the deepest rock is not a single colour forever.
+    const mix = fbm2(seed, x * 0.03, y * 0.03, 3719, 2, 2, 0.5);
+    if (mix > 0.76) return 'obsidian';
+    return mix > 0.46 ? 'brimstone' : 'cinderstone';
+  }
+  if (layer === 'hell') {
+    const alt = altitudeOf(y) - 1250;
+    return alt + jitter > 240 ? 'brimstone' : 'ash';
+  }
+  if (layer === 'deep') {
+    const alt = altitudeOf(y) - 750;
+    return alt + jitter * 2 > 260 ? 'slate' : 'basalt';
+  }
   if (depth < 300 + jitter * 2) return 'stone';
   if (depth < 540 + jitter * 2) return 'granite';
-  if (depth < 760 + jitter * 2) return 'basalt';
-  return 'slate';
+  return 'basalt';
 }
 
 const ORE_BANDS = [
@@ -317,7 +359,7 @@ const ORE_BANDS = [
   { key: 'silver', from: 180, to: 680, salt: 1401, rarity: 0.818, size: 0.072 },
   { key: 'gold', from: 300, to: 820, salt: 1501, rarity: 0.833, size: 0.068 },
   { key: 'cobalt', from: 520, to: 980, salt: 1601, rarity: 0.846, size: 0.064 },
-  { key: 'emberite', from: 740, to: WORLD_H, salt: 1701, rarity: 0.862, size: 0.058 }
+  { key: 'emberite', from: 740, to: Infinity, salt: 1701, rarity: 0.862, size: 0.058 }
 ];
 
 function oreAt(seed, x, y, depth) {
@@ -330,12 +372,19 @@ function oreAt(seed, x, y, depth) {
 }
 
 function baseTileAt(seed, x, y) {
-  if (y < 0 || y >= WORLD_H) return AIR;
   const column = columnOf(seed, x);
   const surface = column.height;
   // Above the ground: air, unless this column's ground lies below sea level, in which
   // case everything between the two is water. That single rule is the whole ocean.
-  if (y < surface) return y >= SEA_LEVEL ? idOf('water') : AIR;
+  if (y < surface) {
+    const above = skyTileAt(seed, x, y);
+    if (above !== AIR) return above;
+    return y >= SEA_LEVEL ? idOf('water') : AIR;
+  }
+
+  // Hell's great hall, and its repeats below the hell caves.
+  const hall = hallTileAt(seed, x, y);
+  if (hall !== null) return hall;
 
   const depth = y - surface;
   const biome = column.biome;
@@ -348,6 +397,9 @@ function baseTileAt(seed, x, y) {
     // holding an impossible column of water.
     const flood = floodFloor(seed, x, column);
     if (flood > 0 && y <= flood && y >= SEA_LEVEL) return idOf('water');
+    // Hell's caverns hold lava in their floors rather than water in their ceilings.
+    const lava = lavaFloor(seed, x, y);
+    if (lava) return idOf('lava');
     return AIR;
   }
 
@@ -417,6 +469,171 @@ function treeAt(seed, x) {
 // The canopy is an egg, wider above the trunk top than below it, with its edge eroded by a
 // per-tile hash. A solid ellipse of leaf tiles reads as a rectangular hedge once several
 // trees stand together; a ragged edge reads as foliage.
+// Lava pools. Below the top of hell, the lower part of any cavity fills: the deeper the
+// altitude the higher the pool sits, so hell gets steadily less walkable the further down
+// it goes rather than switching from dry to drowned at one line.
+function lavaFloor(seed, x, y) {
+  const alt = altitudeOf(y);
+  if (alt < 1250) return false;
+  // A wandering lava table rather than one flat ocean. Where the field runs low the table
+  // sits far below, which leaves walkable cavern above it.
+  const field = fbm1(seed, x * 0.006, 3511, 3, 2, 0.5);
+  const table = 1250 + 40 + (1 - field) * 540;
+  if (alt <= table) return false;
+  // Dry pockets, so even the deepest caverns are not solid lava. Without these hell's
+  // caves measured 0% walkable: every cavity below the table filled, and the layer was
+  // pure hazard with nowhere to stand.
+  const pocket = fbm2(seed, x * 0.013, y * 0.013, 3517, 2, 2, 0.5);
+  return pocket < 0.6;
+}
+
+// Hell's great hollow, and what lies below it. This is not a shaft: it is the open hall
+// that Terraria's Underworld is - a wide cavern with an ash ceiling above and an ash
+// floor below, scattered standing columns, and lakes of lava pooled along the bottom.
+//
+// Below the hell caves the same hall repeats, which is what "infinite depth" means here.
+// A new palette every thousand tiles would be a promise the generator cannot keep; one
+// enormous recognisable place that goes on forever is a journey instead.
+const HALL_TOP = 1250;
+const HALL_PERIOD = 500;
+const HALL_RESUME = 2170;
+
+// Whether this altitude is inside a great hall rather than ordinary rock.
+function inHall(alt) {
+  if (alt >= HALL_TOP && alt < 1750) return true;
+  return alt >= HALL_RESUME;
+}
+
+function hallTileAt(seed, x, y) {
+  const alt = altitudeOf(y);
+  if (!inHall(alt)) return null;
+
+  // Where in the repeating hall this row sits. The slab between one hall and the next is
+  // what gives the deep world a rhythm instead of one undifferentiated void.
+  const t = ((alt - HALL_TOP) % HALL_PERIOD + HALL_PERIOD) % HALL_PERIOD;
+  const ceiling = 64 + (fbm1(seed, x * 0.009, 5101, 3, 2, 0.5) - 0.5) * 72;
+  const floor = 432 + (fbm1(seed, x * 0.012, 5107, 3, 2, 0.5) - 0.5) * 68;
+
+  if (t < ceiling || t > floor) {
+    // The slab. Mixed rock, with ore in it, and the occasional passage punched through so
+    // one hall always connects to the next.
+    const bore = ridged2(seed, x * 0.02, y * 0.02, 5131, 3);
+    if (bore > 0.82) return AIR;
+    const ore = oreAt(seed, x, y, alt);
+    if (ore) return idOf(ore);
+    const mix = fbm2(seed, x * 0.03, y * 0.03, 3719, 2, 2, 0.5);
+    if (mix > 0.78) return idOf('obsidian');
+    return idOf(mix > 0.48 ? 'brimstone' : 'ash');
+  }
+
+  // Inside the hall: open, with standing columns and hanging formations.
+  const column = fbm2(seed, x * 0.022, y * 0.011, 5113, 3, 2, 0.5);
+  if (column > 0.76) {
+    const ore = oreAt(seed, x, y, alt);
+    if (ore) return idOf(ore);
+    return idOf(column > 0.86 ? 'brimstone' : 'ash');
+  }
+
+  // Lava lakes pooled along the floor of the hall, their surface wandering.
+  const lake = floor - 34 - fbm1(seed, x * 0.007, 5119, 2, 2, 0.5) * 72;
+  if (t > lake) return idOf('lava');
+  return AIR;
+}
+
+// --- everything above the ground ---------------------------------------------------
+// Sky islands and planetoids are computed, not stamped. A stamped structure has to be
+// scanned for from neighbouring chunks and the margin has to exceed its half-width; a
+// structure that is a pure function of (x, y) cannot disagree across a seam at all, and
+// an island forty tiles wide would otherwise need a margin three times the trees'.
+
+const SKY_SPACING = 360;
+const PLANETOID_SPACING = 150;
+const SPACE_FLOOR = -1800;
+
+function skyIslandAt(seed, slot) {
+  if (unit(seed, slot, 0, 4001) > 0.55) return null;
+  const cx = slot * SKY_SPACING + SKY_SPACING * (0.2 + unit(seed, slot, 0, 4003) * 0.6);
+  const alt = -300 - unit(seed, slot, 0, 4007) * 400;
+  const rx = 16 + unit(seed, slot, 0, 4011) * 26;
+  const ry = 5 + unit(seed, slot, 0, 4013) * 6;
+  return { cx: Math.round(cx), cy: Math.round(SEA_LEVEL + alt), rx, ry, slot };
+}
+
+function planetoidAt(seed, slot) {
+  if (unit(seed, slot, 0, 4101) > 0.42) return null;
+  const cx = slot * PLANETOID_SPACING + PLANETOID_SPACING * (0.15 + unit(seed, slot, 0, 4103) * 0.7);
+  const alt = -800 - unit(seed, slot, 0, 4107) * 700;
+  const r = 5 + unit(seed, slot, 0, 4111) * 9;
+  return { cx: Math.round(cx), cy: Math.round(SEA_LEVEL + alt), r, slot };
+}
+
+// A floating island: a gentle dome on top and a tapered keel underneath, which is what
+// separates an island from a lens. Grass, then soil, then the stone it rides on.
+function islandTile(seed, island, x, y) {
+  const u = (x - island.cx) / island.rx;
+  if (u <= -1 || u >= 1) return AIR;
+  const span = Math.sqrt(Math.max(0, 1 - u * u));
+  const edge = (fbm1(seed, x * 0.09 + island.slot * 13, 4017, 2, 2, 0.5) - 0.5) * 2.4;
+  const top = island.cy - Math.round(island.ry * 0.38 * span + edge);
+  const keel = island.cy + Math.round(island.ry * Math.pow(span, 0.6) * 1.8 + edge);
+  if (y < top || y > keel) return AIR;
+  const depth = y - top;
+  if (depth === 0) return idOf('grass');
+  if (depth < 2 + Math.round(span * 3)) return idOf('dirt');
+  const ore = fbm2(seed, x * 0.08, y * 0.08, 4019, 2, 2, 0.5);
+  if (ore > 0.86) return idOf(depth > island.ry ? 'gold' : 'copper');
+  return idOf('skystone');
+}
+
+// A planetoid: a rough sphere, eroded at its edge, with a core of starrock.
+function planetoidTile(seed, body, x, y) {
+  const dx = x - body.cx;
+  const dy = (y - body.cy) * 1.15;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const wobble = (fbm2(seed, x * 0.11, y * 0.11, 4113, 2, 2, 0.5) - 0.5) * body.r * 0.5;
+  const edge = body.r + wobble;
+  if (dist > edge) return AIR;
+  if (dist > edge - 1.5) return idOf('skystone');
+  const ore = fbm2(seed, x * 0.09, y * 0.09, 4117, 2, 2, 0.5);
+  if (ore > 0.8) return idOf(dist < edge * 0.5 ? 'emberite' : 'silver');
+  return dist < edge * 0.55 ? idOf('starrock') : idOf('skystone');
+}
+
+function skyTileAt(seed, x, y) {
+  const alt = altitudeOf(y);
+  if (alt >= -250) return AIR;
+
+  if (alt >= -750) {
+    const slot = Math.floor(x / SKY_SPACING);
+    for (let s = slot - 1; s <= slot + 1; s += 1) {
+      const island = skyIslandAt(seed, s);
+      if (!island) continue;
+      if (x < island.cx - island.rx - 2 || x > island.cx + island.rx + 2) continue;
+      const found = islandTile(seed, island, x, y);
+      if (found !== AIR) return found;
+    }
+    // Cloud banks: discrete puffs you can land on, not a ceiling. The first attempt used
+    // a very low x-frequency, which produced one continuous white slab across the whole
+    // sky - it read as a wall and hid the islands behind it.
+    const puff = fbm2(seed, x * 0.022, y * 0.075, 4201, 3, 2, 0.5);
+    // Thinned toward the edges of the layer so clouds sit in bands rather than fill it.
+    const band = Math.abs(alt + 500) / 250;
+    if (puff - band * 0.14 > 0.88) return idOf('cloud');
+    return AIR;
+  }
+
+  if (alt < SPACE_FLOOR) return AIR;
+  const slot = Math.floor(x / PLANETOID_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    const body = planetoidAt(seed, s);
+    if (!body) continue;
+    if (x < body.cx - body.r - 4 || x > body.cx + body.r + 4) continue;
+    const found = planetoidTile(seed, body, x, y);
+    if (found !== AIR) return found;
+  }
+  return AIR;
+}
+
 function stampTree(write, seed, tree) {
   const trunk = idOf(tree.trunk || 'trunk');
   const leaf = idOf('leaves');
@@ -495,7 +712,7 @@ function stampTree(write, seed, tree) {
   }
 }
 
-function decorate(write, seed, x) {
+function decorate(write, seed, x, yFrom, yTo) {
   const column = columnOf(seed, x);
   const biome = column.biome;
   const surface = column.height;
@@ -531,8 +748,13 @@ function decorate(write, seed, x) {
 
   // Underground growth: moss near the surface, mushrooms deep, and the blights' own caps
   // wherever their rock reaches. Placed on the ceiling-facing side of any solid floor.
+  // Bounded to the rows the caller is actually building. This used to run to a fixed
+  // world height, which wasted most of its work and, once the world lost its floor,
+  // would simply never have returned.
   const blighted = biome.key === 'blight' || biome.key === 'crimson';
-  for (let y = surface + 1; y < WORLD_H; y += 1) {
+  const y0 = Math.max(surface + 1, yFrom === undefined ? surface + 1 : yFrom);
+  const y1 = yTo === undefined ? surface + 400 : yTo;
+  for (let y = y0; y < y1; y += 1) {
     const depth = y - surface;
     if (depth < 24) continue;
     if (unit(seed, x, y, 2203) < 0.9945) continue;
@@ -550,10 +772,14 @@ function decorate(write, seed, x) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y) {
-  if (y < 0 || y >= WORLD_H) return 0;
   const column = columnOf(seed, x);
   const depth = y - column.height;
-  if (depth < 0) return 0;
+  if (depth < 0) {
+    // A sky structure carries its own wall, so digging into an island leaves a room
+    // rather than a hole with daylight behind it.
+    if (skyTileAt(seed, x, y) === AIR) return 0;
+    return altitudeOf(y) < -750 ? wallIdOf('skywall') : wallIdOf('dirtwall');
+  }
   const layer = stratum(seed, x, y, depth, column);
   if (layer === 'surface' || layer === 'filler' || layer === 'blighted') {
     return wallIdOf(column.biome.wall);
@@ -561,6 +787,8 @@ function baseWallAt(seed, x, y) {
   if (layer === 'stone') return wallIdOf('stonewall');
   if (layer === 'granite') return wallIdOf('granitewall');
   if (layer === 'basalt') return wallIdOf('basaltwall');
+  if (layer === 'ash' || layer === 'obsidian') return wallIdOf('ashwall');
+  if (layer === 'brimstone') return wallIdOf('brimstonewall');
   return wallIdOf('slatewall');
 }
 
@@ -586,6 +814,20 @@ function canStamp(existing, id) {
 
 // Identity helpers the live world asks for, so chunks.js never needs its own copy of the
 // tile registry just to tell water from rock.
+// Which vertical band an absolute y falls in. Pure in y, so it costs nothing to ask per
+// tile and two chunks can never disagree about where hell begins.
+function layerAt(y) {
+  const alt = y - SEA_LEVEL;
+  for (let i = 0; i < LAYERS.length; i += 1) {
+    if (alt >= LAYERS[i].from && alt < LAYERS[i].to) return LAYERS[i];
+  }
+  return LAYERS[LAYERS.length - 1];
+}
+
+function altitudeOf(y) {
+  return y - SEA_LEVEL;
+}
+
 function isLiquidId(id) {
   return !!tile(id).liquid;
 }
@@ -615,7 +857,7 @@ function generateChunk(seed, cx, cy) {
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
     const tree = treeAt(seed, wx);
     if (tree) stampTree(write, seed, tree);
-    decorate(write, seed, wx);
+    decorate(write, seed, wx, y0 - 1, y0 + CHUNK + 1);
   }
   return { tiles, walls };
 }
@@ -625,6 +867,9 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
+    LAYERS, layerAt, altitudeOf,
+    lavaFloor, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
+    skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
