@@ -1,6 +1,6 @@
-import * as D from './content.mjs?v=24';
-import * as E from './engine.mjs?v=24';
-import {NPC_VOICES,QUEST_DIALOGUE} from './quest-content.mjs?v=24';
+import * as D from './content.mjs?v=26';
+import * as E from './engine.mjs?v=26';
+import {NPC_VOICES,QUEST_DIALOGUE} from './quest-content.mjs?v=26';
 export {NPC_VOICES,QUEST_DIALOGUE};
 export function currentNpcQuest(s,c,giver){const list=D.STORY.filter(q=>q.giver===giver).map(q=>E.questStatus(s,q.id,c));return list.find(q=>q.ready)||list.find(q=>q.accepted&&!q.done)||list.find(q=>q.available&&!q.done)||null;}
 export function npcMarker(s,c,giver){const q=currentNpcQuest(s,c,giver),training=giver!=='steward'&&!c.class?E.classQuest(s,c,giver):null;if(q?.ready||training?.ready)return{symbol:'✓',color:'#a8f2a0',state:'ready',label:'Ready to turn in'};if(q?.accepted)return{symbol:'…',color:'#c7dfef',state:'active',label:'Quest in progress'};if(q||training&&E.availableClass(s,giver))return{symbol:'!',color:'#ffdf78',state:'available',label:'Quest or training available'};return{symbol:'',color:'#c7dfef',state:'idle',label:'Talk'};}

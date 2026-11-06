@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
-import * as E from './engine.mjs?v=24';import * as D from './content.mjs?v=24';import * as C from './conversations.mjs?v=24';import {npcDialogue} from './dialogue-panels.mjs?v=24';import {MONSTER_ART,monsterArtId,drawMonsterArt,monsterSvg} from './monster-art.mjs?v=24';import {World,createMap,createDungeonMap} from './world.mjs?v=24';
+import * as E from './engine.mjs?v=26';import * as D from './content.mjs?v=26';import * as C from './conversations.mjs?v=26';import {npcDialogue} from './dialogue-panels.mjs?v=26';import {MONSTER_ART,monsterArtId,drawMonsterArt,monsterSvg} from './monster-art.mjs?v=26';import {World,createMap,createDungeonMap} from './world.mjs?v=26';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);E.travel(s,c,'town',0);const npc=createMap('town',0).npcs.find(n=>n.role==='steward');c.position={x:npc.x,y:npc.y};return{s,c,npc};};
 function finishLines(s,c,t){while(!C.conversationReady(s,c,t))t=C.advanceConversation(s,c,t,100);return t;}
 const round=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
@@ -35,4 +35,7 @@ test('Every monster, rootling and dungeon enemy resolves to authored art, with n
 });
 test('All 27 textures have different colored pixels and different silhouettes, and draw finite visible art',()=>{
  assert.equal(Object.keys(MONSTER_ART).length,27);const colors=new Set(),masks=new Set();for(const[id,a]of Object.entries(MONSTER_ART)){colors.add(createHash('sha256').update(JSON.stringify(a.pixels)).digest('hex'));masks.add(createHash('sha256').update(a.pixels.map(p=>p?'1':'0').join('')).digest('hex'));let count=0,depth=0;const g={save(){depth++;},restore(){depth--;},translate(...args){assert.ok(args.every(Number.isFinite));},scale(...args){assert.ok(args.every(Number.isFinite));},fillRect(...args){assert.ok(args.every(Number.isFinite));count++;}};assert.ok(drawMonsterArt(g,{id},0,0,1,id==='boss'));assert.ok(count>30,id);assert.equal(depth,0);assert.match(monsterSvg(id),/<svg/);assert.ok(a.description.length>30);assert.ok(a.pixels.filter(Boolean).length>60,id);}assert.equal(colors.size,27);assert.equal(masks.size,27);
+});
+test('Advanced brewing objectives count draughts rather than food, resin or reset potions',()=>{
+ const{s,c}=setup();s.kills['jungle-3']=120;s.coins=10000;E.travel(s,c,'jungle-town',1);c.position={x:1510,y:644};let expected=0;for(const id of ['bread','binding-resin','reset-potion','mining-tonic','logging-tonic','battle-tonic','ward-tonic']){const r=D.RECIPES.find(r=>r.id===id);if(r.unlock)E.unlock(s,r.unlock);for(const[item,n]of Object.entries(r.cost))s.inventory[item]=Math.max(s.inventory[item]||0,n);assert.ok(E.craft(s,c,id),id);if(D.POTIONS[r.output])expected++;assert.equal(c.journey.events['craft:brew']||0,expected,id);}assert.equal(expected,4);assert.ok(round(s));
 });
