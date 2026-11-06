@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1c273a"><title>Wildroot · World One</title><meta name="description" content="A side-view idle RPG. Walk, fight, gather, and grow a whole roster of adventurers."><link rel="stylesheet" href="style.css?v=20"><link rel="stylesheet" href="interface.css?v=20"><link rel="stylesheet" href="readability.css?v=20">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1c273a"><title>Wildroot · World One</title><meta name="description" content="A side-view idle RPG. Walk, fight, gather, and grow a whole roster of adventurers."><link rel="stylesheet" href="style.css?v=21"><link rel="stylesheet" href="interface.css?v=21"><link rel="stylesheet" href="readability.css?v=21">
 </head>
 <body>
 <header class="game-header"><a href="../index.html" class="brand">♧ WILDROOT <small>WORLD ONE</small></a><div id="roster" class="roster" aria-label="Your characters"></div><button id="manage-roster" class="manage-roster" aria-label="Manage roster">☷</button><button id="new-character" class="new-character" title="Create another character">＋</button><button id="open-settings" class="settings-button">⚙ <span>Save & help</span></button></header>
@@ -12,7 +12,7 @@
 <div id="quest-tracker" class="quest-tracker"></div>
 <div class="world-hint" id="world-hint">Click to walk · Click an enemy to attack · W / S to climb</div>
 <div id="loot-feed" class="loot-feed" role="log" aria-live="polite"></div>
-<div id="trial-hud" class="trial-hud" hidden><strong id="trial-status"></strong><button data-end-trial="">LEAVE TRIAL</button></div>
+<div id="trial-hud" class="trial-hud" hidden><strong id="trial-status"></strong><button data-instance-menu="">LEAVE TRIAL</button></div>
 <div id="knockout" class="knockout" hidden>Recovering…</div>
 </section>
 <section class="hud" aria-label="Character controls">
@@ -25,5 +25,5 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <dialog id="panel"><header class="panel-header"><div><small id="panel-eyebrow">ADVENTURER'S JOURNAL</small><h2 id="panel-title">Inventory</h2></div><button id="close-panel" aria-label="Close menu">✕</button></header><div id="panel-tabs"></div><div id="panel-content"></div><footer class="panel-footer"><button id="panel-back" data-panel-back="">◀ BACK</button><span id="panel-footer-text"></span></footer></dialog>
 <input id="import-file" type="file" accept="application/json,.json" hidden>
-<script type="module" src="app.mjs?v=20"></script>
+<script type="module" src="app.mjs?v=21"></script>
 </body></html>

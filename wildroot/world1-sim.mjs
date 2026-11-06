@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=20';
-import * as D from './content.mjs?v=20';
-import {World} from './world.mjs?v=20';
+import * as E from './engine.mjs?v=21';
+import * as D from './content.mjs?v=21';
+import {World} from './world.mjs?v=21';
 export function runWorldOne({rng=()=>.5}={}){
  const s=E.freshSave(),events=[];let seconds=0,depth=0;
  const hero=s.characters[0];
@@ -12,12 +12,13 @@ export function runWorldOne({rng=()=>.5}={}){
  const stock=id=>(s.inventory[id]||0);
  const available=(id,c)=>E.amount(s,id,c);
  const worker=skill=>s.characters.find(c=>c.class&&D.CLASSES[c.class].skill===skill)||hero;
- function trainBuild(c){for(const id of ['precision','vitality','haste'])while(E.combatPoints(c)&&c.talents[id]<5)E.train(c,id);while(E.combatPoints(c))E.train(c,'power');}
- function fight(c,area,zone,count){trainBuild(c);use(c);assert.ok(E.travel(s,c,area,zone),`route ${area}:${zone}`);assert.ok(E.start(s,c,'fight'));const id=`${area}-${zone}`,target=(s.kills[id]||0)+count;let guard=0;while((s.kills[id]||0)<target&&guard++<2000){tick(10);if(c.activity==='rest')throw Error(`Combat stall at ${id}; attack=${E.power(s,c)}, hp=${E.maxHp(c)}`);}assert.ok((s.kills[id]||0)>=target,id);E.start(s,c,'rest');bank(c);}
+ function openRoute(c,area,zone){const req=E.routeRequirement(area,zone);if(!req||E.zoneUnlocked(s,area,zone,c))return;openRoute(c,req.area,req.index);const missing=req.goal-(c.journey.kills[req.id]||0);if(missing>0)fight(c,req.area,req.index,missing);}
+ function trainBuild(c){if(c.class){E.investAttribute(c,E.CLASS_DESIGNS[c.class].accuracy,Math.ceil(E.attributePoints(c)/2)||1);E.investAttribute(c,E.CLASS_DESIGNS[c.class].primary,E.attributePoints(c)||1);}E.syncAccount(s);for(const id of ['precision','vitality','haste'])while(E.combatPoints(c)&&c.talents[id]<5)E.train(c,id);for(const id of ['power','precision','vitality','haste','signature','industry'])while(E.combatPoints(c)&&E.train(c,id)){}}
+ function fight(c,area,zone,count){openRoute(c,area,zone);trainBuild(c);use(c);assert.ok(E.travel(s,c,area,zone),`route ${area}:${zone}`);assert.ok(E.start(s,c,'fight'));const id=`${area}-${zone}`,target=(s.kills[id]||0)+count;let guard=0;while((s.kills[id]||0)<target&&guard++<2000){tick(10);if(c.activity==='rest')throw Error(`Combat stall at ${id}; attack=${E.power(s,c)}, hp=${E.maxHp(c)}`);}assert.ok((s.kills[id]||0)>=target,id);E.start(s,c,'rest');bank(c);}
  function ensureTool(c,resource){const need=E.gatherRequirement(c,resource);if(!need)return;const skill=E.gatherSkill(resource),level={birch:2,iron:3,'jungle-wood':3,gold:5}[resource]||1;if(E.skillLevel(c,skill)<level){const raw=skill==='mining'?'copper':'oak',required=Math.max(1,Math.ceil((12*(level-1)**2-c.skills[skill])/2));gather(c,raw,required);}
   const base=skill==='mining'?(resource==='gold'?'iron-pick':'copper-pick'):'copper-axe',slot=D.EQUIPMENT[base].slot;if(E.gatherRequirement(c,resource)&&!c.loadout[slot])gear(base,c);else if(resource==='gold'&&c.loadout.pick?.base!=='iron-pick')gear(base,c);
  }
- function gather(c,id,n){const routes={oak:['forest',0],birch:['forest',2],'jungle-wood':['jungle',0],copper:['caves',0],iron:['deep',0],gold:['deep',2]},[area,zone]=routes[id];ensureTool(c,id);use(c);assert.ok(E.travel(s,c,area,zone));assert.ok(E.start(s,c,'gather',id),`${id}: ${E.gatherRequirement(c,id)}`);const initial=(c.bag[id]||0)+(c.overflow[id]||0),target=initial+n;let guard=0;while((c.bag[id]||0)+(c.overflow[id]||0)<target&&guard++<5000)tick(5);assert.ok(guard<5000,`gather stalled ${id}`);E.start(s,c,'rest');bank(c);}
+ function gather(c,id,n){const routes={oak:['forest',0],birch:['forest',2],'jungle-wood':['jungle',0],copper:['caves',0],iron:['deep',0],gold:['deep',2]},[area,zone]=routes[id];ensureTool(c,id);openRoute(c,area,zone);use(c);assert.ok(E.travel(s,c,area,zone));assert.ok(E.start(s,c,'gather',id),`${id}: ${E.gatherRequirement(c,id)}`);const initial=(c.bag[id]||0)+(c.overflow[id]||0),target=initial+n;let guard=0;while((c.bag[id]||0)+(c.overflow[id]||0)<target&&guard++<5000)tick(5);assert.ok(guard<5000,`gather stalled ${id}`);E.start(s,c,'rest');bank(c);}
  function material(id,n,forced=null){if(stock(id)>=n)return;if(++depth>30)throw Error('Recipe dependency cycle: '+id);try{const shortage=n-stock(id);if(D.ANVIL_PRODUCTS[id]){const c=worker('smithing');use(c);E.travel(s,c,'town',1);c.position={x:1390,y:644};assert.ok(E.chooseProduct(c,id,s));let guard=0;while((c.anvil.stored[id]||0)<shortage&&guard++<5000)tick(5);assert.ok(E.claimAnvil(s,c,id));bank(c);return;}const raw=['oak','birch','jungle-wood','copper','iron','gold'];if(raw.includes(id)){gather(worker(E.gatherSkill(id)),id,shortage);return;}
   const source=Object.values(D.ENEMIES).find(e=>e.loot.some(d=>d.id===id&&d.chance>=.5)&&/^(forest|caves|jungle|deep)-/.test(e.id));if(source){fight(hero,source.area,source.index,Math.ceil(shortage/.65)+3);return;}
   const r=D.RECIPES.find(r=>r.output===id);if(!r)throw Error('No common source for '+id);ensurePage(r);if(!E.recipeOpen(s,r))throw Error('Locked recipe '+r.id+' needs '+r.unlock);const crafter=forced||worker(r.skill),yieldPer=r.count*(crafter.class&&D.CLASSES[crafter.class].skill===r.skill?2:1),batches=Math.ceil(shortage/yieldPer);

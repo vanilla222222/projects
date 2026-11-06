@@ -1,25 +1,27 @@
-import * as EconomyUI from './economy-panels.mjs?v=20';
-import * as Prof from './profession-panels.mjs?v=20';
-import * as UI from './ui-panels.mjs?v=20';
-import {icon,portrait} from './ui-art.mjs?v=20';
-import * as AUI from './adventure-panels.mjs?v=20';
-import * as T from './town-panels.mjs?v=20';
-import * as U from './panels.mjs?v=20';
-import {GameAudio} from './audio.mjs?v=20';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=20';
-import * as E from './engine.mjs?v=20';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=20';
-import {drawWorld,viewFor} from './scene.mjs?v=20';
+import * as Parity from './parity-panels.mjs?v=21';
+import * as EconomyUI from './economy-panels.mjs?v=21';
+import * as Prof from './profession-panels.mjs?v=21';
+import * as UI from './ui-panels.mjs?v=21';
+import {icon,portrait} from './ui-art.mjs?v=21';
+import * as AUI from './adventure-panels.mjs?v=21';
+import * as T from './town-panels.mjs?v=21';
+import * as U from './panels.mjs?v=21';
+import {GameAudio} from './audio.mjs?v=21';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=21';
+import * as E from './engine.mjs?v=21';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=21';
+import {drawWorld,viewFor} from './scene.mjs?v=21';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
 let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null;
 let uiView={},panelHistory=[],trialResult=null;
+let dungeonResult=null;
 let talentView={tab:"beginner",count:1},shopView={};
 let inventoryView={tab:"equipment",page:0,chestPage:0,source:"bag",index:null};
 const audio=new GameAudio();
 try{raw=localStorage.getItem(KEY);}catch{}
-try{state=raw?E.restoreSave(JSON.parse(raw)):E.freshSave();if(raw)offline=E.claimOffline(state);}catch(err){state=E.freshSave();loadError=err.message;}
+try{state=raw?E.restoreSave(JSON.parse(raw)):E.freshSave();if(raw)offline=(E.claimOffline(state),state.afkReport);}catch(err){state=E.freshSave();loadError=err.message;}
 function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),4000);}
 function save(){if(paused||loadError)return;state.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(state));$('save-state').textContent='Saved locally';}catch{$('save-state').textContent='Export a backup';}}
 const world=new World(state,{onIntent:handleIntent,onEvent:event=>{audio.play(event.type);if(event.type==='notice')toast(event.text);if(event.type==='loot'){loot.unshift({text:`+${event.count} ${ITEMS[event.id].name}`,until:Date.now()+5500});loot=loot.slice(0,4);}}});
@@ -30,6 +32,8 @@ function handleIntent(event){
  if(E.SERVICES[service]){uiView.profession=service;uiView.firstVisit=E.discoverService(state,world.c,service)?service:null;save();}
  if(event.type==='telescope'){if(E.unlockStars(state,world.c)){save();openPanel('stars');}}
  if(event.type==='constellation'){const result=E.observeConstellation(state,world.c,event.entity.constellation);toast(result==='complete'?'Constellation completed · +2 star points':result?'Constellation observed. Meet its requirement and return.':'Climb to the telescope in Crown Observatory first.');save();}
+ if(['dungeon','bossboard'].includes(event.type))openPanel(event.type);
+ if(event.type==='dungeon-result'){dungeonResult=event.result;save();openPanel('dungeon-result');}
  if(event.type==='arena')openPanel('trial');
  if(event.type==='trial-result'){trialResult=event.result;save();openPanel('trial-result');}
  if(event.type==='npc'){npc=event.entity;if(npc.classId&&!world.c.metMentors.includes(npc.classId))world.c.metMentors.push(npc.classId);openPanel('npc');}
@@ -43,15 +47,15 @@ function handleIntent(event){
 let rendered=new Map();
 function html(id,content){if(rendered.get(id)!==content){$(id).innerHTML=content;rendered.set(id,content);}}
 function costs(cost){return U.costs(state,cost);}
-function closePanel(){if(loadError){toast('Your original save is preserved. Import a backup or explicitly start fresh.');return;}if(paused){location.reload();return;}if(panelKind==='minigame')world.c.minigame=null;$('panel').close();panelKind=null;panelHistory=[];npc=null;last=performance.now();}
-function openPanel(kind,back=false){if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();}
+function closePanel(){if(loadError){toast('Your original save is preserved. Import a backup or explicitly start fresh.');return;}if(paused){location.reload();return;}if(panelKind==='offline'){E.acknowledgeOffline(state);offline=null;save();}if(panelKind==='minigame')world.c.minigame=null;$('panel').close();panelKind=null;panelHistory=[];npc=null;last=performance.now();}
+function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();}
 function travel(area,index=0){if(world.teleport(area,Number(index))){closePanel();buildTargets();save();refresh();return true;}toast(E.lockReason(state,area,Number(index))||(!E.discovered(state,area,Number(index))?'Walk there through the portals to discover this room.':'No map teleports left. Walk through portals or use a Bottled Town Return.'));return false;}
 function classCard(id,c){const def=CLASSES[id],q=E.classQuest(state,c,id),owned=state.unlockedClasses.includes(id);return`<article class="quest-card"><span class="emblem">${emblems[id]}</span><h3>${def.name}</h3><p>${SKILLS[def.skill]} specialist · ${def.trainer}</p><p class="step">${owned?'CLASS DISCOVERED':`INITIATION ${Math.min(3,q.stage+1)} / 3`}</p><p>${c.class?(c.class===id?'Your chosen class.':'Create another character to choose this path.'):!E.availableClass(state,id)?'Discover all five classes before choosing another of this class.':q.text}</p>${!c.class&&q.stage===2?costs(q.needs):''}<p>${def.motto}</p><button data-find-npc="${id}" ${c.class?'disabled':''}>Find ${def.trainer} ↗</button></article>`;}
 function renderPanel(){
  const c=world.c,kind=panelKind;let title='',eyebrow='ADVENTURER’S JOURNAL',body='';
  if(kind==='welcome'){title='Welcome to the Greenreach';body=`<p class="intro">This is your world to explore. Walk across the map, climb ladders, and click enemies to fight them. Meet Willow beside the first oak tree, or Brann by the first copper seam. Other mentors work near their specialty stations.</p><div class="welcome-controls"><span>A / D · Move</span><span>W / S · Climb</span><span>Space · Jump</span><span>F · Attack</span><span>1 · Class skill</span><span>E · Interact</span></div><p class="intro">On mobile, tap the map to walk and tap enemies, trees, ore, NPCs, or portals to interact. Movement buttons and combat skills are below the world.</p><p class="intro">Your first goal: reach level 3, learn a profession, and complete a mentor’s initiation. Each first class adds another character slot. Other characters keep working while you explore.</p><button class="primary" data-close="">Enter the world</button>`;}
  if(kind==='cards'){title='Cards';body=UI.cards(state,c,uiView);}
- if(kind==='afk'){title='AFK & gathering';body=AUI.afk(state,c);}
+ if(kind==='afk'){title='AFK & gathering';body=AUI.afk(state,c)+Parity.afkDetails(state,c);}
  if(kind==='tasks'){title='World & daily tasks';body=AUI.tasks(state);}
  if(kind==='industry'){title='Anvil & furnace production';body=uiView.industryTab==='furnaces'?UI.industry(state,c,E.nearService(c,'foundry'),uiView):Prof.anvil(state,c,uiView);}
  if(kind==='minigame'){title='Gathering challenge';body=AUI.minigame(c);}
@@ -64,7 +68,7 @@ function renderPanel(){
  body+=U.npcStories(state,npc.classId);
  }
  if(kind==='npc'&&npc&&!npc.classId){title=npc.name;eyebrow='VILLAGE STEWARD';body='<div class="dialogue"><div class="npc-portrait">⚑</div><div><h3>A village grows together.</h3><p>Blackened roots have reached our well. We need miners, foresters and makers working together. Bring your supplies to the storage chest and help us find the cause.</p></div></div>'+U.npcStories(state,'steward');}
- if(kind==='skills'){title='Class builds & professions';body=UI.talents(state,c,talentView);}
+ if(kind==='skills'){title='Class builds & professions';body=UI.talents(state,c,talentView)+Parity.buildExtras(state,c);}
  if(kind==='craft'){const station=['anvil','foundry','alchemy','enchanting'].includes(uiView.profession)?uiView.profession:E.stationFor(c)||'anvil';title=E.SERVICES[station]?.name||'Professions';body=station==='anvil'?Prof.anvil(state,c,uiView):station==='alchemy'?Prof.alchemy(state,c,uiView):station==='enchanting'?Prof.enchanting(state,c,uiView):E.serviceAccess(state,c,'foundry')?EconomyUI.foundry(state,c,uiView):Prof.locked(state,c,'foundry');}
  if(kind==='map'){title='World One · Routes & teleports';eyebrow='THE GREENREACH';body=UI.map(state,c,uiView);}
  if(kind==='stamps'){title='Legacy Square · Stamp Registry';body=UI.stamps(state,c,uiView);}
@@ -86,7 +90,12 @@ function renderPanel(){
  if(kind==='trial'){title='Solo Trials';body=UI.trials(state,c);}
  if(kind==='trial-result'&&trialResult){title=trialResult.completed?'All Waves Cleared':'Trial Complete';body=`<div class="trial-banner">${icon('trophy')}<h3>${trialResult.score} POINTS</h3></div><div class="offline-grid"><div>${trialResult.wave+1}<small>WAVE REACHED</small></div><div>${trialResult.kills}<small>FOES DEFEATED</small></div><div>${E.money(trialResult.coins)}<small>COINS EARNED</small></div></div><button data-panel="trial">Trial records</button><button data-close="">Return to town</button>`;}
  if(kind==='new'){title='A new adventurer';body=`<p class="intro">${state.characters.length} / ${E.slots(state)} character slots used. Each character chooses a class individually through their quest line.</p><label for="character-name">Name your adventurer</label><input id="character-name" class="name-input" maxlength="24" autocomplete="off" placeholder="Adventurer name"><button class="primary" data-create="">Join the roster</button>`;}
- if(kind==='offline'&&offline){title='Your roster kept adventuring';body=`<p class="intro">Welcome back. ${Math.floor(offline.seconds/3600)}h ${Math.floor(offline.seconds%3600/60)}m of progress${offline.capped?' (eight-hour limit)':''}.</p><div class="offline-grid"><div>${fmt(offline.kills)}<small>ENEMIES</small></div><div>${fmt(offline.items)}<small>MATERIALS</small></div><div>${fmt(offline.coins)}<small>COINS</small></div></div><button class="primary" data-close="">Return to the world</button>`;}
+ if(kind==='offline'){title='Your roster kept adventuring';body=Parity.offlineReport(state.afkReport);}
+ if(kind==='books'){title='Special talent books';body=Parity.books(state,c);}
+ if(kind==='journey'){title='Personal World One progress';body=Parity.journey(state,c);}
+ if(kind==='bossboard'){title='Boss hunts';body=Parity.hunts(state,c);}
+ if(kind==='dungeon'){title='Mossroot Ruins';body=Parity.dungeon(state,c);}
+ if(kind==='dungeon-result'&&dungeonResult){title='Dungeon results';body=Parity.dungeonResult(dungeonResult);}
  if(kind==='victory'){title='The Rootwarden falls';eyebrow='THE ROOTWARDEN DEFEATED';body='<p class="intro">The ancient gate is quiet. Your roster has conquered the first world. Collect the heart and return it to Hesta to finish the World One story. Your five professions made this possible.</p><button class="primary" data-close="">Keep exploring</button>';}
  if(kind==='chapter-complete'){title='The Greenreach restored';eyebrow='WORLD ONE STORY COMPLETE';body='<p class="intro">Hesta repairs the well. You have brought five callings together, quieted the Rootbound Gate and earned the Heartwood blueprint. Secret discoveries, world tasks and equipment builds remain within World One.</p><button class="primary" data-close="">Return to the Greenreach</button>';}
  if(kind==='load-error'){title='Your save needs attention';body=`<p class="intro">${esc(loadError)}. Your existing save has been left untouched. Export it before starting fresh, or import a backup.</p><div class="save-actions"><button data-export="">Export original save</button><button data-import="">Import backup</button><button data-fresh="">Start fresh</button></div>`;}
@@ -108,27 +117,27 @@ window.addEventListener('pointercancel',()=>{panelInteraction=false;});
 window.addEventListener('keyup',()=>{panelInteraction=false;});
 function buildTargets(){
  const key=world.key+':'+world.map.boss+':'+world.map.monsters.map(e=>e.id).join(',')+':'+world.groundLoot.map(d=>d.id).join(',');if(key===targetKey)return;targetKey=key;
- html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:['survey','shop','stamps','statues','vault','worldgate','tasks','telescope','constellation','arena'].includes(e.kind)?`Visit ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));projectTargets();
+ html('world-objects',[...world.map.entities,...world.groundLoot].map((e,i)=>{const label=e.kind==='drop'?`Pick up ${e.itemId==='coins'?'coins':ITEMS[e.itemId].name}`:e.kind==='enemy'?`Attack ${e.enemy.name} ${i+1}`:e.kind==='node'?`${['copper','iron','gold'].includes(e.resource)?'Mine':'Chop'} ${ITEMS[e.resource].name}`:e.kind==='storage'?'Open storage chest':e.kind==='discovery'?`Inspect ${e.name}`:e.kind==='npc'?`Talk to ${e.name}`:e.kind==='station'?`Use ${e.name}`:['survey','shop','stamps','statues','vault','worldgate','tasks','telescope','constellation','arena','dungeon','bossboard'].includes(e.kind)?`Visit ${e.name}`:`Enter ${e.name}`;return`<button class="map-target" data-target="${e.id}" aria-label="${esc(label)}"><span>${esc(label)}</span></button>`;}).join(''));projectTargets();
 }
 function projectTargets(){renderMinimap();const v=viewFor($('scene'),world.player);for(const button of $('world-objects').children){const e=[...world.map.entities,...world.groundLoot].find(e=>e.id===button.dataset.target);if(!e)continue;button.hidden=e.kind==='enemy'&&e.dead>0||e.x<v.x-80||e.x>v.x+v.width+80||e.y<v.y-160||e.y>v.y+v.height+160;const w=e.kind==='drop'?44:e.kind==='node'?110:90,h=e.kind==='drop'?44:e.kind==='node'?160:e.kind==='portal'?135:120;button.style.left=`${(e.x-w/2-v.x)/v.width*100}%`;button.style.top=`${(e.y-h-v.y)/v.height*100}%`;button.style.width=`${w/v.width*100}%`;button.style.height=`${h/v.height*100}%`;}}
 function renderMinimap(){const map=world.map,v=viewFor($('scene'),world.player),svg=$('room-minimap'),x=n=>n/map.width*260,y=n=>(n-map.minY)/map.height*75;svg.dataset.vertical=String(map.height>1400);svg.innerHTML=`<svg viewBox="0 0 260 75" preserveAspectRatio="none" aria-hidden="true">${map.platforms.map(p=>`<path d="M${x(p.x)} ${y(p.y)}h${x(p.w)}" stroke="#8bba82" stroke-width="2"/>`).join('')}${map.ladders.map(l=>`<path d="M${x(l.x)} ${y(l.top)}V${y(l.bottom)}" stroke="#a38b65"/>`).join('')}${map.entities.filter(e=>e.kind!=='enemy').map(e=>`<circle cx="${x(e.x)}" cy="${y(e.y)-3}" r="2" fill="${e.kind==='portal'?'#72dfff':'#e9c06d'}"/>`).join('')}<rect x="${x(v.x)}" y="${y(v.y)}" width="${x(v.width)}" height="${v.height/map.height*75}" fill="#ffffff0c" stroke="#d3e8ef44"/><circle cx="${x(world.player.x)}" cy="${y(world.player.y)-3}" r="3" fill="#fff4be"/></svg>`;}
 $('room-minimap').addEventListener('click',event=>{const rect=$('room-minimap').getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*world.map.width,y=world.map.minY+(event.clientY-rect.top)/rect.height*world.map.height;const e=world.map.entities.filter(e=>e.kind!=='enemy').sort((a,b)=>Math.abs(a.x-x)+Math.abs(a.y-y)-Math.abs(b.x-x)-Math.abs(b.y-y))[0];if(e&&Math.abs(e.x-x)<world.map.width*.035&&Math.abs(e.y-y)<Math.max(100,world.map.height*4/75))world.select(e.id);else world.walkTo(x,y);});
 function refresh(){
- const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
+ E.syncAccount(state);const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
  html('roster',state.characters.map(ch=>`<button data-character="${ch.id}" class="${ch.id===c.id?'active':''}" aria-pressed="${ch.id===c.id}"><span class="portrait">${portrait(ch)}</span><span>${esc(ch.name)}<span class="sub">${ch.class?CLASSES[ch.class].name:'Beginner'} · Lv. ${ch.level}</span></span></button>`).join(''));
- $('new-character').disabled=state.characters.length>=E.slots(state);$('new-character').title=`${state.characters.length} / ${E.slots(state)} slots. Discover a class to unlock another.`;
- $('area-label').textContent=`WORLD 1 · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
- $('mana-status').textContent='AFK INFO';$('mana-bar').style.width=(c.mp/E.maxMana(c)*100)+'%';$('mana-label').textContent=`${Math.floor(c.mp)} / ${E.maxMana(c)} MP`;$('food-count').textContent='FOOD '+c.foodSlots.reduce((n,t)=>n+(t?.count||0),0);$('quest-tracker').hidden=!state.options.questHelper;document.body.classList.toggle('ui-compact',state.options.compact);$('trial-hud').hidden=!c.trial;if(c.trial)$('trial-status').textContent=`WAVE ${c.trial.wave+1}/8 · ${Math.ceil(c.trial.time)}s · ${c.trial.score} POINTS`;
+ $('new-character').disabled=!!c.dungeon||state.characters.length>=E.slots(state);$('new-character').title=`${state.characters.length} / ${E.slots(state)} slots. Discover a class to unlock another.`;
+ $('area-label').textContent=`WORLD 1 · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
+ $('mana-status').textContent='AFK INFO';$('mana-bar').style.width=(c.mp/E.maxMana(c)*100)+'%';$('mana-label').textContent=`${Math.floor(c.mp)} / ${E.maxMana(c)} MP`;$('food-count').textContent='FOOD '+c.foodSlots.reduce((n,t)=>n+(t?.count||0),0);$('quest-tracker').hidden=!state.options.questHelper;document.body.classList.toggle('ui-compact',state.options.compact);$('trial-hud').hidden=!c.trial&&!c.dungeon;document.querySelector('[data-instance-menu]').textContent=c.dungeon?'RUN MENU':'LEAVE TRIAL';if(c.dungeon)$('trial-status').textContent=`ROOM ${c.dungeon.room+1}/4 · ${Math.ceil(c.dungeon.time)}s · ${c.dungeon.cash} RUN COINS`;if(c.trial)$('trial-status').textContent=`WAVE ${c.trial.wave+1}/8 · ${Math.ceil(c.trial.time)}s · ${c.trial.score} POINTS`;
  document.querySelectorAll('.game-menu [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panelKind));
  $('bag-count').textContent=`Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}`;
  $('player-name').textContent=c.name;$('player-class').textContent=`${c.class?CLASSES[c.class].name:'Beginner'} · Lv. ${c.level}`;$('coin-count').textContent=E.money(state.coins);$('gem-count').textContent=`◇ ${fmt(state.gems)}`;
  $('health-bar').style.width=`${Math.max(0,c.hp/E.maxHp(c)*100)}%`;$('health-label').textContent=`${fmt(c.hp)} / ${E.maxHp(c)} HP`;$('xp-bar').style.width=`${c.xp/E.xpNeeded(c)*100}%`;$('xp-label').textContent=`${fmt(c.xp)} / ${E.xpNeeded(c)} XP`;
  $('auto-button').setAttribute('aria-pressed',String(world.auto));$('auto-button').querySelector('i').textContent=world.auto?'ON':'OFF';
  for(const [slot,id]of [[0,'skill-button'],[1,'secondary-button'],[2,'utility-button']]){const button=$(id),skill=abilities[slot],index=c.hotbar[slot],available=!!skill&&abilityAvailable(c,index);button.disabled=!available;button.querySelector('span').textContent=skill?.icon||'⌑';button.querySelector('small').textContent=available?skill.name.toUpperCase():skill?'TRAIN TALENT':'CLASS REQUIRED';button.title=available?skill.description:'Learn this technique in the class talent tab';const cd=index===0?world.player.skill:world.player.cooldowns[index];button.querySelector('b').textContent=cd>0?Math.ceil(cd):'';}
- const kills=state.kills[zoneEnemy(c.area,c.zone)?.id]||0;
+ const kills=c.journey.kills[zoneEnemy(c.area,c.zone)?.id]||0,routeGoal=E.PORTAL_GOALS[c.area]?.[c.zone]||0;
  let tracker=c.class?`<strong>${CLASSES[c.class].name} · ${esc(c.name)}</strong><p>✦ ${E.talentPoints(c)} unspent talent points</p><p>${state.unlockedClasses.length} / 5 classes discovered</p>`:`<strong>Find your calling</strong><p class="${c.level>=3?'done':''}">${c.level>=3?'✓':'○'} Reach character level 3 (${c.level}/3)</p><p>○ Find Willow by the oak tree or Brann by copper ore</p><p>○ Complete your class initiation</p>`;
  const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
- if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=12?'done':''}">${kills>=12?'✓ Next route unlocked':`○ Open next route: ${kills}/12 kills`}</p>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
+ if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p>${esc(l.text)}</p>`).join(''));
  $('knockout').hidden=world.player.respawn<=0;
@@ -137,8 +146,22 @@ function refresh(){
 document.addEventListener('click',event=>{
  const b=event.target.closest('button');if(!b||b.disabled)return;const d=b.dataset,c=world.c;
  if(paused&&d.reload===undefined)return;
+ if(c.dungeon&&d.character)return;
+ if(d.attribute){E.investAttribute(c,d.attribute,Number(d.count)||1);E.syncAccount(state);save();renderPanel();refresh();return;}
+ if(d.book){toast(E.learnBook(state,d.book)?'Talent book learned for your roster.':'Meet the source requirement and visit its facility if needed.');save();renderPanel();return;}
+ if(d.special){E.trainSpecial(state,c,d.special);E.syncAccount(state);save();renderPanel();refresh();return;}
+ if(d.bossKeys!==undefined){toast(E.claimBossKeys(state,c)?'Three keys added.':'Visit the Hunt Board after opening the boss gate. Keys can be claimed once daily.');save();renderPanel();return;}
+ if(d.bossTier!==undefined){E.chooseBossTier(state,c,Number(d.bossTier));save();renderPanel();return;}
+ if(d.startDungeon!==undefined){if(world.beginDungeon(d.startDungeon==='practice')){closePanel();targetKey='';save();refresh();}return;}
+ if(d.endDungeon!==undefined){world.endDungeon();targetKey='';save();refresh();return;}
+ if(d.boon){E.chooseDungeonBoon(c,d.boon);save();renderPanel();return;}
+ if(d.runHeal!==undefined){E.buyRunHeal(c);save();renderPanel();refresh();return;}
+ if(d.runGear){E.buyRunGear(c,d.runGear);save();renderPanel();refresh();return;}
+ if(d.nextDungeon!==undefined&&E.nextDungeonRoom(c)){c.position={x:190,y:644,facing:1};world.enter(false);closePanel();targetKey='';save();refresh();return;}
+ if(d.dungeonUpgrade){E.buyDungeonUpgrade(state,c,d.dungeonUpgrade,d.relic==='true');E.syncAccount(state);save();renderPanel();return;}
  if(d.panelBack!==undefined){const previous=panelHistory.pop();if(previous)openPanel(previous,true);return;}
  if(d.attackToggle!==undefined){const open=document.body.classList.toggle('attacks-open');b.setAttribute('aria-expanded',String(open));return;}
+ if(d.instanceMenu!==undefined){if(c.dungeon)openPanel('dungeon');else world.endTrial(false);return;}
  if(d.endTrial!==undefined){world.endTrial(false);return;}
  if(d.startTrial!==undefined){if(world.beginTrial()){closePanel();targetKey='';save();refresh();}else toast('Stand by the trial board with a ticket at level 3 or higher.');return;}
  if(d.option){if(Object.hasOwn(state.options,d.option))state.options[d.option]=!state.options[d.option];save();renderPanel();refresh();return;}
@@ -265,9 +288,9 @@ $('close-panel').addEventListener('click',closePanel);
 $('panel').addEventListener('cancel',e=>{e.preventDefault();closePanel();});
 $('map-shortcut').addEventListener('click',()=>openPanel('map'));
 $('open-settings').addEventListener('click',()=>openPanel('settings'));
-$('new-character').addEventListener('click',()=>{openPanel('new');$('character-name').focus();});
+$('new-character').addEventListener('click',()=>{openPanel('new');$('character-name')?.focus();});
 $('auto-button').addEventListener('click',()=>{world.toggleAuto();save();refresh();});
-$('attack-button').addEventListener('click',()=>{if(!world.basicAttack()){world.findTarget();if(world.target)world.c.activity=world.map.trial?'trial':world.map.boss?'boss':'fight';}refresh();});
+$('attack-button').addEventListener('click',()=>{if(!world.basicAttack()){world.findTarget();if(world.target)world.c.activity=world.c.dungeon?'dungeon':world.map.trial?'trial':world.map.boss?'boss':'fight';}refresh();});
 $('skill-button').addEventListener('click',()=>{world.useSkill(0);refresh();});
 $('secondary-button').addEventListener('click',()=>{world.useSkill(1);refresh();});
 $('utility-button').addEventListener('click',()=>{world.useSkill(2);refresh();});
@@ -282,10 +305,10 @@ for(const b of document.querySelectorAll('[data-hold]')){b.addEventListener('poi
 const keyMap={a:'left',ArrowLeft:'left',d:'right',ArrowRight:'right',w:'up',ArrowUp:'up',s:'down',ArrowDown:'down',f:'attack'};
 window.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(!$('panel').open){const shortcut={i:'inventory',t:'skills',c:'codex',m:'map',p:'roster',Escape:'menu'}[e.key==='Escape'?e.key:e.key.toLowerCase()];if(shortcut&&!e.repeat){e.preventDefault();openPanel(shortcut);return;}if(e.key.toLowerCase()==='q'&&!e.repeat){document.body.classList.toggle('attacks-open');return;}}if($('panel').open)return;const mapped=keyMap[e.key]||keyMap[e.key.toLowerCase()];if(mapped){e.preventDefault();input[mapped]=true;}if(e.code==='Space'){e.preventDefault();if(!e.repeat)input.jump=true;}if(['1','2','3'].includes(e.key)&&!e.repeat)world.useSkill(Number(e.key)-1);if(e.key.toLowerCase()==='e'&&!e.repeat)world.interact();if(e.key.toLowerCase()==='m'&&!e.repeat)openPanel('map');if(e.key.toLowerCase()==='i'&&!e.repeat)openPanel('inventory');});
 window.addEventListener('keyup',e=>{const mapped=keyMap[e.key]||keyMap[e.key.toLowerCase()];if(mapped)input[mapped]=false;});window.addEventListener('blur',()=>{input={};});
-$('import-file').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>2000000)throw Error('File is too large.');const incoming=E.restoreSave(JSON.parse(await file.text()));if(!confirm('Replace this roster with the imported save? Export a backup first if you want to keep it.'))return;state=incoming;world.state=state;loadError=null;offline=E.claimOffline(state);world.enter();targetKey='';closePanel();save();refresh();toast('Save imported.');}catch(err){toast(`Could not import: ${err.message}`);}});
+$('import-file').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>2000000)throw Error('File is too large.');const incoming=E.restoreSave(JSON.parse(await file.text()));if(!confirm('Replace this roster with the imported save? Export a backup first if you want to keep it.'))return;state=incoming;world.state=state;loadError=null;offline=(E.claimOffline(state),state.afkReport);world.enter();targetKey='';closePanel();save();refresh();toast('Save imported.');}catch(err){toast(`Could not import: ${err.message}`);}});
 window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){paused=true;input={};openPanel('paused');}});
 window.addEventListener('pagehide',save);
-document.addEventListener('visibilitychange',()=>{input={};if(paused)return;if(document.hidden){save();}else{offline=E.claimOffline(state);last=performance.now();lastWall=Date.now();world.enter();targetKey='';refresh();save();if(offline.seconds>60)openPanel('offline');}});
+document.addEventListener('visibilitychange',()=>{input={};if(paused)return;if(document.hidden){save();}else{offline=(E.claimOffline(state),state.afkReport);last=performance.now();lastWall=Date.now();world.enter();targetKey='';refresh();save();if(offline?.seconds>60)openPanel('offline');}});
 const systemReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;let renderTime=0;
 function frame(time){const reduced=systemReduced||state.options.reducedMotion;const delta=Math.max(0,(time-last)/1000);last=time;
  if(!paused&&!document.hidden){

@@ -1,5 +1,5 @@
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=20';
-import {roomLayout} from './layouts.mjs?v=20';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=21';
+import {roomLayout} from './layouts.mjs?v=21';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -358,3 +358,10 @@ for(const r of RECIPES)if(['rune','elixir'].includes(r.id))r.retired=true;
 
 // Token presentation is non-consuming: completion can never destroy these unlocks.
 for(const [id,d]of Object.entries(BADGES)){EQUIPMENT[d.base]={name:d.gear,slot:d.slot,stats:d.stats,...(d.class?{class:d.class}:{})};item(d.base,d.gear,'rare','◆');RECIPES.push({id:'gear-'+d.base,name:d.gear,station:'anvil',skill:'smithing',equipment:d.base,cost:d.cost,unlock:'badge-'+id});}
+
+item('rootwarden-scale','Rootwarden Scale','rare','◆');
+for(const [tier,id,name,slot,stats,cost] of [
+ [0,'rootbound-helm','Rootbound Helm','head',{health:20,defense:3},{'rootwarden-scale':4,'iron-bar':8}],
+ [1,'rootbound-mail','Challenger Rootmail','body',{health:45,defense:6},{'rootwarden-scale':8,'tempered-bar':5}],
+ [2,'ancient-greaves','Ancient Root Greaves','legs',{health:60,defense:8,attack:6},{'rootwarden-scale':12,'tempered-bar':8}]
+]){EQUIPMENT[id]={name,slot,stats};item(id,name,'rare','◆');RECIPES.push({id:'gear-'+id,name,station:'anvil',skill:'smithing',equipment:id,cost,bossTier:tier});}

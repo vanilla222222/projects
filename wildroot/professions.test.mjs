@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=20';
-import * as D from './content.mjs?v=20';
-import * as Panels from './profession-panels.mjs?v=20';
-import * as UI from './ui-panels.mjs?v=20';
-import {roomLayout,pointFor} from './layouts.mjs?v=20';
+import * as E from './engine.mjs?v=21';
+import * as D from './content.mjs?v=21';
+import * as Panels from './profession-panels.mjs?v=21';
+import * as UI from './ui-panels.mjs?v=21';
+import {roomLayout,pointFor} from './layouts.mjs?v=21';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 function visit(s,c,id){const d=E.SERVICES[id];Object.assign(c,{area:d.area,zone:d.zone,secret:null,activity:'rest',position:id==='stars'?{x:d.x,y:d.y}:pointFor(roomLayout(d.area,d.zone),d.point)});E.discoverService(s,c,id);}
 const restore=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
