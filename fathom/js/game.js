@@ -11,7 +11,7 @@ function makeGame(canvas, deps) {
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
-    profile: profileModule, menu: menuModule, sprite } = deps;
+    profile: profileModule, menu: menuModule, sprite, audio: audioModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -67,6 +67,34 @@ function makeGame(canvas, deps) {
   };
 
   const input = { left: false, right: false, jump: false, down: false, dig: false };
+
+  // Sound. One object for the whole game; it does nothing at all until a key or a click
+  // has been seen, because no browser will start an audio context before one.
+  const audio = audioModule ? audioModule.makeAudio(window) : null;
+
+  // Sound at a place: quieter the further it is from the player, so a slime dying across
+  // the cavern is a detail rather than an event.
+  function sfxAt(name, x, y, opts) {
+    if (!audio) return;
+    const dx = x - (state.player.x + state.player.width / 2);
+    const dy = y - (state.player.y + state.player.height / 2);
+    audio.play(name, Object.assign({ distance: Math.hypot(dx, dy) }, opts || {}));
+  }
+
+  function sfx(name, opts) {
+    if (audio) audio.play(name, opts);
+  }
+
+  // Which noise a material makes when it is struck. Soil is dull, wood knocks, and
+  // everything else is stone, which covers ore and gems too.
+  function digSound(spec) {
+    if (!spec) return 'dig-stone';
+    if (spec.wood || spec.trunkOf || /wood|log|plank|door|chest|bench|table|chair|platform/.test(spec.key)) {
+      return 'dig-wood';
+    }
+    if (/dirt|grass|sand|snow|mud|clay|ash|peat/.test(spec.key)) return 'dig-soil';
+    return 'dig-stone';
+  }
   const pointer = { x: 0, y: 0 };
   let lastView = null;
 
@@ -159,6 +187,7 @@ function makeGame(canvas, deps) {
         return true;
       }
       say('Maximum mana is now ' + stats.maxMana, 2.2);
+      sfx('upgrade');
     } else if (use.heal !== undefined) {
       if (stats.health >= stats.maxHealth) { say('You are unhurt', 1.2); return true; }
       statsModule.heal(stats, use.heal);
@@ -168,6 +197,7 @@ function makeGame(canvas, deps) {
       const boss = swarm.summon(use.summon, state.player);
       if (!boss) { say('There is no room here', 1.6); return true; }
       say(boss.spec.name + ' has awoken', 3.2);
+      sfx('roar');
       spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.spec.colour, 26);
     } else if (use.restore !== undefined) {
       if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
@@ -177,6 +207,7 @@ function makeGame(canvas, deps) {
     }
     inventory.take(item.key, 1);
     spawnParticles(state.player.x + 0.5, state.player.y + 0.5, spec.colour, 10);
+    if (!use.summon) sfx('use');
     return true;
   }
 
@@ -198,6 +229,7 @@ function makeGame(canvas, deps) {
     const len = Math.hypot(dx, dy) || 1;
     state.hook = { x: cx, y: cy, vx: (dx / len) * spec.speed, vy: (dy / len) * spec.speed,
       anchored: false, from: { x: cx, y: cy }, spec };
+    sfx('hook');
     return true;
   }
 
@@ -220,6 +252,7 @@ function makeGame(canvas, deps) {
         hook.y += (hook.vy * dt) / steps;
         if (tiles.isSolid(world.get(Math.floor(hook.x), Math.floor(hook.y)))) {
           hook.anchored = true;
+          sfxAt('grab', hook.x, hook.y);
           break;
         }
       }
@@ -289,6 +322,7 @@ function makeGame(canvas, deps) {
         if (landed) {
           dropItem(Math.floor(star.x), Math.floor(star.y) - 1, 'fallenstar', 'loot', 1);
           spawnParticles(star.x, star.y, '#ffe9a0', 12);
+          sfxAt('star', star.x, star.y);
         }
         state.stars.splice(i, 1);
       }
@@ -334,11 +368,15 @@ function makeGame(canvas, deps) {
         // forward into what you just killed.
         if (d.kind === 'pickup') {
           if (d.key === 'heart') statsModule.heal(stats, HEART_HEAL);
+          sfx('pickup', { pitch: 1.2 });
           state.drops.splice(i, 1);
           continue;
         }
         const left = inventory.add({ key: d.key, kind: d.kind }, d.count);
-        if (left === 0) state.drops.splice(i, 1);
+        if (left === 0) {
+          sfx(d.kind === 'coin' ? 'coin' : 'pickup', { gain: 0.7 });
+          state.drops.splice(i, 1);
+        }
         else if (left < d.count) d.count = left;
         else if (d.age > 1.2) say('Backpack full', 1.4);
       }
@@ -405,6 +443,7 @@ function makeGame(canvas, deps) {
       current.swing -= swingTime;
       current.damage += perHit;
       spawnParticles(aim.x, aim.y, spec.colour, 2);
+      sfxAt(digSound(spec), aim.x, aim.y, { gain: 0.8 });
       if (current.damage < current.toughness) return;
     }
 
@@ -433,6 +472,7 @@ function makeGame(canvas, deps) {
       if (origin) breakMulti(origin);
       else world.set(aim.x, aim.y, tiles.AIR);
       spawnParticles(aim.x, aim.y, spec.colour, 9);
+      sfxAt('break', aim.x, aim.y);
       const leaves = mining.dropsOf(spec);
       if (leaves) dropItem(aim.x, aim.y, leaves, craft.kindOf(leaves), 1);
       // Cutting rock can open a reservoir, so every neighbour of the hole is woken.
@@ -539,6 +579,7 @@ function makeGame(canvas, deps) {
       damage: Math.round(weapon.damage * (gear.magic || 1)),
       life: 1.8, colour: weapon.bolt, gravity: 0, magic: true });
     spawnParticles(cx, cy, weapon.bolt, 4);
+    sfx('cast');
     return true;
   }
 
@@ -609,6 +650,8 @@ function makeGame(canvas, deps) {
     }
     cooldown *= gear.swing || 1;
     swingCooldown = cooldown;
+    sfx('swing');
+    sfxAt('hit', target.x, target.y);
     swingTotal = cooldown;
     target.vx += Math.sign(target.x - cx) * 6;
     target.vy -= 3;
@@ -618,6 +661,7 @@ function makeGame(canvas, deps) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
       }
       spawnParticles(target.x, target.y, target.spec.colour, 14);
+      sfxAt('enemydie', target.x, target.y, { pitch: target.boss ? 0.5 : 1 });
       rareDrop(target);
       // Roughly one kill in five leaves a heart behind, and a hurt player sees them
       // more often: the drop is there to keep a fight going, so it arrives when the
@@ -643,6 +687,7 @@ function makeGame(canvas, deps) {
     state.player.vy = 0;
     if (swarm) swarm.clear();
     releaseHook();
+    sfx('death');
     say('You died', 2.2);
   }
 
@@ -661,6 +706,7 @@ function makeGame(canvas, deps) {
     breakMulti(origin);
     spawnParticles(origin.x + 0.5, origin.y + 0.5, '#e0405c', 20);
     say('Maximum health is now ' + stats.maxHealth, 2.2);
+    sfx('upgrade');
     return true;
   }
 
@@ -931,6 +977,7 @@ function makeGame(canvas, deps) {
     if (!againstBlock && !(spec.emit > 0 && againstWall)) return;
     world.set(aim.x, aim.y, spec.id);
     inventory.take(item.key, 1);
+    sfxAt('place', aim.x, aim.y);
     // Placing a block can displace or dam water just as surely as removing one.
     if (liquid) liquid.activateAround(aim.x, aim.y);
   }
@@ -956,6 +1003,33 @@ function makeGame(canvas, deps) {
     return null;
   }
 
+  // Footsteps, jumps, landings and splashes. Driven off the gait phase rather than off a
+  // timer, so footfalls land with the feet at any speed, and off the physics' own
+  // onGround and swimming flags rather than off the keys, so a player who is pushed or
+  // who walks off a ledge is treated the same as one who jumped.
+  let lastFoot = 0;
+  let wasGround = true;
+  let wasWet = false;
+
+  function stepFootfalls(beforeX, dt) {
+    const p = state.player;
+    if (p.onGround && Math.abs(p.x - beforeX) > 1e-4) {
+      // One step per half stride.
+      if (Math.floor(state.anim / Math.PI) !== lastFoot) {
+        lastFoot = Math.floor(state.anim / Math.PI);
+        const under = tiles.tile(world.get(Math.floor(p.x + p.width / 2),
+          Math.floor(p.y + p.height + 0.1)));
+        sfx('step', { gain: 0.55, pitch: digSound(under) === 'dig-soil' ? 0.9 : 1.15 });
+      }
+    }
+    if (!p.onGround && wasGround && p.vy < -1) sfx('jump', { gain: 0.6 });
+    if (p.onGround && !wasGround) sfx('land', { gain: 0.6 });
+    if (p.swimming && !wasWet) sfx('splash');
+    if (!p.swimming && wasWet) sfx('splash', { gain: 0.6, pitch: 1.2 });
+    wasGround = p.onGround;
+    wasWet = !!p.swimming;
+  }
+
   function simulate(dt) {
     // Water first, so what the player collides with this step is where the water ended up
     // rather than where it was. The budget is per step, not per frame, which keeps a
@@ -979,6 +1053,7 @@ function makeGame(canvas, deps) {
     // Where the arms are. Mining drives the arc from the dig timer so the swing lands
     // when the tile takes damage; a weapon swing drives it from its own cooldown.
     state.anim += Math.abs(state.player.x - before) * 2.3;
+    stepFootfalls(before, dt);
     const dug = state.player.mining;
     if (dug) {
       const tool = selectedItem();
@@ -1017,6 +1092,11 @@ function makeGame(canvas, deps) {
     // Weather lives in worldgen because it is a property of the world, pure in seed and
     // clock. Keeping one definition matters more here than usual: a copy of this rule in
     // the test would make the test agree with the copy rather than with the game.
+    if (audio) {
+      const layerKey = worldgen.layerAt(Math.floor(state.player.y)).key;
+      audio.setAmbience(layerKey);
+      audio.stepMusic(dt, layerKey, state.dayPhase > 0.27 && state.dayPhase < 0.73);
+    }
     state.weather = worldgen.weatherAt(seed, state.time,
       worldgen.biomeAt(seed, Math.floor(state.player.x)).key);
 
@@ -1041,6 +1121,7 @@ function makeGame(canvas, deps) {
           const away = Math.sign(state.player.x - hit.x) || 1;
           state.player.vx = away * 9;
           state.player.vy = -7;
+          sfx('hurt');
           say(hit.spec.name + ' hit you for ' + dealt, 1.1);
         }
       }
@@ -1186,6 +1267,19 @@ function makeGame(canvas, deps) {
     };
     addEventListener('keydown', (ev) => {
       if (!running) return;
+      if (audio) audio.unlock();
+      if (ev.code === 'KeyN') {
+        const on = audio ? audio.setEnabled(!audio.enabled) : false;
+        say(on ? 'Sound on' : 'Sound off', 1.2);
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'KeyB') {
+        const on = audio ? audio.setMusic(!audio.musicOn) : false;
+        say(on ? 'Music on' : 'Music off', 1.2);
+        ev.preventDefault();
+        return;
+      }
       if (ev.code === 'KeyE' || ev.code === 'Tab' || ev.code === 'KeyI') {
         // Shutting the backpack shuts whatever chest was open with it, which is both
         // what a player expects and what makes sure the contents get written back.
@@ -1242,6 +1336,7 @@ function makeGame(canvas, deps) {
     canvas.addEventListener('mousemove', (ev) => { if (running) worldFromScreen(ev); });
     canvas.addEventListener('mousedown', (ev) => {
       if (!running) return;
+      if (audio) audio.unlock();
       worldFromScreen(ev);
       if (ui.isOpen) return;
       if (ev.button === 0) input.dig = true;
@@ -1441,7 +1536,8 @@ function makeGame(canvas, deps) {
     get stats() { return stats; },
     get seed() { return seed; },
     get ui() { return ui; },
-    get profiles() { return profiles; } };
+    get profiles() { return profiles; },
+    get audio() { return audio; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

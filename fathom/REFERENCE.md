@@ -730,3 +730,44 @@ The physics test proves the contract rather than the implementation: two seconds
 climbing rises, a second of hanging does not slide, climbing down descends, stepping
 sideways leaves the rope and falls, a hooked player does not accelerate downward over
 three seconds, and letting go restores gravity rather than leaving the player floating.
+
+## Sound
+
+There are no audio assets for the same reason there are no image assets: everything is
+made from a description, so a new sound is a few numbers rather than a file.
+
+One idea, repeated. A sound is a list of **layers**, each either a tone - an oscillator
+sweeping between two frequencies - or a hiss - filtered noise sweeping between two
+cutoffs - with an attack-decay envelope. That is enough for a pickaxe, a bowstring, a
+splash, a spell and a boss, because what distinguishes those is mostly which frequencies
+move which way and how fast. Twenty-seven sounds, the longest 1.46 seconds.
+
+Every sound is jittered in pitch per play. Without that, the same sound fifty times in a
+row is a machine gun rather than a pickaxe. Digging has three sounds rather than one,
+because the difference between a spade in soil and a pick on stone is most of what mining
+sounds like.
+
+**Ambience** is one bed per vertical layer, crossfaded as the player moves between them:
+wind above ground, a hollow drone in the caves, a low roar in hell. The filter closes as
+you go down, so depth is audible.
+
+**Music** is a slow generative line over a held chord, pentatonic because a pentatonic
+scale has no wrong notes in it - which is exactly what you want from music that will play
+for hours and must never once sound like a mistake. Depth lowers the root and darkens the
+scale, so the music says where you are without a word. It is scheduled from the game loop
+one note at a time rather than from a timer, so it stops when the game stops and never
+runs on in a background tab.
+
+Keeping the description separate from the playing is what makes any of this testable:
+there is no audio in Node at all. `node tools/audio-test.js` checks that no sound is
+silent, deafening, clipping or ten seconds long; that the sound names game.js actually
+plays - read out of game.js, not listed in the test - all exist; that every layer of the
+world has an ambience bed; and that the music only ever picks notes inside its own scale
+over six hundred steps of its own line.
+
+That last check caught the real bug: the melody allowed an octave jump in both
+directions on top of a ten-semitone scale, giving it a span of thirty-four semitones.
+That is not a melody, it is an alarm. It only lifts now, never drops.
+
+**N** mutes everything, **B** stops the music. Nothing is built until the first key or
+click, because no browser will start an audio context before one.
