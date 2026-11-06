@@ -1,5 +1,5 @@
-import {serviceAccess} from './services.mjs?v=34';
-import {STORY} from './content.mjs?v=34';
+import {serviceAccess} from './services.mjs?v=35';
+import {STORY} from './content.mjs?v=35';
 export const SPECIAL_TALENTS={
  hemoglobin:{name:'Rootblood Recovery',text:'Heal 0.15% maximum HP per kill per level, including AFK.',effect:'killHeal',amount:.0015,max:20,source:'World Task Board: 2 merits',sourceType:'merit',cost:2},
  simmer:{name:'Attacks on Simmer',text:'+0.5% combat AFK progress per level.',effect:'combatAFK',amount:.005,max:20,source:'Finish Flint’s Tools for Tomorrow quest',sourceType:'quest',quest:'tools'},
