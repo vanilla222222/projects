@@ -1630,6 +1630,10 @@ function makeGame(canvas, deps) {
     get profiles() { return profiles; },
     get audio() { return audio; },
     get controls() { return CONTROLS; },
+    // Test seams: what the keyboard and the mouse would set, so a long
+    // automated session can play the game through the same path a person does.
+    get input() { return input; },
+    get pointer() { return pointer; },
     // A test seam: draw one frame without the animation loop, so a measurement can
     // separate the cost of simulating from the cost of drawing.
     drawOnce() { lastView = renderer.draw(state); return lastView; },
