@@ -188,12 +188,38 @@ for (const key of ['trunk', 'leaves', 'vine']) {
 }
 check(tiles.isSolid(tiles.idOf('wood')), 'placed wood should still be a solid building block');
 
-// 9. Spawn must be standable: solid ground with headroom above it.
-for (let x = -500; x <= 500; x += 97) {
+// 9. Spawn must be standable, and the surface must not be riddled with holes. Cave
+// mouths mean not every column has solid ground any more - that is the point of them -
+// so what is checked is that a safe spawn is always findable nearby, and that mouths
+// stay a small minority of the surface rather than turning it into a sieve.
+let mouthColumns = 0;
+let sampled = 0;
+for (let x = -4000; x <= 4000; x += 7) {
+  sampled += 1;
   const surface = gen.surfaceHeight(SEED, x);
-  check(tiles.isSolid(gen.baseTileAt(SEED, x, surface)), 'no solid ground at column ' + x);
-  check(gen.baseTileAt(SEED, x, surface - 1) === tiles.AIR
-    || !tiles.isSolid(gen.baseTileAt(SEED, x, surface - 1)), 'column ' + x + ' has no headroom');
+  if (!tiles.isSolid(gen.baseTileAt(SEED, x, surface))) mouthColumns += 1;
+}
+const mouthShare = mouthColumns / sampled;
+check(mouthShare < 0.2, (100 * mouthShare).toFixed(1)
+  + '% of surface columns are open holes: the surface is a sieve');
+check(mouthShare > 0.002, 'no surface column is open anywhere: there are no cave mouths');
+
+// A standable spot is always within a short walk, which is all a spawn needs.
+for (let origin = -900; origin <= 900; origin += 123) {
+  // A flag, not the column index: storing the column and then testing it for being
+  // non-negative made every spot west of zero look like a failure.
+  let found = false;
+  for (let step = 0; step < 60 && !found; step += 1) {
+    for (const x of [origin + step, origin - step]) {
+      const surface = gen.surfaceHeight(SEED, x);
+      if (!tiles.isSolid(gen.baseTileAt(SEED, x, surface))) continue;
+      if (tiles.isSolid(gen.baseTileAt(SEED, x, surface - 1))) continue;
+      if (tiles.isSolid(gen.baseTileAt(SEED, x, surface - 2))) continue;
+      found = true;
+      break;
+    }
+  }
+  check(found, 'no standable ground within 60 tiles of column ' + origin);
 }
 
 // 10. Every biome must actually generate. The climate fields are summed octaves, which
@@ -232,7 +258,7 @@ for (const s of SURVEY_SEEDS) {
       check(gen.baseTileAt(s, x, gen.SEA_LEVEL) === WATER,
         'ocean column ' + x + ' is dry at sea level');
     }
-    const flood = gen.floodFloor(s, x, gen.columnOf(s, x));
+    const column = gen.columnOf(s, x);
     for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 300); y += 1) {
       if (gen.baseTileAt(s, x, y) !== WATER) continue;
       waterCells += 1;
@@ -242,8 +268,9 @@ for (const s of SURVEY_SEEDS) {
       // table, the tile must be above its floor, and it must be a cave in the first
       // place, never water sitting inside what should be solid rock.
       undergroundWater += 1;
-      check(flood > 0, 'flooded cave at ' + x + ',' + y + ' in a column with no water table');
-      check(y <= flood, 'water below the water table at ' + x + ',' + y);
+      // The generator's own rule for what is submerged, not a restatement of it.
+      check(gen.submergedVoid(s, x, y, column),
+        'water at ' + x + ',' + y + ' where nothing should be submerged');
       // The generator's own carving predicate, not a restatement of it: a second copy
       // here would make this oracle agree with itself rather than with the game.
       check(gen.isCarved(s, x, y, y - surface, gen.columnOf(s, x)),
@@ -270,30 +297,64 @@ for (const s of SURVEY_SEEDS) {
 
 // 13. Climate placement is coherent: the biome a column reports really is the one whose
 // climate weight is highest, so identity and the blended height bias cannot disagree.
-// Identity is the strongest weight, OR the runner-up inside a blend band - and when it
-// is the runner-up the two must genuinely be close. This check used to demand the
-// strongest weight outright; the blend made that false by design, so it now asserts what
-// the blend actually promises rather than what the generator did before it existed.
-let blended = 0;
-for (let x = -9000; x < 9000; x += 7) {
-  const column = gen.columnOf(SEED, x);
-  const weights = gen.climateWeights(SEED, x);
-  let best = 0;
-  let second = -1;
-  for (let i = 0; i < weights.length; i += 1) {
-    if (weights[i] > weights[best]) { second = best; best = i; }
-    else if (second === -1 || weights[i] > weights[second]) second = i;
+// 13. Borders between biomes that LOOK different must interleave, not draw a line.
+// Measured on surface material, because taiga meeting tundra is not a visible border at
+// all - they are both snow - and an earlier blend passed its test while firing almost
+// entirely between pairs like that. This counts how often the ground cover flips within
+// thirty tiles of a boundary, which is exactly what a player sees.
+let visibleBorders = 0;
+let raggedBorders = 0;
+let shortRunShare = 0;
+{
+  for (const s of [SEED, 4242, -98765]) {
+    let prev = null;
+    for (let x = -30000; x < 30000; x += 1) {
+      const b = gen.biomeAt(s, x);
+      if (b.key === 'ocean' || b.key === 'beach') { prev = null; continue; }
+      if (prev && prev !== b.surface) {
+        let flips = 0;
+        let last = null;
+        for (let d = -30; d <= 30; d += 1) {
+          const m = gen.biomeAt(s, x + d).surface;
+          if (last !== null && m !== last) flips += 1;
+          last = m;
+        }
+        visibleBorders += 1;
+        if (flips >= 3) raggedBorders += 1;
+        x += 30;
+        prev = null;
+        continue;
+      }
+      prev = b.surface;
+    }
   }
-  const key = column.climate.key;
-  if (key === gen.CLIMATE_BIOMES[best].key) continue;
-  blended += 1;
-  check(key === gen.CLIMATE_BIOMES[second].key,
-    'column ' + x + ' chose ' + key + ', neither its strongest nor its second climate');
-  const share = weights[second] / (weights[best] + weights[second]);
-  check(share > 0.39,
-    'column ' + x + ' blended to ' + key + ' at a share of only ' + share.toFixed(3));
+  check(visibleBorders > 100, 'too few visible borders to judge blending');
+  const raggedShare = raggedBorders / Math.max(1, visibleBorders);
+  check(raggedShare > 0.5, 'only ' + (100 * raggedShare).toFixed(1)
+    + '% of visible biome borders interleave: the rest are ruled lines');
+
+  // And the interleaving must stay at the borders. Jostling the weights hard enough to
+  // rag a boundary also speckles single columns of the wrong biome through the middle of
+  // every biome unless the jostle is scaled by how contested the column is; this is the
+  // check that the cores survived.
+  const runs = [];
+  for (const s of [SEED, 4242]) {
+    let cur = null;
+    let len = 0;
+    for (let x = -30000; x < 30000; x += 1) {
+      const k = gen.biomeAt(s, x).key;
+      if (k === cur) len += 1;
+      else { if (cur) runs.push(len); cur = k; len = 1; }
+    }
+  }
+  const total = runs.reduce((a, b) => a + b, 0);
+  const short = runs.filter(r => r < 20).reduce((a, b) => a + b, 0);
+  shortRunShare = short / total;
+  check(shortRunShare < 0.2, (100 * shortRunShare).toFixed(1)
+    + '% of the world sits in biome runs under 20 tiles: borders have become speckle');
+  check(Math.max(...runs) > 800, 'no biome anywhere is larger than 800 tiles');
 }
-check(blended > 0, 'the biome blend never fires: borders are hard lines');
+
 
 // 14. Each biome's underground has its own character. Materials alone are just a palette;
 // what makes a jungle cavern feel unlike a tundra tunnel is how much of the rock is open
@@ -480,45 +541,62 @@ for (const [key, a0, a1] of [['hell', 1260, 1740], ['hellcaves', 1760, 2160]]) {
   check(air / n > 0.04, key + ' is only ' + (100 * air / n).toFixed(1) + '% walkable');
 }
 
-// 17. Caves must be reachable. This is the check that caught the worst defect in the
-// generator: noise alone made pockets, not caves, and measured over three seeds only 1%
-// to 11% of the open space underground could be walked to from the sky, in 300 to 460
-// separate sealed voids. A cave nobody can enter is indistinguishable from no cave.
+// 17. Caves must be reachable, and findable. This replaced a check that lied: it seeded
+// the flood fill from the top rows of a fixed window, which for most columns was already
+// underground, so it started inside the cave system and proved only that the system
+// reached itself. It reported 93-96% while the game had three cave mouths in 800 columns
+// and the player could not find a single one.
 //
-// The measurement is a flood fill from everything open in the top two rows. It is the
-// only test here that asks a question about the world as a whole rather than about one
-// tile, and it is the one worth the time it costs.
-const CAVE_SEEDS = [SEED, 4242, 777, 31337];
+// The fill now seeds only from tiles strictly above their own column's surface - genuine
+// open sky - and the count of distinct surface openings is checked as well, because
+// connectivity without a door is not a cave system anybody will ever see.
+const CAVE_SEEDS = [SEED, 4242, 777];
 const reachability = [];
 for (const s of CAVE_SEEDS) {
-  const x0 = -260;
-  const w = 520;
-  const h = 620;
-  const top = gen.surfaceHeight(s, 0) - 10;
+  const x0 = -400;
+  const w = 800;
+  const depthBelow = 600;
+  const surf = new Int32Array(w);
+  let minSurf = Infinity;
+  let maxSurf = -Infinity;
+  for (let i = 0; i < w; i += 1) {
+    const sh = gen.surfaceHeight(s, x0 + i);
+    surf[i] = sh;
+    if (sh < minSurf) minSurf = sh;
+    if (sh > maxSurf) maxSurf = sh;
+  }
+  const topY = minSurf - 30;
+  const h = (maxSurf - topY) + depthBelow;
   const open = new Uint8Array(w * h);
-  let airCells = 0;
+  let underground = 0;
   for (let j = 0; j < h; j += 1) {
     for (let i = 0; i < w; i += 1) {
-      if (tiles.isSolid(gen.baseTileAt(s, x0 + i, top + j))) continue;
+      const y = topY + j;
+      if (tiles.isSolid(gen.baseTileAt(s, x0 + i, y))) continue;
       open[j * w + i] = 1;
-      airCells += 1;
+      if (y > surf[i]) underground += 1;
     }
   }
   const seen = new Uint8Array(w * h);
   const stack = [];
   for (let i = 0; i < w; i += 1) {
-    for (let j = 0; j < 2; j += 1) {
-      if (open[j * w + i] && !seen[j * w + i]) { seen[j * w + i] = 1; stack.push(j * w + i); }
+    for (let j = 0; j < h; j += 1) {
+      if (topY + j >= surf[i]) break;
+      const n = j * w + i;
+      if (open[n] && !seen[n]) { seen[n] = 1; stack.push(n); }
     }
   }
   let reached = 0;
   let deepest = 0;
   while (stack.length) {
     const idx = stack.pop();
-    reached += 1;
     const j = (idx / w) | 0;
     const i = idx - j * w;
-    if (j > deepest) deepest = j;
+    if (topY + j > surf[i]) {
+      reached += 1;
+      const d = topY + j - surf[i];
+      if (d > deepest) deepest = d;
+    }
     const push = (ni, nj) => {
       if (ni < 0 || ni >= w || nj < 0 || nj >= h) return;
       const n = nj * w + ni;
@@ -528,13 +606,54 @@ for (const s of CAVE_SEEDS) {
     };
     push(i - 1, j); push(i + 1, j); push(i, j - 1); push(i, j + 1);
   }
-  const pct = reached / Math.max(1, airCells);
-  reachability.push({ seed: s, pct, deepest, airCells });
-  check(pct > 0.75, 'seed ' + s + ': only ' + (100 * pct).toFixed(1)
-    + '% of underground space can be reached from the surface');
-  check(deepest > h - 40, 'seed ' + s + ': the deepest reachable point is only '
-    + deepest + ' tiles down, of ' + h);
+  let mouths = 0;
+  let prev = false;
+  for (let i = 0; i < w; i += 1) {
+    const j = surf[i] - topY;
+    const hit = j >= 0 && j < h && open[j * w + i] === 1 && seen[j * w + i] === 1;
+    if (hit && !prev) mouths += 1;
+    prev = hit;
+  }
+  const pct = reached / Math.max(1, underground);
+  reachability.push({ seed: s, pct, deepest, mouths, w });
+  check(pct > 0.85, 'seed ' + s + ': only ' + (100 * pct).toFixed(1)
+    + '% of underground space is reachable from open sky');
+  check(deepest > 400, 'seed ' + s + ': the deepest reachable point is only '
+    + deepest + ' tiles below the surface');
+  check(mouths >= 5, 'seed ' + s + ': only ' + mouths + ' cave mouths in ' + w
+    + ' columns, which is too few for a player to find one');
 }
+
+// 18. Underground structures exist, of every kind, and stay where they belong.
+const structureKinds = {};
+for (let slot = -400; slot < 400; slot += 1) {
+  // structurePlaced, not structureAt: the first says where a room really is, the second
+  // only what shape a slot would hold if it were allowed one.
+  const rect = gen.structurePlaced(SEED, slot);
+  if (!rect) continue;
+  structureKinds[rect.kind] = (structureKinds[rect.kind] || 0) + 1;
+  check(rect.y1 > rect.y0 && rect.x1 > rect.x0, 'structure ' + slot + ' has no extent');
+  check(gen.altitudeOf(rect.y0) < 1250,
+    'a ' + rect.kind + ' generated in hell at altitude ' + gen.altitudeOf(rect.y0));
+  check(rect.y0 > gen.surfaceHeight(SEED, rect.body.ax) + 40,
+    'a ' + rect.kind + ' generated too close to the surface');
+}
+for (const kind of ['cabin', 'ruin', 'grotto', 'mineshaft']) {
+  check((structureKinds[kind] || 0) > 10,
+    'only ' + (structureKinds[kind] || 0) + ' of structure kind ' + kind + ' in 800 slots');
+}
+// A cabin must actually contain its crafting station, or it is just a wooden box.
+let stationsFound = 0;
+for (let slot = -400; slot < 400; slot += 1) {
+  const rect = gen.structurePlaced(SEED, slot);
+  if (!rect || rect.kind !== 'cabin') continue;
+  for (let y = rect.y0; y < rect.y1; y += 1) {
+    for (let x = rect.x0; x < rect.x1; x += 1) {
+      if (tiles.tile(gen.baseTileAt(SEED, x, y)).station) stationsFound += 1;
+    }
+  }
+}
+check(stationsFound > 5, 'only ' + stationsFound + ' crafting stations across every cabin');
 
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
@@ -551,12 +670,18 @@ for (const [key, n] of Object.entries(propCounts).sort((a, b) => b[1] - a[1])) {
   console.log('  ' + key.padEnd(13) + n.toLocaleString());
 }
 
-console.log('cave reachability (flood fill from the sky, 520x620 tiles):');
+console.log('biome borders: ' + (100 * raggedBorders / Math.max(1, visibleBorders)).toFixed(1)
+  + '% of ' + visibleBorders + ' visible borders interleave; '
+  + (100 * shortRunShare).toFixed(1) + '% of the world is in runs under 20 tiles');
+
+console.log('cave reachability (flood fill seeded from open sky only):');
 for (const r of reachability) {
-  console.log('  seed ' + String(r.seed).padStart(7) + '  '
-    + (100 * r.pct).toFixed(1).padStart(5) + '% of open space reachable, deepest '
-    + r.deepest + ' tiles down');
+  console.log('  seed ' + String(r.seed).padStart(9) + '  '
+    + (100 * r.pct).toFixed(1).padStart(5) + '% reachable, deepest ' + r.deepest
+    + ' below surface, ' + r.mouths + ' mouths in ' + r.w + ' columns');
 }
+console.log('underground structures per 800 slots: '
+  + Object.entries(structureKinds).map(([k, n]) => k + ' ' + n).join(', '));
 
 console.log('underground openness (depth 40-300):');
 for (const [key, a] of Object.entries(openness).sort((x, y) => y[1].air / y[1].n - x[1].air / x[1].n)) {

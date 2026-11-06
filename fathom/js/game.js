@@ -54,13 +54,20 @@ function makeGame(canvas, deps) {
   const pointer = { x: 0, y: 0 };
   let lastView = null;
 
+  // Somewhere to stand, not merely somewhere that is not solid. Cave mouths now break the
+  // surface often enough that spawning on the first clear column dropped the player down
+  // a shaft at the start of the game; it has to be clear AND have ground under it.
   function spawnPlayer() {
-    for (let probe = 0; probe < 256; probe += 1) {
-      const column = probe * 7;
+    for (let probe = 0; probe < 400; probe += 1) {
+      const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
       const surface = worldgen.surfaceHeight(seed, column);
+      if (!tiles.isSolid(world.get(column, surface))) continue;
       const candidate = physics.makePlayer(column + 0.1, surface - 3);
-      if (!physics.overlapsSolid(world, tiles, candidate.x, candidate.y,
-        candidate.width, candidate.height)) return candidate;
+      if (physics.overlapsSolid(world, tiles, candidate.x, candidate.y,
+        candidate.width, candidate.height)) continue;
+      // And not standing in the sea.
+      if (world.getLevel(column, surface - 1) > 0) continue;
+      return candidate;
     }
     return physics.makePlayer(0, worldgen.SKY_H);
   }

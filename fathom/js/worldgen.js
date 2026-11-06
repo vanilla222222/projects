@@ -136,6 +136,29 @@ function stretch(v) {
 // Frequencies divided by about three from the first version: a biome you cross in a
 // couple of screens reads as terrain variation rather than as a place, and the whole
 // point of fourteen of them is that arriving somewhere feels like arriving.
+// Where the climate is actually sampled. Displacing the lookup by a small high-frequency
+// amount is what makes every border ragged: two biomes interleave in tongues because the
+// line between them wanders by a dozen tiles from column to column.
+//
+// This replaced a dither that compared a noise field against how close the top two
+// weights were. That worked, and was invisible: it fired mostly between neighbours which
+// share a surface material - taiga against tundra, both snow - while the borders a player
+// actually sees, snow meeting grass, stayed ruled lines. A warp has no threshold to miss.
+//
+// The climate fields are very low frequency, so displacing the lookup by at most twenty
+// tiles barely moves the blended height bias and the terrain stays continuous.
+// Two octaves. The broad one bends a border over tens of tiles so it is never straight;
+// the fine one oscillates faster than the border moves, which is what turns the boundary
+// into interleaved tongues of each biome rather than a wiggly but single line.
+const CLIMATE_WARP_BROAD = 54;
+const CLIMATE_WARP_FINE = 17;
+
+function climateX(seed, x) {
+  const broad = (fbm1(seed, x * 0.012, 4501, 2, 2, 0.5) - 0.5) * CLIMATE_WARP_BROAD;
+  const fine = (fbm1(seed, x * 0.16, 4507, 2, 2, 0.5) - 0.5) * CLIMATE_WARP_FINE;
+  return x + broad + fine;
+}
+
 function temperature(seed, x) {
   const broad = fbm1(seed, x * 0.00014, 311, 3, 2, 0.52);
   const local = fbm1(seed, x * 0.0012, 733, 2, 2, 0.5);
@@ -158,9 +181,28 @@ function continent(seed, x) {
 
 // Smooth membership in each climate biome. The kernel is wide enough that neighbouring
 // biomes always overlap, which is what makes the blended height bias continuous.
-function climateWeights(seed, x) {
-  const t = temperature(seed, x);
-  const m = moisture(seed, x);
+// How hard each biome's weight is jostled per column. This is what makes a border
+// interleave, and it had to replace two earlier attempts.
+//
+// The first compared a noise field against how close the top two weights were and swapped
+// the winner when it dipped. That fired mostly between neighbours sharing a surface
+// material - taiga against tundra, both snow - so it worked and was invisible. The second
+// displaced the sampled position instead; but the climate fields are deliberately very
+// low frequency, so moving the lookup twenty tiles barely changes the weights and the
+// winner almost never flipped. Measured, only 6.5% of borders between biomes that
+// actually look different had any interleaving at all.
+//
+// Jostling the weights works at every border regardless of which pair meets, because it
+// acts on the comparison itself rather than on the thing being compared.
+const CLIMATE_JOSTLE = 1.5;
+const JOSTLE_FIELD = 0.19;
+
+// The climate weights with no jostle at all. Height bias is blended across these, so the
+// ground stays a smooth function of position even where identity flickers.
+function smoothWeights(seed, x) {
+  const wx = climateX(seed, x);
+  const t = temperature(seed, wx);
+  const m = moisture(seed, wx);
   const weights = new Array(CLIMATE_BIOMES.length);
   for (let i = 0; i < CLIMATE_BIOMES.length; i += 1) {
     const b = CLIMATE_BIOMES[i];
@@ -169,6 +211,37 @@ function climateWeights(seed, x) {
     weights[i] = Math.exp(-(dt * dt + dm * dm));
   }
   return weights;
+}
+
+// The weights that decide identity: the smooth ones, jostled by a per-biome noise whose
+// strength is proportional to how contested the column already is.
+//
+// Scaling by contest is the part that matters. A flat jostle strong enough to interleave
+// a border - 64% of visible borders, measured - also scattered single columns of the
+// wrong biome through the middle of every biome, dropping the median run from 17 tiles
+// to 8 and then to 4 as it was strengthened. Deep inside a biome the runner-up is far
+// behind, the contest is near zero, and the jostle vanishes with it.
+function climateWeights(seed, x) {
+  const smooth2 = smoothWeights(seed, x);
+  let best = 0;
+  for (let i = 0; i < smooth2.length; i += 1) if (smooth2[i] > smooth2[best]) best = i;
+  let second = -1;
+  for (let i = 0; i < smooth2.length; i += 1) {
+    if (i === best) continue;
+    if (second === -1 || smooth2[i] > smooth2[second]) second = i;
+  }
+  const share = second >= 0 && smooth2[best] > 0
+    ? smooth2[second] / (smooth2[best] + smooth2[second]) : 0;
+  // Nothing below a third of parity is a border worth ragging.
+  const contest = Math.max(0, (share - 0.3) / 0.2);
+  if (contest <= 0) return smooth2;
+
+  const out = new Array(smooth2.length);
+  for (let i = 0; i < smooth2.length; i += 1) {
+    const noise = fbm1(seed, x * JOSTLE_FIELD, 4600 + i * 29, 2, 2, 0.5) - 0.5;
+    out[i] = smooth2[i] * (1 + noise * CLIMATE_JOSTLE * contest);
+  }
+  return out;
 }
 
 // Columns are asked about repeatedly, once per tile in the column and again by trees and
@@ -212,33 +285,56 @@ function blightAt(seed, x) {
 // large enough to read as a tongue of forest reaching into the plains rather than as
 // single-column speckle.
 const BLEND_FIELD = 0.055;
+// How close the runners-up must be before a border starts interleaving.
+// Low enough that a border between two biomes which actually look different gets a wide
+// interleaved band. At 0.40 the blend fired mostly between neighbours that share a
+// surface material - taiga against tundra, both snow - so it was working and invisible.
+const BLEND_THRESHOLD = 0.26;
 
-function buildColumn(seed, x) {
+// Which two climates compete for a column, how close they are, and which one wins. One
+// function, exported, because the test had its own copy of the second-place search and
+// inherited the same bug the generator had.
+//
+// That bug: finding second place inside the same pass as first left it equal to `best`
+// whenever the strongest biome was index 0, since nothing ever displaced the initial
+// value. The blend then fired, computed a share of exactly one half, and swapped the
+// biome for itself. It ran on a fifth of all columns and changed nothing, which is why
+// borders still looked like ruled lines in the game while the tests called them blended.
+function climateChoice(seed, x) {
   const weights = climateWeights(seed, x);
   let best = 0;
-  let second = -1;
+  for (let i = 0; i < weights.length; i += 1) {
+    if (weights[i] > weights[best]) best = i;
+  }
+  // Height comes from the unjostled weights. If the bias followed the flicker, a border
+  // would be a row of one-tile steps instead of a smooth slope with ragged ground cover.
+  const smooth2 = smoothWeights(seed, x);
   let total = 0;
   let blended = 0;
+  for (let i = 0; i < smooth2.length; i += 1) {
+    total += smooth2[i];
+    blended += smooth2[i] * CLIMATE_BIOMES[i].bias;
+  }
+  let second = -1;
   for (let i = 0; i < weights.length; i += 1) {
-    if (weights[i] > weights[best]) { second = best; best = i; }
-    else if (second === -1 || weights[i] > weights[second]) second = i;
-    total += weights[i];
-    blended += weights[i] * CLIMATE_BIOMES[i].bias;
+    if (i === best) continue;
+    if (second === -1 || weights[i] > weights[second]) second = i;
   }
-  const bias = total > 0 ? blended / total : 0;
 
-  // Blend. Taking the strongest weight outright puts a ruled line between two biomes,
-  // which is the one place a generated world always looks generated. Where the top two
-  // weights are close, a coherent noise field decides per patch which of the pair wins,
-  // so the border becomes interleaved tongues of each. Height already blends across every
-  // weight, so only identity needed this.
-  if (second >= 0 && weights[best] > 0) {
-    const share = weights[second] / (weights[best] + weights[second]);
-    if (share > 0.40) {
-      const dither = fbm1(seed, x * BLEND_FIELD, 4401, 2, 2, 0.5);
-      if (dither < share) best = second;
-    }
-  }
+  // Taking the strongest weight outright puts a ruled line between two biomes, which is
+  // the one place a generated world always looks generated. Where the top two are close,
+  // a coherent noise field decides per patch which wins, so the border becomes
+  // interleaved tongues of each. Height already blends across every weight.
+  const share = second >= 0 && weights[best] > 0
+    ? weights[second] / (weights[best] + weights[second]) : 0;
+  return { weights, best, second, share, chosen: best,
+    bias: total > 0 ? blended / total : 0 };
+}
+
+function buildColumn(seed, x) {
+  const choice = climateChoice(seed, x);
+  const best = choice.chosen;
+  const bias = choice.bias;
   const land = continent(seed, x);
 
   // Height first, because whether this column is shore or sea depends on where it lands.
@@ -270,7 +366,8 @@ function buildColumn(seed, x) {
     const blight = blightAt(seed, x);
     if (blight) biome = BY_BIOME[blight];
   }
-  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land, weights };
+  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land,
+    weights: choice.weights, choice };
 }
 
 function biomeAt(seed, x) {
@@ -304,14 +401,14 @@ const CAVE_PROFILES = {
   // Tundra: tight, winding, little open space.
   narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 , bore: 0.66 },
   // Desert: broad flat halls carved along the bedding planes of the sandstone.
-  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.8 },
+  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.28 },
   // Jungle: enormous chambers, the largest in the world.
-  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 , bore: 1.55 },
+  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 , bore: 1.1 },
   // Highlands and badlands: vertical shafts punched through the rock.
   shafts:  { scale: 0.03, rooms: 0.24, threshold: 0.6, vertical: 0.42, roomScale: 0.018 , bore: 1.05 },
   // The blights: narrow vertical chasms that run a long way down.
   chasms:  { scale: 0.026, rooms: 0.2, threshold: 0.58, vertical: 0.66, roomScale: 0.017 , bore: 0.82 },
-  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 , bore: 1.3 }
+  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 , bore: 1.15 }
 };
 
 function caveProfile(column) {
@@ -332,8 +429,15 @@ function caveProfile(column) {
 //
 // Both are pure functions of (x, y), so like the sky islands they cannot disagree at a
 // chunk seam and need no stamping margin.
-const GALLERY_SPACING = 64;
-const SHAFT_SPACING = 108;
+// Galleries every 50 tiles with the widened radius left the jungle underground 53% open
+// - more air than rock, which is a void rather than a cave system. 62 keeps the layers
+// distinct and the rock between them worth mining through.
+const GALLERY_SPACING = 62;
+// Measured, not guessed. At 108 apart with 62% of them breaking the surface there was
+// one cave mouth every 160 to 267 tiles - two or three screens of walking between doors,
+// each only a few tiles wide and easily hidden behind a tree. Connectivity was already
+// 95%, but a cave you never find is a cave that is not there.
+const SHAFT_SPACING = 50;
 
 // A horizontal gallery near this depth, if any.
 function inGallery(seed, x, depth, bore) {
@@ -342,8 +446,8 @@ function inGallery(seed, x, depth, bore) {
     if (b < 1) continue;
     const base = b * GALLERY_SPACING + (unit(seed, b, 0, 5201) - 0.5) * 38;
     const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
-    const radius = (2.2 + unit(seed, b, 0, 5207) * 3.0
-      + (fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5) - 0.5) * 2.4) * bore;
+    const radius = (2.8 + unit(seed, b, 0, 5207) * 3.8
+      + (fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5) - 0.5) * 3.0) * bore;
     if (Math.abs(depth - (base + wander)) < radius) return true;
   }
   return false;
@@ -354,23 +458,43 @@ function inGallery(seed, x, depth, bore) {
 function inShaft(seed, x, depth, bore) {
   const slot = Math.round(x / SHAFT_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
-    if (unit(seed, s, 0, 5301) > 0.7) continue;
+    if (unit(seed, s, 0, 5301) > 0.82) continue;
     // Most shafts break the surface. The cave system was already one connected mass in
     // every seed measured - up to 120,000 tiles of it - but with doors every 480 tiles
     // on average, two of three sample windows contained none at all, and a cave with no
     // door is indistinguishable from no cave.
-    const top = unit(seed, s, 0, 5313) < 0.62 ? -2 : 30 + unit(seed, s, 0, 5317) * 180;
+    const top = unit(seed, s, 0, 5313) < 0.72 ? -3 : 30 + unit(seed, s, 0, 5317) * 180;
     const bottom = 320 + unit(seed, s, 0, 5319) * 560;
     if (depth < top || depth > bottom) continue;
     const base = s * SHAFT_SPACING + (unit(seed, s, 0, 5303) - 0.5) * SHAFT_SPACING * 0.72;
     const wander = (fbm1(seed, depth * 0.0062 + s * 23, 5307, 3, 2, 0.5) - 0.5) * 76;
-    const radius = (1.7 + unit(seed, s, 0, 5311) * 2.3
-      + (fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5) - 0.5) * 1.4) * bore;
+    const radius = (2.1 + unit(seed, s, 0, 5311) * 2.8
+      + (fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5) - 0.5) * 1.8) * bore;
     // The mouth flares, so an entrance reads as an entrance rather than as a drilled hole.
-    const flare = top < 0 && depth < 14 ? (14 - depth) * 0.22 : 0;
-    if (Math.abs(x - (base + wander)) < radius + flare) return true;
+    // A funnel, not a flare. Widening the mouth made each entrance fifteen tiles across
+    // and the surface measured 21.9% open holes - a sieve rather than a landscape - so
+    // the shaft now pinches at the top and opens out below. That gives many more
+    // entrances for the same amount of missing ground, and a narrow opening leading
+    // into a widening throat reads far more like a cave than a crater does.
+    const throat = top < 0 && depth < 14 ? 0.4 + depth * 0.043 : 1;
+    if (Math.abs(x - (base + wander)) < radius * throat) return true;
   }
   return false;
+}
+
+// Whether an open tile underground is full of water. Under the sea, everything open and
+// below sea level is: the rock down there has had geological time to saturate, and a dry
+// cavern beneath an ocean is a bubble nothing could have made.
+//
+// The earlier rule stopped at a water table 110 to 230 tiles below the bed, which left
+// 89,309 dry air tiles below sea level under the ocean in one sampled stretch, and the
+// cave shafts then punched 5% of sea beds open into them. That is the ocean full of air
+// pockets. The cut-off now is hell, where lava takes over instead.
+function submergedVoid(seed, x, y, column) {
+  if (y < SEA_LEVEL) return false;
+  if (column.biome.drowned && altitudeOf(y) < 1250) return true;
+  const flood = floodFloor(seed, x, column);
+  return flood > 0 && y <= flood;
 }
 
 // The network takes its width from the biome's own cave profile, so a desert gallery is
@@ -477,6 +601,133 @@ function oreAt(seed, x, y, depth) {
   return null;
 }
 
+// --- underground structures ---------------------------------------------------------
+// Terraria's underground is punctuated: a ruined cabin with a chest in it, a brick room
+// half buried, a mineshaft someone abandoned. Those punctuation marks are what make
+// exploring feel like finding things rather than like walking through noise.
+//
+// Like the sky islands, these are computed from (x, y) rather than stamped, so a room
+// wider than a chunk cannot disagree with itself across a seam.
+
+const STRUCTURE_SPACING = 260;
+
+function structureAt(seed, slot) {
+  if (unit(seed, slot, 0, 6001) > 0.72) return null;
+  const ax = Math.round(slot * STRUCTURE_SPACING
+    + STRUCTURE_SPACING * (0.15 + unit(seed, slot, 0, 6003) * 0.7));
+  // Anchored to its own column's surface, so a structure sits at a sane depth whether
+  // the ground above it is a mountain or an ocean bed.
+  const depth = 80 + unit(seed, slot, 0, 6007) * 520;
+  const roll = unit(seed, slot, 0, 6011);
+  let kind;
+  let w;
+  let h;
+  if (roll < 0.3) { kind = 'cabin'; w = 11 + Math.floor(unit(seed, slot, 0, 6013) * 8); h = 6 + Math.floor(unit(seed, slot, 0, 6017) * 3); }
+  else if (roll < 0.52) { kind = 'ruin'; w = 13 + Math.floor(unit(seed, slot, 0, 6013) * 10); h = 7 + Math.floor(unit(seed, slot, 0, 6017) * 4); }
+  else if (roll < 0.8) { kind = 'grotto'; w = 26 + Math.floor(unit(seed, slot, 0, 6013) * 30); h = 14 + Math.floor(unit(seed, slot, 0, 6017) * 16); }
+  else { kind = 'mineshaft'; w = 46 + Math.floor(unit(seed, slot, 0, 6013) * 40); h = 5; }
+  return { slot, kind, w, h, ax, depth };
+}
+
+// A structure's absolute vertical position. Separate from structureAt so the shape can be
+// decided without a column lookup, which keeps the slot scan cheap.
+function structureRect(seed, body) {
+  const top = columnOf(seed, body.ax).height + Math.round(body.depth);
+  return { x0: body.ax - (body.w >> 1), x1: body.ax - (body.w >> 1) + body.w,
+    y0: top, y1: top + body.h, kind: body.kind, slot: body.slot, w: body.w, h: body.h };
+}
+
+// Whether a structure in this slot actually generates, and where. The refusals used to
+// live inline in structureTileAt, so a test that asked structureAt where the rooms were
+// got told about rooms that never appear - the third time a rule has existed in two
+// places in this file and the two have disagreed.
+function structurePlaced(seed, slot) {
+  const body = structureAt(seed, slot);
+  if (!body) return null;
+  const rect = structureRect(seed, body);
+  // Never in hell, where a wooden cabin among lava is absurd, and never under the sea,
+  // where it would flood the moment it generated.
+  if (altitudeOf(rect.y0) >= 1250) return null;
+  if (columnOf(seed, body.ax).biome.drowned) return null;
+  rect.body = body;
+  return rect;
+}
+
+const STRUCTURE_STATIONS = ['workbench', 'furnace', 'anvil'];
+
+function structureTileAt(seed, x, y) {
+  const slot = Math.floor(x / STRUCTURE_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    const r = structurePlaced(seed, s);
+    if (!r) continue;
+    const body = r.body;
+    if (x < r.x0 || x >= r.x1 || y < r.y0 || y >= r.y1) continue;
+    // A structure is anchored to its own column's surface, so over a neighbouring valley
+    // it can reach above the ground there and carve a hole in the open hillside. It has
+    // to stay buried at every column it spans, not just at its anchor.
+    if (y < columnOf(seed, x).height + 8) continue;
+
+    const lx = x - r.x0;
+    const ly = y - r.y0;
+    const edge = lx === 0 || lx === r.w - 1 || ly === 0 || ly === r.h - 1;
+
+    if (r.kind === 'grotto') {
+      // A large natural chamber: an eroded ellipse, open, with a flat-ish floor.
+      const u = (lx - r.w / 2) / (r.w / 2);
+      const v = (ly - r.h / 2) / (r.h / 2);
+      const bite = (fbm2(seed, x * 0.07, y * 0.07, 6101, 2, 2, 0.5) - 0.5) * 0.5;
+      if (u * u + v * v + bite > 0.95) continue;
+      if (ly >= r.h - 2) return idOf('stone');
+      return AIR;
+    }
+
+    if (r.kind === 'mineshaft') {
+      if (ly === r.h - 1) return idOf('wood');            // the floor
+      if (ly === 0) return idOf('wood');                  // the roof beam
+      // Upright timbers every few tiles, and the rest open.
+      if (lx % 7 === 3 && ly > 0 && ly < r.h - 1) return idOf('wood');
+      return AIR;
+    }
+
+    const shell = r.kind === 'cabin' ? idOf('wood') : idOf('brick');
+    if (edge) {
+      // A ruin has collapsed in places; a cabin is whole apart from its doorway.
+      const gap = fbm2(seed, x * 0.12, y * 0.12, 6107, 2, 2, 0.5);
+      if (r.kind === 'ruin' && gap > 0.62) return AIR;
+      if (r.kind === 'cabin' && ly >= r.h - 3 && lx === 0 && gap > 0.5) return AIR;
+      return shell;
+    }
+
+    // Inside. A cabin keeps a crafting station and a torch; a ruin keeps rubble.
+    if (r.kind === 'cabin') {
+      const stationX = 2 + (body.slot % Math.max(1, r.w - 4));
+      if (ly === r.h - 2 && lx === stationX) {
+        return idOf(STRUCTURE_STATIONS[Math.abs(body.slot) % STRUCTURE_STATIONS.length]);
+      }
+      if (ly === 1 && (lx === 2 || lx === r.w - 3)) return idOf('torch');
+      return AIR;
+    }
+    const rubble = fbm2(seed, x * 0.15, y * 0.15, 6113, 2, 2, 0.5);
+    if (ly >= r.h - 2 && rubble > 0.56) return idOf('stone');
+    return AIR;
+  }
+  return null;
+}
+
+// The background a structure leaves behind, so its interior reads as a room.
+function structureWallAt(seed, x, y) {
+  const slot = Math.floor(x / STRUCTURE_SPACING);
+  for (let s = slot - 1; s <= slot + 1; s += 1) {
+    const r = structurePlaced(seed, s);
+    if (!r) continue;
+    if (x < r.x0 || x >= r.x1 || y < r.y0 || y >= r.y1) continue;
+    if (y < columnOf(seed, x).height + 8) continue;
+    if (r.kind === 'grotto') return 0;
+    return wallIdOf(r.kind === 'cabin' || r.kind === 'mineshaft' ? 'plankwall' : 'brickwall');
+  }
+  return null;
+}
+
 function baseTileAt(seed, x, y) {
   const column = columnOf(seed, x);
   const surface = column.height;
@@ -487,6 +738,11 @@ function baseTileAt(seed, x, y) {
     if (above !== AIR) return above;
     return y >= SEA_LEVEL ? idOf('water') : AIR;
   }
+
+  // Structures win over the rock they are set into, but not over hell or the sea, which
+  // structureTileAt refuses for itself.
+  const built = structureTileAt(seed, x, y);
+  if (built !== null) return built;
 
   // Hell's great hall, and its repeats below the hell caves.
   const hall = hallTileAt(seed, x, y);
@@ -503,8 +759,7 @@ function baseTileAt(seed, x, y) {
     // A cave below the water table is not a cave, it is a flooded one. Everything above
     // sea level stays dry, so a cavern that breaches the surface drains rather than
     // holding an impossible column of water.
-    const flood = floodFloor(seed, x, column);
-    if (flood > 0 && y <= flood && y >= SEA_LEVEL) return idOf('water');
+    if (submergedVoid(seed, x, y, column)) return idOf('water');
     // Hell's caverns hold lava in their floors rather than water in their ceilings.
     const lava = lavaFloor(seed, x, y);
     if (lava) return idOf('lava');
@@ -888,6 +1143,8 @@ function baseWallAt(seed, x, y) {
     if (skyTileAt(seed, x, y) === AIR) return 0;
     return altitudeOf(y) < -750 ? wallIdOf('skywall') : wallIdOf('dirtwall');
   }
+  const built = structureWallAt(seed, x, y);
+  if (built !== null) return built;
   const layer = stratum(seed, x, y, depth, column);
   if (layer === 'surface' || layer === 'filler' || layer === 'blighted') {
     return wallIdOf(column.biome.wall);
@@ -948,9 +1205,7 @@ function baseLevelAt(seed, x, y) {
   if (spec.solid) return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
-  const flood = floodFloor(seed, x, column);
-  if (flood > 0 && y <= flood && y >= SEA_LEVEL) return 255;
-  return 0;
+  return submergedVoid(seed, x, y, column) ? 255 : 0;
 }
 
 function isLiquidId(id) {
@@ -992,13 +1247,15 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, layerAt, altitudeOf,
-    lavaFloor, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
+    LAYERS, layerAt, altitudeOf, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
+    lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
+    STRUCTURE_SPACING, structureAt, structureRect, structurePlaced, structureTileAt, structureWallAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
