@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=27';
-import * as D from './content.mjs?v=27';
-import * as R from './reward-progression.mjs?v=27';
-import * as UI from './panels.mjs?v=27';
-import {questRewards} from './dialogue-panels.mjs?v=27';
+import * as E from './engine.mjs?v=28';
+import * as D from './content.mjs?v=28';
+import * as R from './reward-progression.mjs?v=28';
+import * as UI from './ui-panels.mjs?v=28';
+import {questRewards} from './dialogue-panels.mjs?v=28';
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 function ready(s,c,id){const q=D.STORY.find(q=>q.id===id);for(const before of q.requires)c.journey.story[before]={accepted:true,done:true};c.journey.story[id]={accepted:true,done:false,extrasVersion:1};Object.assign(c.journey.kills,q.kills);Object.assign(c.journey.events,q.actions);for(const room of q.visits||[])c.journey.visited[room]=true;if(q.minigame)c.minigames.best[q.minigame.skill]=q.minigame.score;for(const[k,n]of Object.entries(q.deliver||{}))s.inventory[k]=n;s.unlockedClasses=Object.keys(D.CLASSES);return q;}
 test('Quest storage rewards grant actual usable personal and shared slots, once',()=>{
@@ -12,7 +12,7 @@ test('Quest storage rewards grant actual usable personal and shared slots, once'
  ready(s,c,'stone-oath');assert.ok(E.claimQuest(s,c,'stone-oath','warrior'));assert.ok(E.useExpansion(s,c,'cavern-chest'));assert.equal(E.chestCapacity(s),30);assert.doesNotThrow(()=>reload(s));
 });
 test('Repeat characters earn their own bags, while account chest and stamps become previewed coins',()=>{
- const s=E.freshSave(),a=E.selected(s);ready(s,a,'stone-oath');assert.ok(E.claimQuest(s,a,'stone-oath','warrior'));assert.ok(E.createCharacter(s,'Second'));const b=E.selected(s),q=ready(s,b,'stone-oath'),plan=R.questRewardPlan(s,b,q);assert.equal(plan.replacementCoins,70);assert.deepEqual(plan.items,{});assert.match(questRewards(q,s,b),/170 coins/);const coins=s.coins;assert.ok(E.claimQuest(s,b,q.id,q.giver));assert.equal(s.coins-coins,plan.coins);assert.equal(b.bag['cavern-chest']||0,0);
+ const s=E.freshSave(),a=E.selected(s);ready(s,a,'stone-oath');assert.ok(E.claimQuest(s,a,'stone-oath','warrior'));assert.ok(E.createCharacter(s,'Second'));const b=E.selected(s),q=ready(s,b,'stone-oath'),plan=R.questRewardPlan(s,b,q);assert.equal(plan.replacementCoins,70);assert.deepEqual(plan.items,{});assert.match(questRewards(q,s,b),/170 coins/);assert.match(UI.journal(s,b,{quest:q.id}),/170 coins/);const coins=s.coins;assert.ok(E.claimQuest(s,b,q.id,q.giver));assert.equal(s.coins-coins,plan.coins);assert.equal(b.bag['cavern-chest']||0,0);
  for(const c of [a,b]){ready(s,c,'seam-work');assert.ok(E.claimQuest(s,c,'seam-work','warrior'));assert.equal(c.bag['seam-bag'],1);}
 });
 test('Already crafted personal pouches convert to coins without losing existing capacity',()=>{
@@ -31,7 +31,7 @@ test('Category stamps change only their own stacks; accuracy and maker stamps af
  const s=E.freshSave(),c=E.selected(s);s.stamps.orebag={level:5,cap:5};s.stamps.sight={level:5,cap:5};s.stamps.forge={level:5,cap:5};E.syncAccount(s);assert.equal(E.stackLimit(c,'copper'),111);assert.equal(E.stackLimit(c,'oak'),99);assert.ok(E.accuracy(c)>13);const base=structuredClone(s);base.stamps={};E.syncAccount(base);E.advanceProduction(s,200);E.advanceProduction(base,200);assert.ok(c.anvil.progress>base.characters[0].anvil.progress||Object.values(c.anvil.stored).reduce((a,b)=>a+b,0)>Object.values(base.characters[0].anvil.stored).reduce((a,b)=>a+b,0));
 });
 test('Every reward has a source and three uses; storage collection hides undiscovered quest names',()=>{
- const s=E.freshSave(),c=E.selected(s);for(const items of Object.values(D.QUEST_UPGRADES))for(const id of Object.keys(items))assert.ok(D.purposes(id).length>=3,id);assert.equal(R.upgradeSource(s,c,'seam-bag'),'Undiscovered quest');ready(s,c,'seam-work');assert.match(R.upgradeSource(s,c,'seam-bag'),/Read the Seams/);const html=UI.inventory(s,c,null,{tab:'capacity'});assert.match(html,/shared chest/);assert.match(html,/Undiscovered quest/);assert.doesNotMatch(html,/undefined|NaN/);
+ const s=E.freshSave(),c=E.selected(s);for(const items of Object.values(D.QUEST_UPGRADES))for(const id of Object.keys(items))assert.ok(D.purposes(id).length>=3,id);assert.equal(R.upgradeSource(s,c,'seam-bag'),'Undiscovered quest');ready(s,c,'seam-work');assert.match(R.upgradeSource(s,c,'seam-bag'),/Read the Seams/);const html=UI.inventory(s,c,{tab:'capacity'});assert.match(html,/shared chest/);assert.match(html,/Undiscovered quest/);assert.doesNotMatch(html,/undefined|NaN/);
 });
 test('Enchanting and alchemy stamps improve actual profession actions',()=>{
  const s=E.freshSave(),c=E.selected(s);Object.assign(c,{area:'jungle-town',zone:0,position:{x:1700,y:644}});s.inventory.dust=100;s.inventory['bat-fang']=100;s.inventory['copper-bar']=100;E.createEquipment(s,'copper-sword',c);s.stamps.weave={level:5,cap:5};s.stamps.cauldron={level:5,cap:5};E.syncAccount(s);assert.ok(E.enchant(s,c,'weapon','force'));assert.equal(c.skills.enchanting,6.75);

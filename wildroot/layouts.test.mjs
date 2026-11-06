@@ -1,11 +1,11 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=27';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=28';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=27';
-import {AREAS,SECRETS} from './content.mjs?v=27';
-import {World,createMap,GROUND} from './world.mjs?v=27';
-import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=27';
-import {viewFor} from './scene.mjs?v=27';
+import * as E from './engine.mjs?v=28';
+import {AREAS,SECRETS} from './content.mjs?v=28';
+import {World,createMap,GROUND} from './world.mjs?v=28';
+import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=28';
+import {viewFor} from './scene.mjs?v=28';
 const rooms=()=>[...AREAS.flatMap(a=>a.zones.map((_,i)=>({area:a.id,index:i}))),...Object.entries(SECRETS).map(([secret,d])=>({area:d.area,index:d.zone,secret})),{area:'jungle-town',index:2,boss:true}];
 const open=()=>{const s=E.freshSave();for(const a of AREAS)for(let i=0;i<a.zones.length;i++)seedKill(s,`${a.id}-${i}`,12);s.storyFlags.bossPermit=true;s.secretUnlocks=['sunwell'];s.stars.unlocked=true;return s;};
 const tick=(w,t)=>{for(let i=0;i<t*50;i++)w.step(.02);};

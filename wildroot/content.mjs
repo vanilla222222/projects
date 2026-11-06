@@ -1,6 +1,6 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=27';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=27';
-import {roomLayout} from './layouts.mjs?v=27';
+import {QUEST_REFORMS} from './quest-content.mjs?v=28';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=28';
+import {roomLayout} from './layouts.mjs?v=28';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
