@@ -1,11 +1,11 @@
-import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=38';
-import {ATTACKS} from './combat-patterns.mjs?v=38';
-import {zoneUnlocked,routeRequirement} from './engine.mjs?v=38';
-import {drawMonsterArt} from './monster-art.mjs?v=38';
-import {npcMarker} from './conversations.mjs?v=38';
-import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=38';
+import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=39';
+import {ATTACKS} from './combat-patterns.mjs?v=39';
+import {zoneUnlocked,routeRequirement} from './engine.mjs?v=39';
+import {drawMonsterArt} from './monster-art.mjs?v=39';
+import {npcMarker} from './conversations.mjs?v=39';
+import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=39';
 // Original canvas scenery. No external artwork or game assets.
-import {areaById,zoneEnemy,ENEMIES,CLASSES,EQUIPMENT,COSMETICS} from './content.mjs?v=38';
+import {areaById,zoneEnemy,ENEMIES,CLASSES,EQUIPMENT,COSMETICS} from './content.mjs?v=39';
 const PALETTES={forest:['#b0c6a0','#8fae8b','#6f9575','#375c47','#203e32','#75905b'],jungle:['#b0c7a0','#759b7a','#497c63','#2a5745','#1b3d32','#7f9c5b'],caves:['#67777a','#56676c','#3d4f55','#283c42','#192f34','#54726a'],deep:['#565e71','#444f62','#354152','#263442','#1c2937','#657776'],town:['#c7d4b1','#a7bb94','#829c73','#4f6f48','#36533b','#a2af70'],'jungle-town':['#bdcdac','#8eae88','#699373','#3e6b53','#274d3e','#8ea76a']};
 const R=(x,y,w,h,c,g)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h));};
 function tree(g,x,y,scale=1,birch=false,jungle=false){g.save();g.translate(x,y);g.scale(scale,scale);R(-6,-110,13,113,birch?'#c6c6a0':'#695d40',g);R(-6,-110,4,113,birch?'#858e70':'#4c4f34',g);if(birch)for(let i=0;i<5;i++)R(-5,-i*21,7,3,'#657259',g);const colors=jungle?['#284e3d','#315d43','#47774e','#5c8856']:['#345c40','#47734b','#62874f','#77945b'];for(let i=0;i<4;i++){const w=100-i*14;R(-w/2,-130-i*17,w,34,colors[i],g);R(-w/2+8,-140-i*17,w-16,14,colors[i],g);}if(jungle){R(27,-151,3,115,'#7c9c57',g);R(25,-49,5,8,'#66884b',g);}g.restore();}
@@ -34,7 +34,7 @@ function adventurer(g,x,y,c,t){
  g.restore();}g.restore();
 }
 function enemy(g,x,y,e,t,boss=false){drawMonsterArt(g,e,x,y,t,boss);}
-import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=38';
+import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=39';
 function label(g,text,x,y,color='#fff8db',size=14){g.font=`bold ${size}px Trebuchet MS, sans-serif`;g.textAlign='center';g.fillStyle='#172d38';g.fillText(text,x+1,y+2);g.fillStyle=color;g.fillText(text,x,y);}
 function platform(g,p,cave){const y=p.y;R(p.x,y,p.w,18,cave?'#687e82':'#6eab43',g);R(p.x,y+18,p.w,18,cave?'#50646f':'#7a643c',g);R(p.x,y+36,p.w,p.y===GROUND?90:26,cave?'#364757':'#514c35',g);for(let x=p.x;x<p.x+p.w;x+=32){R(x,y,24,5,cave?'#8da6a3':'#a9d467',g);R(x+8,y+25,8,6,cave?'#749091':'#ae925a',g);R(x+17,y+48,12,5,cave?'#465e6e':'#6d603f',g);}if(!cave)for(let x=p.x+8;x<p.x+p.w;x+=43){R(x,y-5,3,7,'#74ae45',g);R(x+4,y-10,3,12,'#a6cf61',g);}}
 function portal(g,e,t,locked=false,progress=''){g.save();g.translate(e.x,e.y);const color=locked?'#687786':'#5ed5ff';for(let i=3;i>=0;i--){g.strokeStyle=[color+'20',color+'40',color+'80',color][3-i];g.lineWidth=7+i*4;g.beginPath();g.ellipse(0,-62,27+i*2,52+i*3,0,0,Math.PI*2);g.stroke();}R(-43,-8,86,13,'#65788a',g);R(-32,-15,64,8,'#a1b0b1',g);g.fillStyle='#143c6377';g.beginPath();g.ellipse(0,-64,23,49,0,0,Math.PI*2);g.fill();for(let i=0;i<6;i++){const phase=t*1.1+i;R(Math.sin(phase)*17,-60+Math.cos(phase*1.5)*39,3,5,'#d0f9ff',g);}label(g,e.name==='The Rootwarden'?'BOSS GATE':e.name,e.direction<0?55:e.direction>0?-55:0,-135,'#d8f6ff',10);if(progress)label(g,progress,e.direction<0?55:e.direction>0?-55:0,-115,'#ffe3a8',11);g.restore();}

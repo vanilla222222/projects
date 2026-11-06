@@ -276,3 +276,5 @@ At a town chest, Store & Clear Overflow repeatedly deposits unlocked materials a
 The backpack counter opens Items and signals retained floor loot or pending overflow. Full-bag notices name the blocked item, floor loot is listed in Items, and rare pickups receive distinct colors. Quest delivery objectives link to the item reference; material sources include gathering rooms, skill requirements, recipe unlock hints, shop prices and map links. Unobtained reward quests identify the mentor instead of revealing their title.
 
 Equipment audit: the Sunwell Branch was strictly outclassed by the common verdant staff despite needing three cooldown-gated guardian drops. It now costs one sap and trades some attack for stronger logging/skill bonuses, keeping a useful profession role. All 199 items retain at least three implemented uses.
+
+Runtime 39 also excludes active boss, guardian, trial and dungeon encounters from town-chest access, even when their retained world coordinates coincide with a town chest. No material transaction can use that coordinate overlap to resupply an active encounter.

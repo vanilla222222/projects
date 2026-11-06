@@ -1,6 +1,6 @@
-import * as D from './content.mjs?v=38';
-import * as E from './engine.mjs?v=38';
-import {upgradeSource} from './reward-progression.mjs?v=38';
+import * as D from './content.mjs?v=39';
+import * as E from './engine.mjs?v=39';
+import {upgradeSource} from './reward-progression.mjs?v=39';
 export const inEncounter=c=>!!(c.dungeon||c.trial||c.encounter||c.secret||c.activity==='boss');
 const recipeFor=id=>D.RECIPES.find(r=>r.output===id||r.equipment===id);
 const goal=(title,detail,action='inventory',value='')=>({title,detail,action,value});

@@ -1,8 +1,8 @@
-import * as D from './content.mjs?v=38';
-import * as E from './engine.mjs?v=38';
-import * as R from './roster.mjs?v=38';
-import {roomLayout} from './layouts.mjs?v=38';
-import {portrait,esc,fmt} from './ui-art.mjs?v=38';
+import * as D from './content.mjs?v=39';
+import * as E from './engine.mjs?v=39';
+import * as R from './roster.mjs?v=39';
+import {roomLayout} from './layouts.mjs?v=39';
+import {portrait,esc,fmt} from './ui-art.mjs?v=39';
 const button=(text,data,disabled=false)=>`<button ${data} ${disabled?'disabled':''}>${text}</button>`;
 const metric=(name,value)=>`<div><small>${name}</small><strong>${value}</strong></div>`;
 const gear=(c,slot)=>D.ITEMS[c.loadout[slot]?.base]?.name||'Empty';
