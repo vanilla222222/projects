@@ -1,8 +1,8 @@
-import {recordQuestAction} from './quest-content.mjs?v=24';
-import {FOODS,CARDS,ANVIL_PRODUCTS,STONES,EQUIPMENT,MERITS,WORLD_TASKS,DAILY_TASKS,CARD_COLLECTIONS} from './content.mjs?v=24';
-import * as I from './inventory.mjs?v=24';
-import {serviceAccess} from './services.mjs?v=24';
-import {productOpen} from './workshop.mjs?v=24';
+import {recordQuestAction} from './quest-content.mjs?v=26';
+import {FOODS,CARDS,ANVIL_PRODUCTS,STONES,EQUIPMENT,MERITS,WORLD_TASKS,DAILY_TASKS,CARD_COLLECTIONS} from './content.mjs?v=26';
+import * as I from './inventory.mjs?v=26';
+import {serviceAccess} from './services.mjs?v=26';
+import {productOpen} from './workshop.mjs?v=26';
 const DAY=86400000;
 export function initCharacter(c){c.mp??=20+(c.level-1)*3;c.foodSlots??=[null,null];c.cardSets??={combat:[],skilling:[]};c.cardPreset??='combat';c.cardSetBonuses??={combat:null,skilling:null};c.cardBonus??={};c.anvil??={product:'thread',progress:0,stored:{},upgrades:{speed:0,capacity:0,xp:0},purchased:0};c.minigames??={day:0,used:{},best:{}};c.minigame=null;return c;}
 export function initialize(s){s.cards??={};s.merits??={};s.meritPoints??=0;s.tasksUnlocked??=false;s.taskClaims??=[];s.metrics??={gather:{},anvil:0,forge:0,crafted:0};s.furnaces??=Array.from({length:2},()=>({ore:'copper',oreCount:0,fuel:0,output:0,progress:0,owner:s.characters[0].id}));for(const c of s.characters)initCharacter(c);syncCards(s);rollDaily(s);return s;}

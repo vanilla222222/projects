@@ -1,7 +1,7 @@
-import * as E from './engine.mjs?v=24';
-import * as D from './content.mjs?v=24';
-import * as C from './conversations.mjs?v=24';
-import {portrait,esc,fmt} from './ui-art.mjs?v=24';
+import * as E from './engine.mjs?v=26';
+import * as D from './content.mjs?v=26';
+import * as C from './conversations.mjs?v=26';
+import {portrait,esc,fmt} from './ui-art.mjs?v=26';
 const button=(text,data,disabled=false)=>`<button ${data} ${disabled?'disabled':''}>${text}</button>`;
 export function questRewards(q){const r=q.reward;return[`${r.coins||0} coins`,'20 base character XP',...Object.entries(r.items||{}).map(([id,n])=>`${n} ${D.ITEMS[id].name}`),...(r.recipes||[]).map(id=>id.replaceAll('-',' ')+' blueprints'),...(r.secrets||[]).map(id=>D.SECRETS[id].name+' passage'),...(r.permit?['Rootwarden gate access']:[]),...(r.complete?['World One story completion']:[]),...(r.liquid?[r.liquid+' alchemy liquid']:[]),...(r.guild?['Permanent roster workshop bonus']:[])].join(' · ');}
 export function npcDialogue(s,c,t,now=0){const voice=C.NPC_VOICES[t.giver],lines=C.conversationLines(s,c,t),text=lines[t.page],ready=C.conversationReady(s,c,t),chars=t.revealed?text.length:Math.min(text.length,Math.floor(Math.max(0,now-t.started)/18)),q=t.questId?E.questStatus(s,t.questId,c):null,complete=D.STORY.filter(q=>q.giver===t.giver&&c.journey.story[q.id]?.done).length;let actions='';if(ready){if(t.mode==='offer')actions=button('ACCEPT QUEST','data-talk-accept="" class="primary"')+button('MAYBE LATER','data-close=""');else if(t.mode==='ready')actions=button('HAND IN & CLAIM REWARDS','data-talk-complete="" class="primary"',!q?.ready)+button('NOT YET','data-close=""');else if(t.mode==='training'){const cl=E.classQuest(s,c,t.giver);actions=c.class||!E.availableClass(s,t.giver)?button('ASK ABOUT WORK','data-talk-topic="work"')+button('GOODBYE','data-close=""'):button(cl.stage===2?'BECOME '+D.CLASSES[t.giver].name.toUpperCase():'COMPLETE TRAINING STEP '+(cl.stage+1),'data-talk-train="" class="primary"',!cl.ready)+button('ASK ABOUT WORK','data-talk-topic="work"')+button('LATER','data-close=""');}else actions=button(t.mode==='complete'?'WHAT’S NEXT?':'ASK ABOUT WORK','data-talk-topic="work"')+(t.giver!=='steward'?button('CLASS TRAINING','data-talk-topic="training"'):'')+button('GOODBYE','data-close=""');}
