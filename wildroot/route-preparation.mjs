@@ -1,5 +1,5 @@
-import * as D from './content.mjs?v=38';
-import * as E from './engine.mjs?v=38';
+import * as D from './content.mjs?v=39';
+import * as E from './engine.mjs?v=39';
 // Estimates use a copy of the character; inspecting a room never changes an assignment.
 export function roomPreparation(s,c,area,zone){
  const enemy=D.zoneEnemy(area,zone);if(!enemy)return null;

@@ -1,6 +1,6 @@
-import * as D from './content.mjs?v=38';
-import * as I from './inventory.mjs?v=38';
-import {roomLayout} from './layouts.mjs?v=38';
+import * as D from './content.mjs?v=39';
+import * as I from './inventory.mjs?v=39';
+import {roomLayout} from './layouts.mjs?v=39';
 const sum=bag=>Object.values(bag).reduce((n,v)=>n+v,0);
 const foodCounts=c=>{const out={};for(const t of c.foodSlots)if(t?.count)out[t.id]=(out[t.id]||0)+t.count;return out;};
 export function offlineSnapshot(s,c,rates){const r=rates(s,c);return{coins:c.earnedCoins,kills:c.kills,xp:c.lifetimeXp,skills:{...c.skills},food:c.foodEaten,

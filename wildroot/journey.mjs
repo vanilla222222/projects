@@ -1,6 +1,6 @@
-import {validateOfflineDetails} from './offline-progress.mjs?v=38';
-import {QUEST_ACTIONS} from './quest-content.mjs?v=38';
-import {AREAS,ENEMIES,STORY,ITEMS,SKILLS} from './content.mjs?v=38';
+import {validateOfflineDetails} from './offline-progress.mjs?v=39';
+import {QUEST_ACTIONS} from './quest-content.mjs?v=39';
+import {AREAS,ENEMIES,STORY,ITEMS,SKILLS} from './content.mjs?v=39';
 const PREVIOUS_GOALS={forest:[8,18,30,45,60],caves:[12,28,50],jungle:[40,60,90,120],deep:[45,65,95,140],tree:[25,45,70]};
 export const PORTAL_GOALS={forest:[12,25,45,70,100],caves:[18,40,85],jungle:[130,170,220,280],deep:[115,155,205,270],tree:[120,180,260]};
 export const personalStory=c=>c.journey.story;

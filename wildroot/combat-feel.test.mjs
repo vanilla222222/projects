@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=38';import * as D from './content.mjs?v=38';
-import {World} from './world.mjs?v=38';import {makeTell} from './combat-patterns.mjs?v=38';
+import * as E from './engine.mjs?v=39';import * as D from './content.mjs?v=39';
+import {World} from './world.mjs?v=39';import {makeTell} from './combat-patterns.mjs?v=39';
 const setup=()=>{const s=E.freshSave(),w=new World(s,{rng:()=>.5});return{s,w,c:w.c,e:w.map.monsters[0]};};
 test('Every class can use its primary skill from the distance where AUTO stops',()=>{
  for(const calling of Object.keys(D.CLASSES)){const{s,w,c,e}=setup();c.class=calling;c.level=10;c.mp=E.maxMana(c);e.hp=100000;w.player.x=e.x-(E.weaponProfile(c).range-20);w.player.y=e.y;w.target=e;w.auto=true;const hp=e.hp;w.follow(.02);assert.ok(w.player.skill>0,calling);assert.ok(e.hp<hp,calling);assert.ok(w.attackEffects.some(f=>f.skill&&f.calling===calling));}
@@ -24,4 +24,4 @@ test('Comparable late-world builds keep single-target idle kill rates within a b
  const rates=[];for(const calling of Object.keys(D.CLASSES)){const{s,c}=setup();c.class=calling;c.level=20;E.investAttribute(c,E.CLASS_DESIGNS[calling].accuracy,20);E.investAttribute(c,E.CLASS_DESIGNS[calling].primary,18);for(const id of [D.VERDANT_WEAPONS[calling],'tempered-mail','iron-helm'])E.createEquipment(s,id,c);E.syncAccount(s);c.area='deep';c.zone=0;c.activity='fight';const f=E.assignmentForecast(s,c,600);assert.equal(f.retreatSeconds,null);rates.push(f.kills);}assert.ok(Math.max(...rates)/Math.min(...rates)<1.4,rates.join(', '));
 });
 
-test('Phone boss HUD reserves the room-title area and keeps its panel within the viewport',async()=>{const{bossHudLayout}=await import('./combat-effects.mjs?v=38');for(const width of [480,600,799]){const hud=bossHudLayout(width);assert.ok(hud.top>=100);assert.ok(hud.width<=width-40);}assert.ok(bossHudLayout(1280).top<100);});
+test('Phone boss HUD reserves the room-title area and keeps its panel within the viewport',async()=>{const{bossHudLayout}=await import('./combat-effects.mjs?v=39');for(const width of [480,600,799]){const hud=bossHudLayout(width);assert.ok(hud.top>=100);assert.ok(hud.width<=width-40);}assert.ok(bossHudLayout(1280).top<100);});

@@ -1,8 +1,8 @@
-import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=38';
-import {surveyPoint} from './exploration.mjs?v=38';
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=38';
-import {roomLayout,pointFor} from './layouts.mjs?v=38';
-import * as E from './engine.mjs?v=38';
+import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=39';
+import {surveyPoint} from './exploration.mjs?v=39';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=39';
+import {roomLayout,pointFor} from './layouts.mjs?v=39';
+import * as E from './engine.mjs?v=39';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];

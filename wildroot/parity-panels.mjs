@@ -1,8 +1,8 @@
-import {bossCraftProgress} from './route-preparation.mjs?v=38';
-import {nextGoal} from './roster.mjs?v=38';
-import * as E from './engine.mjs?v=38';
-import * as D from './content.mjs?v=38';
-import {esc,fmt,percent,section} from './ui-art.mjs?v=38';
+import {bossCraftProgress} from './route-preparation.mjs?v=39';
+import {nextGoal} from './roster.mjs?v=39';
+import * as E from './engine.mjs?v=39';
+import * as D from './content.mjs?v=39';
+import {esc,fmt,percent,section} from './ui-art.mjs?v=39';
 const button=(text,data,disabled=false)=>`<button ${data} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
 export function buildExtras(s,c){const d=E.CLASS_DESIGNS[c.class];return section('Character attributes',`<p>${d?`${d.name} · ${d.weapon}. <strong>${d.primary}</strong> increases damage; <strong>${d.accuracy}</strong> increases accuracy.`:'Choose your class before investing. Attributes have separate points from talents.'}</p><strong>${E.attributePoints(c)} attribute points available</strong><div class="ability-cards">${Object.entries(E.ATTRIBUTES).map(([id,a])=>`<article><h4>${a.name} · ${c.attributes[id]}</h4><p>${a.text}</p>${button('+1',`data-attribute="${id}"`,!E.attributePoints(c))}${button('+5',`data-attribute="${id}" data-count="5"`,!E.attributePoints(c))}</article>`).join('')}</div>`)+section('Family bonuses',note('Only the highest-level character of each class contributes. Bonuses apply to the entire roster, including characters working in the background.')+`<div class="unlock-steps">${Object.entries(E.CLASS_DESIGNS).map(([id,d])=>{const level=Math.max(0,...s.characters.filter(c=>c.class===id).map(c=>c.level));return`<article><strong>${D.CLASSES[id].name} · highest Lv ${level}</strong><p>+${d.family.effect==='defense'?(level*d.family.amount).toFixed(2):percent(level*d.family.amount)} ${d.family.effect}</p></article>`;}).join('')}</div>`)+section('More talent pages',button('SPECIAL TALENT BOOKS','data-panel="books"')+button('PERSONAL WORLD PROGRESS','data-panel="journey"'));}

@@ -1,5 +1,5 @@
-import {recordQuestAction} from './quest-content.mjs?v=38';
-import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=38';
+import {recordQuestAction} from './quest-content.mjs?v=39';
+import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=39';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}
@@ -28,7 +28,7 @@ function chestRoom(s,id){return chestSlots(s).slice(0,chestCapacity(s)).reduce((
 export function carry(c,id,n){initBag(c);if(!ITEMS[id]||!Number.isFinite(n)||n<=0)return 0;const accepted=Math.min(Math.floor(n),carryRoom(c,id));if(accepted>0){c.bag[id]=(c.bag[id]||0)+accepted;bagSlots(c);}return accepted;}
 export function give(c,id,n){if(!ITEMS[id]||!Number.isFinite(n)||n<=0)return 0;n=Math.floor(n);const accepted=carry(c,id,n);if(accepted<n)c.overflow[id]=(c.overflow[id]||0)+n-accepted;return accepted;}
 export function reclaim(c){initBag(c);let total=0;for(const[id,n]of Object.entries(c.overflow)){const moved=carry(c,id,n);c.overflow[id]-=moved;total+=moved;}return total;}
-export function storageAccess(c){return['town','jungle-town'].includes(c.area)&&Math.abs((c.position?.x??190)-160)<115&&Math.abs((c.position?.y??644)-644)<55;}
+export function storageAccess(c){return !c.dungeon&&!c.trial&&!c.encounter&&!c.secret&&!['boss','trial','dungeon'].includes(c.activity)&&['town','jungle-town'].includes(c.area)&&Math.abs((c.position?.x??190)-160)<115&&Math.abs((c.position?.y??644)-644)<55;}
 export function unlockedAmount(c,id){return bagSlots(c).reduce((n,t,i)=>n+(t?.id===id&&!c.lockedSlots.includes(i)?t.qty:0),0);}
 function removeMaterial(c,id,n){const grid=bagSlots(c);for(let i=grid.length-1;i>=0&&n>0;i--)if(grid[i]?.id===id&&!c.lockedSlots.includes(i)){const take=Math.min(n,grid[i].qty);grid[i].qty-=take;c.bag[id]-=take;n-=take;if(!grid[i].qty)grid[i]=null;}}
 export function deposit(s,c,id,n=Infinity){if(!storageAccess(c)||!ITEMS[id])return 0;const amount=Math.max(0,Math.floor(Math.min(unlockedAmount(c,id),n,chestRoom(s,id))));if(amount>0){recordQuestAction(c,'bank:deposit');removeMaterial(c,id,amount);s.inventory[id]=(s.inventory[id]||0)+amount;chestSlots(s);}return amount;}

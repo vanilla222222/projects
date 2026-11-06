@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=38';import * as D from './content.mjs?v=38';import * as G from './inventory-guidance.mjs?v=38';import * as UI from './ui-panels.mjs?v=38';
-import {World} from './world.mjs?v=38';
+import * as E from './engine.mjs?v=39';import * as D from './content.mjs?v=39';import * as G from './inventory-guidance.mjs?v=39';import * as UI from './ui-panels.mjs?v=39';
+import {World} from './world.mjs?v=39';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const atChest=c=>Object.assign(c,{area:'town',zone:0,position:{x:160,y:644}});
 test('Gear comparisons include lost-only stats and all instance bonuses',()=>{
@@ -29,4 +29,8 @@ test('Full-bag floor loot stays intact, names the blocked item and remains visib
 });
 test('The guardian staff remains a useful logging sidegrade to the common verdant staff',()=>{
  const a=D.EQUIPMENT['sunwell-staff'].stats,b=D.EQUIPMENT['verdant-staff'].stats;assert.ok(a.logging>b.logging);assert.ok(a.attack<b.attack);assert.equal(D.RECIPES.find(r=>r.equipment==='sunwell-staff').cost['sap-essence'],1);assert.ok(D.purposes('sunwell-staff').length>=3);
+});
+
+test('Encounter coordinates cannot act as a town chest or resupply point',()=>{
+ for(const [key,value]of [['encounter',{id:'boss',tier:0,started:1000}],['dungeon',{}],['trial',{}],['secret','sunwell'],['activity','boss']]){const{s,c}=setup();atChest(c);E.give(c,'oak',20);s.inventory.copper=20;c[key]=value;const before=JSON.stringify(s);assert.equal(E.storageAccess(c),false);assert.equal(E.deposit(s,c,'oak'),0);assert.equal(E.withdraw(s,c,'copper'),0);assert.equal(G.storeAndClear(s,c).deposited,0);assert.equal(JSON.stringify(s),before);}
 });
