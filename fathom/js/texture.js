@@ -72,7 +72,7 @@ function paintOre(ctx, spec, variant, ox, oy) {
 // Bark: vertical fibres with a lit left edge and a dark right edge, so a one-tile trunk still
 // reads as round rather than as a flat brown stripe.
 function paintWood(ctx, spec, variant, ox, oy) {
-  const trunk = spec.key === 'trunk';
+  const trunk = spec.key === 'trunk' || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk';
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox, oy, TILE, TILE);
   for (let x = 0; x < TILE; x += 1) {
@@ -204,6 +204,175 @@ function paintGlass(ctx, spec, variant, ox, oy) {
 // Water is painted with alpha so the wall behind a flooded tunnel still reads through it.
 // The bands shift with the variant, which gives a large body of water some movement when
 // the per-tile variant hash scatters them.
+// Grass. The old grass was a flat tinted square with noise over it, which is why a
+// hillside read as coloured dirt. Now the top two rows are a lighter band with blades
+// standing out of it, so the surface of the world has a silhouette.
+function paintGrass(ctx, spec, variant, ox, oy, soil) {
+  ctx.fillStyle = soil || shade(spec.colour, -0.5);
+  ctx.fillRect(ox, oy, 16, 16);
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox, oy, 16, 4);
+  ctx.fillStyle = shade(spec.colour, 0.16);
+  ctx.fillRect(ox, oy, 16, 1);
+  // A ragged lower edge, so grass meets soil as a fringe of roots and not as a ruled line.
+  for (let x = 0; x < 16; x += 1) {
+    const h = 3 + ((x * 7 + variant * 5) % 3);
+    ctx.fillStyle = shade(spec.colour, -0.12);
+    ctx.fillRect(ox + x, oy + 4, 1, h - 2);
+  }
+  // Blades rising above the block, drawn into the top rows of the tile below's space by
+  // staying inside this tile: the autotile lip above does the rest.
+  for (let i = 0; i < 4; i += 1) {
+    const x = (i * 4 + variant * 3 + 1) % 16;
+    const tall = 1 + ((x + variant) % 3);
+    ctx.fillStyle = shade(spec.colour, 0.3);
+    ctx.fillRect(ox + x, oy, 1, -tall + 1 > 0 ? 1 : 1);
+    ctx.fillRect(ox + x, oy, 1, 1);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  for (let i = 0; i < 5; i += 1) {
+    const x = (i * 5 + variant * 7) % 16;
+    const y = 6 + ((i * 3 + variant) % 9);
+    ctx.fillRect(ox + x, oy + y, 1, 1);
+  }
+}
+
+// One painter for the whole prop family. Each prop is a small silhouette built from a
+// handful of rectangles; drawing them from a shared routine keeps them consistent in
+// weight, which is what stops a field of foliage looking like a sticker sheet.
+function paintDecor(ctx, spec, variant, ox, oy) {
+  const c = spec.colour;
+  const mid = 8;
+  const jitter = (variant % 3) - 1;
+  const base = ox + mid + jitter;
+
+  function blade(x, from, to, w, colour) {
+    ctx.fillStyle = colour;
+    ctx.fillRect(x, oy + to, w, from - to);
+  }
+
+  switch (spec.key) {
+    case 'tuft':
+    case 'jungletuft': {
+      const n = spec.key === 'jungletuft' ? 5 : 4;
+      for (let i = 0; i < n; i += 1) {
+        const x = base - (n - 1) + i * 2 + ((variant + i) % 2);
+        const top = 16 - (4 + ((i * 3 + variant * 2) % 6));
+        blade(x, 16, top, 1, shade(c, i % 2 ? 0.14 : -0.08));
+      }
+      return;
+    }
+    case 'reeds': {
+      for (let i = 0; i < 3; i += 1) {
+        const x = base - 2 + i * 2;
+        blade(x, 16, 2 + ((i + variant) % 4), 1, shade(c, i % 2 ? 0.1 : -0.1));
+      }
+      return;
+    }
+    case 'seaweed': {
+      // A ribbon that leans, so a bed of it does not look like a comb.
+      for (let y = 15; y >= 3; y -= 1) {
+        const sway = Math.round(Math.sin((y + variant * 3) * 0.6) * 1.6);
+        ctx.fillStyle = shade(c, y % 3 ? 0 : 0.12);
+        ctx.fillRect(base + sway, oy + y, 2, 1);
+      }
+      return;
+    }
+    case 'flower': {
+      blade(base, 16, 7, 1, '#4f8a3a');
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 2, oy + 4, 5, 3);
+      ctx.fillRect(base - 1, oy + 3, 3, 5);
+      ctx.fillStyle = shade(c, -0.4);
+      ctx.fillRect(base, oy + 5, 1, 1);
+      return;
+    }
+    case 'bamboo': {
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 2, oy, 4, 16);
+      ctx.fillStyle = shade(c, -0.26);
+      ctx.fillRect(base + 1, oy, 1, 16);
+      ctx.fillStyle = shade(c, -0.38);
+      for (let y = (variant * 3) % 6; y < 16; y += 6) ctx.fillRect(base - 2, oy + y, 4, 1);
+      ctx.fillStyle = shade(c, 0.22);
+      ctx.fillRect(base - 2, oy, 1, 16);
+      return;
+    }
+    case 'cactus': {
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 3, oy, 6, 16);
+      ctx.fillStyle = shade(c, 0.18);
+      ctx.fillRect(base - 3, oy, 1, 16);
+      ctx.fillStyle = shade(c, -0.3);
+      ctx.fillRect(base + 2, oy, 1, 16);
+      ctx.fillStyle = '#e4e0c8';
+      for (let y = 2 + (variant % 3); y < 16; y += 5) {
+        ctx.fillRect(base - 4, oy + y, 1, 1);
+        ctx.fillRect(base + 3, oy + y + 2, 1, 1);
+      }
+      return;
+    }
+    case 'deadbush': {
+      ctx.fillStyle = c;
+      ctx.fillRect(base, oy + 8, 1, 8);
+      for (let i = 0; i < 4; i += 1) {
+        const dir = i % 2 ? 1 : -1;
+        const y = 9 + i * 2 - (variant % 2);
+        ctx.fillRect(base + (dir > 0 ? 1 : -3), oy + y, 3, 1);
+        ctx.fillRect(base + dir * 3, oy + y - 2, 1, 2);
+      }
+      return;
+    }
+    case 'shell': {
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 3, oy + 12, 7, 4);
+      ctx.fillRect(base - 2, oy + 11, 5, 1);
+      ctx.fillStyle = shade(c, -0.22);
+      for (let i = -2; i <= 2; i += 1) ctx.fillRect(base + i, oy + 12, 1, 3 - Math.abs(i));
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(base - 2, oy + 11, 4, 1);
+      return;
+    }
+    case 'coral': {
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 1, oy + 7, 2, 9);
+      for (let i = 0; i < 3; i += 1) {
+        const dir = (i + variant) % 2 ? 1 : -1;
+        const y = 8 + i * 2;
+        ctx.fillRect(base + (dir > 0 ? 1 : -3), oy + y, 3, 1);
+        ctx.fillRect(base + dir * 3, oy + y - 3, 1, 3);
+      }
+      ctx.fillStyle = shade(c, 0.3);
+      ctx.fillRect(base - 1, oy + 7, 1, 4);
+      return;
+    }
+    case 'frostshard': {
+      ctx.fillStyle = c;
+      for (let i = 0; i < 3; i += 1) {
+        const x = base - 3 + i * 3;
+        const top = 4 + ((i * 5 + variant * 2) % 7);
+        ctx.fillRect(x, oy + top, 2, 16 - top);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillRect(base - 3, oy + 8, 1, 8);
+      return;
+    }
+    default: {
+      // The mushroom caps: blight, crimson, and anything else that lands here.
+      ctx.fillStyle = '#d9d2c4';
+      ctx.fillRect(base - 1, oy + 9, 2, 7);
+      ctx.fillStyle = c;
+      ctx.fillRect(base - 4, oy + 6, 9, 3);
+      ctx.fillRect(base - 3, oy + 4, 7, 3);
+      ctx.fillRect(base - 1, oy + 3, 3, 2);
+      ctx.fillStyle = shade(c, 0.34);
+      ctx.fillRect(base - 3, oy + 4, 6, 1);
+      ctx.fillStyle = shade(c, -0.3);
+      ctx.fillRect(base - 4, oy + 8, 9, 1);
+    }
+  }
+}
+
 function paintWater(ctx, spec, variant, ox, oy) {
   ctx.save();
   ctx.globalAlpha = 0.62;
@@ -296,7 +465,10 @@ function bakeAtlas(document, tiles) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
       if (spec.ore) paintOre(ctx, spec, v, ox, oy);
-      else if (spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk') paintWood(ctx, spec, v, ox, oy);
+      else if (spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'
+        || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk') paintWood(ctx, spec, v, ox, oy);
+      else if (spec.decor) paintDecor(ctx, spec, v, ox, oy);
+      else if (spec.grassTop) paintGrass(ctx, spec, v, ox, oy, spec.soil);
       else if (spec.key === 'leaves') paintLeaves(ctx, spec, v, ox, oy);
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);

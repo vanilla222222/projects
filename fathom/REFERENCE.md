@@ -156,3 +156,22 @@ those scarcity decisions apply and the generator is its own design rather than a
   than empty. A mire has a shallower water table for the same reason.
 - Water is static, non-solid and translucent. Swimming is three numbers in the physics
   step; being underwater is shown by tinting the view, not by lighting the water.
+
+## Foliage
+
+Terraria's surface decoration is largely one grass tile plus a handful of shared props.
+Fathom gives each biome its own planting table, because two patches of grass reading as
+two different places is most of what makes a biome felt rather than labelled.
+
+- Thirteen prop types, all non-solid and all one-swing: tufts, ferns, flowers, bamboo,
+  cacti, dead bushes, reeds, shells, seaweed, coral, frost shards, and the two blights'
+  own caps.
+- Seaweed and coral grow only submerged; everything else only in air. **Shells are the
+  exception** and grow on the sea bed and the beach alike, which is where a player looks
+  for them.
+- Bamboo, cactus and seaweed are stalks rather than single tiles. Seaweed is clamped to
+  the depth of water above it, or a stalk in a shallow bay grows out into the air.
+- Grass is drawn as a lit top band with a ragged root fringe into the soil beneath it,
+  not a tinted square, so a hillside has a silhouette.
+- Trees carry branches and a root flare. Without them a trunk is a pole with a hat.
+- The blights have their own wood, so a blighted tree stops looking like an ordinary one.

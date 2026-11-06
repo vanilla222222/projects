@@ -94,9 +94,9 @@ function wholeRegion(seed, cx0, cy0, wChunks, hChunks) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= w || ly < 0 || ly >= h) return;
-    if (id === tiles.idOf('leaves') || id === tiles.idOf('vine')) {
-      if (out[ly * w + lx] !== tiles.AIR) return;
-    }
+    // The same stamping rule the real generator uses, imported rather than restated:
+    // a second copy here once made this oracle agree with itself and not with the game.
+    if (!gen.canStamp(out[ly * w + lx], id)) return;
     out[ly * w + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + w + STRUCTURE_MARGIN; wx += 1) {
@@ -300,13 +300,59 @@ check(cavity('jungle') > cavity('tundra') * 2,
 check(cavity('desert') > cavity('plains') * 1.4,
   'desert halls are not meaningfully larger than ordinary caves');
 
+// 15. Foliage. Every prop in the registry must actually grow somewhere, wet props must
+// grow underwater and dry ones above it, and nothing a prop is stamped into may have been
+// something else: a bamboo stalk that replaced a tree trunk is a bug you only see by
+// looking, so it is checked here instead.
+const DECOR = tiles.TILES.filter(t => t.decor);
+// Shells are deliberately not here: they belong on the beach as well as the sea bed.
+const WET = new Set(gen.WET_ONLY);
+const propCounts = {};
+for (const s of [SEED, 4242, -98765]) {
+  const done = new Set();
+  for (let x = -9000; x < 9000; x += 1) {
+    const column = gen.columnOf(s, x);
+    const cx = Math.floor(x / gen.CHUNK);
+    const cy = Math.floor((column.height - 6) / gen.CHUNK);
+    const key = cx + ',' + cy;
+    if (done.has(key)) continue;
+    done.add(key);
+    for (const yy of [cy, cy + 1]) {
+      const chunk = gen.generateChunk(s, cx, yy);
+      for (let i = 0; i < chunk.tiles.length; i += 1) {
+        const spec = tiles.tile(chunk.tiles[i]);
+        if (!spec.decor) continue;
+        propCounts[spec.key] = (propCounts[spec.key] || 0) + 1;
+        const lx = cx * gen.CHUNK + (i % gen.CHUNK);
+        const ly = yy * gen.CHUNK + Math.floor(i / gen.CHUNK);
+        // The cell a prop occupies must have been empty, or water for the wet ones.
+        const under = gen.baseTileAt(s, lx, ly);
+        check(under === tiles.AIR || tiles.tile(under).liquid,
+          spec.key + ' at ' + lx + ',' + ly + ' replaced ' + tiles.tile(under).key);
+        if (WET.has(spec.key)) {
+          check(ly >= gen.SEA_LEVEL, spec.key + ' is growing above sea level at ' + lx);
+        }
+      }
+    }
+  }
+}
+for (const spec of DECOR) {
+  check(!spec.solid, spec.key + ' is solid, so foliage would block movement');
+  check((propCounts[spec.key] || 0) > 0, spec.key + ' never grows anywhere');
+}
+
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()
   + ' below-surface tiles all carry a wall; worst surface step ' + worstStep + ' tiles; all '
   + gen.BIOMES.length + ' biomes generate; ' + waterCells.toLocaleString()
   + ' water cells all inside their basins, ' + undergroundWater.toLocaleString()
-  + ' of them in flooded caves');
+  + ' of them in flooded caves; all ' + DECOR.length + ' foliage types grow');
+
+console.log('foliage stamped at the surface across 3 seeds:');
+for (const [key, n] of Object.entries(propCounts).sort((a, b) => b[1] - a[1])) {
+  console.log('  ' + key.padEnd(13) + n.toLocaleString());
+}
 
 console.log('underground openness (depth 40-300):');
 for (const [key, a] of Object.entries(openness).sort((x, y) => y[1].air / y[1].n - x[1].air / x[1].n)) {

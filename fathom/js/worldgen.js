@@ -48,11 +48,43 @@ const BIOMES = [
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
   { key: 'ocean', name: 'Ocean', temp: -1, moist: -1, bias: 0, cave: 'caverns', drowned: true,
     surface: 'sand', filler: 'sand', sub: 'sandstone', wall: 'sandwall', tree: 'none', grass: false, overlay: true },
-  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0, cave: 'chasms',
+  { key: 'blight', name: 'The Blight', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'blighttrunk',
     surface: 'blightgrass', filler: 'dirt', sub: 'blight', wall: 'blightwall', tree: 'blighted', grass: false, overlay: true },
-  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0, cave: 'chasms',
+  { key: 'crimson', name: 'The Crimson', temp: -1, moist: -1, bias: 0, cave: 'chasms', trunk: 'fleshtrunk',
     surface: 'fleshgrass', filler: 'dirt', sub: 'flesh', wall: 'fleshwall', tree: 'blighted', grass: false, overlay: true }
 ];
+
+// What each biome plants on its own surface. `chance` is per column; `props` are weighted
+// by their own numbers. A biome with nothing here gets a bare surface, which is itself a
+// statement: the badlands are meant to look dead.
+const FLORA = {
+  plains:    { chance: 0.62, props: [['tuft', 7], ['flower', 3]] },
+  forest:    { chance: 0.74, props: [['tuft', 8], ['flower', 2], ['mushroom', 1]] },
+  taiga:     { chance: 0.34, props: [['tuft', 6], ['frostshard', 2]] },
+  tundra:    { chance: 0.22, props: [['frostshard', 5], ['deadbush', 1]] },
+  highlands: { chance: 0.18, props: [['tuft', 3], ['deadbush', 2]] },
+  savanna:   { chance: 0.52, props: [['tuft', 8], ['deadbush', 3], ['flower', 1]] },
+  jungle:    { chance: 0.88, props: [['jungletuft', 7], ['bamboo', 4], ['flower', 1], ['mushroom', 1]] },
+  marsh:     { chance: 0.7, props: [['reeds', 7], ['mushroom', 3], ['jungletuft', 2]] },
+  desert:    { chance: 0.14, props: [['cactus', 5], ['deadbush', 3]] },
+  badlands:  { chance: 0.1, props: [['deadbush', 6], ['cactus', 1]] },
+  beach:     { chance: 0.3, props: [['shell', 6], ['deadbush', 1]] },
+  ocean:     { chance: 0.55, props: [['seaweed', 6], ['coral', 3], ['shell', 2]] },
+  blight:    { chance: 0.5, props: [['blightshroom', 6], ['deadbush', 3]] },
+  crimson:   { chance: 0.5, props: [['fleshshroom', 6], ['deadbush', 3]] }
+};
+
+// Resolve a weighted prop list with a single hash draw, so the choice is pure in x.
+function pickProp(seed, x, props) {
+  let total = 0;
+  for (const [, w] of props) total += w;
+  let roll = unit(seed, x, 0, 2131) * total;
+  for (const [key, w] of props) {
+    roll -= w;
+    if (roll <= 0) return key;
+  }
+  return props[0][0];
+}
 
 const BY_BIOME = {};
 for (const b of BIOMES) BY_BIOME[b.key] = b;
@@ -378,14 +410,15 @@ function treeAt(seed, x) {
   const height = spec.height[0] + Math.floor(unit(seed, x, 0, 2011) * (span + 1));
   const root = column.height;
   if (baseTileAt(seed, x, root) !== idOf(biome.surface)) return null;
-  return { x, root, height, canopy: spec.canopy, kind: biome.tree, spec };
+  return { x, root, height, canopy: spec.canopy, kind: biome.tree, spec,
+    trunk: biome.trunk || 'trunk' };
 }
 
 // The canopy is an egg, wider above the trunk top than below it, with its edge eroded by a
 // per-tile hash. A solid ellipse of leaf tiles reads as a rectangular hedge once several
 // trees stand together; a ragged edge reads as foliage.
 function stampTree(write, seed, tree) {
-  const trunk = idOf('trunk');
+  const trunk = idOf(tree.trunk || 'trunk');
   const leaf = idOf('leaves');
   const spec = tree.spec || TREES[tree.kind] || {};
   for (let i = 1; i <= tree.height; i += 1) write(tree.x, tree.root - i, trunk);
@@ -400,6 +433,41 @@ function stampTree(write, seed, tree) {
       for (let j = 1; j <= len; j += 1) write(tree.x + dir * j, tree.root - i, trunk);
     }
     return;
+  }
+
+  // Branches. Without them a trunk is a pole with a hat, which is exactly how the first
+  // version read. A branch is two or three trunk tiles stepping outward and up, with a
+  // tuft of leaves on its end, placed only on the upper half so the lower trunk stays
+  // clear enough to walk past.
+  if (!spec.conifer) {
+    const from = Math.max(2, Math.floor(tree.height * 0.45));
+    for (let i = from; i < tree.height - 1; i += 2) {
+      if (unit(seed, tree.x, i, 2051) > 0.42) continue;
+      const dir = unit(seed, tree.x, i, 2053) < 0.5 ? -1 : 1;
+      const len = 1 + Math.floor(unit(seed, tree.x, i, 2057) * 2);
+      let bx = tree.x;
+      let by = tree.root - i;
+      for (let j = 0; j < len; j += 1) {
+        bx += dir;
+        if (j > 0) by -= 1;
+        write(bx, by, trunk);
+      }
+      for (let lx = -1; lx <= 1; lx += 1) {
+        for (let ly = -1; ly <= 0; ly += 1) {
+          if (lx === 0 && ly === 0) continue;
+          write(bx + lx, by + ly, leaf);
+        }
+      }
+    }
+  }
+
+  // A root flare: one tile either side at the base, so a trunk meets the ground instead
+  // of being planted in it like a post.
+  if (unit(seed, tree.x, 0, 2059) < 0.7) {
+    write(tree.x - 1, tree.root - 1, trunk);
+  }
+  if (unit(seed, tree.x, 0, 2061) < 0.7) {
+    write(tree.x + 1, tree.root - 1, trunk);
   }
 
   const r = tree.canopy;
@@ -428,19 +496,53 @@ function stampTree(write, seed, tree) {
 }
 
 function decorate(write, seed, x) {
-  const biome = biomeAt(seed, x);
-  const surface = surfaceHeight(seed, x);
-  if (biome.grass && unit(seed, x, 0, 2101) > 0.55) {
-    write(x, surface - 1, idOf('vine'));
+  const column = columnOf(seed, x);
+  const biome = column.biome;
+  const surface = column.height;
+  const flora = FLORA[biome.key];
+
+  if (flora && unit(seed, x, 0, 2101) < flora.chance) {
+    const key = pickProp(seed, x, flora.props);
+    const underwater = surface > SEA_LEVEL;
+    // Seaweed and coral only grow submerged; everything else only grows in air. Shells
+    // are the exception that proves the rule: they belong on the sea bed and on the
+    // beach alike, which is the one place a player expects to find them.
+    const wetOnly = key === 'seaweed' || key === 'coral';
+    const anywhere = key === 'shell';
+    if (anywhere || wetOnly === underwater) {
+      if (key === 'bamboo') {
+        // Bamboo is a stalk, not a tuft: it grows several tiles up from its root.
+        const tall = 3 + Math.floor(unit(seed, x, 0, 2137) * 5);
+        for (let i = 1; i <= tall; i += 1) write(x, surface - i, idOf('bamboo'));
+      } else if (key === 'cactus') {
+        const tall = 2 + Math.floor(unit(seed, x, 0, 2139) * 3);
+        for (let i = 1; i <= tall; i += 1) write(x, surface - i, idOf('cactus'));
+      } else if (key === 'seaweed') {
+        // Clamped to the water above it, or a stalk in a shallow bay grows out into the
+        // air. The depth here is exactly how far the sea bed sits below sea level.
+        const room = surface - SEA_LEVEL;
+        const tall = Math.min(room, 1 + Math.floor(unit(seed, x, 0, 2141) * 4));
+        for (let i = 1; i <= tall; i += 1) write(x, surface - i, idOf('seaweed'));
+      } else {
+        write(x, surface - 1, idOf(key));
+      }
+    }
   }
-  const depth0 = surface + 1;
-  for (let y = depth0; y < WORLD_H; y += 1) {
-    if (y - surface < 30) continue;
-    if (unit(seed, x, y, 2203) < 0.9955) continue;
+
+  // Underground growth: moss near the surface, mushrooms deep, and the blights' own caps
+  // wherever their rock reaches. Placed on the ceiling-facing side of any solid floor.
+  const blighted = biome.key === 'blight' || biome.key === 'crimson';
+  for (let y = surface + 1; y < WORLD_H; y += 1) {
+    const depth = y - surface;
+    if (depth < 24) continue;
+    if (unit(seed, x, y, 2203) < 0.9945) continue;
     if (baseTileAt(seed, x, y) !== AIR) continue;
-    const below = baseTileAt(seed, x, y + 1);
-    if (below === AIR) continue;
-    write(x, y, y - surface > 200 ? idOf('mushroom') : idOf('glowmoss'));
+    if (baseTileAt(seed, x, y + 1) === AIR) continue;
+    let key;
+    if (blighted && depth < 90) key = biome.key === 'blight' ? 'blightshroom' : 'fleshshroom';
+    else if (depth > 200) key = 'mushroom';
+    else key = 'glowmoss';
+    write(x, y, idOf(key));
   }
 }
 
@@ -462,6 +564,26 @@ function baseWallAt(seed, x, y) {
   return wallIdOf('slatewall');
 }
 
+// Whether a structure or prop may be stamped over whatever is already there. Foliage and
+// leaves only ever fill empty space: a prop must never replace a tree trunk, a block, or
+// another prop. Water counts as empty for the things that grow in it, which is how
+// seaweed and coral reach the sea bed.
+//
+// This used to be written out twice, once in generateChunk and once in the seam test's
+// reference builder. Updating one and not the other made the two disagree, and since the
+// test's whole job is to prove they agree, the duplicate quietly turned the oracle into a
+// liar. One copy, exported, used by both.
+const GROWS_IN_WATER = ['seaweed', 'coral', 'shell'];
+const WET_ONLY = ['seaweed', 'coral'];
+
+function canStamp(existing, id) {
+  const spec = tile(id);
+  if (!spec.decor && id !== idOf('leaves') && id !== idOf('vine')) return true;
+  if (existing === AIR) return true;
+  if (existing !== idOf('water')) return false;
+  return GROWS_IN_WATER.indexOf(spec.key) !== -1;
+}
+
 function generateChunk(seed, cx, cy) {
   const tiles = new Uint8Array(CHUNK * CHUNK);
   const walls = new Uint8Array(CHUNK * CHUNK);
@@ -477,9 +599,7 @@ function generateChunk(seed, cx, cy) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= CHUNK || ly < 0 || ly >= CHUNK) return;
-    if (id === idOf('leaves') || id === idOf('vine')) {
-      if (tiles[ly * CHUNK + lx] !== AIR) return;
-    }
+    if (!canStamp(tiles[ly * CHUNK + lx], id)) return;
     tiles[ly * CHUNK + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
@@ -497,7 +617,7 @@ const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
-    CAVE_PROFILES, caveProfile, caveThreshold, floodFloor,
+    CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };
@@ -514,6 +634,7 @@ if (typeof module !== 'undefined' && module.exports) {
   global.ridged2 = noise.ridged2;
   global.AIR = tiles.AIR;
   global.idOf = tiles.idOf;
+  global.tile = tiles.tile;
   global.wallIdOf = tiles.wallIdOf;
   module.exports = EXPORTS_worldgen;
 } else if (typeof FATHOM !== 'undefined') {
