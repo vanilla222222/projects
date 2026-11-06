@@ -8,7 +8,8 @@ const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
   const { tiles, worldgen, chunks, light, texture, render, player: physics,
-    noise, autotile, mining, craft, liquid: liquidModule, inventory: inventoryModule, stats: statsModule, ui: uiModule,
+    noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
+    inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
@@ -24,6 +25,8 @@ function makeGame(canvas, deps) {
   let stats = null;
   let ui = null;
   let liquid = null;
+  let swarm = null;
+  let swingCooldown = 0;
   let characterId = null;
   let worldId = null;
   let running = false;
@@ -229,6 +232,54 @@ function makeGame(canvas, deps) {
     return true;
   }
 
+  // Swing at an enemy under the cursor. Returns true if something was struck, so mining
+  // does not also happen in the same frame.
+  function attack() {
+    if (!swarm || swingCooldown > 0) return false;
+    const item = selectedItem();
+    const weapon = item ? craft.WEAPONS[item.key] : null;
+    const reach = weapon ? weapon.reach : 2.2;
+    const target = swarm.at(pointer.x, pointer.y);
+    if (!target) return false;
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height / 2;
+    if (Math.hypot(target.x - cx, target.y - cy) > reach + 1.5) return false;
+
+    // A pickaxe will do, badly. That is the argument for making a sword.
+    let hit = 3;
+    let cooldown = 0.4;
+    if (weapon) {
+      hit = weapon.damage;
+      cooldown = weapon.useTime;
+    } else if (mining.isTool(item)) {
+      hit = Math.max(3, Math.round(mining.powerOf(item) * 0.3));
+      cooldown = mining.useTimeOf(item) * 1.5;
+    }
+    swingCooldown = cooldown;
+    target.vx += Math.sign(target.x - cx) * 6;
+    target.vy -= 3;
+    spawnParticles(target.x, target.y, target.spec.colour, 5);
+    if (swarm.damage(target, hit)) {
+      for (const [key, count] of target.spec.drops || []) {
+        dropItem(target.x, target.y, key, craft.kindOf(key), count);
+      }
+      spawnParticles(target.x, target.y, target.spec.colour, 14);
+      say(target.spec.name + ' died', 1.0);
+    }
+    return true;
+  }
+
+  function respawnPlayer() {
+    statsModule.respawn(stats);
+    const spot = state.spawn || { x: 0, y: worldgen.surfaceHeight(seed, 0) - 3 };
+    state.player.x = spot.x;
+    state.player.y = spot.y;
+    state.player.vx = 0;
+    state.player.vy = 0;
+    if (swarm) swarm.clear();
+    say('You died', 2.2);
+  }
+
   function place() {
     const item = selectedItem();
     if (!item) return;
@@ -274,12 +325,40 @@ function makeGame(canvas, deps) {
     // rather than where it was. The budget is per step, not per frame, which keeps a
     // collapsing reservoir from stalling the loop.
     if (liquid) liquid.step(900);
+    swingCooldown = Math.max(0, swingCooldown - dt);
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
     statsModule.step(stats, dt, moving);
-    if (input.dig && !ui.isOpen) mine(dt);
+    // A swing at something alive takes priority over a swing at the rock behind it.
+    if (input.dig && !ui.isOpen && attack()) state.player.mining = null;
+    else if (input.dig && !ui.isOpen) mine(dt);
     else state.player.mining = null;
+
+    if (swarm) {
+      swarm.step(state.player, dt, state.dayPhase);
+      const hit = swarm.touching(state.player);
+      if (hit) {
+        const dealt = statsModule.damage(stats, hit.spec.damage);
+        if (dealt > 0) {
+          // Knocked away from whatever hit you, so contact damage is not a death loop.
+          const away = Math.sign(state.player.x - hit.x) || 1;
+          state.player.vx = away * 9;
+          state.player.vy = -7;
+          say(hit.spec.name + ' hit you for ' + dealt, 1.1);
+        }
+      }
+    }
+
+    // Standing in lava burns. It is the only tile in the world that hurts by itself.
+    const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
+      Math.floor(state.player.y + state.player.height * 0.6)));
+    if (feet.hot) {
+      const burnt = statsModule.damage(stats, 24);
+      if (burnt > 0) say('Burning!', 0.9);
+    }
+
+    if (stats.dead) respawnPlayer();
     updateDrops(dt);
 
     for (let i = state.particles.length - 1; i >= 0; i -= 1) {
@@ -466,6 +545,8 @@ function makeGame(canvas, deps) {
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise });
     liquid = liquidModule.makeLiquid(world, tiles);
+    swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
+    state.enemies = swarm.list;
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
@@ -547,7 +628,29 @@ function makeGame(canvas, deps) {
     return useBucket(item, { x, y, inReach: true });
   }
 
+  // Test seams: how many enemies are alive, swing at a point, and advance the clock by
+  // hand so a browser check does not have to wait in real time.
+  function swarmCount() {
+    return swarm ? swarm.count : 0;
+  }
+
+  function attackAt(x, y) {
+    pointer.x = x;
+    pointer.y = y;
+    swingCooldown = 0;
+    return attack();
+  }
+
+  function advance(seconds) {
+    let left = seconds;
+    while (left > 0) {
+      simulate(Math.min(STEP, left));
+      left -= STEP;
+    }
+  }
+
   return { state, start, deps, swingAt, selectedItem, liquidWake, liquidActive, useBucketAt,
+    swarmCount, attackAt, advance,
     get inventory() { return inventory; },
     get stats() { return stats; },
     get seed() { return seed; },

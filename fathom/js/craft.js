@@ -20,7 +20,36 @@ const ITEMS = {
   // Buckets. Two items rather than one with a flag, so a full bucket stacks separately
   // from an empty one and the hotbar shows at a glance which you are holding.
   bucket: { name: 'Empty Bucket', kind: 'tool', colour: '#9aa3ad' },
-  'water-bucket': { name: 'Water Bucket', kind: 'tool', colour: '#3f86c4' }
+  'water-bucket': { name: 'Water Bucket', kind: 'tool', colour: '#3f86c4' },
+
+  // Loot. Everything an enemy leaves behind, so a drop has a name in the backpack and an
+  // icon rather than a grey square.
+  gel: { name: 'Gel', kind: 'loot', colour: '#6fc26f' },
+  rottenflesh: { name: 'Rotten Flesh', kind: 'loot', colour: '#7d6a4e' },
+  lens: { name: 'Lens', kind: 'loot', colour: '#9fd4e8' },
+  feather: { name: 'Feather', kind: 'loot', colour: '#d8d2c2' },
+  chitin: { name: 'Chitin', kind: 'loot', colour: '#b5783e' },
+  stinger: { name: 'Stinger', kind: 'loot', colour: '#e0c050' },
+  leather: { name: 'Leather', kind: 'loot', colour: '#8a6038' },
+  bone: { name: 'Bone', kind: 'loot', colour: '#e2dcc8' },
+  wormtooth: { name: 'Worm Tooth', kind: 'loot', colour: '#cfc6ae' },
+  shadowscale: { name: 'Shadow Scale', kind: 'loot', colour: '#7a5fa8' },
+  tissue: { name: 'Vile Tissue', kind: 'loot', colour: '#a8404a' },
+  finleather: { name: 'Shark Fin', kind: 'loot', colour: '#7b8792' },
+  cinder: { name: 'Cinder', kind: 'loot', colour: '#d2622f' },
+  stardust: { name: 'Stardust', kind: 'loot', colour: '#aab4f0' }
+};
+
+// Weapons. Separate from pickaxes: a pickaxe can be swung at an enemy and will hurt it,
+// but badly, which is the whole reason to make a sword.
+const WEAPONS = {
+  'wood-sword': { name: 'Wooden Sword', damage: 11, useTime: 0.34, reach: 2.6 },
+  'copper-sword': { name: 'Copper Sword', damage: 16, useTime: 0.31, reach: 2.8 },
+  'iron-sword': { name: 'Iron Sword', damage: 24, useTime: 0.28, reach: 3.0 },
+  'silver-sword': { name: 'Silver Sword', damage: 32, useTime: 0.26, reach: 3.1 },
+  'gold-sword': { name: 'Gold Sword', damage: 41, useTime: 0.24, reach: 3.2 },
+  'cobalt-sword': { name: 'Cobalt Sword', damage: 58, useTime: 0.21, reach: 3.4 },
+  'emberite-sword': { name: 'Emberite Sword', damage: 78, useTime: 0.18, reach: 3.6 }
 };
 
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
@@ -36,6 +65,7 @@ const RECIPES = [
   { out: { key: 'brickwall', kind: 'wall', count: 4 }, need: [['stone', 1]], station: 'workbench' },
   { out: { key: 'anvil', kind: 'block', count: 1 }, need: [['iron-bar', 5]], station: 'workbench' },
   { out: { key: 'bucket', kind: 'tool', count: 1 }, need: [['iron-bar', 3]], station: 'anvil' },
+  { out: { key: 'wood-sword', kind: 'tool', count: 1 }, need: [['wood', 14]], station: 'workbench' },
 
   // Furnace: ore into bars, and sand into glass. Smelting is the whole point of depth.
   { out: { key: 'copper-bar', kind: 'bar', count: 1 }, need: [['copper', 3]], station: 'furnace' },
@@ -52,7 +82,13 @@ const RECIPES = [
   { out: { key: 'silver-pick', kind: 'tool', count: 1 }, need: [['silver-bar', 12], ['wood', 4]], station: 'anvil' },
   { out: { key: 'gold-pick', kind: 'tool', count: 1 }, need: [['gold-bar', 12], ['wood', 4]], station: 'anvil' },
   { out: { key: 'cobalt-pick', kind: 'tool', count: 1 }, need: [['cobalt-bar', 15], ['wood', 5]], station: 'anvil' },
-  { out: { key: 'emberite-pick', kind: 'tool', count: 1 }, need: [['emberite-bar', 18], ['wood', 6]], station: 'anvil' }
+  { out: { key: 'emberite-pick', kind: 'tool', count: 1 }, need: [['emberite-bar', 18], ['wood', 6]], station: 'anvil' },
+  { out: { key: 'copper-sword', kind: 'tool', count: 1 }, need: [['copper-bar', 8], ['wood', 3]], station: 'anvil' },
+  { out: { key: 'iron-sword', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['wood', 3]], station: 'anvil' },
+  { out: { key: 'silver-sword', kind: 'tool', count: 1 }, need: [['silver-bar', 10], ['wood', 4]], station: 'anvil' },
+  { out: { key: 'gold-sword', kind: 'tool', count: 1 }, need: [['gold-bar', 10], ['wood', 4]], station: 'anvil' },
+  { out: { key: 'cobalt-sword', kind: 'tool', count: 1 }, need: [['cobalt-bar', 13], ['wood', 5]], station: 'anvil' },
+  { out: { key: 'emberite-sword', kind: 'tool', count: 1 }, need: [['emberite-bar', 16], ['wood', 6]], station: 'anvil' }
 ];
 
 // Which stations are in reach. Scanning the box is cheap enough to do every frame, and
@@ -105,6 +141,7 @@ function craft(inventory, recipe) {
 
 // A key's kind, so refunds and drops rebuild the same item they came from.
 function kindOf(key) {
+  if (WEAPONS[key]) return 'tool';
   if (ITEMS[key]) return ITEMS[key].kind;
   if (CRAFT_TOOLS[key]) return 'tool';
   if (CRAFT_WALLS[key]) return 'wall';
@@ -119,6 +156,7 @@ const CRAFT_WALLS = (typeof require === 'function')
   ? require('./tiles.js').WALL_BY_KEY : WALL_BY_KEY;
 
 function nameOf(key, tiles) {
+  if (WEAPONS[key]) return WEAPONS[key].name;
   if (ITEMS[key]) return ITEMS[key].name;
   if (CRAFT_TOOLS[key]) return CRAFT_TOOLS[key].name;
   if (tiles) {
@@ -132,7 +170,7 @@ function nameOf(key, tiles) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_craft = { RECIPES, ITEMS, STATION_REACH_X, STATION_REACH_Y,
+const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf };
 
 if (typeof module !== 'undefined' && module.exports) {
