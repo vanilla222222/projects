@@ -144,3 +144,5 @@
 #panel-content :where(.recipe-icon-grid,.item-index-grid,.ledger-list){overscroll-behavior:auto;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
 #panel-content select,#panel-content input{max-width:100%;box-sizing:border-box}
 @media(max-width:800px){#panel[open]{height:96dvh;max-height:96dvh}#panel>.panel-footer{flex-wrap:wrap;gap:4px 10px}#panel>.panel-footer span{min-width:0;overflow-wrap:anywhere}}
+.atlas-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 0}.atlas-toolbar>span{margin-right:auto;font:700 11px system-ui;letter-spacing:1.5px;color:#496557}.atlas-toolbar output{min-width:48px;text-align:center;font:700 13px system-ui}.atlas-toolbar button{min-width:40px}.atlas-canvas{position:relative;overflow:hidden;flex-shrink:0}.atlas-canvas>.world-atlas{position:absolute;left:0;top:0;transform-origin:0 0}
+@media(max-width:600px){.atlas-toolbar>span{flex-basis:100%}.atlas-toolbar{gap:5px}.atlas-toolbar button{padding:7px!important}}

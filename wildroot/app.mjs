@@ -1,3 +1,4 @@
+import {installAtlasZoom} from './atlas-zoom.mjs?v=48';
 import {rememberMenuScroll} from './menu-scroll.mjs?v=47';
 import {installAtlasPanning} from './atlas-panning.mjs?v=47';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
@@ -11,7 +12,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=45';
 import * as Parity from './parity-panels.mjs?v=45';
 import * as EconomyUI from './economy-panels.mjs?v=45';
 import * as Prof from './profession-panels.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=47';
+import * as UI from './ui-panels.mjs?v=48';
 import {icon,portrait} from './ui-art.mjs?v=45';
 import * as AUI from './adventure-panels.mjs?v=45';
 import * as T from './town-panels.mjs?v=45';
@@ -23,6 +24,7 @@ import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} fr
 import {drawWorld,viewFor} from './scene.mjs?v=45';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
+const atlasZoom=installAtlasZoom($('panel-content'));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
 let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null,assignmentView={};
@@ -62,7 +64,7 @@ function costs(cost){return U.costs(state,cost);}
 function advanceTalk(){if(!conversation)return;conversation=Talk.advanceConversation(state,world.c,conversation,performance.now());renderPanel();$('npc-speech')?.focus();}
 function animateTalk(now){}
 function closePanel(){if(loadError){toast('Your original save is preserved. Import a backup or explicitly start fresh.');return;}if(paused){location.reload();return;}if(panelKind==='offline'){E.acknowledgeOffline(state);offline=null;save();}if(panelKind==='minigame')world.c.minigame=null;$('panel').close();panelKind=null;panelHistory=[];npc=null;conversation=null;last=performance.now();}
-function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();}
+function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();if(kind==='map')atlasZoom.refresh();}
 function travel(area,index=0){if(world.teleport(area,Number(index))){closePanel();buildTargets();save();refresh();return true;}toast(E.lockReason(state,area,Number(index))||(!E.discovered(state,area,Number(index))?'Walk there through the portals to discover this room.':'No map teleports left. Walk through portals or use a Bottled Town Return.'));return false;}
 function classCard(id,c){const def=CLASSES[id],q=E.classQuest(state,c,id),owned=state.unlockedClasses.includes(id);return`<article class="quest-card"><span class="emblem">${emblems[id]}</span><h3>${def.name}</h3><p>${SKILLS[def.skill]} specialist · ${def.trainer}</p><p class="step">${owned?'CLASS DISCOVERED':`INITIATION ${Math.min(3,q.stage+1)} / 3`}</p><p>${c.class?(c.class===id?'Your chosen class.':'Create another character to choose this path.'):!E.availableClass(state,id)?'Discover all five classes before choosing another of this class.':q.text}</p>${!c.class&&q.stage===2?costs(q.needs):''}<p>${def.motto}</p><button data-find-npc="${id}" ${c.class?'disabled':''}>Find ${def.trainer} ↗</button></article>`;}
 function renderPanel(preserveScroll=false){
@@ -115,7 +117,7 @@ function renderPanel(preserveScroll=false){
  if(serviceId&&!E.serviceAccess(state,c,serviceId))body=Prof.locked(state,c,serviceId);
  if(uiView.firstVisit&&(kind==='craft'&&uiView.profession===uiView.firstVisit||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
  const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ${worldOf(c.area)} · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
- $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'){const atlas=document.querySelector('.atlas-scroll'),pin=document.querySelector('.atlas-node.selected');if(atlas&&pin){atlas.scrollLeft=Math.max(0,pin.offsetLeft-atlas.clientWidth/2);atlas.scrollTop=Math.max(0,pin.offsetTop-atlas.clientHeight/2);}}
+ $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'&&$('panel').open)atlasZoom.refresh();
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
 function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:TIDE_NPCS[id]?.area,zone:TIDE_NPCS[id]?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
