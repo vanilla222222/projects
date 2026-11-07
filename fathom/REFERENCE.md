@@ -1027,30 +1027,45 @@ in twenty seconds" is a thing a test can notice and a screenshot cannot.
 
 ## Fishing
 
-The design problem with fishing in a game with this much water is that water is
-everywhere - an ocean, a flooded cavern, a bucket's worth in a hole you dug. If a puddle
-fishes like the sea then fishing is a button you press rather than a place you go.
+The design problem is that liquid is everywhere in this game - an ocean, a flooded
+cavern, a lava lake in hell, a bucket's worth in a hole you dug. If every pool fishes the
+same then fishing is a button you press rather than a place you go. So a catch depends on
+four things, all read from where the bobber actually is.
 
-So the catch depends on how much water is actually there, and the amount is **measured**
-rather than assumed: a box of tiles around the bobber is counted, and three bands fall
-out of it. A puddle catches almost nothing but junk. A pond catches the common fish of
-wherever it is. The sea, and the flooded caverns under it, catch everything including
-crates. Where also decides what: cold water has trout and warm has perch, salt water has
-shrimp and swordfish, underground has cave fish - and the flooded caverns under an ocean
-are salt and underground at once, which makes them the one place that fishes like both.
+**Which liquid.** Water and lava share nothing. Lava needs the Hellfire Rod - emberite
+and obsidian, the two things that do not burn - and any other rod answers "the line burns
+away". Out of it come flarefin, obsidifish and magma snails, which cook into the best
+food in the game, because hell is a long way to go.
 
-Casting is right click at water, and right click again pulls the line. Between those is a
-wait and then a window of about a second in which the bobber dips, rings spread from it,
-and pulling gets you what was on the line. Walk away and the line breaks; mine the water
-out from under it and it breaks too.
+**How much of it**, counted rather than assumed: a box of tiles around the bobber, water
+and lava tallied apart. A puddle gives junk. A pond gives the local fish. Only open sea
+gives swordfish and ocean crates.
 
-A better rod does not unlock anything. It shortens the wait and tilts the draw away from
-junk - it wastes less of your time, which is the only thing a fishing upgrade should
-ever do. Fish cook at a furnace into the cheapest healing in the game, which is the point
-of a pond near the house.
+**Which biome.** Trout and ice pike in the cold, perch in temperate water, piranha in the
+jungle and the mire, oasis carp in dry country, shrimp and swordfish in salt, rotgill in
+the blights. Every biome the generator can make offers something beyond junk in a real
+pool - the test walks all fourteen and insists on it.
 
-Three minutes with a gilded rod in open ocean: 84 catches - 27 bass, 18 junk, 14 shrimp,
-12 perch, 8 swordfish, 4 crates and one goldfish.
+**Surface or underground, and those cross.** This is the point of the scheme. A flooded
+cavern holds cave fish and glowfish wherever it is; the caverns *under a jungle* also hold
+mud eel, which exists neither on the jungle surface nor in an ordinary cavern. The same
+for frost minnow under the tundra, shadow carp under a blight, deep shrimp under the sea.
+The test requires the surface and the caverns of those biomes to fish differently.
+
+**Six kinds of crate**, one per place, and each holds something the others do not: ocean
+crates have shells and diving gear, jungle crates mahogany and emerald, frozen crates
+silver and diamond, stone crates cave crystal and torches, hellforged crates emberite and
+obsidian and - rarely - an Ember Ward. The test requires all six tables to be distinguishable
+from one another, so no crate is worth catching only for the name.
+
+A better rod unlocks nothing except lava. It shortens the wait and tilts the draw away
+from junk - it wastes less of your time, which is the only thing a fishing upgrade should
+do.
+
+Measured in play: three minutes with a gilded rod in open ocean gave 84 catches - 27 bass,
+18 junk, 14 shrimp, 12 perch, 8 swordfish, 4 crates, one goldfish. Two and a half minutes
+with a hellfire rod over a lava lake gave 70 - 24 flarefin, 19 obsidifish, 15 slag, 9
+hellforged crates, 3 magma snails.
 
 ### The bug this found
 

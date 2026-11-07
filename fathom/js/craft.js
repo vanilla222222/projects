@@ -78,19 +78,52 @@ const ITEMS = {
     text: 'Right click at water to cast, and again to pull' },
   'gold-rod': { name: 'Gilded Rod', kind: 'tool', colour: '#e0c054', rod: true,
     text: 'Right click at water to cast, and again to pull' },
+  'hellfire-rod': { name: 'Hellfire Rod', kind: 'tool', colour: '#c2543a', rod: true,
+    text: 'The only rod that survives lava' },
   junk: { name: 'Old Boot', kind: 'loot', colour: '#6a5b52' },
+  slag: { name: 'Lump of Slag', kind: 'loot', colour: '#5f4038' },
+
+  // Fish. Where you caught one says where you have been, which is most of why there
+  // are this many of them.
   bass: { name: 'Bass', kind: 'loot', colour: '#7f8f6a' },
+  goldfish: { name: 'Goldfish', kind: 'loot', colour: '#e0a63c' },
   trout: { name: 'Trout', kind: 'loot', colour: '#9fb0c0' },
+  icepike: { name: 'Ice Pike', kind: 'loot', colour: '#bfe8f0' },
   perch: { name: 'Perch', kind: 'loot', colour: '#c0a060' },
+  piranha: { name: 'Piranha', kind: 'loot', colour: '#c0523f' },
+  oasiscarp: { name: 'Oasis Carp', kind: 'loot', colour: '#d8b06a' },
   shrimp: { name: 'Shrimp', kind: 'loot', colour: '#e49a86' },
+  swordfish: { name: 'Swordfish', kind: 'loot', colour: '#5f7f9f' },
+  rotgill: { name: 'Rotgill', kind: 'loot', colour: '#8a6f9f' },
   cavefish: { name: 'Cave Fish', kind: 'loot', colour: '#8a8f9a' },
   glowfish: { name: 'Glowfish', kind: 'loot', colour: '#9fe8d0' },
-  swordfish: { name: 'Swordfish', kind: 'loot', colour: '#5f7f9f' },
-  goldfish: { name: 'Goldfish', kind: 'loot', colour: '#e0a63c' },
+  mudeel: { name: 'Mud Eel', kind: 'loot', colour: '#6a5a3a' },
+  frostminnow: { name: 'Frost Minnow', kind: 'loot', colour: '#cfe4f0' },
+  shadowcarp: { name: 'Shadow Carp', kind: 'loot', colour: '#6a4f8a' },
+  deepshrimp: { name: 'Deep Shrimp', kind: 'loot', colour: '#c07a86' },
+  flarefin: { name: 'Flarefin', kind: 'loot', colour: '#e2743a' },
+  obsidifish: { name: 'Obsidifish', kind: 'loot', colour: '#3a3042' },
+  magmasnail: { name: 'Magma Snail', kind: 'loot', colour: '#d2502a' },
+
+  // Crates. Each kind comes out of one kind of place and holds what that place is
+  // worth, which is the reason to fish somewhere particular rather than anywhere.
   crate: { name: 'Sealed Crate', kind: 'use', colour: '#8a6038', use: { open: 'crate' },
     text: 'Open it and see' },
+  oceancrate: { name: 'Ocean Crate', kind: 'use', colour: '#3f86c4', use: { open: 'oceancrate' },
+    text: 'Pulled from deep salt water' },
+  junglecrate: { name: 'Jungle Crate', kind: 'use', colour: '#3f8a3a', use: { open: 'junglecrate' },
+    text: 'Pulled from a jungle pool' },
+  frozencrate: { name: 'Frozen Crate', kind: 'use', colour: '#8fc8e6', use: { open: 'frozencrate' },
+    text: 'Pulled from freezing water' },
+  stonecrate: { name: 'Stone Crate', kind: 'use', colour: '#8e949e', use: { open: 'stonecrate' },
+    text: 'Pulled from a flooded cavern' },
+  hellcrate: { name: 'Hellforged Crate', kind: 'use', colour: '#c2543a', use: { open: 'hellcrate' },
+    text: 'Pulled out of lava' },
+
   'cooked-fish': { name: 'Cooked Fish', kind: 'use', colour: '#d8a06a',
     use: { heal: 45 }, text: 'Restores 45 health' },
+  'seared-fish': { name: 'Seared Fish', kind: 'use', colour: '#e2743a',
+    use: { heal: 110 }, text: 'Restores 110 health' },
 
   // Grappling hooks. A hook is a tool rather than a weapon: it is fired with its own
   // key, it does no damage, and what it changes is where you can go. `range` is how far
@@ -432,13 +465,14 @@ function describe(key, tilesModule) {
     const rod = (typeof require === 'function')
       ? require('./fishing.js').RODS[key]
       : (typeof RODS === 'undefined' ? null : RODS[key]);
-    lines.push('Fishing rod');
+    lines.push(rod && rod.lava ? 'Fishing rod, and lavaproof' : 'Fishing rod');
     if (rod) lines.push('Power ' + rod.power.toFixed(2));
-    lines.push('Right click at water to cast, and again when it dips');
+    lines.push('Right click at liquid to cast, and again when it dips');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   if (item && item.use && item.use.open) {
     lines.push('Used where you stand');
+    if (item.text) lines.push(item.text);
     lines.push('Open it and see what is inside');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
@@ -667,7 +701,10 @@ RECIPES.push(
   { out: { key: 'wood-rod', kind: 'tool', count: 1 }, need: [['#wood', 12]], station: 'workbench' },
   { out: { key: 'iron-rod', kind: 'tool', count: 1 }, need: [['iron-bar', 6], ['#wood', 6]], station: 'anvil' },
   { out: { key: 'gold-rod', kind: 'tool', count: 1 }, need: [['gold-bar', 8], ['silver-bar', 4]], station: 'anvil' },
+  // Lava eats anything else. Made of the two things that do not burn.
+  { out: { key: 'hellfire-rod', kind: 'tool', count: 1 }, need: [['emberite-bar', 6], ['obsidian', 12]], station: 'anvil' },
   { out: { key: 'cooked-fish', kind: 'use', count: 1 }, need: [['#fish', 1]], station: 'furnace' },
+  { out: { key: 'seared-fish', kind: 'use', count: 1 }, need: [['#lavafish', 1]], station: 'furnace' },
   { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
@@ -720,8 +757,12 @@ function stationsNear(world, tiles, px, py) {
 // having to be written out once per species.
 const TAGS = {
   // Any fish cooks the same way, so the furnace takes a tag rather than nine recipes.
-  '#fish': (key) => ['bass', 'trout', 'perch', 'shrimp', 'cavefish', 'glowfish',
-    'swordfish', 'goldfish'].includes(key),
+  '#fish': (key) => ['bass', 'goldfish', 'trout', 'icepike', 'perch', 'piranha',
+    'oasiscarp', 'shrimp', 'swordfish', 'rotgill', 'cavefish', 'glowfish', 'mudeel',
+    'frostminnow', 'shadowcarp', 'deepshrimp'].includes(key),
+  // Everything out of the lava cooks too, and into something better: hell is further to
+  // go, and the fish there are worth the trip.
+  '#lavafish': (key) => ['flarefin', 'obsidifish', 'magmasnail'].includes(key),
   '#wood': (key) => {
     const spec = CRAFT_TILES.BY_KEY[key];
     return !!(spec && spec.wood && key.endsWith('wood'));
@@ -821,7 +862,7 @@ function kindOf(key) {
 // Tags need names of their own: the crafting list shows what a recipe costs, and "#fish"
 // is not something to show a player. Kept beside the tag table rather than inside it so
 // a tag is a predicate and nothing else.
-const TAG_NAMES = { '#wood': 'Wood', '#fish': 'Fish' };
+const TAG_NAMES = { '#wood': 'Wood', '#fish': 'Fish', '#lavafish': 'Lava Fish' };
 
 function nameOf(key, tiles) {
   if (TAG_NAMES[key]) return TAG_NAMES[key];

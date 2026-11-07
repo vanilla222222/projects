@@ -16,6 +16,7 @@ function makeUI(root, deps) {
   let shop = null;
   let onBuy = null;
   let onHeal = null;
+  let onSelectHotbar = null;
   const els = {};
   let open = false;
 
@@ -323,14 +324,17 @@ function makeUI(root, deps) {
     node.dataset.index = String(index);
     el('span', 'icon', node);
     el('span', 'count', node);
-    node.addEventListener('mousedown', (ev) => {
+    const activate = ev => {
       ev.preventDefault();
       ev.stopPropagation();
+      if (!open && parent === els.bar && onSelectHotbar) { onSelectHotbar(index); return; }
       if (ev.button === 2) inventory.splitSlot(index);
       else if (ev.shiftKey) inventory.quickMove(index);
       else inventory.clickSlot(index);
       sync();
-    });
+    };
+    node.addEventListener('mousedown', activate);
+    node.addEventListener('pointerdown', ev => { if (ev.pointerType === 'touch') activate(ev); });
     node.addEventListener('contextmenu', (ev) => ev.preventDefault());
     watchSlot(node, () => inventory.slots[index]);
     return node;
@@ -732,12 +736,13 @@ function makeUI(root, deps) {
   }
 
   return { build, sync, toggle, setOpen, get isOpen() { return open; },
-    setField(key, text) { if (els[key]) els[key].textContent = text; },
-    setMessage(text) { if (els.message) els.message.textContent = text; },
+    setField(key, text) { if (els[key] && els[key].textContent !== text) els[key].textContent = text; },
+    setMessage(text) { if (els.message && els.message.textContent !== text) els.message.textContent = text; },
     set onCraft(fn) { onCraft = fn; },
     set onChestMove(fn) { onChestMove = fn; },
     set onBuy(fn) { onBuy = fn; },
     set onHeal(fn) { onHeal = fn; },
+    set onSelectHotbar(fn) { onSelectHotbar = fn; },
     openShop(who, purse) { shop = { who, coins: purse.coins }; },
     closeShop() { shop = null; },
     openChest(box) { chest = box; craftSignature = null; },

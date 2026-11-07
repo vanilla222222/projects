@@ -309,7 +309,9 @@ for (const [station, items] of Object.entries(groups)) {
       .filter(f => item.use[f] !== undefined);
     ok(fields.length === 1, key + ' does ' + fields.length + ' things rather than one');
     if (fields[0] === 'open') {
-      ok(item.use.open === 'crate', key + ' opens ' + item.use.open + ', which is nothing');
+      const crates = require('../js/fishing.js').CRATES;
+      ok(!!crates[item.use.open],
+        key + ' opens ' + item.use.open + ', which no crate table describes');
       continue;
     }
     if (fields[0] === 'buff') {

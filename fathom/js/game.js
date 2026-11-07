@@ -23,6 +23,7 @@ function makeGame(canvas, deps) {
   let seed = 0;
   let world = null;
   let renderer = null;
+  let touchControls = null, lastUISync = -Infinity;
   let inventory = null;
   let stats = null;
   let ui = null;
@@ -245,7 +246,7 @@ function makeGame(canvas, deps) {
       // A crate holds what it holds because of where it was caught, like a pot.
       const px = Math.floor(state.player.x);
       const py = Math.floor(state.player.y);
-      for (const got of fishModule.crateContents(rng.unit, seed, px, py)) {
+      for (const got of fishModule.crateContents(rng.unit, seed, px, py, use.open)) {
         dropItem(px, py, got.key, craft.kindOf(got.key), got.count);
       }
       sfx('chest');
@@ -325,31 +326,40 @@ function makeGame(canvas, deps) {
     const spec = craft.ITEMS[item.key];
     if (!spec || !spec.rod) return false;
     if (state.bobber) { reelIn(); return true; }
+    const rod = fishModule.RODS[item.key] || { power: 1 };
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height * 0.4;
     const away = Math.hypot(pointer.x - cx, pointer.y - cy);
     if (away > fishModule.CAST_RANGE) { say('Too far', 1.0); return true; }
     const tx = Math.floor(pointer.x);
     const ty = Math.floor(pointer.y);
-    const at = tiles.tile(world.get(tx, ty));
-    if (!at.liquid || at.hot) { say('Cast at water', 1.2); return true; }
+    const liquid = fishModule.liquidAt(tiles, world.get(tx, ty));
+    if (!liquid) { say('Cast at water', 1.2); return true; }
+    if (liquid === 'lava' && !rod.lava) {
+      say('The line burns away', 1.8);
+      return true;
+    }
 
-    const water = fishModule.waterAround(world, tiles, tx, ty);
-    if (water < fishModule.PUDDLE / 3) { say('There is hardly any water there', 1.6); return true; }
-    const rod = fishModule.RODS[item.key] || { power: 1 };
+    const survey = fishModule.surveyLiquid(world, tiles, tx, ty);
+    const amount = liquid === 'lava' ? survey.lava : survey.water;
+    if (amount < fishModule.PUDDLE / 3) {
+      say('There is hardly anything there', 1.6);
+      return true;
+    }
     state.bobber = {
       x: pointer.x,
       y: pointer.y,
       tx,
       ty,
+      liquid,
       rod: item.key,
       power: rod.power,
-      water,
-      wait: fishModule.biteDelay(Math.random(), rod.power, water),
+      amount,
+      wait: fishModule.biteDelay(Math.random(), rod.power, amount),
       biting: 0,
       bob: 0
     };
-    sfx('splash', { gain: 0.5, pitch: 1.3 });
+    sfx('splash', { gain: 0.5, pitch: liquid === 'lava' ? 0.7 : 1.3 });
     return true;
   }
 
@@ -366,29 +376,30 @@ function makeGame(canvas, deps) {
     const ctx = {
       biome: worldgen.biomeAt(seed, bobber.tx).key,
       layer: worldgen.layerAt(bobber.ty).key,
-      water: bobber.water
+      liquid: bobber.liquid,
+      amount: bobber.amount
     };
     const got = fishModule.rollCatch(ctx, Math.random(), bobber.power);
     if (!got) { say('Nothing is biting here', 1.4); return; }
     dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
     sfx('pickup', { pitch: 1.35 });
-    spawnParticles(bobber.x, bobber.y, '#bfe6ff', 8);
+    spawnParticles(bobber.x, bobber.y,
+      bobber.liquid === 'lava' ? '#ffb05a' : '#bfe6ff', 8);
     say(craft.nameOf(got.key, tiles), 1.6);
   }
 
   function stepFishing(dt) {
     const bobber = state.bobber;
     if (!bobber) return;
-    // The line breaks if you walk away from it, which is what stops a cast being a
-    // thing you set down and forget.
+    // The line breaks if you walk away from it, which is what stops a cast being
+    // something you set down and forget.
     const away = Math.hypot(bobber.x - state.player.x, bobber.y - state.player.y);
     if (away > fishModule.CAST_RANGE + 6) {
       state.bobber = null;
       say('The line broke', 1.2);
       return;
     }
-    const still = tiles.tile(world.get(bobber.tx, bobber.ty));
-    if (!still.liquid || still.hot) {
+    if (fishModule.liquidAt(tiles, world.get(bobber.tx, bobber.ty)) !== bobber.liquid) {
       state.bobber = null;
       say('The water is gone', 1.2);
       return;
@@ -398,14 +409,14 @@ function makeGame(canvas, deps) {
       bobber.biting -= dt;
       if (bobber.biting <= 0) {
         say('It got away', 1.1);
-        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.water);
+        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.amount);
       }
       return;
     }
     bobber.wait -= dt;
     if (bobber.wait <= 0) {
       bobber.biting = fishModule.BITE_WINDOW;
-      sfx('splash', { gain: 0.35, pitch: 1.6 });
+      sfx('splash', { gain: 0.35, pitch: bobber.liquid === 'lava' ? 0.9 : 1.6 });
     }
   }
 
@@ -1443,9 +1454,13 @@ function makeGame(canvas, deps) {
       }
     }
     lastView = renderer.draw(state);
-    if (minimap) minimap.draw(state, dt);
+    if (minimap && (minimap.isLarge || !window.matchMedia?.('(max-width: 900px)').matches)) minimap.draw(state, dt);
     drawAim();
-    syncUI();
+    if (now - lastUISync >= (ui.isOpen ? 40 : 100)) {
+      syncUI();
+      touchControls?.sync();
+      lastUISync = now;
+    }
     requestAnimationFrame(frame);
   }
 
@@ -1471,8 +1486,7 @@ function makeGame(canvas, deps) {
   }
 
   function syncUI() {
-    // Recomputed every frame so that mining a bench out, or walking away from one, closes
-    // its recipes the moment it happens rather than the next time the screen is opened.
+    // Refresh the open inventory frequently so nearby station changes appear promptly.
     state.stations = craft.stationsNear(world, tiles, state.player.x, state.player.y);
     const hour = ((state.dayPhase + 0.5) * 24) % 24;
     ui.setField('clock', String(Math.floor(hour)).padStart(2, '0') + ':'
@@ -1613,9 +1627,12 @@ function makeGame(canvas, deps) {
   }
 
   function resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(canvas.clientWidth * dpr);
-    canvas.height = Math.floor(canvas.clientHeight * dpr);
+    const width = Math.max(1, canvas.clientWidth), height = Math.max(1, canvas.clientHeight);
+    const mobile = !!window.matchMedia?.('(pointer: coarse)').matches;
+    const budget = mobile ? 1000000 : 2400000;
+    const dpr = Math.min(mobile ? 1.25 : 2, window.devicePixelRatio || 1, Math.sqrt(budget / (width * height)));
+    const w = Math.max(1, Math.floor(width * dpr)), h = Math.max(1, Math.floor(height * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   }
 
   function boot(choice) {
@@ -1628,7 +1645,7 @@ function makeGame(canvas, deps) {
     world = chunks.makeWorld(seed, worldgen);
     if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
 
-    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite });
+    renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
@@ -1647,6 +1664,7 @@ function makeGame(canvas, deps) {
     ui.onChestMove = chestMove;
     ui.onBuy = buyFrom;
     ui.onHeal = healFrom;
+    ui.onSelectHotbar = index => { state.player.selected = index - inventory.section('hotbar').from; ui.sync(state); };
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
@@ -1694,7 +1712,11 @@ function makeGame(canvas, deps) {
 
     ui.build();
     running = true;
-    say(choice.world.name + ' \u2014 seed ' + seed + '. E opens the backpack.', 7);
+    if (touchControls) {
+      touchControls.setPlaying(true);
+      if (touchControls.active) state.camera.zoom = canvas.clientWidth < 600 ? 1.5 : 2;
+    }
+    say(choice.world.name + ' \u2014 seed ' + seed + (touchControls?.active ? '. Tap the world to aim and dig. Bag opens the backpack.' : '. E opens the backpack.'), 7);
     setInterval(save, 20000);
     requestAnimationFrame(frame);
   }
@@ -1703,6 +1725,30 @@ function makeGame(canvas, deps) {
     resize();
     addEventListener('resize', resize);
     bind();
+    if (deps.touch) touchControls = deps.touch.bindTouchControls(canvas, document.getElementById('touch-controls'), {
+      modal: () => !!(ui?.isOpen || minimap?.isLarge),
+      hold: (key, value) => { input[key] = value; if (value && audio) audio.unlock(); },
+      aim: worldFromScreen,
+      run(action) {
+        if (audio) audio.unlock();
+        if (action === 'bag') {
+          if (minimap?.isLarge) minimap.setLarge(false);
+          if (ui.isOpen) closeChest();
+          ui.toggle();
+        } else if (action === 'map') {
+          if (ui.isOpen) { closeChest(); ui.setOpen(false); }
+          if (minimap) minimap.setLarge(!minimap.isLarge);
+        } else if (action === 'place' && !state.paused) place();
+        else if (action === 'hook' && !state.paused) fireHook();
+        else if (action === 'pause') state.paused = !state.paused;
+        else if (action === 'house') checkHousing();
+        else if (action === 'zoomIn' || action === 'zoomOut') {
+          const step = action === 'zoomIn' ? 1 : -1;
+          if (minimap?.isLarge) minimap.zoomBy(step);
+          else state.camera.zoom = Math.max(1, Math.min(4, state.camera.zoom + step * .5));
+        }
+      }
+    });
     menu.open().then(boot);
   }
 

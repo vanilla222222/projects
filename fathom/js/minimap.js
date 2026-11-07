@@ -65,7 +65,7 @@ function makeMinimap(canvas, deps) {
 
   function size() {
     if (!large) return { w: SMALL_W, h: SMALL_H };
-    const side = Math.min(window.innerWidth, window.innerHeight) * LARGE_SCALE;
+    const side = Math.min(window.innerWidth / 1.5, window.innerHeight) * LARGE_SCALE;
     return { w: Math.round(side * 1.5), h: Math.round(side) };
   }
 

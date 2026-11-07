@@ -58,6 +58,7 @@ function makeWorld(seed, generator) {
   // map of a thousand explored chunks saves in a quarter of a megabyte.
   const explored = new Map();
   const dirty = new Set();
+  let renderRevision = 0;
 
   // A one-entry memo in front of the chunk map. Every read of the world goes through
   // here, and every one of them was building the string `cx + ':' + cy` and hashing it:
@@ -125,6 +126,7 @@ function makeWorld(seed, generator) {
     const index = ly * generator.CHUNK + lx;
     if (chunk.walls[index] === id) return false;
     chunk.walls[index] = id;
+    renderRevision += 1;
     let diff = wallEdits.get(key);
     if (!diff) {
       diff = new Map();
@@ -147,6 +149,7 @@ function makeWorld(seed, generator) {
     const index = ly * generator.CHUNK + lx;
     if (chunk.tiles[index] === id) return false;
     chunk.tiles[index] = id;
+    renderRevision += 1;
     let diff = edits.get(key);
     if (!diff) {
       diff = new Map();
@@ -355,6 +358,7 @@ function makeWorld(seed, generator) {
   }
 
   function restore(saved) {
+    renderRevision += 1;
     edits.clear();
     wallEdits.clear();
     levels.clear();
@@ -383,6 +387,7 @@ function makeWorld(seed, generator) {
   return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
     getContainer, setContainer, clearContainer,
     markExplored, isExplored, exploredCount, chunkAt, evictOutside, editCount, serialize, restore,
+    get renderRevision() { return renderRevision; },
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Fathom</title>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -12,6 +12,26 @@
 
 <div id="menu"></div>
 <div id="hud"></div>
+<div id="touch-controls" hidden aria-label="Touch controls">
+  <div class="touch-move">
+    <button data-touch-hold="left" aria-label="Move left">◀</button>
+    <button data-touch-hold="right" aria-label="Move right">▶</button>
+    <button data-touch-hold="down" aria-label="Climb down">▼</button>
+  </div>
+  <div class="touch-act">
+    <button data-touch-action="mode" aria-pressed="false">Dig / attack</button>
+    <button data-touch-action="hook" aria-label="Grapple at target">Hook</button>
+    <button data-touch-hold="jump" aria-label="Jump or climb">Jump</button>
+  </div>
+  <div class="touch-menu">
+    <button data-touch-action="bag">Bag</button>
+    <button data-touch-action="map">Map</button>
+    <button data-touch-action="zoomOut" aria-label="Zoom out">−</button>
+    <button data-touch-action="zoomIn" aria-label="Zoom in">+</button>
+    <button data-touch-action="pause">Pause</button>
+    <button data-touch-action="house">House</button>
+  </div>
+</div>
 
 <script src="js/registry.js"></script>
 <script src="js/rng.js"></script>
@@ -38,9 +58,11 @@
 <script src="js/buffs.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/sprite.js"></script>
+<script src="js/webgl.js"></script>
 <script src="js/render.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/menu.js"></script>
+<script src="js/touch.js"></script>
 <script src="js/game.js"></script>
 <script>
 (function boot() {
