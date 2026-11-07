@@ -59,6 +59,8 @@ function makeWorld(seed, generator) {
   const explored = new Map();
   const dirty = new Set();
   let renderRevision = 0;
+  let hardmode = false;
+  let protectedChunks = new Set();
   let liquidRevision = 0;
 
   // A one-entry memo in front of the chunk map. Every read of the world goes through
@@ -77,9 +79,41 @@ function makeWorld(seed, generator) {
     memoChunk = null;
   }
 
+  function hardmodeApplies(cx, cy) {
+    return hardmode && !protectedChunks.has(chunkKey(cx, cy));
+  }
+
+  function enableHardmode() {
+    if (hardmode) return false;
+    hardmode = true;
+    protectedChunks = new Set([...explored.keys(), ...edits.keys(), ...wallEdits.keys(), ...levels.keys()]);
+    for (const key of containers.keys()) {
+      const [x, y] = key.split(',').map(Number);
+      protectedChunks.add(chunkKey(Math.floor(x / generator.CHUNK), Math.floor(y / generator.CHUNK)));
+    }
+    loaded.clear();
+    forgetMemo();
+    renderRevision += 1;
+    return true;
+  }
+
+  function biomeAt(x, y) {
+    const cx = Math.floor(x / generator.CHUNK), cy = Math.floor(y / generator.CHUNK);
+    const altitude = generator.altitudeOf?.(y);
+    return altitude >= -110 && altitude <= 740 && hardmodeApplies(cx, cy) && generator.isHallowRegion?.(seed, x)
+      ? generator.HALLOW_BIOME : generator.biomeAt(seed, x);
+  }
+
   function acceptGeneratedChunk(cx, cy, chunk) {
     const key = chunkKey(cx, cy);
     if (loaded.has(key)) return loaded.get(key);
+    if (hardmodeApplies(cx, cy) && generator.hardmodeTileAt) {
+      const size = generator.CHUNK;
+      for (let index = 0; index < chunk.tiles.length; index += 1) {
+        const x = cx * size + index % size, y = cy * size + Math.floor(index / size);
+        chunk.tiles[index] = generator.hardmodeTileAt(seed, x, y, chunk.tiles[index]);
+      }
+    }
     const diff = edits.get(key);
     if (diff) for (const [index, id] of diff) chunk.tiles[index] = id;
     const wallDiff = wallEdits.get(key);
@@ -155,7 +189,9 @@ function makeWorld(seed, generator) {
       diff = new Map();
       edits.set(key, diff);
     }
-    const original = generator.baseTileAt(seed, x, y);
+    const base = generator.baseTileAt(seed, x, y);
+    const original = hardmodeApplies(cx, cy) && generator.hardmodeTileAt
+      ? generator.hardmodeTileAt(seed, x, y, base) : base;
     if (id === original) diff.delete(index);
     else diff.set(index, id);
     if (diff.size === 0) edits.delete(key);
@@ -353,12 +389,14 @@ function makeWorld(seed, generator) {
     // bytes become 384 characters instead of roughly 1,100.
     const seen = {};
     for (const [key, bits] of explored) seen[key] = packBits(bits);
-    return { seed, edits: out, wallEdits: wallOut, levels: levelOut,
+    return { seed, hardmode, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
       containers: boxes, explored: seen };
   }
 
   function restore(saved) {
     renderRevision += 1;
+    hardmode = !!saved.hardmode;
+    protectedChunks = new Set(saved.protectedChunks || []);
     edits.clear();
     wallEdits.clear();
     levels.clear();
@@ -384,7 +422,7 @@ function makeWorld(seed, generator) {
     }
   }
 
-  return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
+  return { seed, get, set, biomeAt, enableHardmode, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
     getContainer, setContainer, clearContainer,
     markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },

@@ -320,7 +320,8 @@ function makeRenderer(canvas, deps) {
     redclay: ['#a45e4d', '#d9956e'],
     stone: ['#777784', '#a0a4b2'],
     blightgrass: ['#845ca1', '#b986c9'],
-    fleshgrass: ['#a64d61', '#d68186']
+    fleshgrass: ['#a64d61', '#d68186'],
+    hallowgrass: ['#8e79b5', '#e2aadf']
   };
   const GRASS_PALETTES = {
     forest: ['#49834d', '#83a855'],
@@ -354,7 +355,7 @@ function makeRenderer(canvas, deps) {
             const hPix = Math.round(size * frac);
             const srcH = Math.max(1, Math.round(TILE * frac));
             const wid = tiles.idOf('water');
-            ctx.drawImage(atlas, sample.variants[at] * TILE, wid * TILE + (TILE - srcH),
+            ctx.drawImage(atlas, texture.atlasX(wid, sample.variants[at]), texture.atlasY(wid) + (TILE - srcH),
               TILE, srcH, sx, sy + size - hPix, size, hPix);
           }
         }
@@ -373,7 +374,7 @@ function makeRenderer(canvas, deps) {
           const frac = brimming ? 1 : Math.max(0.08, level / 255);
           const hPix = Math.round(size * frac);
           const srcH = Math.max(1, Math.round(TILE * frac));
-          ctx.drawImage(atlas, variant * TILE, id * TILE + (TILE - srcH), TILE, srcH,
+          ctx.drawImage(atlas, texture.atlasX(id, variant), texture.atlasY(id) + (TILE - srcH), TILE, srcH,
             sx, sy + size - hPix, size, hPix);
           continue;
         }
@@ -383,13 +384,13 @@ function makeRenderer(canvas, deps) {
         // halves offset against each other read as a bend at this size.
         if (spec.decor && wind !== 0) {
           const sway = Math.sin(state.time * 2.1 + wx * 0.7) * wind * size * 0.18;
-          ctx.drawImage(atlas, variant * TILE, id * TILE + TILE / 2, TILE, TILE / 2,
+          ctx.drawImage(atlas, texture.atlasX(id, variant), texture.atlasY(id) + TILE / 2, TILE, TILE / 2,
             sx, sy + size / 2, size, size / 2);
-          ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE / 2,
+          ctx.drawImage(atlas, texture.atlasX(id, variant), texture.atlasY(id), TILE, TILE / 2,
             sx + sway, sy, size, size / 2);
           continue;
         }
-        ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
+        ctx.drawImage(atlas, texture.atlasX(id, variant), texture.atlasY(id), TILE, TILE, sx, sy, size, size);
         if (!spec.solid) continue;
         const edges = sample.edges[at];
         if (!edges) continue;
@@ -555,6 +556,19 @@ function makeRenderer(canvas, deps) {
         ctx.beginPath();
         ctx.ellipse(sx + w / 2, sy + h, w * 0.46, Math.max(1, size * 0.1), 0, 0, Math.PI * 2);
         ctx.fill();
+      }
+      if (enemy.beams) {
+        ctx.save();
+        ctx.lineWidth = size * (enemy.beams.live ? 0.34 : 0.075);
+        ctx.strokeStyle = enemy.beams.live ? '#f9dafa' : '#b898d0';
+        for (const angle of enemy.beams.angles) {
+          ctx.beginPath();
+          ctx.moveTo(sx + w / 2, sy + h / 2);
+          ctx.lineTo(sx + w / 2 + Math.cos(angle) * enemy.beams.range * size,
+            sy + h / 2 + Math.sin(angle) * enemy.beams.range * size);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
       sprite.drawCreature(ctx, { x: sx, y: sy, w, h }, enemy.spec.body || 'slime', {
         colour: enemy.spec.colour,
@@ -825,7 +839,7 @@ function makeRenderer(canvas, deps) {
       if (state.itemArt) {
         ctx.drawImage(state.itemArt(d), sx, sy, half, half);
       } else if (spec && spec.colour) {
-        ctx.drawImage(atlas, 0, spec.id * TILE, TILE, TILE, sx, sy, half, half);
+        ctx.drawImage(atlas, texture.atlasX(spec.id, 0), texture.atlasY(spec.id), TILE, TILE, sx, sy, half, half);
       } else {
         const wallSpec = tiles.WALL_BY_KEY[d.key];
         ctx.fillStyle = wallSpec && wallSpec.colour ? wallSpec.colour : '#8894a8';

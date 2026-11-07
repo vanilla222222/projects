@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 237 enemies including thirty-six bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 240 enemies including thirty-seven bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -310,3 +310,20 @@ Find Driftwood Jetties, Saltwater Storehouses, and Saltmarrow Catacombs across
 three depths. Some catacomb chests are Driftlock Mimics. Use a Breakwater Shell
 on the Shore surface or a Saltmarrow Token in the deep Shore to summon the
 optional Breakwater Crab or Saltmarrow.
+
+
+### Hardmode
+
+Defeat the Rift Archon, then craft a Prism Sigil and summon the Prism Sentinel
+in the sky. Its defeat activates Hardmode for that world. The Hallow and new
+veins appear in previously unexplored, unedited chunks. The Progression Journal
+shows ore depths and can point to nearby Hallow surface.
+
+Mine Palladium with Aetherite, Mythril with Palladium, and Adamantite with
+Mythril. All three metals have armor, pickaxes, axes, hammers, swords, bows,
+rifles, arrows, and bullets. Hallow crystals make a piercing lance, a chain
+lightning conduit, a ward scepter, and the Prismweave mage set.
+
+The equipment panel has four ammo slots and five coin slots. Copper, silver,
+gold, platinum, and onyx convert at 100 to one. Shops and contracts use copper
+value, and existing coin stacks retain their value.

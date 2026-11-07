@@ -59,4 +59,33 @@ for (const spec of tiles.WALLS) {
     'wall ' + spec.key + ' blocks as much light as solid stone');
 }
 
+{
+  const hardWorld = makeWorld(SEED, gen);
+  const hallowX = Array.from({ length: 2000 }, (_, i) => i + 600)
+    .find(x => gen.isHallowRegion(SEED, x));
+  check(Number.isFinite(hallowX), 'seed has no Hallow region');
+  const surface = gen.surfaceHeight(SEED, hallowX);
+  const oldSurface = hardWorld.get(hallowX, surface);
+  hardWorld.markExplored(hallowX, surface);
+  check(hardWorld.enableHardmode() && !hardWorld.enableHardmode(), 'Hardmode should activate once');
+  check(hardWorld.get(hallowX, surface) === oldSurface && hardWorld.biomeAt(hallowX, surface).key !== 'hallow',
+    'Hardmode modified an already explored surface chunk');
+  for (const [ore, depth] of [['palladium', 300], ['mythril', 1030], ['adamantite', 2050]]) {
+    let found = null;
+    const id = tiles.idOf(ore);
+    for (let x = 600; x < 940 && !found; x += 3) {
+      for (let y = gen.SEA_LEVEL + depth; y < gen.SEA_LEVEL + depth + 70; y += 3) {
+        if (hardWorld.get(x, y) === id) { found = { x, y }; break; }
+      }
+    }
+    check(!!found, ore + ' did not generate in Hardmode');
+    if (found) {
+      hardWorld.set(found.x, found.y, tiles.AIR);
+      const copy = makeWorld(SEED, gen);
+      copy.restore(hardWorld.serialize());
+      check(copy.hardmode && copy.get(found.x, found.y) === tiles.AIR, ore + ' regenerated after mining and saving');
+    }
+  }
+}
+
 console.log('World: ' + checks + ' checks passed across both layers, the edit diff and the safe-wall rule');

@@ -23,6 +23,15 @@ const STATION_REACH_Y = 3;
 
 // Items that are not tiles: bars and tools. Tiles supply their own name and colour, so
 // only these need a registry. `kind` decides how a slot draws and whether it stacks.
+const HARDMODE_METALS = [
+  { key: 'palladium', name: 'Palladium', colour: '#cf8457', defense: 25, damage: 130,
+    bonus: { key: 'renewal', name: 'Renewal', text: 'Health regenerates 50% faster', regen: 1.5 } },
+  { key: 'mythril', name: 'Mythril', colour: '#68b9a8', defense: 29, damage: 147,
+    bonus: { key: 'conduit', name: 'Conduit', text: 'Magic costs 20% less mana', manaCost: 0.8 } },
+  { key: 'adamantite', name: 'Adamantite', colour: '#db6f8b', defense: 34, damage: 164,
+    bonus: { key: 'adamant', name: 'Adamant', text: 'Defence +8 and weapon damage +10%', defense: 8, melee: 1.1, ranged: 1.1, magic: 1.1 } }
+];
+
 const ITEMS = {
   'tin-bar': { name: 'Tin Bar', kind: 'bar', colour: '#b3b1a6' },
   'copper-bar': { name: 'Copper Bar', kind: 'bar', colour: '#c07a42' },
@@ -58,7 +67,7 @@ const ITEMS = {
   arrow: { name: 'Arrow', kind: 'ammo', colour: '#b9a271' },
   'iron-arrow': { name: 'Iron Arrow', kind: 'ammo', colour: '#9aa0a8' },
   'ember-arrow': { name: 'Ember Arrow', kind: 'ammo', colour: '#e2743a' },
-  coin: { name: 'Coin', kind: 'coin', colour: '#d8b43c' },
+  coin: { name: 'Copper Coin', kind: 'coin', colour: '#c98762' },
 
   // Things that fall out of the sky, and things you use rather than wear or swing.
   // A `use` item is spent where it stands: the only way max mana goes up, and the only
@@ -165,6 +174,14 @@ const ITEMS = {
   'reef-conch': { name: 'Reef Conch', kind: 'use', colour: '#69a5ad', use: { summon: 'reefleviathan', layer: 'surface', biome: 'ocean' }, text: 'Summon in the Ocean' },
   'abyssal-pearl': { name: 'Abyssal Pearl', kind: 'loot', colour: '#6284ac' },
   'abyssal-signal': { name: 'Abyssal Signal', kind: 'use', colour: '#6284ac', use: { summon: 'abyssaleye', layer: 'deep', biome: 'ocean' }, text: 'Summon in the Ocean' },
+  'copper-coin': { name: 'Copper Coin', kind: 'coin', colour: '#c98762', text: 'Worth 1 copper' },
+  'silver-coin': { name: 'Silver Coin', kind: 'coin', colour: '#bcc9d6', text: 'Worth 100 copper' },
+  'gold-coin': { name: 'Gold Coin', kind: 'coin', colour: '#f1c35b', text: 'Worth 10,000 copper' },
+  'platinum-coin': { name: 'Platinum Coin', kind: 'coin', colour: '#bde6e7', text: 'Worth 1,000,000 copper' },
+  'onyx-coin': { name: 'Onyx Coin', kind: 'coin', colour: '#746685', text: 'Worth 100,000,000 copper' },
+  'prism-sigil': { name: 'Prism Sigil', kind: 'use', colour: '#e6b4f2',
+    use: { summon: 'prismsentinel', layer: 'sky' }, text: 'Summon among the sky islands' },
+  'prism-heart': { name: 'Prism Heart', kind: 'loot', colour: '#e6b4f2' },
   'driftlock-fang': { name: 'Driftlock Fang', kind: 'loot', colour: '#a9b89e' },
   'breakwater-claw': { name: 'Breakwater Claw', kind: 'loot', colour: '#c68d66' },
   'breakwater-shell': { name: 'Breakwater Shell', kind: 'use', colour: '#c68d66', use: { summon: 'breakwatercrab', layer: 'surface', biome: 'beach' }, text: 'Summon in the Shore' },
@@ -276,6 +293,13 @@ const ITEMS = {
 // Generated per metal rather than written out, for the same reason the wood sets are: six
 // tiers times four pieces is twenty-four entries that must all agree.
 const ARMOUR_TIERS = [
+  ...HARDMODE_METALS.map(m => ({ key: m.key, name: m.name, colour: m.colour,
+    base: m.defense, bar: m.key + '-bar', cost: 26, bonus: m.bonus })),
+  { key: 'prism', name: 'Prismweave', colour: '#d4a5ef', base: 24, bar: null,
+    craft: [['mythril-bar', 6], ['ward-crystal', 3]], station: 'anvil',
+    bonus: { key: 'refraction', name: 'Refraction', text: 'Magic damage +18% and 15% lower mana costs',
+      magic: 1.18, manaCost: 0.85 } },
+
   { key: 'wood', name: 'Wooden', colour: '#8a6038', base: 2, bar: null, cost: null,
     bonus: { key: 'scavenger', name: 'Scavenger', text: 'Dropped items fly to you from further away', pickup: 2.4 } },
   { key: 'tin', name: 'Tin', colour: '#b3b1a6', base: 3, bar: 'tin-bar', cost: 16,
@@ -527,6 +551,14 @@ function equipEffects(wornArmour, wornAccessories, buffEffects) {
 // Weapons. Separate from pickaxes: a pickaxe can be swung at an enemy and will hurt it,
 // but badly, which is the whole reason to make a sword.
 const WEAPONS = {
+  'iron-musket': { name: 'Iron Musket', damage: 28, useTime: 0.42, reach: 47, ranged: true, ammo: 'bullet' },
+  'prism-lance': { name: 'Prism Lance', damage: 132, useTime: 0.34, reach: 48, magic: true,
+    mana: 15, bolt: '#ffd6a1', spell: 'pierce' },
+  'storm-conduit': { name: 'Storm Conduit', damage: 115, useTime: 0.37, reach: 44, magic: true,
+    mana: 18, bolt: '#8bd4ea', spell: 'chain' },
+  'ward-scepter': { name: 'Ward Scepter', damage: 103, useTime: 0.36, reach: 42, magic: true,
+    mana: 17, bolt: '#d4a5ef', spell: 'ward' },
+
   'tin-sword': { name: 'Tin Sword', damage: 13, useTime: 0.32, reach: 2.7 },
   // A bow is a weapon that spends ammunition and reaches across the screen, so its
   // "reach" is the arrow's range rather than an arm's length.
@@ -581,6 +613,15 @@ const WEAPONS = {
   'bone-flail': { name: 'Bone Flail', damage: 40, useTime: 0.38, reach: 4.0, drop: 'armouredskeleton' }
 };
 
+for (const metal of HARDMODE_METALS) {
+  ITEMS[metal.key + '-bar'] = { name: metal.name + ' Bar', kind: 'bar', colour: metal.colour };
+  WEAPONS[metal.key + '-sword'] = { name: metal.name + ' Sword', damage: metal.damage, useTime: 0.19, reach: 4.5 };
+  WEAPONS[metal.key + '-bow'] = { name: metal.name + ' Bow', damage: metal.damage - 30,
+    useTime: 0.18, reach: 60, ranged: true, ammo: 'arrow' };
+  WEAPONS[metal.key + '-rifle'] = { name: metal.name + ' Rifle', damage: metal.damage - 18,
+    useTime: 0.22, reach: 62, ranged: true, ammo: 'bullet', colour: metal.colour };
+}
+
 // Ammunition. A bow fires whatever is best in the backpack rather than whatever slot is
 // selected, which is Terraria's rule and spares the player a second hotbar.
 const AMMO = {
@@ -589,12 +630,29 @@ const AMMO = {
   'ember-arrow': { bonus: 14, colour: '#e2743a', speed: 1.15, burns: true }
 };
 
+const AMMO_METALS = [
+  ['tin', 'Tin', '#b3b1a6', 3], ['copper', 'Copper', '#c07a42', 5], ['iron', 'Iron', '#a8a29b', 7],
+  ['silver', 'Silver', '#cdd2dc', 9], ['gold', 'Gold', '#e0c054', 12], ['cobalt', 'Cobalt', '#3f7fb5', 15],
+  ['emberite', 'Emberite', '#d4663a', 18], ['meteor', 'Meteor', '#a06a5c', 13], ['aetherite', 'Aetherite', '#8de8d3', 22],
+  ...HARDMODE_METALS.map((m, i) => [m.key, m.name, m.colour, 26 + i * 5])
+];
+for (const [metal, name, colour, bonus] of AMMO_METALS) {
+  for (const family of ['arrow', 'bullet']) {
+    const key = metal + '-' + family;
+    if (AMMO[key]) continue;
+    ITEMS[key] = { name: name + ' ' + (family === 'arrow' ? 'Arrow' : 'Bullet'), kind: 'ammo', colour };
+    AMMO[key] = { family, bonus, colour, speed: family === 'bullet' ? 1.8 : 1.12 };
+  }
+}
+ITEMS.bullet = { name: 'Bullet', kind: 'ammo', colour: '#a8a29b' };
+AMMO.bullet = { family: 'bullet', bonus: 0, colour: '#a8a29b', speed: 1.75 };
+
 // The best ammunition held, by the damage it adds. `countOf` is passed in rather than an
 // inventory, so this is a pure function of what is carried.
-function bestAmmo(countOf) {
+function bestAmmo(countOf, family = 'arrow') {
   let best = null;
   for (const [key, spec] of Object.entries(AMMO)) {
-    if (!countOf(key)) continue;
+    if ((spec.family || 'arrow') !== family || !countOf(key)) continue;
     if (!best || spec.bonus > AMMO[best].bonus) best = key;
   }
   return best;
@@ -627,7 +685,10 @@ function describe(key, tilesModule) {
     if (cls === 'melee') lines.push(weapon.reach.toFixed(1) + ' tiles of reach');
     else lines.push(weapon.reach + ' tiles of range');
     if (weapon.mana) lines.push(weapon.mana + ' mana a shot');
-    if (weapon.ammo) lines.push('Fires the best arrow you carry');
+    if (weapon.ammo) lines.push('Fires the best ' + weapon.ammo + ' you carry');
+    if (weapon.spell === 'pierce') lines.push('Pierces up to three enemies');
+    if (weapon.spell === 'chain') lines.push('Arcs to up to two nearby enemies');
+    if (weapon.spell === 'ward') lines.push('Casting grants +14 defence for four seconds');
     if (weapon.drop) lines.push('Only dropped, never made');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
@@ -820,6 +881,31 @@ for (const [metal, bars, wood, jobs] of [
 for (const [metal, bars, wood] of [['tin', 7, 7], ['meteor', 10, 10], ['aetherite', 12, 12]]) {
   RECIPES.push({ out: { key: metal + '-bow', kind: 'tool', count: 1 },
     need: [[metal + '-bar', bars], ['#wood', wood]], station: 'anvil' });
+}
+
+for (const [metal] of AMMO_METALS) {
+  for (const family of ['arrow', 'bullet']) {
+    const key = metal + '-' + family;
+    if (key === 'iron-arrow') continue;
+    RECIPES.push({ out: { key, kind: 'ammo', count: family === 'bullet' ? 36 : 28 },
+      need: [[metal + '-bar', 1], ...(family === 'arrow' ? [['#wood', 2]] : [])], station: 'anvil' });
+  }
+}
+RECIPES.push(
+  { out: { key: 'bullet', kind: 'ammo', count: 50 }, need: [['tin-bar', 1]], station: 'anvil' },
+  { out: { key: 'iron-musket', kind: 'tool', count: 1 }, need: [['iron-bar', 9], ['#wood', 6]], station: 'anvil' },
+  { out: { key: 'prism-sigil', kind: 'use', count: 1 }, need: [['rift-core', 1], ['aetherite-bar', 5]], station: 'anvil' },
+  { out: { key: 'prism-lance', kind: 'tool', count: 1 }, need: [['ray-crystal', 8], ['palladium-bar', 6]], station: 'anvil' },
+  { out: { key: 'storm-conduit', kind: 'tool', count: 1 }, need: [['storm-crystal', 8], ['mythril-bar', 6]], station: 'anvil' },
+  { out: { key: 'ward-scepter', kind: 'tool', count: 1 }, need: [['ward-crystal', 8], ['palladium-bar', 6]], station: 'anvil' }
+);
+for (const metal of HARDMODE_METALS) {
+  const bar = metal.key + '-bar';
+  RECIPES.push({ out: { key: bar, kind: 'bar', count: 1 }, need: [[metal.key, 3]], station: 'furnace' });
+  for (const job of ['pick', 'axe', 'hammer', 'sword', 'bow', 'rifle']) {
+    RECIPES.push({ out: { key: metal.key + '-' + job, kind: 'tool', count: 1 },
+      need: [[bar, job === 'rifle' ? 11 : 8], ['#wood', 4]], station: 'anvil' });
+  }
 }
 
 // Armour, every tier and piece. Wooden mail is made from any lumber at a bench; metal
@@ -1201,7 +1287,8 @@ const BOSS_CHAPTERS = [
     'sporecrown', 'bloodcrest', 'reefleviathan', 'saltmarrow'],
   ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],
   ['voidsovereign'],
-  ['riftarchon']
+  ['riftarchon'],
+  ['prismsentinel']
 ];
 
 const BOSS_PREREQUISITES = new Map();

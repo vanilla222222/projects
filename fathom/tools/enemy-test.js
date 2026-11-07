@@ -43,7 +43,7 @@ for (const spec of ENEMIES) {
       spec.key + ' spawns in unknown layer ' + layer);
   }
   for (const biome of spec.biomes || []) {
-    ok(worldgen.BIOMES.some(b => b.key === biome),
+    ok([...worldgen.BIOMES, worldgen.HALLOW_BIOME].some(b => b.key === biome),
       spec.key + ' spawns in unknown biome ' + biome);
   }
   for (const [key, count] of spec.drops || []) {

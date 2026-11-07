@@ -30,7 +30,7 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 // Meteorite is raw but is in no band: it is not generated with the world at all. A
 // meteor falls where a meteor falls, and its crater is written into the edit diff.
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
-  'shell', 'obsidian', 'fallenstar', 'meteorite', 'vault-relic', 'void-crystal', 'aetherite', 'peat', ...enemyDrops, ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', 'vault-relic', 'void-crystal', 'aetherite', 'peat', 'palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
@@ -299,6 +299,9 @@ for (const [station, items] of Object.entries(groups)) {
     'a plain arrow was chosen over an ember arrow');
   ok(craft.bestAmmo(k => (k === 'iron-arrow' || k === 'ember-arrow' ? 5 : 0)) === 'ember-arrow',
     'the weaker of two arrows was chosen');
+  ok(craft.bestAmmo(k => k === 'adamantite-bullet' || k === 'arrow') === 'arrow', 'bow loaded a bullet');
+  ok(craft.bestAmmo(k => k === 'adamantite-bullet' || k === 'arrow', 'bullet') === 'adamantite-bullet',
+    'rifle selected the wrong ammo family');
   for (const [key, spec] of Object.entries(craft.AMMO)) {
     ok(spec.bonus >= 0 && spec.speed > 0, key + ' has nonsense numbers');
     ok(craft.kindOf(key) === 'ammo', key + ' is not ammunition');

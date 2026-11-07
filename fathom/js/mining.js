@@ -55,7 +55,16 @@ const TOOLS = {
 
   'aetherite-pick': { name: 'Aetherite Pickaxe', job: 'pick', power: 200, useTime: 0.105, tier: 10 },
   'aetherite-axe': { name: 'Aetherite Axe', job: 'axe', power: 208, useTime: 0.115, tier: 10 },
-  'aetherite-hammer': { name: 'Aetherite Hammer', job: 'hammer', power: 205, useTime: 0.13, tier: 10 }
+  'aetherite-hammer': { name: 'Aetherite Hammer', job: 'hammer', power: 205, useTime: 0.13, tier: 10 },
+  'palladium-pick': { name: 'Palladium Pickaxe', job: 'pick', power: 225, useTime: 0.098, tier: 11 },
+  'palladium-axe': { name: 'Palladium Axe', job: 'axe', power: 230, useTime: 0.106, tier: 11 },
+  'palladium-hammer': { name: 'Palladium Hammer', job: 'hammer', power: 228, useTime: 0.12, tier: 11 },
+  'mythril-pick': { name: 'Mythril Pickaxe', job: 'pick', power: 255, useTime: 0.092, tier: 12 },
+  'mythril-axe': { name: 'Mythril Axe', job: 'axe', power: 260, useTime: 0.10, tier: 12 },
+  'mythril-hammer': { name: 'Mythril Hammer', job: 'hammer', power: 258, useTime: 0.11, tier: 12 },
+  'adamantite-pick': { name: 'Adamantite Pickaxe', job: 'pick', power: 285, useTime: 0.085, tier: 13 },
+  'adamantite-axe': { name: 'Adamantite Axe', job: 'axe', power: 290, useTime: 0.092, tier: 13 },
+  'adamantite-hammer': { name: 'Adamantite Hammer', job: 'hammer', power: 288, useTime: 0.1, tier: 13 }
 };
 
 // Which tool a given tile answers to. Anything with a background wall is hammer work,
@@ -87,7 +96,7 @@ function jobFor(spec, isWall) {
 // Doubled power, as Terraria does for dirt, clay and sand: the soft ground you move through
 // rather than the rock you work at.
 // Head colour per tier, so a glance at the hotbar says which pickaxe you are holding.
-const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5', '#a06a5c', '#8de8d3'];
+const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5', '#a06a5c', '#8de8d3', '#cf8457', '#68b9a8', '#db6f8b'];
 
 const SOFT = new Set(['dirt', 'grass', 'sand', 'snow', 'clay', 'mud']);
 

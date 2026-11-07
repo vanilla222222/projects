@@ -177,4 +177,19 @@ check(doomed.health === 0, 'a dead character regenerated');
 stats.respawn(doomed);
 check(!doomed.dead && doomed.health === doomed.maxHealth, 'respawn did not restore the character');
 
+{
+  const purse = makeInventory();
+  const old = Array(purse.section('ammo').from).fill(null);
+  old[0] = { key: 'coin', kind: 'coin', count: 135 };
+  purse.restore(old);
+  check(purse.countOf('coin') === 135 && purse.countOf('silver-coin') === 1, 'legacy coins did not migrate');
+  check(purse.add({ key: 'onyx-coin', kind: 'coin' }, 1) === 0, 'onyx coin did not fit');
+  check(purse.take('coin', 136) === 136 && purse.countOf('coin') === 99999999,
+    'wallet failed to make change across denominations');
+  check(purse.countOf('platinum-coin') === 99, 'platinum change did not normalize');
+  const firstAmmo = purse.section('ammo').from;
+  purse.add({ key: 'iron-bullet', kind: 'ammo' }, 34);
+  check(purse.slots[firstAmmo]?.key === 'iron-bullet', 'ammo was not routed to its slots');
+}
+
 console.log('Inventory and stats: ' + checks + ' checks passed');

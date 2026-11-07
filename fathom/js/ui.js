@@ -73,7 +73,7 @@ function makeUI(root, deps) {
     if (multi) {
       const unit = Math.floor(size / Math.max(multi.w, multi.h));
       for (const cell of multi.cells) {
-        ctx.drawImage(atlas, 4 * texture.TILE, cell.id * texture.TILE, texture.TILE, texture.TILE,
+        ctx.drawImage(atlas, texture.atlasX(cell.id, 4), texture.atlasY(cell.id), texture.TILE, texture.TILE,
           Math.floor((size - multi.w * unit) / 2) + cell.part.dx * unit,
           Math.floor((size - multi.h * unit) / 2) + cell.part.dy * unit, unit, unit);
       }
@@ -81,7 +81,7 @@ function makeUI(root, deps) {
     }
     const spec = tiles.BY_KEY[item.key];
     if (spec && spec.colour) {
-      ctx.drawImage(atlas, 4 * texture.TILE, spec.id * texture.TILE, texture.TILE, texture.TILE, 0, 0, size, size);
+      ctx.drawImage(atlas, texture.atlasX(spec.id, 4), texture.atlasY(spec.id), texture.TILE, texture.TILE, 0, 0, size, size);
       return canvas;
     }
     const wallSpec = tiles.WALL_BY_KEY[item.key];
@@ -143,13 +143,13 @@ function makeUI(root, deps) {
       ctx.fillRect(7 * u, 8 * u, 2 * u, 2 * u);
       return canvas;
     }
-    if (craft && item.key === 'coin') {
+    if (craft && item.kind === 'coin') {
       const u = size / 16;
       ctx.fillStyle = '#b8912c';
       ctx.beginPath();
       ctx.arc(8 * u, 8 * u, 5.6 * u, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#e8c650';
+      ctx.fillStyle = craft.ITEMS[item.key]?.colour || '#c38560';
       ctx.beginPath();
       ctx.arc(8 * u, 8 * u, 4.4 * u, 0, Math.PI * 2);
       ctx.fill();
@@ -161,6 +161,15 @@ function makeUI(root, deps) {
     }
     if (craft && craft.ITEMS[item.key]?.kind === 'ammo') {
       const u = size / 16;
+      if (craft.AMMO[item.key]?.family === 'bullet') {
+        ctx.fillStyle = '#544352';
+        ctx.fillRect(5 * u, 5 * u, 6 * u, 9 * u);
+        ctx.fillStyle = craft.ITEMS[item.key].colour;
+        ctx.fillRect(6 * u, 2 * u, 4 * u, 10 * u);
+        ctx.fillStyle = '#f0d9aa';
+        ctx.fillRect(5 * u, 12 * u, 6 * u, 2 * u);
+        return canvas;
+      }
       ctx.strokeStyle = '#b9a271';
       ctx.lineWidth = Math.max(1, u);
       ctx.beginPath();
@@ -175,6 +184,14 @@ function makeUI(root, deps) {
     }
     if (craft && craft.WEAPONS[item.key] && craft.WEAPONS[item.key].ranged) {
       const u = size / 16;
+      if (craft.WEAPONS[item.key].ammo === 'bullet') {
+        ctx.fillStyle = '#3c2d3e';
+        ctx.fillRect(2 * u, 8 * u, 12 * u, 3 * u);
+        ctx.fillRect(3 * u, 10 * u, 3 * u, 4 * u);
+        ctx.fillStyle = craft.WEAPONS[item.key].colour || '#a8a29b';
+        ctx.fillRect(5 * u, 6 * u, 10 * u, 2 * u);
+        return canvas;
+      }
       const pickKey = item.key.replace(/-bow$/, '-pick');
       ctx.strokeStyle = mining?.toolSpec(pickKey) ? mining.tierColour({ key: pickKey }) : '#8a6038';
       ctx.lineWidth = Math.max(1.5, u * 1.4);
@@ -567,7 +584,7 @@ function makeUI(root, deps) {
     const right = el('div', 'panel equip-panel', els.screen);
     el('h2', null, right).textContent = 'Equipment';
     els.equipSlots = [];
-    for (const [key, title] of [['armor', 'Armour'], ['accessory', 'Accessories'], ['vanity', 'Vanity']]) {
+    for (const [key, title] of [['armor', 'Armour'], ['accessory', 'Accessories'], ['vanity', 'Vanity'], ['ammo', 'Ammo'], ['coins', 'Coins']]) {
       const group = el('div', 'equip-group', right);
       el('span', 'equip-label', group).textContent = title;
       const row = el('div', 'equip-row', group);
@@ -815,7 +832,7 @@ function makeUI(root, deps) {
     paintedShop = shop;
     els.shopName.textContent = shop.who.spec.name.replace(/^the /, '');
     const discount = Math.round((1 - shop.discount) * 100);
-    els.shopPurse.textContent = shop.coins.toLocaleString() + ' coin'
+    els.shopPurse.textContent = shop.coins.toLocaleString() + ' copper value'
       + (discount ? ' · ' + discount + '% town discount' : '');
     els.shopList.textContent = '';
     shop.who.spec.stock.forEach((entry, i) => {

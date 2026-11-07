@@ -210,7 +210,9 @@ function makeGame(canvas, deps) {
         const buried = (target.key === 'desertscourge' || target.key === 'reefleviathan') && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
         dropItem(buried ? state.player.x : x, buried ? state.player.y : target.y, key, craft.kindOf(key), count);
       }
-      say(target.spec.name + ' is dead', 3.4);
+      if (target.key === 'prismsentinel' && world.enableHardmode()) {
+        say('Hardmode begins. The Hallow and new ores await beyond explored ground.', 6);
+      } else say(target.spec.name + ' is dead', 3.4);
       return;
     }
     const table = RARE_BY_ENEMY[target.key];
@@ -837,7 +839,7 @@ function makeGame(canvas, deps) {
   function shoot(weapon) {
     // The best arrow held, not the one in the selected slot: a second hotbar for
     // ammunition is a chore, and Terraria does not ask for one either.
-    const ammo = craft.bestAmmo(key => inventory.countOf(key));
+    const ammo = craft.bestAmmo(key => inventory.countOf(key), weapon.ammo);
     if (!ammo) {
       say('Out of ' + craft.nameOf(weapon.ammo, tiles), 1.0);
       return false;
@@ -853,7 +855,8 @@ function makeGame(canvas, deps) {
     const speed = 42 * kind.speed * (gear.arrowSpeed || 1);
     state.arrows.push({ x: cx, y: cy, vx: (dx / len) * speed, vy: (dy / len) * speed,
       damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1)),
-      life: 2.6 * (gear.arrowSpeed || 1), colour: kind.colour, gravity: 26,
+      life: kind.family === 'bullet' ? weapon.reach / speed : 2.6 * (gear.arrowSpeed || 1), colour: kind.colour,
+      gravity: kind.family === 'bullet' ? 0 : 26,
       burns: !!kind.burns });
     return true;
   }
@@ -875,10 +878,21 @@ function makeGame(canvas, deps) {
     const len = Math.hypot(dx, dy) || 1;
     state.arrows.push({ x: cx, y: cy, vx: (dx / len) * 34, vy: (dy / len) * 34,
       damage: Math.round(weapon.damage * (gear.magic || 1)),
-      life: 1.8, colour: weapon.bolt, gravity: 0, magic: true });
+      life: weapon.spell ? weapon.reach / 34 : 1.8, colour: weapon.bolt, gravity: 0, magic: true, spell: weapon.spell,
+      hits: weapon.spell === 'pierce' ? new Set() : null });
+    if (weapon.spell === 'ward') state.wardUntil = state.time + 4;
     spawnParticles(cx, cy, weapon.bolt, 4);
     sfx('cast');
     return true;
+  }
+
+  function projectileHit(target, damage) {
+    if (!swarm.damage(target, damage)) return;
+    for (const [key, count] of target.spec.drops || []) {
+      dropItem(target.x, target.y, key, craft.kindOf(key), count);
+    }
+    if (target.key === 'kingslime') dropMeteor();
+    rareDrop(target);
   }
 
   function updateArrows(dt) {
@@ -894,15 +908,18 @@ function makeGame(canvas, deps) {
         if (tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) hit = true;
         else if (swarm) {
           const target = swarm.at(a.x, a.y);
-          if (target) {
-            hit = true;
+          if (target && !a.hits?.has(target)) {
+            a.hits?.add(target);
+            hit = !a.hits || a.hits.size >= 3;
             spawnParticles(a.x, a.y, target.spec.colour, 5);
-            if (swarm.damage(target, a.damage)) {
-              for (const [key, count] of target.spec.drops || []) {
-                dropItem(target.x, target.y, key, craft.kindOf(key), count);
+            projectileHit(target, a.damage);
+            if (a.spell === 'chain') {
+              const links = swarm.list.filter(other => other !== target
+                && Math.hypot(other.x - target.x, other.y - target.y) <= 6).slice(0, 2);
+              for (const other of links) {
+                spawnParticles(other.x, other.y, a.colour, 5);
+                projectileHit(other, Math.round(a.damage * 0.55));
               }
-              if (target.key === 'kingslime') dropMeteor();
-              rareDrop(target);
             }
           }
         }
@@ -980,6 +997,7 @@ function makeGame(canvas, deps) {
   }
 
   function respawnPlayer() {
+    state.wardUntil = 0;
     state.progress.deaths += 1;
     statsModule.respawn(stats);
     const spot = state.spawn || defaultSpawn();
@@ -1214,12 +1232,26 @@ function makeGame(canvas, deps) {
       rows.push('Next pickaxe · ' + spec.name + ' · ' + recipeLine(key));
       const ore = key.replace('-pick', '');
       const band = worldgen.ORE_BANDS.find(entry => entry.key === ore);
+      const hardmodeDepth = { 'palladium-pick': '160–849', 'mythril-pick': '850–1,949', 'adamantite-pick': '1,950 or deeper' }[key];
+      if (hardmodeDepth) rows.push(world.hardmode
+        ? 'Look for this ore in unexplored rock ' + hardmodeDepth + ' tiles below sea level.'
+        : 'Defeat the Prism Sentinel to start Hardmode in this world.');
       if (key === 'aetherite-pick') rows.push('Mine Aetherite in the underside of sky islands, then smelt it at a Furnace.');
       if (key === 'rift-pick') rows.push('Defeat the Rift Archon for a Rift Core. The Rift Pickaxe mines Aetherite on sky islands.');
       if (band) rows.push('Find ' + craft.nameOf(ore, tiles) + ' · '
         + (ore === 'emberite' ? 'Search Hell and smelt it with obsidian.'
           : 'Usually ' + band.from + '–' + band.to + ' tiles below the surface.'));
       if (rank < 2) rows.push('Build a Furnace, then craft an Anvil at a Work Bench using ' + recipeLine('anvil') + '.');
+    }
+    if (world.hardmode) {
+      const playerX = Math.floor(state.player.x);
+      let hallow = null;
+      for (let offset = 0; offset <= 4800 && hallow === null; offset += 24) {
+        for (const x of [playerX + offset, playerX - offset]) {
+          if (world.biomeAt(x, worldgen.surfaceHeight(seed, x)).key === 'hallow') { hallow = x; break; }
+        }
+      }
+      if (hallow !== null) rows.push('Hallow surface near x ' + hallow + ' · Search the caves below for spell crystals.');
     }
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
@@ -1230,7 +1262,8 @@ function makeGame(canvas, deps) {
       furnacewarden: 'Summon in Hell. Forge an Ashvault Key from a core.',
       ashguardian: 'Bring the key to an Ashvault in the Trench.',
       voidsovereign: 'Mine Void Crystals with an Emberite Pickaxe.',
-      riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.'
+      riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.',
+      prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.' 
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1575,7 +1608,7 @@ function makeGame(canvas, deps) {
     const key = item.key;
     if (craft.WEAPONS[key]) {
       const w = craft.WEAPONS[key];
-      return { shape: w.ranged ? 'axe' : 'blade', head: '#cfd6e0',
+      return { shape: w.ammo === 'bullet' ? 'rifle' : w.ranged ? 'axe' : 'blade', head: w.colour || '#cfd6e0',
         handle: '#6d4f30', length: w.ranged ? 0.4 : 0.5 };
     }
     if (mining.isTool(item)) {
@@ -1704,7 +1737,7 @@ function makeGame(canvas, deps) {
 
     const gear = currentEffects();
     state.gear = gear;
-    stats.defense = gear.defense;
+    stats.defense = gear.defense + (state.wardUntil > state.time ? 14 : 0);
     state.player.speedScale = gear.speed;
     state.player.canDoubleJump = gear.doubleJump;
 
@@ -1805,7 +1838,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=shore-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=hardmode-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -1920,7 +1953,7 @@ function makeGame(canvas, deps) {
     const hour = ((state.dayPhase + 0.5) * 24) % 24;
     ui.setField('clock', String(Math.floor(hour)).padStart(2, '0') + ':'
       + String(Math.floor((hour % 1) * 60)).padStart(2, '0'));
-    ui.setField('biome', worldgen.biomeAt(seed, Math.floor(state.player.x)).name);
+    ui.setField('biome', world.biomeAt(Math.floor(state.player.x), Math.floor(state.player.y)).name);
     const layer = worldgen.layerAt(Math.floor(state.player.y));
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
     ui.setField('depth', depth > 0 ? layer.name + ' · ' + depth + 'm' : layer.name);
@@ -2095,6 +2128,8 @@ function makeGame(canvas, deps) {
     townDevices = worldRecord.townDevices || [];
     completedOrders = new Set(worldRecord.completedOrders || []);
     defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
+    if (defeatedBosses.has('prismsentinel') && !world.hardmode) world.enableHardmode();
+    state.wardUntil = 0;
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },

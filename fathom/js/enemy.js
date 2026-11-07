@@ -116,7 +116,9 @@ const ARCHETYPES = {
   standard: { gravity: 0, boss: true, flies: true, speed: 5.6, hoverAbove: 3.9, drift: 3,
     chargeEvery: 3.8, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.82, spawnEvery: 5,
     minion: 'chalksentry', minions: 2, enrageAt: 0.47, enrageSpeed: 1.27,
-    enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 }
+    enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 },
+  prism: { gravity: 0, boss: true, flies: true, speed: 5.5,
+    enrageAt: 0.5, minion: 'deepreefeye', spawnEvery: 5.6, minions: 2 }
 
 };
 
@@ -648,6 +650,16 @@ const ENEMIES = [
   { key: 'breakwatercrab', minion: 'driftcrab', name: 'Breakwater Crab', kind: 'king', body: 'crab', hp: 1950, damage: 37, weight: 0, w: 4.2, h: 3, colour: '#c68d66', boss: true, summonOnly: true, emit: 4, drops: [['coin', 420]], bossDrops: ['breakwater-claw'] },
   { key: 'saltmarrow', minion: 'saltmarrowguard', name: 'Saltmarrow', kind: 'guardian', body: 'skeleton', hp: 3880, damage: 49, weight: 0, w: 4.4, h: 3.2, colour: '#a5b8ae', boss: true, summonOnly: true, emit: 5, drops: [['coin', 840]], bossDrops: ['saltmarrow-bone'] },
 
+  { key: 'hallowwisp', name: 'Hallow Wisp', kind: 'flyer', body: 'cloud', hp: 420, damage: 48,
+    weight: 10, w: 1.1, h: 1.25, colour: '#d5a5ee', layers: ['surface', 'caves'], biomes: ['hallow'], emit: 5,
+    drops: [['stardust', 3], ['coin', 25]] },
+  { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
+    weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
+    drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'prismsentinel', name: 'Prism Sentinel', kind: 'prism', body: 'golem', hp: 12800,
+    damage: 95, weight: 0, w: 4.7, h: 4.6, colour: '#d6a6ed', boss: true, summonOnly: true,
+    emit: 10, drops: [['coin', 2600]], bossDrops: ['prism-heart'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -728,6 +740,7 @@ function makeEnemy(spec, x, y) {
 // Gait speed per archetype: how much animation one tile of travel buys, and how much is
 // added per second regardless.
 const GAIT = {
+  prism: { perTile: 0.4, perSecond: 8 },
   // A slime's wobble runs whether or not it is going anywhere, which is the whole
   // character of the thing: it sits there quivering.
   slime: { perTile: 0.4, perSecond: 2.4 },
@@ -799,7 +812,7 @@ function makeSwarm(world, tiles, deps) {
   // Context at a point: which biome, which layer, is it wet, is it day. This is the whole
   // input to the spawn table.
   function contextAt(x, y, dayPhase, event) {
-    const biome = worldgen.biomeAt(world.seed, Math.floor(x)).key;
+    const biome = (world.biomeAt?.(Math.floor(x), Math.floor(y)) || worldgen.biomeAt(world.seed, Math.floor(x))).key;
     const layer = worldgen.layerAt(Math.floor(y)).key;
     const wet = liquidAt(x, y) !== 0;
     // Underground is never daylit, whatever the clock says.
@@ -938,7 +951,8 @@ function makeSwarm(world, tiles, deps) {
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
-      if (arch.flies) stepHoverBoss(enemy, arch, player, dt, toward);
+      if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
+      else if (arch.flies) stepHoverBoss(enemy, arch, player, dt, toward);
       else stepBoss(enemy, arch, player, dt, toward);
       return;
     }
@@ -1102,6 +1116,30 @@ function makeSwarm(world, tiles, deps) {
 
   // A boss that flies, hovers out of reach, and charges in a straight line it chooses
   // before it starts and cannot change afterwards.
+  function stepPrismBoss(enemy, arch, player, dt, toward) {
+    enemy.enraged = enemy.hp / enemy.maxHp <= arch.enrageAt;
+    if (!enemy.enraged) bossMinions(enemy, arch, dt);
+    const cycle = enemy.timer % 5;
+    const px = player.x + player.width / 2, py = player.y + player.height / 2;
+    const cx = enemy.x + enemy.width / 2, cy = enemy.y + enemy.height / 2;
+    enemy.facing = toward;
+    if (cycle < 2.2) {
+      enemy.beams = null;
+      const dx = px - cx + Math.sin(enemy.timer) * 7;
+      const dy = py - cy - 6;
+      const len = Math.hypot(dx, dy) || 1;
+      moveAxis(enemy, dx / len * arch.speed * dt, 0);
+      moveAxis(enemy, 0, dy / len * arch.speed * dt);
+      enemy.beamAim = Math.atan2(py - cy, px - cx);
+      return;
+    }
+    if (cycle > 4.5) { enemy.beams = null; return; }
+    const live = cycle >= 3.25;
+    const sweep = live ? (cycle - 3.25) * 1.12 - 0.7 : -0.7;
+    const angle = (enemy.beamAim || 0) + sweep;
+    enemy.beams = { live, range: 26, angles: enemy.enraged ? [angle - 0.38, angle, angle + 0.38] : [angle] };
+  }
+
   function stepHoverBoss(enemy, arch, player, dt, toward) {
     function move() {
       if (arch.burrows) {
@@ -1256,8 +1294,20 @@ function makeSwarm(world, tiles, deps) {
 
   // Which enemy, if any, the player is touching. Contact is how every enemy here deals
   // damage; nothing has a projectile yet.
+  function prismHit(enemy, player) {
+    if (!enemy.beams?.live) return false;
+    const dx = player.x + player.width / 2 - (enemy.x + enemy.width / 2);
+    const dy = player.y + player.height / 2 - (enemy.y + enemy.height / 2);
+    return enemy.beams.angles.some(angle => {
+      const along = dx * Math.cos(angle) + dy * Math.sin(angle);
+      const across = dx * Math.sin(angle) - dy * Math.cos(angle);
+      return along >= 0 && along <= enemy.beams.range && Math.abs(across) <= 0.72;
+    });
+  }
+
   function touching(player) {
     for (const enemy of list) {
+      if (prismHit(enemy, player)) return enemy;
       if (enemy.x + enemy.width <= player.x) continue;
       if (enemy.x >= player.x + player.width) continue;
       if (enemy.y + enemy.height <= player.y) continue;
