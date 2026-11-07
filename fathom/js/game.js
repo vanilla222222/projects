@@ -16,7 +16,7 @@ function makeGame(canvas, deps) {
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
-    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed });
+    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed, sprite });
 
   // Nothing world-shaped exists until a world is chosen, so each of these is filled in by
   // boot(). A character brings its own inventory and stats into whichever world it enters.
@@ -743,6 +743,24 @@ function makeGame(canvas, deps) {
       out.push(inventory.slots[i] ? inventory.slots[i].key : null);
     }
     return out;
+  }
+
+  let appearanceKeys = '';
+  let appearance = {};
+  function wornAppearance() {
+    const armor = wornKeys('armor');
+    const accessories = wornKeys('accessory');
+    const keys = armor.concat(accessories).join('|');
+    if (keys !== appearanceKeys) {
+      appearanceKeys = keys;
+      appearance = {};
+      for (const key of armor) {
+        const piece = craft.ARMOUR[key];
+        if (piece) appearance[piece.slot] = piece;
+      }
+      appearance.accessories = accessories.map(key => craft.ACCESSORIES[key]).filter(Boolean);
+    }
+    return appearance;
   }
 
   function currentEffects() {
@@ -1516,6 +1534,7 @@ function makeGame(canvas, deps) {
         guard += 1;
       }
     }
+    state.gear = wornAppearance();
     lastView = renderer.draw(state);
     maintainChunks();
     if (minimap && (minimap.isLarge || !window.matchMedia?.('(max-width: 900px)').matches)) minimap.draw(state, dt);
@@ -1726,6 +1745,7 @@ function makeGame(canvas, deps) {
     ui = uiModule.makeUI(document.getElementById('hud'),
       { tiles, texture, inventory, atlas: renderer.atlas, mining, craft,
         controls: CONTROLS });
+    state.itemArt = ui.itemArt;
     ui.onChestMove = chestMove;
     ui.onBuy = buyFrom;
     ui.onHeal = healFrom;

@@ -135,6 +135,15 @@ BODIES.slime = function (ctx, g, c) {
   const stretch = clamp(c.vy * 0.022 + Math.sin(c.anim) * 0.05, -0.24, 0.28);
   const rx = 0.5 - stretch * 0.5;
   const ry = 0.5 + stretch * 0.5;
+  if (c.key === 'iceslime') {
+    poly(ctx, g, [-0.27, -ry * 1.63, -0.22, -ry * 2.32, -0.03, -ry * 1.85,
+      0.08, -ry * 2.17, 0.19, -ry * 1.6], '#b9f1f1');
+  } else if (c.key === 'jungleslime') {
+    poly(ctx, g, [-0.24, -ry * 1.67, -0.36, -ry * 2.2, -0.05, -ry * 1.96,
+      0.15, -ry * 2.24, 0.07, -ry * 1.64], '#79b753');
+  } else if (c.key === 'motherslime') {
+    ell(ctx, g, -0.37, -ry * 0.45, rx * 0.42, ry * 0.42, spriteShade(c.colour, -0.3));
+  }
   ctx.save();
   ctx.globalAlpha *= 0.88;
   ell(ctx, g, 0, -ry, rx, ry, c.colour);
@@ -635,14 +644,15 @@ BODIES.cloud = function (ctx, g, c) {
 function drawPerson(ctx, box, look, pose) {
   const g = geometry(box);
   const skin = look.skin || '#e8c39a';
-  const shirt = look.shirt || '#4a6fa5';
-  const pants = look.pants || '#2f3b52';
+  const gear = pose.gear || {};
+  const shirt = gear.chest?.colour || look.shirt || '#4a6fa5';
+  const pants = gear.legs?.colour || look.pants || '#2f3b52';
   const hair = look.hair || '#23304a';
   const shirtDark = spriteShade(shirt, -0.3);
   const shirtLight = spriteShade(shirt, 0.16);
   const pantsDark = spriteShade(pants, -0.3);
   const skinDark = spriteShade(skin, -0.2);
-  const boot = spriteShade(pants, -0.42);
+  const boot = gear.feet?.colour || spriteShade(pants, -0.42);
   const shinCol = spriteShade(pants, -0.14);
 
   const anim = pose.anim || 0;
@@ -673,7 +683,10 @@ function drawPerson(ctx, box, look, pose) {
     const footX = hipX + throwX;
     limb(ctx, g, hipX, -0.46, kneeX, kneeY, 0.21, thigh);
     limb(ctx, g, kneeX, kneeY, footX, -0.05, 0.18, shin);
-    rect(ctx, g, footX - 0.08, -0.06, 0.17, 0.055, bootCol);
+    rect(ctx, g, footX - 0.10, -0.075, 0.23, 0.07, '#222538');
+    rect(ctx, g, footX - 0.08, -0.07, 0.20, 0.051, bootCol);
+    if (gear.feet) rect(ctx, g, footX, -0.065, 0.10, 0.014, spriteShade(boot, 0.4));
+    if (gear.legs) rect(ctx, g, kneeX - 0.05, kneeY - 0.025, 0.1, 0.044, spriteShade(pants, 0.32));
   }
 
   // An arm is an upper in sleeve colour and a forearm in skin, with a hand at the end.
@@ -698,29 +711,76 @@ function drawPerson(ctx, box, look, pose) {
   rect(ctx, g, -0.19, -0.5, 0.38, 0.055, spriteShade(shirt, -0.45));
   rect(ctx, g, -0.18, -0.46, 0.36, 0.045, pants);
 
+  rect(ctx, g, -0.052, -0.49, 0.105, 0.036, '#d6a455');
+  if (gear.chest) {
+    poly(ctx, g, [-0.26, -0.78, 0.26, -0.78, 0.17, -0.57, 0, -0.53, -0.17, -0.57], shirtDark);
+    poly(ctx, g, [-0.22, -0.77, 0.22, -0.77, 0.14, -0.61, 0, -0.57, -0.14, -0.61], shirtLight);
+    const bone = gear.chest.tier === 'bone';
+    for (let i = 0; i < (bone ? 3 : 2); i += 1) {
+      rect(ctx, g, -0.15 + i * 0.025, -0.71 + i * 0.045, 0.3 - i * 0.05, 0.019, bone ? shirt : shirtDark);
+    }
+  }
+  if (gear.accessories?.length) {
+    for (const [index, accessory] of gear.accessories.entries()) {
+      const x = (index - (gear.accessories.length - 1) / 2) * 0.072;
+      poly(ctx, g, [x, -0.714, x + 0.043, -0.674, x, -0.633, x - 0.043, -0.674], '#25253b');
+      dot(ctx, g, x, -0.674, 0.032, accessory.colour);
+    }
+  }
+
   // Neck and head.
   const hx = 0.01 - lean * 1.6;
   rect(ctx, g, hx - 0.06, -0.82, 0.12, 0.06, skinDark);
   ell(ctx, g, hx, -0.89, 0.155, 0.085, skin);
-  // Hair: a cap that follows the skull, a fringe over the brow and a tuft at the back.
-  ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(g.cx + hx * g.w, g.by - 0.89 * g.h, 0.175 * g.w, 0.1 * g.h, 0, 0, TAU);
-  ctx.clip();
-  rect(ctx, g, hx - 0.2, -1.0, 0.4, 0.085, hair);
-  rect(ctx, g, hx - 0.2, -1.0, 0.1, 0.16, hair);
-  ctx.restore();
-  poly(ctx, g, [hx - 0.19, -0.95, hx - 0.25, -0.86, hx - 0.14, -0.88], hair);
+  const hairstyle = look.hairstyle || 'swept';
+  if (!gear.head && hairstyle !== 'shaved') {
+    ell(ctx, g, hx - 0.027, -0.939, 0.158, 0.055, hair);
+    if (hairstyle === 'braid') {
+      for (let i = 0; i < 4; i += 1) dot(ctx, g, hx - 0.15 - i * 0.013, -0.91 + i * 0.044, 0.055, hair);
+      rect(ctx, g, hx - 0.225, -0.76, 0.075, 0.018, '#d5a159');
+    } else if (hairstyle === 'crest') {
+      poly(ctx, g, [hx - 0.19, -0.94, hx - 0.20, -1.04, hx - 0.08, -0.99, hx + 0.05, -1.03,
+        hx + 0.12, -0.94], hair);
+    } else if (hairstyle === 'curls') {
+      for (let i = 0; i < 4; i += 1) dot(ctx, g, hx - 0.16 + i * 0.083, -0.958 - (i % 2) * 0.018, 0.065, hair);
+    } else {
+      poly(ctx, g, [hx - 0.17, -0.97, hx - 0.24, -0.87, hx - 0.13, -0.88, hx + 0.12, -0.97], hair);
+    }
+    rect(ctx, g, hx - 0.1, -0.967, 0.17, 0.014, spriteShade(hair, 0.28));
+  }
   // A face: one eye, a brow and a mouth is enough at this size, and the blink is on a
   // long cycle with a short closure, which is the only reason it reads as a blink.
   const blink = Math.sin((pose.time || 0) * 0.9 + (pose.phase || 0));
   if (blink > 0.985) rect(ctx, g, hx + 0.03, -0.9, 0.09, 0.012, skinDark);
   else {
     dot(ctx, g, hx + 0.075, -0.9, 0.05, '#f6f3ec');
-    dot(ctx, g, hx + 0.09, -0.9, 0.028, '#241e2a');
+    dot(ctx, g, hx + 0.09, -0.9, 0.028, look.eyes || '#241e2a');
   }
   rect(ctx, g, hx + 0.03, -0.94, 0.1, 0.014, hair);
   rect(ctx, g, hx + 0.05, -0.845, 0.06, 0.012, skinDark);
+
+  if (look.marking === 'freckles') {
+    for (let i = 0; i < 3; i += 1) dot(ctx, g, hx + i * 0.035, -0.865, 0.012, skinDark);
+  } else if (look.marking === 'paint') {
+    rect(ctx, g, hx + 0.03, -0.873, 0.107, 0.017, look.eyes || '#349d9b');
+  } else if (look.marking === 'scar') {
+    limb(ctx, g, hx + 0.03, -0.88, hx - 0.02, -0.844, 0.022, skinDark);
+  }
+  if (gear.head) {
+    const { colour, tier } = gear.head;
+    const cloth = tier === 'apprentice' || tier === 'adept' || tier === 'brigand';
+    const dark = spriteShade(colour, -0.35);
+    ell(ctx, g, hx - 0.018, -0.946, 0.184, 0.071, dark);
+    if (cloth) {
+      poly(ctx, g, [hx - 0.20, -0.94, hx - 0.11, -0.994, hx - 0.06, -1.05, hx + 0.16, -0.94], colour);
+      rect(ctx, g, hx - 0.22, -0.949, 0.43, 0.022, spriteShade(colour, 0.35));
+    } else {
+      poly(ctx, g, [hx - 0.18, -0.95, hx - 0.09, -1.01, hx + 0.09, -1.01, hx + 0.17, -0.944,
+        hx + 0.08, -0.929, hx - 0.05, -0.942, hx - 0.10, -0.858, hx - 0.18, -0.883], colour);
+      rect(ctx, g, hx - 0.09, -0.992, 0.18, 0.016, spriteShade(colour, 0.47));
+      dot(ctx, g, hx - 0.12, -0.925, 0.025, tier === 'emberite' ? '#ffde87' : dark);
+    }
+  }
 
   // Near side, and whatever is in hand.
   leg(0.05, legF, pants, shinCol, boot);
@@ -782,6 +842,51 @@ function drawHeld(ctx, g, held, hx, hy, angle) {
 // Draw one creature. `box` is in pixels; `c` carries colour, the animation phase and
 // whatever state the plan reads. Mirroring is done here, once, so no plan has to think
 // about which way it is facing.
+// Anchors sit on the central body, clear of eyes and animated extremities.
+const CREATURE_INLAYS = {
+  slime: [-0.17, -0.68, 'speck'], kingslime: [-0.20, -0.55, 'gem'],
+  humanoid: [-0.05, -0.61, 'seam'], skeleton: [-0.06, -0.62, 'seam'],
+  eye: [-0.18, -0.62, 'seam'], bigeye: [-0.19, -0.62, 'gem'],
+  bird: [-0.1, -0.52, 'seam'], beetle: [-0.19, -0.48, 'plate'],
+  spider: [-0.18, -0.54, 'gem'], wasp: [-0.24, -0.56, 'seam'],
+  leech: [0.12, -0.48, 'speck'], crab: [-0.08, -0.48, 'plate'],
+  jelly: [-0.10, -0.69, 'speck'], fish: [-0.13, -0.53, 'seam'],
+  maw: [-0.18, -0.62, 'gem'], worm: [0.14, -0.48, 'plate'],
+  bat: [0, -0.56, 'seam'], lizard: [-0.13, -0.46, 'plate'],
+  golem: [0, -0.63, 'gem'], imp: [-0.04, -0.57, 'seam'],
+  demon: [-0.02, -0.61, 'gem'], cloud: [-0.14, -0.57, 'speck']
+};
+const creaturePaints = new Map();
+
+function paintCreatureInlay(ctx, g, body, c) {
+  const inlay = CREATURE_INLAYS[body];
+  if (!inlay || !c.key || g.px < 7) return;
+  let paint = creaturePaints.get(c.key);
+  if (!paint) {
+    let seed = 0;
+    for (const letter of c.key) seed = (Math.imul(seed, 31) + letter.charCodeAt(0)) >>> 0;
+    paint = { ink: spriteShade(c.colour, -0.55), light: spriteShade(c.colour, 0.53),
+      count: 2 + seed % 3, spacing: 0.032 + (seed % 5) * 0.006 };
+    creaturePaints.set(c.key, paint);
+  }
+  const [x, y, style] = inlay;
+  if (style === 'gem') {
+    poly(ctx, g, [x, y - 0.055, x + 0.07, y, x, y + 0.055, x - 0.07, y], paint.ink);
+    poly(ctx, g, [x, y - 0.042, x + 0.044, y, x, y + 0.021, x - 0.039, y], paint.light);
+    return;
+  }
+  for (let i = 0; i < paint.count; i += 1) {
+    const dx = x + i * paint.spacing;
+    const dy = y - (i % 2) * 0.025;
+    if (style === 'speck') dot(ctx, g, dx, dy, 0.021, paint.light);
+    else if (style === 'seam') limb(ctx, g, dx, dy, dx + 0.028, dy + 0.048, 0.025, paint.light);
+    else {
+      rect(ctx, g, dx, dy, 0.032, 0.048, paint.ink);
+      rect(ctx, g, dx, dy, 0.025, 0.012, paint.light);
+    }
+  }
+}
+
 function drawCreature(ctx, box, body, c) {
   const plan = BODIES[body] || BODIES.slime;
   const g = geometry(box);
@@ -792,6 +897,7 @@ function drawCreature(ctx, box, body, c) {
     ctx.translate(-g.cx, 0);
   }
   plan(ctx, g, c);
+  paintCreatureInlay(ctx, g, body, c);
   ctx.restore();
 }
 

@@ -558,6 +558,7 @@ function makeRenderer(canvas, deps) {
       }
       sprite.drawCreature(ctx, { x: sx, y: sy, w, h }, enemy.spec.body || 'slime', {
         colour: enemy.spec.colour,
+        key: enemy.spec.key,
         glow: enemy.spec.emit ? '#ffcf7a' : null,
         anim: enemy.anim || 0,
         enraged: !!enemy.enraged,
@@ -766,6 +767,7 @@ function makeRenderer(canvas, deps) {
       swimming: !!p.swimming,
       swingArm: state.swingArm === null ? undefined : state.swingArm,
       held: state.held,
+      gear: state.gear,
       time: state.time,
       phase: 0
     });
@@ -781,6 +783,7 @@ function makeRenderer(canvas, deps) {
       const bob = Math.sin(state.time * 3.4 + d.x * 2.1) * size * 0.1;
       const sx = (d.x - x0) * size - offsetX - half / 2;
       const sy = (d.y - y0) * size - offsetY - half / 2 + bob;
+      if (sx + half < 0 || sy + half < 0 || sx > canvas.width || sy > canvas.height) continue;
       const spec = tiles.BY_KEY[d.key];
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.5)';
@@ -812,7 +815,9 @@ function makeRenderer(canvas, deps) {
         ctx.restore();
         continue;
       }
-      if (spec && spec.colour) {
+      if (state.itemArt) {
+        ctx.drawImage(state.itemArt(d), sx, sy, half, half);
+      } else if (spec && spec.colour) {
         ctx.drawImage(atlas, 0, spec.id * TILE, TILE, TILE, sx, sy, half, half);
       } else {
         const wallSpec = tiles.WALL_BY_KEY[d.key];

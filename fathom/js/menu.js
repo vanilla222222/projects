@@ -5,7 +5,7 @@
 // size is meaningless and both evils can exist out along the axis.
 
 function makeMenu(root, deps) {
-  const { profiles, palette } = deps;
+  const { profiles, palette, sprite } = deps;
   let resolve = null;
   let chosenCharacter = null;
   let pendingColours = null;
@@ -41,18 +41,8 @@ function makeMenu(root, deps) {
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    const u = size / 16;
-    ctx.fillStyle = colours.pants;
-    ctx.fillRect(5 * u, 10 * u, 6 * u, 5 * u);
-    ctx.fillStyle = colours.shirt;
-    ctx.fillRect(4 * u, 6 * u, 8 * u, 5 * u);
-    ctx.fillStyle = colours.skin;
-    ctx.fillRect(5 * u, 2 * u, 6 * u, 5 * u);
-    ctx.fillStyle = colours.hair;
-    ctx.fillRect(4.5 * u, 1 * u, 7 * u, 2.4 * u);
-    ctx.fillRect(4.5 * u, 1 * u, 1.6 * u, 4 * u);
-    ctx.fillStyle = 'rgba(20,26,40,0.9)';
-    ctx.fillRect(8.4 * u, 4 * u, 1.3 * u, 1.3 * u);
+    sprite.drawPerson(ctx, { x: size * 0.08, y: size * 0.11, w: size * 0.84, h: size * 0.81 },
+      colours, { time: 0 });
     return canvas;
   }
 
@@ -71,6 +61,21 @@ function makeMenu(root, deps) {
         refreshPreview();
       });
     }
+  }
+
+  function appearanceRow(parent, label, key, options) {
+    const row = el('label', 'field', parent);
+    el('span', null, row, label);
+    const select = el('select', 'appearance-select', row);
+    for (const value of options) {
+      const option = el('option', null, select, value[0].toUpperCase() + value.slice(1));
+      option.value = value;
+    }
+    select.value = pendingColours[key] || options[0];
+    select.addEventListener('change', () => {
+      pendingColours[key] = select.value;
+      refreshPreview();
+    });
   }
 
   let previewHost = null;
@@ -132,18 +137,20 @@ function makeMenu(root, deps) {
         avatar(entry.colours, 44));
     }
     const create = el('button', 'primary', body, 'New character');
-    create.addEventListener('click', showCreateCharacter);
+    create.addEventListener('click', () => showCreateCharacter());
   }
 
-  function showCreateCharacter() {
-    pendingColours = profiles.pickColours(String(Date.now()));
-    const body = shell('New character', 'They keep what they carry, in any world.');
+  function showCreateCharacter(existing) {
+    pendingColours = existing ? { ...existing.colours } : profiles.pickColours(String(Date.now()));
+    const body = shell(existing ? 'Customize character' : 'New character',
+      'They keep what they carry, in any world.');
     const form = el('div', 'form', body);
     const nameRow = el('label', 'field', form);
     el('span', null, nameRow, 'Name');
     const name = el('input', null, nameRow);
     name.maxLength = 24;
     name.placeholder = 'Delver';
+    if (existing) { name.value = existing.name; name.disabled = true; }
 
     const preview = el('div', 'preview', form);
     previewHost = el('div', 'preview-art', preview);
@@ -152,14 +159,25 @@ function makeMenu(root, deps) {
     swatchRow(picks, 'Hair', palette.HAIR_COLOURS, 'hair');
     swatchRow(picks, 'Shirt', palette.SHIRT_COLOURS, 'shirt');
     swatchRow(picks, 'Trousers', palette.PANTS_COLOURS, 'pants');
+    swatchRow(picks, 'Eyes', ['#241e2a', '#527869', '#516e9c', '#ba7447', '#8d588a'], 'eyes');
+    appearanceRow(picks, 'Hairstyle', 'hairstyle', ['swept', 'braid', 'crest', 'curls', 'shaved']);
+    appearanceRow(picks, 'Face detail', 'marking', ['none', 'freckles', 'paint', 'scar']);
     refreshPreview();
 
     const row = el('div', 'button-row', body);
     const back = el('button', 'ghost', row, 'Back');
-    back.addEventListener('click', showCharacters);
-    const make = el('button', 'primary', row, 'Create');
+    back.addEventListener('click', existing ? showWorlds : showCharacters);
+    const make = el('button', 'primary', row, existing ? 'Save appearance' : 'Create');
     make.addEventListener('click', () => {
-      chosenCharacter = profiles.createCharacter({ name: name.value, colours: pendingColours });
+      if (existing) {
+        if (!profiles.saveCharacter(existing.id, { colours: pendingColours })) {
+          make.textContent = 'Save failed. Retry';
+          return;
+        }
+        chosenCharacter = { ...existing, colours: pendingColours };
+      } else {
+        chosenCharacter = profiles.createCharacter({ name: name.value, colours: pendingColours });
+      }
       showWorlds();
     });
     name.focus();
@@ -167,6 +185,8 @@ function makeMenu(root, deps) {
 
   function showWorlds() {
     const body = shell('Choose a world', 'Playing as ' + chosenCharacter.name + '.');
+    const customize = el('button', 'ghost', body, 'Customize appearance');
+    customize.addEventListener('click', () => showCreateCharacter(chosenCharacter));
     const list = el('div', 'card-list', body);
     const worlds = profiles.listWorlds();
     if (!worlds.length) el('p', 'empty', list, 'No worlds yet.');

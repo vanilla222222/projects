@@ -873,6 +873,27 @@ function paintBrick(ctx, spec, variant, ox, oy) {
   }
 }
 
+// A cool shadow and warm glints unify the material painters at atlas bake time.
+function finishTileArt(ctx, spec, variant, x, y) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-atop';
+  const material = materialOf(spec);
+  const highlights = { rock: '#d4c8f441', soil: '#ffc69144', sand: '#fff0b44f', ice: '#cbffff59' };
+  if (spec.liquid || !spec.solid || spec.part || spec.station) {
+    ctx.fillStyle = spec.liquid ? '#19365d29' : '#20193534';
+    ctx.fillRect(x, y + 10, TILE, 6);
+  }
+  ctx.fillStyle = spec.liquid ? '#b9f2ff2b' : highlights[material] || '#ffd6a438';
+  for (let i = 0; i < 4; i += 1) {
+    const px = 1 + Math.floor(hashPixel(spec.id, variant, i, 83) * 12);
+    const py = 1 + Math.floor(hashPixel(spec.id, variant, i, 89) * 12);
+    const width = material === 'sand' || material === 'ice' ? 3 : i % 2 + 1;
+    ctx.fillRect(x + px, y + py, width, 1);
+    if (material === 'ice') ctx.fillRect(x + px + 1, y + py - 1, 2, 1);
+  }
+  ctx.restore();
+}
+
 function bakeAtlas(document, tiles) {
   const canvas = document.createElement('canvas');
   canvas.width = TILE * VARIANTS;
@@ -912,6 +933,8 @@ function bakeAtlas(document, tiles) {
         ctx.fillRect(ox, oy, TILE, TILE);
         paintGrain(ctx, spec, v, ox, oy);
       }
+
+      finishTileArt(ctx, spec, v, ox, oy);
 
       // The brightness band, washed over whatever was painted. Done here rather than in
       // each painter so every material gets it, including the ones with hand-drawn

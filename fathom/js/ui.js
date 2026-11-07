@@ -27,18 +27,55 @@ function makeUI(root, deps) {
     return node;
   }
 
+  const iconArt = new Map();
+  function itemArt(item) {
+    let art = iconArt.get(item.key);
+    if (!art) {
+      art = paintInventoryIcon(item, 32);
+      const ctx = art.getContext('2d');
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = '#eecb9c22';
+      ctx.fillRect(0, 3, 32, 6);
+      ctx.fillStyle = '#211f362b';
+      ctx.fillRect(0, 23, 32, 9);
+      ctx.globalCompositeOperation = 'source-over';
+      iconArt.set(item.key, art);
+    }
+    return art;
+  }
+
   function iconFor(item, size) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    if (!item) return canvas;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(itemArt(item), 1, 2, size - 2, size - 2);
+    return canvas;
+  }
+
+  function paintInventoryIcon(item, size) {
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     if (!item) return canvas;
-    // A multi-tile object is shown by its top cell, which is the recognisable one.
+    // Fit the whole object into the slot so furniture reads as a silhouette.
     const multi = tiles.MULTI && tiles.MULTI[item.key];
-    const spec = multi ? multi.cells[0] : tiles.BY_KEY[item.key];
+    if (multi) {
+      const unit = Math.floor(size / Math.max(multi.w, multi.h));
+      for (const cell of multi.cells) {
+        ctx.drawImage(atlas, 4 * texture.TILE, cell.id * texture.TILE, texture.TILE, texture.TILE,
+          Math.floor((size - multi.w * unit) / 2) + cell.part.dx * unit,
+          Math.floor((size - multi.h * unit) / 2) + cell.part.dy * unit, unit, unit);
+      }
+      return canvas;
+    }
+    const spec = tiles.BY_KEY[item.key];
     if (spec && spec.colour) {
-      ctx.drawImage(atlas, 0, spec.id * texture.TILE, texture.TILE, texture.TILE, 0, 0, size, size);
+      ctx.drawImage(atlas, 4 * texture.TILE, spec.id * texture.TILE, texture.TILE, texture.TILE, 0, 0, size, size);
       return canvas;
     }
     const wallSpec = tiles.WALL_BY_KEY[item.key];
@@ -91,8 +128,13 @@ function makeUI(root, deps) {
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.fillRect(2 * u, 12 * u, 12 * u, 2 * u);
       }
-      ctx.fillStyle = 'rgba(255,255,255,0.22)';
-      ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = '#f8d8aa55';
+      ctx.fillRect(2 * u, 3 * u, 12 * u, 2 * u);
+      ctx.fillStyle = '#251e3b70';
+      ctx.fillRect(2 * u, 10 * u, 12 * u, 2 * u);
+      ctx.fillStyle = piece.tier === 'bone' ? '#5b4c50' : '#f3d59b';
+      ctx.fillRect(7 * u, 8 * u, 2 * u, 2 * u);
       return canvas;
     }
     if (craft && item.key === 'coin') {
@@ -111,7 +153,7 @@ function makeUI(root, deps) {
       ctx.fill();
       return canvas;
     }
-    if (craft && item.key === 'arrow') {
+    if (craft && craft.ITEMS[item.key]?.kind === 'ammo') {
       const u = size / 16;
       ctx.strokeStyle = '#b9a271';
       ctx.lineWidth = Math.max(1, u);
@@ -119,7 +161,7 @@ function makeUI(root, deps) {
       ctx.moveTo(3 * u, 13 * u);
       ctx.lineTo(12 * u, 4 * u);
       ctx.stroke();
-      ctx.fillStyle = '#d8d2c2';
+      ctx.fillStyle = craft.ITEMS[item.key].colour;
       ctx.fillRect(11 * u, 3 * u, 3 * u, 3 * u);
       ctx.fillStyle = '#8a7a52';
       ctx.fillRect(2 * u, 12 * u, 3 * u, 3 * u);
@@ -271,6 +313,26 @@ function makeUI(root, deps) {
       return canvas;
     }
     const itemSpec = craft && craft.ITEMS[item.key];
+    if (itemSpec?.kind === 'loot' || item.key === 'manacrystal' || item.key.endsWith('-fish')) {
+      paintLootIcon(ctx, item.key, itemSpec, size);
+      return canvas;
+    }
+    if (itemSpec?.use?.open) {
+      const u = size / 16;
+      ctx.fillStyle = '#262239';
+      ctx.fillRect(1 * u, 3 * u, 14 * u, 11 * u);
+      ctx.fillStyle = itemSpec.colour;
+      ctx.fillRect(2 * u, 4 * u, 12 * u, 9 * u);
+      ctx.fillStyle = '#fff0c960';
+      ctx.fillRect(2 * u, 4 * u, 12 * u, 2 * u);
+      ctx.fillStyle = '#29203590';
+      ctx.fillRect(2 * u, 8 * u, 12 * u, 2 * u);
+      ctx.fillRect(4 * u, 4 * u, 2 * u, 9 * u);
+      ctx.fillRect(10 * u, 4 * u, 2 * u, 9 * u);
+      ctx.fillStyle = '#e2b663';
+      ctx.fillRect(7 * u, 7 * u, 2 * u, 3 * u);
+      return canvas;
+    }
     // Something used rather than worn: a flask, so a crystal and a salve do not look
     // like bars of metal.
     if (itemSpec && itemSpec.use) {
@@ -311,6 +373,52 @@ function makeUI(root, deps) {
     ctx.fillStyle = '#8894a8';
     ctx.fillRect(size * 0.2, size * 0.2, size * 0.6, size * 0.6);
     return canvas;
+  }
+
+  function paintLootIcon(ctx, key, spec, size) {
+    const u = size / 16;
+    let hash = 0;
+    for (const letter of key) hash = (Math.imul(hash, 31) + letter.charCodeAt(0)) >>> 0;
+    function shape(points, colour) {
+      ctx.fillStyle = colour;
+      ctx.beginPath();
+      ctx.moveTo(points[0] * u, points[1] * u);
+      for (let i = 2; i < points.length; i += 2) ctx.lineTo(points[i] * u, points[i + 1] * u);
+      ctx.closePath();
+      ctx.fill();
+    }
+    const fish = /fish|bass|trout|pike|perch|piranha|carp|gill|minnow|flarefin|mudeel/.test(key);
+    const silhouettes = {
+      fish: [1, 4, 5, 6, 8, 3, 12, 5, 15, 8, 12, 11, 8, 12, 5, 9, 1, 12],
+      shell: [2, 8, 5, 3, 11, 3, 14, 7, 12, 12, 7, 14, 3, 12],
+      feather: [2, 14, 5, 8, 7, 4, 13, 2, 14, 6, 11, 11, 6, 12],
+      shard: [2, 9, 6, 3, 11, 2, 14, 6, 10, 12, 6, 14],
+      star: [8, 1, 10, 6, 15, 6, 11, 10, 12, 15, 8, 12, 4, 15, 5, 10, 1, 6, 6, 6],
+      gel: [2, 11, 4, 6, 7, 5, 10, 2, 13, 7, 14, 12, 11, 14, 5, 14],
+      bone: [1, 10, 3, 7, 5, 8, 9, 5, 9, 2, 12, 2, 15, 5, 12, 8, 10, 7, 6, 11, 6, 13, 3, 14],
+      boot: [5, 2, 11, 2, 10, 8, 14, 9, 15, 13, 3, 13, 3, 10],
+      hide: [2, 3, 6, 4, 10, 2, 14, 5, 12, 9, 14, 13, 8, 14, 5, 11, 2, 13],
+      lens: [2, 6, 5, 3, 11, 3, 14, 6, 14, 10, 11, 13, 5, 13, 2, 10]
+    };
+    const type = fish ? 'fish' : /shrimp|snail|chitin/.test(key) ? 'shell'
+      : /star/.test(key) ? 'star' : /feather|finleather/.test(key) ? 'feather'
+        : /gel/.test(key) ? 'gel' : /bone/.test(key) ? 'bone' : /junk/.test(key) ? 'boot'
+          : /flesh|leather|tissue/.test(key) ? 'hide' : /lens/.test(key) ? 'lens' : 'shard';
+    shape(silhouettes[type], '#211f36');
+    ctx.save();
+    ctx.translate(u, u);
+    ctx.scale(0.875, 0.875);
+    shape(silhouettes[type], spec.colour || '#bdac98');
+    ctx.restore();
+    ctx.globalCompositeOperation = 'source-atop';
+    shape([2, 10, 8, 8, 15, 5, 15, 15, 2, 15], '#211f365c');
+    shape([4, 6, 8, 3, 12, 4, 7, 7], '#fff0c977');
+    ctx.fillStyle = '#fff0c9a0';
+    for (let i = 0; i < 3; i += 1) ctx.fillRect((5 + (hash >>> (i * 5)) % 7) * u, (7 + i) * u, u, u);
+    if (fish || type === 'lens') {
+      ctx.fillStyle = '#211f36';
+      ctx.fillRect((fish ? 11 : 7) * u, 6 * u, 2 * u, 2 * u);
+    }
   }
 
   function nameOf(item) {
@@ -735,7 +843,7 @@ function makeUI(root, deps) {
     return open;
   }
 
-  return { build, sync, toggle, setOpen, get isOpen() { return open; },
+  return { build, sync, toggle, setOpen, itemArt, get isOpen() { return open; },
     setField(key, text) { if (els[key] && els[key].textContent !== text) els[key].textContent = text; },
     setMessage(text) { if (els.message && els.message.textContent !== text) els.message.textContent = text; },
     set onCraft(fn) { onCraft = fn; },
