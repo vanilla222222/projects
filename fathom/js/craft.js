@@ -624,10 +624,10 @@ const RECIPES = [
   { out: { key: 'tin-axe', kind: 'tool', count: 1 }, need: [['tin-bar', 7], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'tin-hammer', kind: 'tool', count: 1 }, need: [['tin-bar', 7], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'tin-sword', kind: 'tool', count: 1 }, need: [['tin-bar', 7], ['#wood', 3]], station: 'anvil' },
-  { out: { key: 'copper-pick', kind: 'tool', count: 1 }, need: [['copper-bar', 10], ['#wood', 3]], station: 'anvil' },
+  { out: { key: 'copper-pick', kind: 'tool', count: 1 }, need: [['copper-bar', 7], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'copper-axe', kind: 'tool', count: 1 }, need: [['copper-bar', 8], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'copper-hammer', kind: 'tool', count: 1 }, need: [['copper-bar', 8], ['#wood', 3]], station: 'anvil' },
-  { out: { key: 'iron-pick', kind: 'tool', count: 1 }, need: [['iron-bar', 12], ['#wood', 3]], station: 'anvil' },
+  { out: { key: 'iron-pick', kind: 'tool', count: 1 }, need: [['iron-bar', 9], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'iron-axe', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'iron-hammer', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'silver-pick', kind: 'tool', count: 1 }, need: [['silver-bar', 8], ['#wood', 4]], station: 'anvil' },
@@ -757,10 +757,9 @@ RECIPES.push(
   { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
-  { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 40], ['gold-bar', 5]], station: 'anvil' },
-  // Six lenses, which only come off demon eyes, which only come out at night. The cost
-  // is the nights you had to survive to afford it.
-  { out: { key: 'bloodshotlens', kind: 'use', count: 1 }, need: [['lens', 6], ['gold-bar', 3]], station: 'anvil' },
+  { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 24], ['iron-bar', 3]], station: 'anvil' },
+  // The first eyes supply the lenses for a silver-tier night summon.
+  { out: { key: 'bloodshotlens', kind: 'use', count: 1 }, need: [['lens', 5], ['silver-bar', 2]], station: 'anvil' },
   { out: { key: 'healing-salve', kind: 'use', count: 2 }, need: [['gel', 4], ['glowmoss', 2]], station: 'workbench' },
   { out: { key: 'mana-salve', kind: 'use', count: 2 }, need: [['fallenstar', 1], ['glowmoss', 2]], station: 'workbench' }
 );

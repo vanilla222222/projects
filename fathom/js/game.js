@@ -33,6 +33,7 @@ function makeGame(canvas, deps) {
   let village = null;
   let townDevices = [];
   let completedOrders = new Set();
+  let defeatedBosses = new Set();
   let storageItems = [];
   const PYLON_RADIUS = 45;
   const STORAGE_RADIUS = 24;
@@ -200,6 +201,7 @@ function makeGame(canvas, deps) {
     // A boss gives up everything it carries, every time. A fight you had to prepare for
     // should not then also be a lottery.
     if (target.spec.bossDrops) {
+      defeatedBosses.add(target.spec.key);
       for (const entry of target.spec.bossDrops) {
         const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
         dropItem(target.x + target.width / 2, target.y, key, craft.kindOf(key), count);
@@ -953,7 +955,7 @@ function makeGame(canvas, deps) {
           vx: (Math.random() - 0.5) * 3, vy: -5, key: 'heart', kind: 'pickup',
           count: 1, age: 0 });
       }
-      say(target.spec.name + ' died', 1.0);
+      if (!target.boss) say(target.spec.name + ' died', 1.0);
     }
     return true;
   }
@@ -1142,7 +1144,8 @@ function makeGame(canvas, deps) {
     else if (room.valid) rows.unshift('This room is ready for a resident.');
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
-    const actions = [{ label: 'Town Contracts', run: openTownOrders }];
+    const actions = [{ label: 'Progression Journal', run: openProgression },
+      { label: 'Town Contracts', run: openTownOrders }];
     for (const spec of villagerModule.VILLAGERS) {
       const housed = village.list.some(v => v.key === spec.key);
       if (!housed && !available.has(spec.key)) {
@@ -1158,6 +1161,42 @@ function makeGame(canvas, deps) {
     }
     rows.push('Two occupied homes in range power a pylon. Shops discount prices in clusters of two or more.');
     ui.showTown('Town Hall', rows, actions);
+  }
+
+  function openProgression() {
+    const picks = Object.entries(mining.TOOLS).filter(([, spec]) => spec.job === 'pick')
+      .sort((a, b) => a[1].power - b[1].power);
+    const rank = picks.reduce((best, [key], index) => inventory.countOf(key) ? index : best, -1);
+    const rows = ['Mining · ' + (rank < 0 ? 'Recover a pickaxe from the Guide or make one at a Work Bench.'
+      : picks[rank][1].name + ' · ' + picks[rank][1].power + ' power')];
+    const recipeLine = key => {
+      const recipe = craft.RECIPES.find(r => r.out.key === key);
+      return recipe.need.map(([item, count]) =>
+        craft.heldOf(inventory, item) + '/' + count + ' ' + craft.nameOf(item, tiles)).join(' · ')
+        + (recipe.station ? ' · ' + recipe.station : '');
+    };
+    if (rank >= 0 && rank + 1 < picks.length) {
+      const [key, spec] = picks[rank + 1];
+      rows.push('Next pickaxe · ' + spec.name + ' · ' + recipeLine(key));
+      const ore = key.replace('-pick', '');
+      const band = worldgen.ORE_BANDS.find(entry => entry.key === ore);
+      if (band) rows.push('Find ' + craft.nameOf(ore, tiles) + ' · '
+        + (ore === 'emberite' ? 'Search Hell and smelt it with obsidian.'
+          : 'Usually ' + band.from + '–' + band.to + ' tiles below the surface.'));
+      if (rank < 2) rows.push('Build a Furnace, then craft an Anvil at a Work Bench using ' + recipeLine('anvil') + '.');
+    }
+    rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
+    for (const [boss, title, summon, hint] of [
+      ['kingslime', 'King Slime', 'slimecrown', 'Iron-tier side fight. A win brings down a meteor.'],
+      ['hollloweye', 'The Hollow Eye', 'bloodshotlens', 'Summon at night. Its lens improves ranged combat.'],
+      ['furnacewarden', 'Furnace Warden', 'cinder-idol', 'Summon in Hell. Forge an Ashvault Key from a core.'],
+      ['ashguardian', 'Ashvault Guardian', 'guardian-effigy', 'Bring the key to an Ashvault in the Trench.'],
+      ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.']
+    ]) {
+      rows.push((defeatedBosses.has(boss) ? 'Defeated · ' : '') + title + ' · ' + hint);
+      if (!defeatedBosses.has(boss)) rows.push(craft.nameOf(summon, tiles) + ' · ' + recipeLine(summon));
+    }
+    ui.showTown('Progression Journal', rows, [{ label: 'Back to Town Hall', run: checkHousing }]);
   }
 
   function openTownOrders() {
@@ -1972,6 +2011,7 @@ function makeGame(canvas, deps) {
       villagers: village ? village.serialize() : [],
       townDevices,
       completedOrders: [...completedOrders],
+      defeatedBosses: [...defeatedBosses],
       storageItems,
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
@@ -2007,6 +2047,7 @@ function makeGame(canvas, deps) {
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
     townDevices = worldRecord.townDevices || [];
     completedOrders = new Set(worldRecord.completedOrders || []);
+    defeatedBosses = new Set(worldRecord.defeatedBosses || []);
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
