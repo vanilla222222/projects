@@ -130,6 +130,32 @@ for (const chest of found) {
     'a chest generated at or near the surface');
 }
 
+// An Ossuary lock is untouched until the first key is spent. Both a filled and
+// an emptied unlocked cache retain their stored state after saving.
+{
+  const world = chunks.makeWorld(SEED, worldgen);
+  const site = worldgen.dungeonLayout(SEED);
+  ok(!!site, 'the Ossuary generates');
+  const { x, y } = site;
+  ok(tiles.tile(world.get(x, y)).key === 'dungeon-gate', 'the Ossuary shaft is sealed');
+  ok(tiles.tile(world.get(x - 6, y - 1)).key === 'dungeon-bell', 'the entrance has a summon bell');
+  ok(tiles.tile(world.get(x, y + 18)).climb, 'the shaft connects the galleries');
+  for (const [row, dy] of [16, 36, 56].entries()) {
+    const cx = x + (row % 2 ? -19 : 18);
+    const cy = y + dy;
+    ok(tiles.tile(world.get(cx, cy)).chest === 'dungeon-cache', 'gallery has a gilded cache');
+    const loot = world.getContainer(cx, cy);
+    ok(loot?.[0].key.startsWith('ossuary-'), 'cache contains an Ossuary weapon');
+    ok(!world.hasStoredContainer(cx, cy), 'generated cache already counts as opened');
+    world.setContainer(cx, cy, row === 0 ? [] : loot);
+    const restored = chunks.makeWorld(SEED, worldgen);
+    restored.restore(JSON.parse(JSON.stringify(world.serialize())));
+    ok(restored.hasStoredContainer(cx, cy), 'cache lock reset after a save and reload');
+    ok(restored.getContainer(cx, cy).length === (row === 0 ? 0 : loot.length),
+      'cache contents changed after a save and reload');
+  }
+}
+
 const byKind = {};
 for (const c of found) byKind[c.kind] = (byKind[c.kind] || 0) + 1;
 console.log('\n' + found.length + ' chests across 600 slots: '

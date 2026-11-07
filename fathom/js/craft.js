@@ -268,6 +268,9 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'dungeon-key': { name: 'Gilded Ossuary Key', kind: 'loot', colour: '#dbbb6d' },
+  'bone-toll': { name: 'Bone Clapper', kind: 'use', colour: '#d4ccb3',
+    use: { summon: 'dungeonkeeper', night: true, dungeon: true }, text: 'Ring the Ossuary Bell at night' },
   'vault-relic': { name: 'Vault Relic', kind: 'loot', colour: '#b891c2' },
   'guardian-seal': { name: 'Guardian Seal', kind: 'loot', colour: '#e6b09e' },
   'void-heart': { name: 'Void Heart', kind: 'loot', colour: '#9973d7' },
@@ -585,6 +588,9 @@ const WEAPONS = {
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
   'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
   'aether-sabre': { name: 'Aether Sabre', damage: 118, useTime: 0.20, reach: 4.4 },
+  'ossuary-sabre': { name: 'Graveglass Sabre', damage: 56, useTime: 0.23, reach: 3.7, colour: '#9fcde4' },
+  'ossuary-bow': { name: 'Cryptstring Bow', damage: 43, useTime: 0.23, reach: 46, ranged: true, ammo: 'arrow', colour: '#91abbf' },
+  'ossuary-staff': { name: 'Pale Lantern', damage: 52, useTime: 0.29, reach: 43, magic: true, mana: 8, bolt: '#a1d3e9' },
   'ashblade': { name: 'Ashblade', damage: 91, useTime: 0.22, reach: 3.9 },
   'relic-staff': { name: 'Relic Staff', damage: 92, useTime: 0.27, reach: 46, magic: true, mana: 12, bolt: '#cb9deb' },
   'emberite-bow': { name: 'Emberite Bow', damage: 64, useTime: 0.2, reach: 48, ranged: true, ammo: 'arrow' },
@@ -804,6 +810,7 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'bone-toll', kind: 'use', count: 1 }, need: [['bone', 8], ['iron-bar', 3]], station: 'anvil' },
   // Torches are the one thing you must be able to make before anything else.
   { out: { key: 'torch', kind: 'block', count: 3 }, need: [['#wood', 1]], station: null },
 
@@ -1280,7 +1287,7 @@ function nameOf(key, tiles) {
 // next chapter. Keep the journal and summon checks on the same order.
 const BOSS_CHAPTERS = [
   ['kingslime', 'briarwarden', 'windmillwarden', 'mirebrood'],
-  ['hollloweye', 'thunderbird', 'desertscourge', 'rimehorn', 'pinemaw', 'orchidqueen',
+  ['hollloweye', 'dungeonkeeper', 'thunderbird', 'desertscourge', 'rimehorn', 'pinemaw', 'orchidqueen',
     'reedking', 'claybehemoth', 'sunmane', 'cragbreaker', 'breakwatercrab'],
   ['furnacewarden', 'rootcrown', 'aurorawraith', 'winterroot', 'amberroot', 'fenwidow',
     'granitecolossus', 'cairnshade', 'ochredrake', 'sunscarab', 'buriedstandard',

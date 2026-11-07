@@ -388,6 +388,17 @@ for (const [key, name, colour, require] of [
     toughness: require * 3, require, basePowerGate: true, ore: true, grain: 0.21 });
 }
 
+for (const [key, name, colour, solid] of [
+  ['dungeon-brick', 'Ossuary Brick', '#47577a', true],
+  ['dungeon-gate', 'Ossuary Seal', '#cbad67', true],
+  ['dungeon-bell', 'Ossuary Bell', '#e0bf7c', false]
+]) pushTile({ key, name, colour, solid, opacity: solid ? 60 : 3, toughness: 240,
+  emit: key === 'dungeon-brick' ? 0 : 6, drops: null });
+defineMulti('dungeon-cache', 'Gilded Ossuary Cache', 2, 2, () => ({
+  solid: false, opacity: 8, emit: 4, colour: '#b99454', toughness: 95, chest: 'dungeon-cache', drops: null
+}));
+WALLS.push({ id: WALLS.length, key: 'dungeon-wall', name: 'Ossuary Wall', colour: '#252d49', opacity: 7 });
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
