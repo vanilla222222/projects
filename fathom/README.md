@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 133 enemies including twenty bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 146 enemies including twenty-two bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -258,3 +258,12 @@ Sepulcher guards its deep cache with floor traps. Some caches awaken as Cairn Mi
 
 Use a Crag Totem on the surface or a Cairn Bell in the deep Highlands to summon
 Cragbreaker or Cairnshade. Both fights are optional.
+
+
+### Badlands expansion
+
+Find Claybreak Camp on the surface, Redstone Kiln underground, and Ochre
+Catacomb in the deep Badlands. Some catacomb chests wake as Ochre Mimics.
+
+Use a Clay Effigy on the surface or an Ochre Sigil in the deep Badlands to
+summon Clay Behemoth or Ochre Drake. Both are optional.

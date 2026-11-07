@@ -634,6 +634,20 @@ for (const seed of [SEED, 4242, -98765]) {
     'Granite Sepulcher has no traps');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -12165, y);
+    if (site?.biome === 'badlands') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Badlands are missing a structure depth');
+  const kiln = sites.get('Redstone Kiln');
+  check(gen.baseTileAt(SEED, kiln.x - 5, kiln.top + kiln.height - 2) === tiles.idOf('furnace'), 'Redstone Kiln has no furnace');
+  const catacomb = sites.get('Ochre Catacomb');
+  check(gen.baseTileAt(SEED, catacomb.x - 4, catacomb.top + catacomb.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Ochre Catacomb has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;
