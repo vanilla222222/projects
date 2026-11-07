@@ -217,13 +217,13 @@ const ENEMIES = [
   // Summoned, never spawned. `summonOnly` is checked by matches(), so no pool anywhere
   // can contain it - which is stronger and more honest than giving it a layer filter
   // that happens never to match.
-  { key: 'kingslime', name: 'King Slime', kind: 'king', body: 'kingslime', hp: 1400,
+  { key: 'kingslime', name: 'King Slime', kind: 'king', body: 'kingslime', hp: 1000,
     damage: 34, weight: 0, w: 4.2, h: 3.0, colour: '#58b05a',
     boss: true, summonOnly: true, emit: 3,
     drops: [['gel', 40], ['coin', 260]],
     bossDrops: ['royal-gel', 'kings-crown'] },
 
-  { key: 'hollloweye', name: 'The Hollow Eye', kind: 'hover', body: 'bigeye', hp: 1800,
+  { key: 'hollloweye', name: 'The Hollow Eye', kind: 'hover', body: 'bigeye', hp: 1450,
     damage: 30, weight: 0, w: 3.4, h: 3.4, colour: '#b4484f',
     boss: true, summonOnly: true, emit: 5,
     drops: [['lens', 10], ['coin', 420]],

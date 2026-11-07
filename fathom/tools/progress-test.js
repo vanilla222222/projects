@@ -226,6 +226,10 @@ for (const [ore, previous] of Object.entries({
   ok(!mining.canMine(mining.TOOLS[earlier + '-pick'].power, tiles.BY_KEY[ore]), earlier + ' skips to ' + ore);
 }
 
+ok(ladder.arrived.get('slimecrown') < ladder.arrived.get('gold-pick'),
+  'King Slime is unavailable before gold gear');
+ok(ladder.arrived.get('bloodshotlens') < ladder.arrived.get('gold-pick'),
+  'Hollow Eye is unavailable before gold gear');
 ok(ladder.arrived.get('cinder-idol') < ladder.arrived.get('furnace-core'), 'Warden rewards precede its summon');
 for (const key of ['furnace-lance', 'cinder-scepter', 'warden-heart']) {
   ok(ladder.arrived.get('furnace-core') < ladder.arrived.get(key), key + ' is available before the Warden');
