@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'chalklock-fang': { name: 'Chalklock Fang', kind: 'loot', colour: '#c0b69e' },
+  'windmill-gear': { name: 'Windmill Gear', kind: 'loot', colour: '#bba782' },
+  'standard-thread': { name: 'Standard Thread', kind: 'loot', colour: '#a2b7cd' },
+  'windmill-token': { name: 'Windmill Token', kind: 'use', colour: '#bba782',
+    use: { summon: 'windmillwarden', layer: 'surface', biome: 'plains' }, text: 'Summon on the Plains surface' },
+  'standard-pennant': { name: 'Standard Pennant', kind: 'use', colour: '#a2b7cd',
+    use: { summon: 'buriedstandard', layer: 'deep', biome: 'plains' }, text: 'Summon in the deep Plains' },
   'pitchlock-fang': { name: 'Pitchlock Fang', kind: 'loot', colour: '#b1aa84' },
   'pinemaw-claw': { name: 'Pinemaw Claw', kind: 'loot', colour: '#b09a72' },
   'winterroot-core': { name: 'Winterroot Core', kind: 'loot', colour: '#a4c8cc' },
@@ -333,6 +340,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'windmill-brace': { name: 'Windmill Brace', colour: '#bba782', text: 'Defence +4 and tools swing 10% faster', defense: 4, swing: 0.9 },
+  'standard-sash': { name: 'Standard Sash', colour: '#a2b7cd', text: 'Arrows deal 12% more damage and defence +5', ranged: 1.12, defense: 5 },
+  'chalklock-clasp': { name: 'Chalklock Clasp', colour: '#c0b69e', text: 'Pick up items from farther away and move 8% faster', pickup: 1.45, speed: 1.08 },
   'pinemaw-grip': { name: 'Pinemaw Grip', colour: '#b09a72', text: 'Melee damage +12% and tools swing 8% faster', melee: 1.12, swing: 0.92 },
   'winterroot-band': { name: 'Winterroot Band', colour: '#a4c8cc', text: 'Defence +7 and health regenerates 20% faster', defense: 7, regen: 1.2 },
   'pitchlock-clasp': { name: 'Pitchlock Clasp', colour: '#b1aa84', text: 'Take 20% less fall damage and pick up items from farther away', fallMul: 0.8, pickup: 1.4 },
@@ -827,6 +837,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'windmill-token', kind: 'use', count: 1 }, need: [['oaklog', 10], ['tin-bar', 4], ['chitin', 3]], station: 'anvil' },
+  { out: { key: 'standard-pennant', kind: 'use', count: 1 }, need: [['bone', 8], ['leather', 5], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'windmill-brace', kind: 'accessory', count: 1 }, need: [['windmill-gear', 1], ['iron-bar', 3]], station: 'anvil' },
+  { out: { key: 'standard-sash', kind: 'accessory', count: 1 }, need: [['standard-thread', 1], ['leather', 6]], station: 'anvil' },
+  { out: { key: 'chalklock-clasp', kind: 'accessory', count: 1 }, need: [['chalklock-fang', 2], ['iron-bar', 4]], station: 'anvil' },
   { out: { key: 'pine-totem', kind: 'use', count: 1 }, need: [['pinelog', 12], ['bone', 5], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'winterroot-bell', kind: 'use', count: 1 }, need: [['crystal', 6], ['pinelog', 10], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'pinemaw-grip', kind: 'accessory', count: 1 }, need: [['pinemaw-claw', 1], ['leather', 6]], station: 'anvil' },

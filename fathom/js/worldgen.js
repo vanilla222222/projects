@@ -828,7 +828,8 @@ const HIGHLAND_SITES = ['Crag Watch', 'Echo Quarry', 'Granite Sepulcher'];
 const BADLAND_SITES = ['Claybreak Camp', 'Redstone Kiln', 'Ochre Catacomb'];
 const SAVANNA_SITES = ['Acacia Waystation', 'Termite Galleries', 'Sunken Sun Court'];
 const TAIGA_SITES = ['Pinewatch Hut', 'Resinworks', 'Winterroot Barrow'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES };
+const PLAINS_SITES = ['Windmill Crossing', 'Chalk Cellar', 'Buried Standard'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
@@ -877,7 +878,8 @@ function biomeSiteTile(site, x, y) {
   const badlands = site.biome === 'badlands';
   const savanna = site.biome === 'savanna';
   const taiga = site.biome === 'taiga';
-  const material = taiga ? ['pinewood', 'granite', 'slate'][site.layer] : savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const plains = site.biome === 'plains';
+  const material = plains ? ['oakwood', 'stone', 'brick'][site.layer] : taiga ? ['pinewood', 'granite', 'slate'][site.layer] : savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
   if (site.layer === 0) {
@@ -889,11 +891,15 @@ function biomeSiteTile(site, x, y) {
     if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
   }
   if (dx >= 7 && dx <= 8 && row >= floor - 2) {
-    const chest = site.mimic ? (badlands || savanna || taiga ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
+    const chest = site.mimic ? (badlands || savanna || taiga || plains ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
     return cellOf(chest, dx - 7, row - floor + 2).id;
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (plains && site.layer === 0 && row >= 1 && row <= 5 && Math.abs(dx) === (row - 3) ** 2) return idOf('oakplatform');
+  if (plains && site.layer === 0 && row === floor - 1 && dx === -7) return idOf('oakbench');
+  if (plains && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('workbench');
+  if (plains && site.layer === 2 && row === floor - 1 && (dx === -5 || dx === -4)) return idOf('ashvault-spikes');
   if (taiga && site.layer === 0 && row === floor - 1 && dx === -7) return idOf('pinebench');
   if (taiga && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('furnace');
   if (taiga && site.layer === 2 && row === floor - 1 && (dx === -5 || dx === -4)) return idOf('glacier-spikes');

@@ -1240,6 +1240,8 @@ function makeGame(canvas, deps) {
       ['sunscarab', 'Sun Court Scarab', 'sun-court-seal', 'Optional. Summon in the deep Savanna.'],
       ['pinemaw', 'Pinemaw', 'pine-totem', 'Optional. Summon on the Taiga surface.'],
       ['winterroot', 'Winterroot Keeper', 'winterroot-bell', 'Optional. Summon in the deep Taiga.'],
+      ['windmillwarden', 'Windmill Warden', 'windmill-token', 'Optional. Summon on the Plains surface.'],
+      ['buriedstandard', 'Buried Standard', 'standard-pennant', 'Optional. Summon in the deep Plains.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1810,7 +1812,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=taiga-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=plains-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

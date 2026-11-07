@@ -112,7 +112,11 @@ const ARCHETYPES = {
   winterroot: { gravity: 0, boss: true, flies: true, speed: 5.4, hoverAbove: 4, drift: 4,
     chargeEvery: 4, windUp: 1.15, chargeSpeed: 29, chargeFor: 0.8, spawnEvery: 5.1,
     minion: 'winterbark', minions: 2, enrageAt: 0.46, enrageSpeed: 1.28,
-    enrageCharge: 0.59, enrageWindUp: 0.69, followUp: 0.46 }
+    enrageCharge: 0.59, enrageWindUp: 0.69, followUp: 0.46 },
+  standard: { gravity: 0, boss: true, flies: true, speed: 5.6, hoverAbove: 3.9, drift: 3,
+    chargeEvery: 3.8, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.82, spawnEvery: 5,
+    minion: 'chalksentry', minions: 2, enrageAt: 0.47, enrageSpeed: 1.27,
+    enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 }
 
 };
 
@@ -563,6 +567,33 @@ const ENEMIES = [
     damage: 55, weight: 0, w: 4.4, h: 3.3, colour: '#8ba6aa', boss: true, summonOnly: true, emit: 6,
     drops: [['crystal', 8], ['coin', 840]], bossDrops: ['winterroot-core'] },
 
+  ...[
+    ['prairiehare', 'Prairie Hare', 'surface', 'walker', 'lizard', 29, 8, '#b59673', 'leather'],
+    ['windlark', 'Wind Lark', 'surface', 'flyer', 'bird', 36, 10, '#b6a279', 'feather'],
+    ['meadowmite', 'Meadow Mite', 'surface', 'crawler', 'beetle', 42, 11, '#849154', 'chitin'],
+    ['thistlewisp', 'Thistle Wisp', 'surface', 'flyer', 'cloud', 48, 13, '#b192ac', 'glowmoss'],
+    ['chalkborer', 'Chalk Borer', 'caves', 'worm', 'worm', 76, 17, '#c0ad8e', 'wormtooth'],
+    ['cellarweaver', 'Cellar Weaver', 'caves', 'crawler', 'spider', 84, 18, '#8c7761', 'chitin'],
+    ['draftbat', 'Draft Bat', 'caves', 'flyer', 'bat', 68, 16, '#847d96', 'leather'],
+    ['chalksentry', 'Chalk Sentry', 'deep', 'walker', 'golem', 171, 27, '#b7ad9f', 'crystal'],
+    ['standardshade', 'Standard Shade', 'deep', 'flyer', 'cloud', 141, 24, '#8e9cb2', 'stardust'],
+    ['palelevy', 'Pale Levy', 'deep', 'walker', 'skeleton', 156, 26, '#beb69e', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.3 : 1, h: ['golem', 'skeleton'].includes(body) ? 1.8 : 1,
+    biomes: ['plains'], layers: [layer], emit: key === 'thistlewisp' ? 3 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 12 : layer === 'caves' ? 7 : 4]]
+  })),
+  { key: 'plainsmimic', name: 'Chalklock Mimic', kind: 'walker', body: 'mimic', hp: 320,
+    damage: 36, weight: 0, w: 1.8, h: 1.5, colour: '#a9a08b', hiddenSpawn: true,
+    drops: [['chalklock-fang', 2], ['coin', 155]] },
+  { key: 'windmillwarden', name: 'Windmill Warden', kind: 'king', body: 'golem', hp: 1750,
+    damage: 34, weight: 0, w: 3.9, h: 3, colour: '#a28c70', boss: true, summonOnly: true, emit: 3,
+    drops: [['oaklog', 12], ['coin', 390]], bossDrops: ['windmill-gear'] },
+  { key: 'buriedstandard', name: 'The Buried Standard', kind: 'standard', body: 'cloud', hp: 3650,
+    damage: 48, weight: 0, w: 4.1, h: 3.2, colour: '#8d9fb6', boss: true, summonOnly: true, emit: 5,
+    drops: [['bone', 12], ['coin', 730]], bossDrops: ['standard-thread'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -668,7 +699,8 @@ const GAIT = {
   cairnshade: { perTile: 0.43, perSecond: 9 },
   ochredrake: { perTile: 0.45, perSecond: 9 },
   sunscarab: { perTile: 0.47, perSecond: 9 },
-  winterroot: { perTile: 0.44, perSecond: 9 }
+  winterroot: { perTile: 0.44, perSecond: 9 },
+  standard: { perTile: 0.44, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------
