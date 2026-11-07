@@ -33,8 +33,10 @@ export const ROOM_DESIGNS={
  boss:{mood:'Heart of the broken crown',sky:['#291d3b','#785368'],rock:'#675362',trim:'#c09678',motif:'rootcrown',weather:'embers',shelves:[[850,1000,70],[1450,1000,-170],[2000,950,-410]],exit:false}
 };
 
-for(const [aIndex,a]of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++)ROOM_DESIGNS[a.id+'-'+i]={mood:a.zones[i],sky:['#'+[1,3,5].map((k,j)=>Math.max(0,Math.min(255,parseInt(a.sky[0].slice(k,k+2),16)-i*(3+j)+(a.world===3?aIndex:0))).toString(16).padStart(2,'0')).join(''),a.sky[1]],rock:['#718e91','#706f8d','#93785c','#67805a'][aIndex%4],trim:['#c4e2cb','#e5bb8e','#bdd1ed'][i%3],motif:a.motif+':'+a.id+'-'+i,weather:a.world===3?'stars':['mist','seeds','sparks','leaves'][i%4],shelves:[],exit:!a.town};
+for(const [aIndex,a]of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++)ROOM_DESIGNS[a.id+'-'+i]={mood:a.zones[i],sky:['#'+[1,3,5].map((k,j)=>Math.max(0,Math.min(255,parseInt(a.sky[0].slice(k,k+2),16)-i*(3+j)+(a.world>=3?aIndex:0))).toString(16).padStart(2,'0')).join(''),a.sky[1]],rock:['#718e91','#706f8d','#93785c','#67805a'][aIndex%4],trim:['#c4e2cb','#e5bb8e','#bdd1ed'][i%3],motif:a.motif+':'+a.id+'-'+i,weather:a.world>=3?'stars':['mist','seeds','sparks','leaves'][i%4],shelves:[],exit:!a.town};
 
 ROOM_DESIGNS.tempest={mood:'Stormglass amphitheatre',sky:['#263d67','#a0bfc3'],rock:'#526d83',trim:'#8dd9d6',motif:'cathedral:tempest',weather:'rain',shelves:[[400,900,100],[1100,800,-130]],exit:false};
 
 for(const id of ['chart-green','chart-tide','chart-orbit','singularity'])ROOM_DESIGNS[id]={mood:id+' · Forgotten star charts',sky:[{ 'chart-green':'#151834','chart-tide':'#102a42','chart-orbit':'#24153f',singularity:'#180f27'}[id],'#554381'],rock:'#4c5379',trim:'#ad90ef',motif:'orbit:'+id,weather:'stars',shelves:[],exit:false};
+
+ROOM_DESIGNS.unmoored={mood:'The Unmoored’s Anchorage',sky:['#231731','#564264'],rock:'#514360',trim:'#b98fce',motif:'void:unmoored',weather:'stars',shelves:[],exit:false};

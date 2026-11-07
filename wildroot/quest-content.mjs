@@ -1,3 +1,4 @@
+import {VOID_NPCS,VOID_QUESTS} from './void-content.mjs';
 import {SIDE_NPCS,SIDE_QUESTS} from './world-rewards.mjs';
 import {ORBIT_DIALOGUE,ORBIT_VOICES} from './orbit-campaign.mjs';
 import {ORBIT_JOBS} from './world-three-content.mjs';
@@ -61,3 +62,6 @@ export const QUEST_DIALOGUE={
 Object.assign(NPC_VOICES,TIDE_VOICES,ORBIT_VOICES);for(const [id,d] of Object.entries(SIDE_NPCS))NPC_VOICES[id]={...d,greeting:[d.work],idle:'Thanks for helping with the expedition.',locked:'Come back when you can help.'};for(const q of SIDE_QUESTS)QUEST_DIALOGUE[q.id]={offer:[q.text,q.hint],ready:['That is everything.','Let me check the supplies.'],complete:['The trail crew has what it needs.','Take this token for your help.'],reminder:q.hint};Object.assign(QUEST_DIALOGUE,TIDE_DIALOGUE,ORBIT_DIALOGUE);
 for(const [id,d] of Object.entries(ORBIT_JOBS))QUEST_ACTIONS['orbit:'+id]='Collect '+d.name+' batches';
 for(const id of ['reed-fish','glowbug','tideberry','clay','fossil'])QUEST_ACTIONS['gather:'+id]='Gather '+id.replaceAll('-',' ')+' yourself';
+
+for(const [id,d] of Object.entries(VOID_NPCS))NPC_VOICES[id]={...d,greeting:[d.work],idle:'The anchors are holding. Thanks for your help.',locked:'Come back when you are ready.'};
+for(const q of VOID_QUESTS)QUEST_DIALOGUE[q.id]={offer:[q.text,q.hint],ready:['You made it back.','Show me what you found.'],complete:['The expedition is safer because of you.','Take this token as thanks.'],reminder:q.hint};

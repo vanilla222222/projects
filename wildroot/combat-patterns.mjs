@@ -10,6 +10,7 @@ export const ATTACKS={
  rootburst:{name:'Root eruption',hint:'Leave the marked ground',windup:1.7,recovery:3.2,range:650,radius:100,mult:1.45}
 };
 export const ENCOUNTER_STYLES={
+ unmoored:{pattern:'rootburst',pace:25},
  'forest-0':{pattern:'hop',pace:34},'forest-1':{pattern:'charge',pace:52},
  'forest-2':{pattern:'bolt',pace:24},'forest-3':{pattern:'slam',pace:29},
  'forest-4':{pattern:'rootburst',pace:26},'caves-0':{pattern:'bolt',pace:32},
@@ -24,15 +25,18 @@ export const ENCOUNTER_STYLES={
 };
 export function encounterStyle(enemy){return ENCOUNTER_STYLES[enemy.id]||{pattern:ATTACKS[enemy.behavior]?enemy.behavior:'hop',pace:40,guard:enemy.behavior==='guard'};}
 export function nextAttack(e){
+ if(e.enemy.id==='unmoored')return (e.phaseLevel||1)===1?'volley':(e.attackCount||0)%2?'rootwave':'rootburst';
  if(['tempest','singularity'].includes(e.enemy.id))return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'volley';
  if(e.enemy.id==='boss')return(e.phaseLevel||1)===1?'rootwave':(e.attackCount||0)%2?'rootwave':'rootburst';
  return encounterStyle(e.enemy).pattern;
 }
 export function makeTell(e,player,width){
  const kind=nextAttack(e),d=ATTACKS[kind],direction=Math.sign(player.x-e.x)||e.facing||-1;
- const target=['rootburst','pounce'].includes(kind)?Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,player.x)):e.x;
+ let target=['rootburst','pounce'].includes(kind)?Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,player.x)):e.x;
+ if(e.enemy.id==='unmoored'&&kind==='rootburst')target=[1200,1780,2220].reduce((a,b)=>Math.abs(b-player.x)<Math.abs(a-player.x)?b:a);
  const end=kind==='charge'?Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,e.x+direction*d.distance)):target;
- const zones=kind==='rootburst'&&(e.phaseLevel||1)>=3?[{left:target-75,right:target+75},{left:Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,target+direction*230))-75,right:Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,target+direction*230))+75}]:null;
+ const second=e.enemy.id==='unmoored'?(target===1780?2220:1780):Math.max(e.ledgeMin||25,Math.min(e.ledgeMax||width-25,target+direction*230));
+ const zones=kind==='rootburst'&&(e.phaseLevel||1)>=3?[{left:target-75,right:target+75},{left:second-75,right:second+75}]:null;
  const left=kind==='charge'?Math.min(e.x,end)-30:target-(d.radius||30),right=kind==='charge'?Math.max(e.x,end)+30:target+(d.radius||30);
  return{zones,threatened:Math.abs(player.y-e.y)<65&&(zones||[{left,right}]).some(z=>player.x>=z.left&&player.x<=z.right),kind,remaining:d.windup,total:d.windup,x:target,y:e.y,direction,origin:e.x,end,
   left:kind==='charge'?Math.min(e.x,end)-30:target-(d.radius||30),

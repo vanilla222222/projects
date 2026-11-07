@@ -19,7 +19,7 @@ test('Boss victories open the next world independently of optional quest and gea
 
 test('Every world has eight token givers, an independent completion recipe and a permanent XP reward',()=>{
  let s=E.freshSave(),c=E.selected(s);
- s.coins=50000;s.bossDefeated=true;s.bossHunt.kills.tempest=1;
+ s.coins=50000;s.bossDefeated=true;s.bossHunt.kills.tempest=1;s.bossHunt.kills.singularity=1;
  Object.assign(c,{area:'town',zone:1,position:{x:1390,y:644}});
  for(const [world,givers] of Object.entries(WORLD_GIVERS)){
   assert.equal(givers.length,8);
@@ -43,13 +43,13 @@ test('Every world has eight token givers, an independent completion recipe and a
   assert.equal(E.craft(s,c,id),false);
  }
  s=E.restoreSave(JSON.parse(JSON.stringify(s)));c=E.selected(s);
- assert.deepEqual(s.worldXpBlessings,[1,2,3]);
+ assert.deepEqual(s.worldXpBlessings,[1,2,3,4]);
  const before=c.lifetimeXp;
  E.gainXp(c,100);
- assert.equal(c.lifetimeXp-before,130);
+ assert.equal(c.lifetimeXp-before,140);
  s.unlockedClasses=['warrior'];
  assert.ok(E.createCharacter(s,'Newcomer'));
- assert.ok(Math.abs(E.selected(s).accountBonuses.worldXP-.3)<1e-9);
+ assert.ok(Math.abs(E.selected(s).accountBonuses.worldXP-.4)<1e-9);
 });
 
 test('Each world has a level-gated product and a consumable enemy blueprint',()=>{

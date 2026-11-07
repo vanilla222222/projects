@@ -1,3 +1,4 @@
+import {VOID_NPCS,VOID_WORK} from './void-content.mjs';
 import {orbitJobStatus,workOrbitJob} from './world-three.mjs';
 import {installAtlasZoom} from './atlas-zoom.mjs?v=48';
 import {rememberMenuScroll} from './menu-scroll.mjs?v=47';
@@ -16,7 +17,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=50';
 import * as Parity from './parity-panels.mjs?v=50';
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as Prof from './profession-panels.mjs?v=50';
-import * as UI from './ui-panels.mjs?v=55';
+import * as UI from './ui-panels.mjs?v=56';
 import {icon,portrait} from './ui-art.mjs?v=50';
 import * as AUI from './adventure-panels.mjs?v=50';
 import * as T from './town-panels.mjs?v=50';
@@ -25,7 +26,7 @@ import {GameAudio} from './audio.mjs?v=45';
 import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=49';
-import {drawWorld,viewFor} from './scene.mjs?v=55';
+import {drawWorld,viewFor} from './scene.mjs?v=56';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
 const atlasZoom=installAtlasZoom($('panel-content'));
@@ -57,6 +58,7 @@ function handleIntent(event){
  if(event.type==='tasks'){state.tasksUnlocked=true;save();openPanel('tasks');}
  if(event.type==='station')openPanel('craft');
  if(['shop','stamps','statues','vault'].includes(event.type)){shopView={};openPanel(event.type);}
+ if(event.type.startsWith('void-')){voidFacility=event.entity;openPanel(event.type);}
  if(event.type==='orbit-job'){world.c.position={x:world.player.x,y:world.player.y};orbitJob=event.entity.skill;openPanel('orbit-job');}
  if(event.type==='advancement'){openPanel('advancement');}
  if(event.type==='worldgate'){openPanel('world-gate');}
@@ -69,7 +71,7 @@ function costs(cost){return U.costs(state,cost);}
 function advanceTalk(){if(!conversation)return;conversation=Talk.advanceConversation(state,world.c,conversation,performance.now());renderPanel();$('npc-speech')?.focus();}
 function animateTalk(now){}
 function closePanel(){if(loadError){toast('Your original save is preserved. Import a backup or explicitly start fresh.');return;}if(paused){location.reload();return;}if(panelKind==='offline'){E.acknowledgeOffline(state);offline=null;save();}if(panelKind==='minigame')world.c.minigame=null;$('panel').close();panelKind=null;panelHistory=[];npc=null;conversation=null;last=performance.now();}
-let orbitJob;
+let orbitJob,voidFacility;
 function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();if(kind==='map')atlasZoom.refresh();}
 function travel(area,index=0){if(world.teleport(area,Number(index))){closePanel();buildTargets();save();refresh();return true;}toast(E.lockReason(state,area,Number(index))||(!E.discovered(state,area,Number(index))?'Walk there through the portals to discover this room.':'No map teleports left. Walk through portals or use a Bottled Town Return.'));return false;}
 function classCard(id,c){const def=CLASSES[id],q=E.classQuest(state,c,id),owned=state.unlockedClasses.includes(id);return`<article class="quest-card"><span class="emblem">${emblems[id]}</span><h3>${def.name}</h3><p>${SKILLS[def.skill]} specialist · ${def.trainer}</p><p class="step">${owned?'CLASS DISCOVERED':`INITIATION ${Math.min(3,q.stage+1)} / 3`}</p><p>${c.class?(c.class===id?'Your chosen class.':'Create another character to choose this path.'):!E.availableClass(state,id)?'Discover all five classes before choosing another of this class.':q.text}</p>${!c.class&&q.stage===2?costs(q.needs):''}<p>${def.motto}</p><button data-find-npc="${id}" ${c.class?'disabled':''}>Find ${def.trainer} ↗</button></article>`;}
@@ -94,6 +96,17 @@ function renderPanel(preserveScroll=false){
  if(kind==='shop'){title=worldOf(c.area)===3?'Orbital Supply Counter':worldOf(c.area)===2?'Expedition Supply Store':c.area==='town'?'Pip’s General Store':'Nori’s Supply Stall';body=UI.shop(state,c,shopView);}
  if(kind==='gems'){title='Gem wardrobe';body=T.gems(state,c);}
  if(kind==='world-gate'){title='The World Gate';body=`<div class="world-gate-card"><span>⌖</span><h3>World Two · ${WORLD_TWO.name}</h3><p>32 rooms across eight areas: shores, marshes, buried ruins, berry uplands, hunting highlands and storm cliffs. Fishing uses rods; bugs use nets; digging uses shovels; foraging uses gloves. Hunting trains through kills.</p><p>${E.areaUnlocked(state,'tide-town')?'The Rootwarden has fallen. The gate is open.':'Defeat the Rootwarden to enter.'}</p><button data-enter-world-two="" ${E.areaUnlocked(state,'tide-town')?'':'disabled'}>ENTER TIDEHAVEN</button><button data-reveal-room="tide-town:0">VIEW WORLD TWO MAP</button></div>`;}
+ if(kind==='void-bridge'){
+  const d=E.bridgeStatus(state,c,voidFacility.project);title=d.name;
+  body=`<p>${d.built?'This bridge is open for the roster.':d.surveyed?'The far anchor has been charted.':'Climb to this room’s Survey Cache to chart the far anchor first.'}</p>`+costs(d.cost)+`<button data-build-void="${voidFacility.project}" ${d.ready?'':'disabled'}>Build crossing</button>`;
+ }
+ if(kind==='void-work'){
+  const skill=voidFacility.skill,d=VOID_WORK[skill];title=SKILLS[skill];
+  body=costs(d.cost)+`<button data-work-void="${skill}">${d.name}</button>`+(skill==='echobinding'?'<p>Bind one echo to your equipped weapon for +9 attack and +5 defense.</p><button data-bind-void>Bind to weapon</button>':skill==='riftkeeping'?'<p>Stabilizing the rift opens it for five minutes. The shortcut reaches the refuge after you have walked there.</p><button data-use-void-rift>Cross rift</button>':'');
+ }
+ if(kind==='void-rift'){title='Return Rift';body='<p>Cross to Anchorhold while the rift is stable.</p><button data-use-void-rift>Cross rift</button>';}
+ if(kind==='void-light'){title='Dark Footholds';body='<p>Spend one Void Lantern to reveal a route into the Rift Wound for the entire roster.</p><button data-light-void>Light the route</button>';}
+ if(kind==='void-training'){const d=E.voidClassStatus(state,c);title='Tier 3 Training';body=`<h3>${d.name||'Tier 3'}</h3><p>${d.reason||'Train this specialty for a bonus when using '+SKILLS[d.skill]+'.'}</p><button data-train-void ${d.ready?'':'disabled'}>Choose specialization</button>`;}
  if(kind==='orbit-job'){const d=orbitJobStatus(state,c,orbitJob);if(d){title=d.name;body=costs(d.cost)+`<p>Output: ${ITEMS[d.output].name}. Collect batches for skill XP.</p><button data-orbit-job="${orbitJob}" ${d.canStart||d.canClaim?'':'disabled'}>${d.remaining===null?d.action:d.remaining?'Ready in '+d.remaining+'s':'Collect batch'}</button>`;}}
  if(kind==='advancement'){title='Pathfinder · Tier 2 Class';const d=E.advancementStatus(state,c);body=`<h3>${d.name||'Choose a calling first'}</h3><p>${d.reason}</p>${d.needs?costs(d.needs):''}<p>Each calling has two Tier 2 branches across Worlds Two and Three. Each first Tier 2 discovery adds a character slot. You cannot repeat a Tier 2 class until all ten different upgrades are discovered.</p><button data-advance-class="" ${d.open?'':'disabled'}>CHOOSE ${d.name||'CLASS'}</button>`;}
  if(kind==='onboarding'){title='Getting Started';const guide=onboarding(state,c);body=`<p>${guide.done}/${guide.steps.length} lessons complete. Follow the next step, or revisit any lesson. These are guidance, not extra quests.</p>`+guide.steps.map(step=>`<article class="quest-card"><h3>${step.done?'✓':'○'} ${step.name}</h3><p>${step.text}</p>${step.room?`<button data-reveal-room="${step.room}">SHOW ROOM</button>`:''}</article>`).join('');}
@@ -128,7 +141,7 @@ function renderPanel(preserveScroll=false){
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'&&$('panel').open)atlasZoom.refresh();
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
-function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
+function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id]||VOID_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id]||VOID_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
 function findStation(station){const [area,zone]={anvil:['town',1],foundry:['town',2],enchanting:['jungle-town',0],alchemy:['jungle-town',1]}[station];if(!E.zoneUnlocked(state,area,zone)){toast(E.lockReason(state,area,zone));return;}if(!travel(area,zone))return;world.select('station');}
 let targetKey='',lastPanelRefresh=0,panelInteraction=false;
 $('panel').addEventListener('pointerdown',()=>{panelInteraction=true;});
@@ -147,12 +160,12 @@ function refresh(){
  E.syncAccount(state);const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
  html('roster',state.characters.map(ch=>`<button data-character="${ch.id}" class="${ch.id===c.id?'active':''}" aria-pressed="${ch.id===c.id}"><span class="portrait">${portrait(ch)}</span><span>${esc(ch.name)}<span class="sub">${ch.class?CLASSES[ch.class].name:'Beginner'} · Lv. ${ch.level}</span></span></button>`).join(''));
  $('new-character').disabled=!!c.dungeon||state.characters.length>=E.slots(state);$('new-character').title=`${state.characters.length} / ${E.slots(state)} slots. Discover a class to unlock another.`;
- document.querySelector('.brand small').textContent='WORLD '+worldOf(c.area);document.title='Wildroot · '+(worldOf(c.area)===3?'Astral Reach':worldOf(c.area)===2?'Tidewilds':'Greenreach');
- $('scene').parentElement.dataset.boss=String(world.map.boss||['tempest','singularity'].includes(world.map.secret));$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD ${worldOf(c.area)} · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
+ document.querySelector('.brand small').textContent='WORLD '+worldOf(c.area);document.title='Wildroot · '+(worldOf(c.area)===4?'Hollow Between':worldOf(c.area)===3?'Astral Reach':worldOf(c.area)===2?'Tidewilds':'Greenreach');
+ $('scene').parentElement.dataset.boss=String(world.map.boss||['tempest','singularity','unmoored'].includes(world.map.secret));$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD ${worldOf(c.area)} · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
  $('mana-status').textContent='AFK INFO';$('mana-bar').style.width=(c.mp/E.maxMana(c)*100)+'%';$('mana-label').textContent=`${Math.floor(c.mp)} / ${E.maxMana(c)} MP`;$('food-count').textContent='FOOD '+c.foodSlots.reduce((n,t)=>n+(t?.count||0),0);$('quest-tracker').hidden=!!c.dungeon||!state.options.questHelper;document.body.classList.toggle('ui-compact',state.options.compact);$('trial-hud').hidden=!c.trial&&!c.dungeon;document.querySelector('[data-instance-menu]').textContent=c.dungeon?'RUN MENU':'LEAVE TRIAL';if(c.dungeon)$('trial-status').textContent=`ROOM ${c.dungeon.room+1}/4 · ${Math.ceil(c.dungeon.time)}s · ${c.dungeon.cash} RUN COINS`;if(c.trial)$('trial-status').textContent=`WAVE ${c.trial.wave+1}/8 · ${Math.ceil(c.trial.time)}s · ${c.trial.score} POINTS`;
  document.querySelectorAll('.game-menu [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panelKind));
  $('bag-count').textContent=`Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}`;
- $('player-name').textContent=c.name;$('player-class').textContent=`${E.advancementName(c)||(c.class?CLASSES[c.class].name:'Beginner')} · Lv. ${c.level}`;$('coin-count').textContent=E.money(state.coins);$('gem-count').textContent=`◇ ${fmt(state.gems)}`;
+ $('player-name').textContent=c.name;$('player-class').textContent=`${E.voidClassStatus(state,c).name&&c.voidClass?E.voidClassStatus(state,c).name:E.advancementName(c)||(c.class?CLASSES[c.class].name:'Beginner')} · Lv. ${c.level}`;$('coin-count').textContent=E.money(state.coins);$('gem-count').textContent=`◇ ${fmt(state.gems)}`;
  $('health-bar').style.width=`${Math.max(0,c.hp/E.maxHp(c)*100)}%`;$('health-label').textContent=`${fmt(c.hp)} / ${E.maxHp(c)} HP`;$('xp-bar').style.width=`${c.xp/E.xpNeeded(c)*100}%`;$('xp-label').textContent=`${fmt(c.xp)} / ${E.xpNeeded(c)} XP`;
  $('auto-button').setAttribute('aria-pressed',String(world.auto));$('auto-button').querySelector('i').textContent=world.auto?'ON':'OFF';
  for(const [slot,id]of [[0,'skill-button'],[1,'secondary-button'],[2,'utility-button']]){const button=$(id),skill=abilities[slot],index=c.hotbar[slot],available=!!skill&&abilityAvailable(c,index);button.disabled=!available;button.querySelector('span').textContent=skill?.icon||'⌑';button.querySelector('small').textContent=available?skill.name.toUpperCase():skill?'TRAIN TALENT':'CLASS REQUIRED';button.title=available?skill.description:'Learn this technique in the class talent tab';const cd=index===0?world.player.skill:world.player.cooldowns[index];button.querySelector('b').textContent=cd>0?Math.ceil(cd):'';}
@@ -160,7 +173,7 @@ function refresh(){
  const guide=onboarding(state,c);
  let tracker=c.class?`<strong>${CLASSES[c.class].name} · ${esc(c.name)}</strong><p>✦ ${E.talentPoints(c)} unspent talent points</p><p>${state.unlockedClasses.length} / 5 classes discovered</p>`:`<strong>Find your calling</strong><p class="${c.level>=3?'done':''}">${c.level>=3?'✓':'○'} Reach character level 3 (${c.level}/3)</p><p>○ Find Willow by the oak tree or Brann by copper ore</p><p>○ Complete your class initiation</p>`;
  const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
- if(worldOf(c.area)===3&&!quest?.accepted)tracker='<strong>Astral Reach Expedition</strong><p>Meet Keeper Sable at Sporeport to start the expedition.</p>';if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(worldOf(c.area)===2&&!quest?.accepted&&!c.journey.story['tide-landfall']?.done)tracker='<strong>Tidewilds Expedition</strong><p>Meet Captain Maris at Landfall Quay to begin.</p><button data-find-npc="captain">FIND MARIS</button>';if(!guide.complete&&!quest?.accepted&&worldOf(c.area)===1)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
+ if(worldOf(c.area)===4&&!quest?.accepted)tracker='<strong>The Hollow Between</strong><p>Survey the Far Anchor, then build a crossing. Follow the anchors to Still Point and chart the boss arena.</p>';if(worldOf(c.area)===3&&!quest?.accepted)tracker='<strong>Astral Reach Expedition</strong><p>Meet Keeper Sable at Sporeport to start the expedition.</p>';if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(worldOf(c.area)===2&&!quest?.accepted&&!c.journey.story['tide-landfall']?.done)tracker='<strong>Tidewilds Expedition</strong><p>Meet Captain Maris at Landfall Quay to begin.</p><button data-find-npc="captain">FIND MARIS</button>';if(!guide.complete&&!quest?.accepted&&worldOf(c.area)===1)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p class="loot-${l.rarity||'common'}">${esc(l.text)}</p>`).join(''));const bagStatus=InventoryGuide.lootStatus(c);$('bag-count').textContent='Bag '+bagStatus.used+'/'+bagStatus.capacity+(bagStatus.pending||bagStatus.floor?' · !':'');$('bag-count').title=bagStatus.pending+' pending items · '+bagStatus.floor+' items on the ground · '+bagStatus.locked+' locked slots';$('bag-count').setAttribute('aria-label','Open inventory. '+$('bag-count').title);
  $('knockout').hidden=world.player.respawn<=0;
@@ -325,6 +338,14 @@ document.addEventListener('click',event=>{
   if(!confirm('Reset all Wildroot data in this browser? This permanently removes every character, item and upgrade. Export a save first to keep a backup.'))return;
   const fresh=E.freshSave();try{persistReset(localStorage,KEY,fresh);}catch{toast('Reset failed: browser storage could not be written. Your current game is still open.');return;}
   paused=true;loadError=null;location.reload();return;
+ }
+ if(d.buildVoid||d.workVoid||d.bindVoid!==undefined||d.lightVoid!==undefined||d.trainVoid!==undefined||d.useVoidRift!==undefined){
+  const dest=d.useVoidRift!==undefined&&E.voidRiftDestination(state,c);
+  const ok=d.buildVoid?E.buildVoidBridge(state,c,d.buildVoid):d.workVoid?E.workVoid(state,c,d.workVoid):d.bindVoid!==undefined?E.bindVoidEcho(state,c):d.lightVoid!==undefined?E.lightVoidRoute(state,c):d.trainVoid!==undefined?E.chooseVoidClass(state,c):dest&&world.travel(dest,0);
+  if(ok){E.syncAccount(state);save();refresh();}
+  toast(ok?'Void progress saved.':'Check the route, materials or workstation requirements.');
+  if(dest&&ok)closePanel();else renderPanel();
+  return;
  }
  if(d.orbitJob){const result=workOrbitJob(state,c,d.orbitJob);if(result){toast(result);save();refresh();}renderPanel();return;}
  if(d.advanceClass!==undefined){if(E.advanceClass(state,c)){toast('Advanced to '+E.advancementName(c));save();refresh();}renderPanel();return;}
