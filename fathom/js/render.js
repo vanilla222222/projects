@@ -235,6 +235,9 @@ function makeRenderer(canvas, deps) {
     const cells = stride * (rows + 2);
     const ids = terrainView?.ids.length === cells ? terrainView.ids : new Uint16Array(cells);
     const walls = terrainView?.walls.length === cells ? terrainView.walls : new Uint16Array(cells);
+    const variants = terrainView?.variants.length === cells ? terrainView.variants : new Uint8Array(cells);
+    const edges = terrainView?.edges.length === cells ? terrainView.edges : new Uint8Array(cells);
+    const levels = terrainView?.levels.length === cells ? terrainView.levels : new Uint8Array(cells);
     for (let y = -1; y <= rows; y += 1) for (let x = -1; x <= cols; x += 1) {
       const index = (y + 1) * stride + x + 1;
       const id = world.get(x0 + x, y0 + y);
@@ -242,8 +245,33 @@ function makeRenderer(canvas, deps) {
       walls[index] = x >= 0 && x < cols && y >= 0 && y < rows && !tiles.isSolid(id)
         ? world.getWall(x0 + x, y0 + y) : 0;
     }
-    terrainView = { world, revision, x0, y0, cols, rows, stride, ids, walls };
+    for (let y = 0; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
+      const at = (y + 1) * stride + x + 1;
+      variants[at] = texture.variantFor(x0 + x, y0 + y);
+      if (!tiles.isSolid(ids[at])) continue;
+      edges[at] = (!tiles.isSolid(ids[at - stride]) ? autotile.N : 0)
+        | (!tiles.isSolid(ids[at + stride]) ? autotile.S : 0)
+        | (!tiles.isSolid(ids[at - 1]) ? autotile.W : 0)
+        | (!tiles.isSolid(ids[at + 1]) ? autotile.E : 0);
+    }
+    terrainView = { world, revision, x0, y0, cols, rows, stride, ids, walls, variants, edges, levels };
     return terrainView;
+  }
+  function sampleLiquid(sample) {
+    const { world, cols, rows, stride, x0, y0, ids, levels } = sample;
+    const revision = world.liquidRevision;
+    if (revision !== undefined && sample.liquidRevision === revision) return;
+    let wet = false;
+    for (let y = -1; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
+      const at = (y + 1) * stride + x + 1;
+      const id = ids[at];
+      const level = tiles.isSolid(id) ? 0
+        : world.getLevel ? world.getLevel(x0 + x, y0 + y, id) : tiles.tile(id).liquid ? 255 : 0;
+      levels[at] = level;
+      if (level && y >= 0) wet = true;
+    }
+    sample.wet = wet;
+    sample.liquidRevision = revision;
   }
   function cachedSurface(world, x) {
     if (world !== heightWorld || heights.size > 4096) { heights = new Map(); heightWorld = world; }
@@ -304,10 +332,6 @@ function makeRenderer(canvas, deps) {
     const size = TILE * zoom;
     const wind = (state.weather && state.weather.wind) || 0;
     const lip = Math.max(1, Math.round(zoom * 1.5));
-    // One closure for the whole pass rather than one per tile: maskAt is called for
-    // every solid tile on the screen and was being handed a freshly allocated function
-    // each time.
-    const solidAt = (nx, ny) => tiles.isSolid(sample.ids[(ny - y0 + 1) * sample.stride + nx - x0 + 1]);
     let ink = null;
     ctx.imageSmoothingEnabled = false;
     for (let ty = 0; ty < rows; ty += 1) {
@@ -324,24 +348,24 @@ function makeRenderer(canvas, deps) {
         // bed is waterlogged, not a hole in the ocean. Draw the water first and the thing
         // standing in it on top.
         if (id === tiles.AIR || (!spec.solid && !spec.liquid)) {
-          const wet = state.world.getLevel ? state.world.getLevel(wx, wy) : 0;
+          const wet = sample.levels[at];
           if (wet > 0) {
             const frac = Math.max(0.08, wet / 255);
             const hPix = Math.round(size * frac);
             const srcH = Math.max(1, Math.round(TILE * frac));
             const wid = tiles.idOf('water');
-            ctx.drawImage(atlas, texture.variantFor(wx, wy) * TILE, wid * TILE + (TILE - srcH),
+            ctx.drawImage(atlas, sample.variants[at] * TILE, wid * TILE + (TILE - srcH),
               TILE, srcH, sx, sy + size - hPix, size, hPix);
           }
         }
         if (id === tiles.AIR) continue;
-        const variant = texture.variantFor(wx, wy);
+        const variant = sample.variants[at];
 
         // Water is drawn at the height it actually holds, measured from the bottom of the
         // tile. A tile that is a third full looks a third full, which is the only way a
         // shoreline or a draining pool reads as anything other than a staircase.
         if (spec.liquid) {
-          const level = state.world.getLevel ? state.world.getLevel(wx, wy) : 255;
+          const level = sample.levels[at];
           if (level <= 0) continue;
           // A tile with water above it is drawn full, so a deep body has no seams in it.
           const below = sample.ids[at - sample.stride];
@@ -367,27 +391,26 @@ function makeRenderer(canvas, deps) {
         }
         ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
         if (!spec.solid) continue;
-        const mask = autotile.maskAt(solidAt, wx, wy);
-        if (autotile.isBuried(mask)) continue;
-        const e = autotile.edges(mask);
+        const edges = sample.edges[at];
+        if (!edges) continue;
         // Assigning fillStyle makes the canvas parse the colour string, so the four
         // edge shades are set at most once each per tile and in a fixed order rather
         // than being re-stated for every rectangle.
-        if (e.top) {
+        if (edges & autotile.N) {
           if (ink !== EDGE_TOP) { ctx.fillStyle = EDGE_TOP; ink = EDGE_TOP; }
           ctx.fillRect(sx, sy, size, lip);
         }
-        if (e.bottom) {
+        if (edges & autotile.S) {
           if (ink !== EDGE_BOTTOM) { ctx.fillStyle = EDGE_BOTTOM; ink = EDGE_BOTTOM; }
           ctx.fillRect(sx, sy + size - lip, size, lip);
         }
-        if (e.left || e.right) {
+        if (edges & (autotile.W | autotile.E)) {
           if (ink !== EDGE_SIDE) { ctx.fillStyle = EDGE_SIDE; ink = EDGE_SIDE; }
-          if (e.left) ctx.fillRect(sx, sy, lip, size);
-          if (e.right) ctx.fillRect(sx + size - lip, sy, lip, size);
+          if (edges & autotile.W) ctx.fillRect(sx, sy, lip, size);
+          if (edges & autotile.E) ctx.fillRect(sx + size - lip, sy, lip, size);
         }
         const detail = SURFACE_DETAIL[spec.key];
-        if (e.top && detail && sample.ids[at - sample.stride] === tiles.AIR
+        if ((edges & autotile.N) && detail && sample.ids[at - sample.stride] === tiles.AIR
           && wy === cachedSurface(state.world, wx)) {
           const palette = spec.key === 'grass'
             ? GRASS_PALETTES[worldgen.biomeAt(state.world.seed, wx).key] || detail
@@ -425,20 +448,8 @@ function makeRenderer(canvas, deps) {
     lava: { deep: '58,8,2', light: '255,196,120', wave: 0.6, crest: 0.34 }
   };
 
-  // What liquid, if any, stands in this cell: the tile if it is a liquid, or the water
-  // logged into a shell or a frond standing on the sea bed.
-  function liquidKindAt(state, x, y, id) {
-    const spec = tiles.tile(id);
-    if (spec.liquid) {
-      const level = state.world.getLevel ? state.world.getLevel(x, y) : 255;
-      return level > 0 ? (spec.hot ? 'lava' : 'water') : null;
-    }
-    if (spec.solid) return null;
-    const wet = state.world.getLevel ? state.world.getLevel(x, y) : 0;
-    return wet > 0 ? 'water' : null;
-  }
-
   function drawLiquidDetail(state, view, sample) {
+    if (!sample.wet) return;
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const t = state.time || 0;
@@ -451,15 +462,19 @@ function makeRenderer(canvas, deps) {
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
       const column = tx + 1;
-      const kindAt = (ty) => liquidKindAt(state, wx, y0 + ty,
-        sample.ids[(ty + 1) * sample.stride + column]);
+      const kindAt = (ty) => {
+        const at = (ty + 1) * sample.stride + column;
+        if (!sample.levels[at]) return null;
+        const spec = tiles.tile(sample.ids[at]);
+        return spec.liquid && spec.hot ? 'lava' : 'water';
+      };
       let ty = 0;
       while (ty < rows) {
         const kind = kindAt(ty);
         if (!kind) { ty += 1; continue; }
         let end = ty + 1;
         while (end < rows && kindAt(end) === kind) end += 1;
-        const level = state.world.getLevel ? state.world.getLevel(wx, y0 + ty) : 255;
+        const level = sample.levels[(ty + 1) * sample.stride + column];
         const above = kindAt(ty - 1);
         const brimming = level >= 250 || above === kind;
         const frac = brimming ? 1 : Math.max(0.08, level / 255);
@@ -1150,7 +1165,11 @@ function makeRenderer(canvas, deps) {
 
     phase('sky', () => drawSky(state));
     phase('parallax', () => drawParallax(state));
-    const sample = phase('terrain sampling', () => sampleTerrain(state.world, view));
+    const sample = phase('terrain sampling', () => {
+      const sample = sampleTerrain(state.world, view);
+      sampleLiquid(sample);
+      return sample;
+    });
     const accelerated = terrain && terrain.begin(canvas.width, canvas.height);
     backend = accelerated ? 'webgl2-terrain' : 'canvas2d';
     terrainQuads = 0;
