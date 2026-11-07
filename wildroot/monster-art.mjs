@@ -44,22 +44,57 @@ export const MONSTER_ART={
  'tree-2':art({b:'#8d8668',l:'#d9d0a1',s:'#505e57',g:'#e4c77a',f:'#89b99a'},(r,l,o)=>{r(15,20,19,23,'s');r(18,22,13,19,'b');r(9,27,8,14,'l');r(33,27,8,14,'l');r(16,41,7,6,'s');r(28,41,7,6,'s');r(13,15,23,7,'l');for(let x=14;x<36;x+=7){r(x,6,3,12,'g');r(x-1,5,5,3,'f');}r(20,25,3,4,'f');r(28,25,3,4,'f');r(22,33,7,6,'g');r(24,34,3,3,'w');for(const x of [12,35]){r(x,30,2,6,'s');r(x+1,31,3,2,'f');}r(21,21,9,2,'g');},'Ivory crown guardian with a branching gold diadem and sky-blue eyes','sway'),
  sunwell:art({b:'#6f9d83',l:'#c7dc9d',s:'#416d70',g:'#f5dc7e'},(r,l,o)=>{o(24,30,14,13,'s');r(15,23,19,18,'b');r(7,28,8,14,'s');r(34,28,8,14,'s');r(14,41,10,5,'s');r(27,41,10,5,'s');o(24,17,13,6,'l');o(24,17,9,3,'g');r(23,6,3,10,'g');r(16,8,3,4,'g');r(32,7,3,4,'g');r(19,27,3,3,'g');r(28,27,3,3,'g');r(21,34,8,3,'l');r(23,30,4,11,'g');},'Spring keeper carrying a luminous water basin and falling golden sap','sway'),
  vault:art({b:'#8a7771',l:'#d5bc8d',s:'#484b5e',g:'#f0a767'},(r,l,o)=>{r(13,16,24,25,'s');r(15,18,20,22,'b');r(17,11,16,7,'l');r(21,7,8,5,'b');r(18,21,15,3,'s');r(20,21,4,2,'g');r(28,21,4,2,'g');o(25,32,6,6,'s');o(25,32,4,4,'l');r(24,30,2,6,'g');r(6,25,7,17,'s');r(37,23,7,19,'s');r(36,22,10,5,'l');r(13,41,10,6,'s');r(28,41,10,6,'s');},'Bronze vault automaton with a keyhole chest and hammer arm','sway'),
- boss:art({b:'#775548',l:'#b88b65',s:'#3d343e',g:'#bd6471',f:'#86a66b'},(r,l,o)=>{r(14,17,22,24,'s');r(16,19,18,20,'b');r(8,26,9,17,'b');r(34,24,10,19,'b');l(17,19,7,3,'b');l(31,19,41,2,'b');l(10,8,3,9,'l');l(38,8,46,9,'l');r(13,12,23,8,'s');r(18,22,5,4,'g');r(28,22,5,4,'g');o(25,33,6,7,'s');o(25,33,3,4,'g');r(24,30,2,3,'w');l(16,40,7,47,'b');l(22,39,18,47,'b');l(30,40,36,47,'b');l(35,39,45,47,'b');r(1,7,7,4,'f');r(40,5,7,4,'f');for(let x=18;x<35;x+=5)r(x,16,2,4,'l');},'Corrupted root sovereign with huge antlers, tangled roots and a crimson heart','sway'),
+ boss:art({b:'#75503f',l:'#bd8c60',s:'#382b34',f:'#87ae6f',g:'#e28b60'},(r,line,oval)=>{
+  for(const d of [-1,1]){
+   const arm=24+d*14,tip=24+d*21;
+   oval(arm,31,7,10,'s');oval(arm,29,5,8,'b');r(arm-3,24,6,3,'l');
+   line(24+d*7,21,24+d*12,10,'s');line(24+d*12,10,tip,4,'l');
+   line(24+d*12,10,24+d*9,3,'b');r(tip-2,4,4,5,'f');
+   line(24+d*6,39,24+d*16,46,'b');line(24+d*8,39,24+d*5,47,'l');
+   r(arm-4,37,8,4,'f');
+  }
+  oval(24,29,12,15,'s');oval(24,28,10,13,'b');
+  r(14,17,20,5,'l');r(17,16,14,3,'f');
+  r(16,24,5,3,'g');r(27,24,5,3,'g');
+  oval(24,34,6,8,'o');oval(24,34,4,6,'g');r(23,30,3,4,'w');
+  for(const [x,y] of [[15,31],[30,30],[19,40],[28,42]])r(x,y,3,2,'l');
+ },'Ancient root king with a moss crown, branch antlers and an amber heart framed by split bark','sway'),
  'boss-rootling':art({b:'#8d6656',l:'#d5aa83',s:'#463c49',g:'#bc6d88'},(r,l,o)=>{r(18,26,14,15,'b');r(21,22,8,5,'l');r(20,29,3,3,'g');r(27,29,3,3,'g');l(18,33,9,28,'b');l(31,33,40,26,'b');l(21,40,14,47,'s');l(28,40,35,47,'s');l(25,24,24,14,'s');r(20,12,10,4,'g');},'Small corrupted root sprig with magenta buds and forked feet','sway'),
  'ruin-bat':art({b:'#5e809a',l:'#94ced4',s:'#34465e',g:'#cfac6e'},(r,l,o)=>{for(let i=0;i<18;i++){r(3+i,15+i/2|0,1,14-i/2|0,'b');r(44-i,15+i/2|0,1,14-i/2|0,'b');}r(19,19,10,20,'s');r(18,12,5,12,'l');r(26,12,5,12,'l');r(20,22,3,3,'g');r(26,22,3,3,'g');r(22,30,4,5,'g');l(5,16,16,27,'l');l(42,16,31,27,'l');},'Ruins bat with turquoise glass wing veins and a brass chest seal','flutter'),
  'ruin-creeper':art({b:'#568b89',l:'#a4c2a1',s:'#344f60',g:'#dab76c'},(r,l,o)=>{r(17,21,15,20,'s');r(19,22,11,17,'b');r(16,16,17,6,'l');r(20,26,3,3,'g');r(27,26,3,3,'g');l(18,33,8,25,'b');l(31,33,41,23,'b');l(20,39,12,47,'b');l(28,39,37,47,'b');r(5,20,9,5,'l');r(37,17,7,6,'l');r(22,11,6,5,'g');},'Carved vine puppet with brass forehead seal and blade-shaped leaves','sway'),
  'archive-golem':art({b:'#a79073',l:'#dfcca0',s:'#5c646f',g:'#8ad0cf'},(r,l,o)=>{r(14,15,22,25,'s');r(17,18,16,19,'b');r(13,10,24,6,'l');r(21,7,8,4,'g');r(19,23,4,3,'g');r(28,23,4,3,'g');r(7,26,7,16,'l');r(36,26,7,16,'l');r(15,41,8,6,'s');r(29,41,8,6,'s');r(21,30,9,7,'l');l(23,31,27,35,'g');},'Archive golem built from engraved parchment slabs and cyan runes','sway'),
  'ruin-heart':art({b:'#777c9e',l:'#b8c0d5',s:'#3f455e',g:'#cf86bd'},(r,l,o)=>{o(24,27,14,17,'s');o(24,27,11,14,'b');r(11,15,27,4,'l');r(7,22,7,16,'s');r(35,22,7,16,'s');r(20,7,3,10,'l');r(28,5,3,12,'l');o(24,29,7,9,'s');o(24,29,4,6,'g');r(22,26,3,3,'w');l(16,40,9,47,'l');l(32,40,39,47,'l');r(7,27,3,7,'g');r(38,27,3,7,'g');},'Hollow reliquary with suspended violet heart, crystal horns and stone claws','float')
 };
-MONSTER_ART.tempest=art({b:'#426c8d',l:'#a5d8d8',s:'#253d65',g:'#f5d68f'},(r,l,o)=>{o(24,25,19,15,'s');o(24,24,16,13,'b');for(let i=0;i<5;i++){l(9+i*7,20,12+i*6,7,'l');r(8+i*7,7,6,4,'g');}r(11,26,27,8,'l');r(14,25,6,4,'g');r(29,25,6,4,'g');for(const side of [-1,1]){l(24+side*15,30,24+side*21,40,'b');l(24+side*10,35,24+side*16,47,'l');r(24+side*21-3,35,6,8,'g');}o(24,30,5,7,'s');o(24,30,3,5,'g');},'Stormglass sovereign with a five-spired shell, lantern eyes, coral claws and a luminous tidal heart','sway');
+MONSTER_ART.tempest=art({b:'#3b7b92',l:'#a3d6cd',s:'#213852',f:'#dfaa67',g:'#dbf2dc'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*15;
+  oval(x,33,8,7,'s');oval(x,32,7,5,'b');
+  line(x,29,x+d*6,20,'l');line(x,30,x+d*8,30,'f');
+  for(let n=0;n<3;n++)line(24+d*8,34+n*3,24+d*(15+n*3),41+n*2,'s');
+ }
+ oval(24,27,14,14,'s');oval(24,25,12,11,'b');
+ for(let i=0;i<5;i++){
+  const x=11+i*6,h=5+Math.abs(2-i)*3;
+  line(x,21,x,h,'l');r(x-1,h,3,8,'f');
+  r(x-2,23,4,3,'l');
+ }
+ r(15,28,6,4,'g');r(27,28,6,4,'g');
+ oval(24,35,5,7,'o');oval(24,34,3,4,'f');r(23,32,2,2,'w');
+},'A stormglass crab sovereign with a brass reef crown, broad claws and luminous seafoam eyes','sway');
 export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;return MONSTER_ART[id]?id:null;}
 export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.round(Math.sin(time*2)*3):Math.round(Math.sin(time*3)),scale=boss?5:2.3;g.fillStyle='#24383c33';g.fillRect(Math.round(x-17*scale),Math.round(y-2),34*scale,4);drawSprite(g,a,x-24*scale,y-48*scale+bob,scale);if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#c2a7da':'#e3c47c';for(let i=0;i<3;i++)g.fillRect(Math.round(x+(i*6-7)*scale),Math.round(y-41*scale-i%2*3),4*scale,4*scale);}return true;}
 
-MONSTER_ART.singularity=art({b:'#655f98',l:'#ad98ec',s:'#342952',g:'#8ce7e7'},(r,line,oval)=>{
- oval(24,24,13,15,'s');oval(24,24,10,12,'b');oval(24,24,7,8,'o');oval(24,24,3,4,'g');
- for(const side of [-1,1]){const x=24+side*15;line(x,6,x+side*5,15,'l');r(x-3,14,7,17,'s');r(x-2,16,5,7,'l');line(x,30,x+side*6,41,'b');}
- r(21,5,7,4,'g');line(19,41,11,47,'l');line(29,41,37,47,'l');
-},'A floating colossus with a black hole core and severed crystal arms','float');
+MONSTER_ART.singularity=art({b:'#555b9a',l:'#aaa9ec',s:'#282847',g:'#8fe8dc',f:'#d7a86a'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*15;
+  r(x-4,13,8,22,'s');r(x-3,16,6,16,'b');r(x-3,17,6,3,'l');
+  line(x,12,x+d*5,7,'f');line(x,35,x+d*5,43,'l');r(x-2,36,4,3,'g');
+ }
+ oval(24,25,12,17,'s');oval(24,25,10,14,'b');
+ r(17,9,14,6,'f');r(19,10,10,3,'l');
+ oval(24,26,8,9,'o');oval(24,26,6,7,'s');oval(24,26,3,5,'g');r(23,24,2,3,'w');
+ r(15,22,4,10,'l');r(29,22,4,10,'l');r(18,37,12,4,'f');
+},'An orbital colossus with brass clamps, articulated armor shutters and a cyan reactor core','float');
 export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);return id?spriteSvg(MONSTER_ART[id],cls):'';}
 
 // Tidewild silhouettes have area anatomy, then room-specific crests and palettes.
@@ -190,13 +225,16 @@ for(const [family,details,entries] of expandedSpecies){
  }
 }
 
-MONSTER_ART.unmoored=art({b:'#755c97',l:'#c9abe5',s:'#3d2f59',f:'#e5a7ee'},(r,line,oval)=>{
+MONSTER_ART.unmoored=art({b:'#6c4f94',l:'#c0a2e0',s:'#352748',f:'#d394e7',g:'#9ce2e6'},(r,line,oval)=>{
  for(const d of [-1,1]){
-  const x=24+d*13;
-  line(x,22,24+d*20,8,'s');r(x-2,16,7,18,'b');r(x-1,19,4,8,'l');
-  line(x,35,24+d*18,44,'b');r(23+d*17,44,5,3,'f');
+  const x=24+d*14;
+  oval(x,23,6,10,'s');oval(x,22,5,8,'b');r(x-3,17,6,4,'l');
+  line(x,13,x+d*5,5,'l');line(x,33,x+d*4,39,'f');r(x+d*4-2,42,4,4,'s');
+  r(x-2,25,4,2,'g');
  }
- oval(24,25,11,16,'s');oval(24,24,9,12,'b');oval(24,25,5,9,'o');
- r(23,17,3,17,'f');r(20,22,9,3,'l');
- line(14,15,9,5,'l');line(34,15,39,5,'l');r(22,3,4,5,'f');
-},'Floating Void sovereign with severed chains, violet plates, and an exposed anchor core','float');
+ oval(24,25,10,15,'s');oval(24,24,8,12,'b');
+ line(18,16,14,6,'l');line(30,16,34,6,'l');r(21,8,6,4,'f');
+ r(18,20,5,2,'g');r(25,20,5,2,'g');
+ oval(24,29,6,7,'o');line(21,29,27,29,'f');r(23,25,2,9,'g');
+ line(21,38,17,45,'s');line(27,38,31,45,'l');
+},'A fractured Void monarch with floating pauldrons, broken chains and a suspended anchor heart','float');

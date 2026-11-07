@@ -26,7 +26,8 @@ export const ENCOUNTER_STYLES={
 export function encounterStyle(enemy){return ENCOUNTER_STYLES[enemy.id]||{pattern:ATTACKS[enemy.behavior]?enemy.behavior:'hop',pace:40,guard:enemy.behavior==='guard'};}
 export function nextAttack(e){
  if(e.enemy.id==='unmoored')return (e.phaseLevel||1)===1?'volley':(e.attackCount||0)%2?'rootwave':'rootburst';
- if(['tempest','singularity'].includes(e.enemy.id))return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'volley';
+ if(e.enemy.id==='singularity')return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'rootburst';
+ if(e.enemy.id==='tempest')return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'volley';
  if(e.enemy.id==='boss')return(e.phaseLevel||1)===1?'rootwave':(e.attackCount||0)%2?'rootwave':'rootburst';
  return encounterStyle(e.enemy).pattern;
 }
@@ -42,4 +43,15 @@ export function makeTell(e,player,width){
   left:kind==='charge'?Math.min(e.x,end)-30:target-(d.radius||30),
   right:kind==='charge'?Math.max(e.x,end)+30:target+(d.radius||30)};
 }
-export function attackDescription(enemy){const style=encounterStyle(enemy),d=ATTACKS[style.pattern];return enemy.id==='boss'?'Jump root sweeps. Later phases add eruption marks and rootlings. In the final phase, sweeps travel both ways and eruptions mark two fixed locations.':d.name+': '+d.hint+'.'+(style.guard?' Its shell opens while winding up and recovering.':'');}
+export function attackDescription(enemy){
+ if(enemy.id==='tempest')return 'Read the two heights of the split volley. Use the platforms to escape the storm, then strike after a slam or charge.';
+ if(enemy.id==='singularity')return 'Avoid orbital volleys and marked overload zones. The reactor opens after heavy slams and overloads.';
+ if(enemy.id==='unmoored')return 'Leave the striped floor marks before they break. The lit anchors stay stable, and the core opens after a fracture.';
+ const style=encounterStyle(enemy),d=ATTACKS[style.pattern];return enemy.id==='boss'?'Jump root sweeps. Later phases add eruption marks and rootlings. In the final phase, sweeps travel both ways and eruptions mark two fixed locations.':d.name+': '+d.hint+'.'+(style.guard?' Its shell opens while winding up and recovering.':'');}
+
+export const BOSS_DESIGNS={
+ boss:{color:'#d49b65',phases:['The Root Crown','Roots Awaken','Wildwood Wrath'],opening:'ROOTS EXPOSED',windows:{rootwave:2.2,rootburst:2.6}},
+ tempest:{color:'#8edbd5',phases:['Stormglass Guard','Storm Volley','Breaking Tide'],opening:'SHELL EXPOSED',windows:{slam:2,charge:2.3}},
+ singularity:{color:'#a9b6ff',phases:['Reactor Shield','Orbital Barrage','Core Overload'],opening:'REACTOR EXPOSED',windows:{slam:2.4,rootburst:2.7}},
+ unmoored:{color:'#d2a5f4',phases:['Loose Anchors','Anchor Fracture','Island Collapse'],opening:'ANCHOR EXPOSED',windows:{rootburst:3.5}}
+};

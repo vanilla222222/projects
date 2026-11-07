@@ -6,9 +6,9 @@ import {ORBIT_NPCS} from './orbit-campaign.mjs';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {drawItemTexture} from './item-textures.mjs?v=50';
 import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=45';
-import {ATTACKS} from './combat-patterns.mjs?v=45';
+import {ATTACKS,BOSS_DESIGNS} from './combat-patterns.mjs?v=45';
 import {zoneUnlocked,routeRequirement} from './engine.mjs?v=45';
-import {drawMonsterArt} from './monster-art.mjs?v=56';
+import {drawMonsterArt} from './monster-art.mjs?v=60';
 import {npcMarker} from './conversations.mjs?v=45';
 import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=57';
 // Original canvas scenery. No external artwork or game assets.
@@ -130,7 +130,7 @@ export function drawWorld(canvas,world,t,reduced=false){
  const visible=(x,y,w=300,h=600)=>x+w>v.x&&x-w<v.x+v.width&&y>v.y-60&&y-h<v.y+v.height+60;
  for(const p of map.platforms)if(p.y>=v.y-100&&p.y<=v.y+850)drawRoomPlatform(g,p,map.layout.design);
  if(map.secret==='unmoored'){for(const x of [600,1480,2600]){R(x-58,GROUND-5,116,6,'#a695df',g);R(x-52,GROUND-10,104,3,'#c4e0e8',g);}}
- if(map.sever?.until>world.time){R(map.sever.left,GROUND-4,map.sever.right-map.sever.left,120,'#21152f',g);R(map.sever.left,GROUND-5,map.sever.right-map.sever.left,4,'#be8cf4',g);}
+ if(map.sever?.until>world.time)for(const z of map.sever.zones||[map.sever]){R(z.left,GROUND-4,z.right-z.left,120,'#21152f',g);R(z.left,GROUND-5,z.right-z.left,4,'#be8cf4',g);}
  for(const l of map.ladders){if(!visible(l.x,l.bottom,32,l.bottom-l.top+12))continue;R(l.x-17,l.top-7,10,l.bottom-l.top+14,'#24383c',g);R(l.x+8,l.top-7,10,l.bottom-l.top+14,'#24383c',g);R(l.x-15,l.top-5,5,l.bottom-l.top+10,'#92704e',g);R(l.x+10,l.top-5,5,l.bottom-l.top+10,'#92704e',g);R(l.x-15,l.top-5,2,l.bottom-l.top+10,'#c4a475',g);for(let y=l.top+5;y<l.bottom;y+=21){if(y<v.y-25||y>v.y+v.height+25)continue;R(l.x-16,y-1,33,8,'#24383c',g);R(l.x-14,y,29,4,'#d0b37e',g);}}
 
  for(const e of map.facilities||[]){if(!visible(e.x,e.y,170,260))continue;const x=e.x,y=e.y,{frame,trim,shadow,accent,fill}=propPalette(map.area);if(e.kind==='survey'){R(x-28,y-35,56,35,frame,g);R(x-32,y-45,64,13,trim,g);R(x-5,y-35,10,18,accent,g);R(x+40,y-110,5,110,frame,g);R(x+45,y-110,40,35,map.layout.design.trim,g);label(g,world.state.surveys.includes(map.layout.key)?'ROUTE SURVEYED':'SURVEY CACHE',x,y-135,'#e7e4b4',11);}else if(e.kind==='telescope'){R(x-9,y-75,18,75,'#725a3e',g);g.save();g.translate(x,y-90);g.rotate(-.4);R(-55,-15,110,31,'#b6955b',g);R(28,-21,35,43,'#657f86',g);R(45,-17,9,35,'#b2e9ef',g);g.restore();label(g,'CROWN TELESCOPE',x,y-155,'#ffe4a4',13);}else if(e.kind==='constellation'){g.strokeStyle='#b6e2ef';g.lineWidth=2;g.beginPath();for(let i=0;i<5;i++){const xx=x+Math.sin(i*2.3)*32,yy=y-70+Math.cos(i*2.3)*28;i?g.lineTo(xx,yy):g.moveTo(xx,yy);R(xx-3,yy-3,6,6,'#fff3b5',g);}g.stroke();label(g,e.name,x,y-125,'#c5e7ed',11);}else if(e.kind==='dungeon'){R(x-64,y-130,128,130,'#637c70',g);R(x-45,y-110,90,110,'#213e35',g);R(x-68,y-141,136,18,'#9bab82',g);R(x-13,y-90,26,32,'#a4dbb3',g);for(const dx of [-52,46])for(let i=0;i<3;i++)R(x+dx,y-25-i*24,6,3,trim,g);R(x-43,y-5,86,5,frame,g);label(g,'MOSSROOT RUINS',x,y-166,'#bbebc8',12);}else if(e.kind==='bossboard'){R(x-47,y-126,94,100,'#755543',g);R(x-55,y-137,110,17,'#bc9a60',g);R(x-32,y-108,64,62,'#dbcc99',g);for(const dx of [-23,18])R(x+dx,y-101,4,4,shadow,g);R(x-19,y-82,38,3,frame,g);R(x-11,y-72,22,2,frame,g);label(g,'HUNT BOARD',x,y-162,'#f8dca0',12);}else if(e.kind==='arena'){R(x-37,y-103,74,90,'#78543e',g);R(x-44,y-113,88,15,'#c69e60',g);label(g,'⚔',x,y-49,'#f2d385',35);label(g,'SOLO TRIALS',x,y-140,'#ffdf95',12);}else if(e.kind==='orbit-job'){R(x-55,y-62,110,62,shadow,g);R(x-59,y-72,118,12,trim,g);R(x-34,y-53,68,26,accent,g);label(g,e.name.toUpperCase(),x,y-101,'#e1d4ff',12);}else if(e.kind==='advancement'){R(x-30,y-90,60,90,frame,g);R(x-38,y-100,76,14,trim,g);label(g,'Ⅱ',x,y-45,'#fff1b8',30);label(g,'TIER 2 PATHFINDER',x,y-130,'#ffe2a3',12);}else if(e.kind==='shop'){shop(g,e,map.area);}else if(e.kind==='vault'){R(x-40,y-85,80,85,'#5b6874',g);R(x-35,y-79,70,73,'#a69a73',g);R(x-27,y-70,54,54,'#384958',g);R(x-5,y-50,10,23,'#e6c875',g);for(const dx of [-29,25]){R(x+dx,y-75,4,4,'#c9af76',g);R(x+dx,y-19,4,4,'#c9af76',g);}R(x-22,y-12,44,4,'#303940',g);label(g,'UPGRADE VAULT',x,y-115,'#ffe1a1',12);}else if(e.kind==='tasks'){R(x-44,y-115,88,90,frame,g);R(x-49,y-124,98,12,trim,g);R(x-35,y-22,9,24,shadow,g);R(x+25,y-22,9,24,shadow,g);for(let i=0;i<3;i++){R(x-29+i*21,y-101,17,45,accent,g);R(x-26+i*21,y-90,10,3,fill,g);}label(g,'WORLD TASKS',x,y-145,'#ffe1a1',12);}else if(e.kind==='worldgate'){for(const dx of [-52,38]){R(x+dx,y-180,18,180,'#728291',g);R(x+dx-4,y-190,26,16,'#b5b7a2',g);}R(x-40,y-190,80,17,'#92a4a2',g);R(x-36,y-173,72,166,'#26394b',g);label(g,'Ⅱ',x,y-105,'#697d8b',42);for(const dx of [-48,42]){R(x+dx,y-164,5,80,trim,g);R(x+dx-3,y-86,11,5,accent,g);}R(x-57,y-8,114,8,frame,g);label(g,'WORLD 2 · TIDEWILDS',x,y-211,'#d2c5b1',12);}else if(e.kind==='stamps'){R(x-42,y-52,84,52,'#785e4b',g);R(x-47,y-62,94,14,'#cba46b',g);R(x-28,y-111,56,49,'#e3d3a0',g);R(x-16,y-100,32,26,'#9c6464',g);R(x-24,y-65,48,4,shadow,g);R(x+17,y-95,3,12,'#a89b7a',g);R(x-29,y-47,58,3,trim,g);label(g,'STAMP REGISTRY',x,y-133,'#ffe1a1',12);}else if(e.kind==='museum'){R(x-53,y-87,106,87,shadow,g);R(x-48,y-91,96,10,trim,g);R(x-41,y-75,82,68,frame,g);R(x-19,y-63,38,55,fill,g);R(x-10,y-49,20,24,accent,g);label(g,e.name,x,y-116,'#e5f1dc',12);}else if(e.kind.startsWith('void-')){if(e.kind==='void-bridge'&&world.state.voidProjects.includes(e.project)){R(x-64,y-17,128,16,frame,g);for(let i=0;i<7;i++)R(x-59+i*17,y-16,11,5,accent,g);}R(x-39,y-57,78,57,shadow,g);R(x-34,y-54,68,8,trim,g);R(x-18,y-44,36,21,fill,g);R(x-10,y-38,20,7,accent,g);label(g,e.name,x,y-84,'#eee0ff',12);}else if(e.kind==='statues'){statueKeeper(g,x,y);}}
@@ -150,6 +150,13 @@ export function drawWorld(canvas,world,t,reduced=false){
   R(e.x-35,e.y-116,70,5,'#552c39',g);R(e.x-35,e.y-116,70*progress,5,'#f4b07d',g);}
 
  g.save();if(e.flash>0)g.globalAlpha=.6;g.translate(e.x,e.y);g.scale(e.facing||-1,1);enemy(g,0,e.enemy.behavior==='hop'?-Math.abs(Math.sin(time*3+e.phase))*5:0,e.enemy,time,(map.boss&&e.enemy.id==='boss')||['tempest','singularity','unmoored'].includes(e.enemy.id));g.restore();
+ const design=BOSS_DESIGNS[e.enemy.id];
+ if(design&&e.counterWindow>0){
+  const y=e.y-108,color=design.color;
+  R(e.x-12,y-14,24,28,'#23243c',g);R(e.x-8,y-10,16,20,color,g);
+  R(e.x-4,y-5,8,10,'#fff1c6',g);
+  for(const side of [-1,1]){R(e.x+side*20-2,y-6,4,12,color,g);R(e.x+side*29-2,y-2,4,4,color,g);}
+ }
  if(e.guarding){g.strokeStyle='#9ed4ed';g.lineWidth=3;g.beginPath();g.arc(e.x,e.y-35,42,0,Math.PI*2);g.stroke();}
  if(e.hp<e.enemy.hp||world.target===e){const boss=e.enemy.id==='boss',w=boss?130:72;R(e.x-w/2-2,e.y-(boss?220:95),w+4,9,'#27323d',g);R(e.x-w/2,e.y-(boss?218:93),w*e.hp/e.enemy.hp,5,'#de6f60',g);if(!boss||!e.telegraph)label(g,e.enemy.name,e.x,e.y-(boss?230:104),'#fff3c4',12);}}
  for(const h of world.hazards||[]){if(h.kind==='bolt'){R(h.x-12,h.y-8,24,16,'#d7aaec',g);R(h.x-8,h.y-4,16,8,'#fbdfac',g);}else{R(h.x-17,h.y-24,34,55,'#9d7860',g);R(h.x-10,h.y-30,20,13,'#c3b384',g);}}
@@ -161,6 +168,15 @@ export function drawWorld(canvas,world,t,reduced=false){
  for(const particle of world.particles){g.globalAlpha=Math.min(1,particle.life*2);label(g,particle.text,particle.x,particle.y,particle.color,particle.text.length<5?23:14);}g.globalAlpha=1;
  if(p.respawn>0)label(g,'Recovering at the entrance…',p.x,p.y-175,'#ffddae',18);
  g.restore();
- if(map.boss||['tempest','singularity','unmoored'].includes(map.secret)){const boss=map.monsters.find(e=>['boss','tempest','singularity','unmoored'].includes(e.enemy.id));if(boss&&boss.dead<=0){const hud=bossHudLayout(v.width),w=hud.width,y=hud.top,x=(v.width-w)/2;R(x-3,y-3,w+6,(boss.phaseLevel||1)>=3?84:63,'#172635e8',g);R(x,y,w*boss.hp/boss.enemy.hp,20,'#a35d60',g);label(g,boss.enemy.name.toUpperCase()+' · PHASE '+(boss.phaseLevel||1),v.width/2,y+14,'#ffdfb4',12);label(g,boss.telegraph?(ATTACKS[boss.telegraph.kind]?.hint||'Move away').toUpperCase():'Watch the tells. Keep moving.',v.width/2,y+42,boss.telegraph?'#ffcb99':'#d1e0ce',12);if((boss.phaseLevel||1)>=3)label(g,boss.enemy.id==='tempest'?'CHARGES AND SPLIT VOLLEYS':boss.enemy.id==='unmoored'?'CROSS THE LIT ANCHORS · AVOID FRACTURES':'TWO ERUPTION MARKS · SWEEPS BOTH WAYS',v.width/2,y+62,'#ffe1ad',10);}}
+ const boss=map.monsters.find(e=>BOSS_DESIGNS[e.enemy.id]&&e.dead<=0);
+ if(boss){
+  const design=BOSS_DESIGNS[boss.enemy.id],hud=bossHudLayout(v.width),w=hud.width,y=hud.top,x=(v.width-w)/2,phase=boss.phaseLevel||1;
+  R(x-3,y-3,w+6,76,'#172635ed',g);R(x,y,w*boss.hp/boss.enemy.hp,20,'#784859',g);
+  R(x,y,w*boss.hp/boss.enemy.hp,3,design.color,g);
+  label(g,boss.enemy.name.toUpperCase(),v.width/2,y+15,'#fff0d1',13);
+  label(g,'PHASE '+phase+' · '+design.phases[phase-1].toUpperCase(),v.width/2,y+37,design.color,10);
+  const warning=boss.telegraph?(ATTACKS[boss.telegraph.kind]?.hint||'Move away').toUpperCase():boss.counterWindow>0?design.opening+' · '+boss.counterWindow.toFixed(1)+'s':'WATCH FOR THE NEXT ATTACK';
+  label(g,warning,v.width/2,y+57,boss.telegraph?'#ffcb99':boss.counterWindow>0?design.color:'#d1e0ce',11);
+ }
  return v;
 }
