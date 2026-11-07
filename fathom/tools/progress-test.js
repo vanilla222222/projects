@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale'].includes(k)));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale', 'sunmane-tuft', 'sun-carat'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -152,6 +152,8 @@ function climb() {
     if (was.has('cairn-bell')) gain('cairn-echo');
     if (was.has('clay-effigy')) gain('behemoth-core');
     if (was.has('ochre-sigil')) gain('ochre-scale');
+    if (was.has('sunmane-idol')) gain('sunmane-tuft');
+    if (was.has('sun-court-seal')) gain('sun-carat');
     if (was.has('rift-sigil')) gain('rift-core');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;

@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'gilt-fang': { name: 'Gilt Fang', kind: 'loot', colour: '#c2a566' },
+  'sunmane-tuft': { name: 'Sunmane Tuft', kind: 'loot', colour: '#cc9b61' },
+  'sun-carat': { name: 'Sun Carat', kind: 'loot', colour: '#e3bd70' },
+  'sunmane-idol': { name: 'Sunmane Idol', kind: 'use', colour: '#cc9b61',
+    use: { summon: 'sunmane', layer: 'surface', biome: 'savanna' }, text: 'Summon on the Savanna surface' },
+  'sun-court-seal': { name: 'Sun Court Seal', kind: 'use', colour: '#e3bd70',
+    use: { summon: 'sunscarab', layer: 'deep', biome: 'savanna' }, text: 'Summon in the deep Savanna' },
   'ochre-fang': { name: 'Ochre Fang', kind: 'loot', colour: '#c99766' },
   'behemoth-core': { name: 'Behemoth Core', kind: 'loot', colour: '#b6795b' },
   'ochre-scale': { name: 'Ochre Scale', kind: 'loot', colour: '#c99766' },
@@ -319,6 +326,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'sunmane-sash': { name: 'Sunmane Sash', colour: '#cc9b61', text: 'Move 12% faster and melee damage +10%', speed: 1.12, melee: 1.1 },
+  'sun-court-ring': { name: 'Sun Court Ring', colour: '#e3bd70', text: 'Defence +7 and mana regenerates 25% faster', defense: 7, manaRegen: 1.25 },
+  'gilt-clasp': { name: 'Gilt Clasp', colour: '#c2a566', text: 'Pick up items from farther away and emit light', pickup: 1.55, glow: 3 },
   'clayguard': { name: 'Clayguard', colour: '#b6795b', text: 'Defence +7 and mining power +8%', defense: 7, power: 1.08 },
   'drake-scale': { name: 'Drake Scale', colour: '#c99766', text: 'Melee damage +14% and 25% less lava damage', melee: 1.14, lavaDamage: 0.75 },
   'ochre-clasp': { name: 'Ochre Clasp', colour: '#c99766', text: 'Move 10% faster and defence +4', speed: 1.1, defense: 4 },
@@ -807,6 +817,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'sunmane-idol', kind: 'use', count: 1 }, need: [['acacialog', 12], ['leather', 5], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'sun-court-seal', kind: 'use', count: 1 }, need: [['topaz', 3], ['chitin', 8], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'sunmane-sash', kind: 'accessory', count: 1 }, need: [['sunmane-tuft', 1], ['leather', 6]], station: 'anvil' },
+  { out: { key: 'sun-court-ring', kind: 'accessory', count: 1 }, need: [['sun-carat', 1], ['gold-bar', 4]], station: 'anvil' },
+  { out: { key: 'gilt-clasp', kind: 'accessory', count: 1 }, need: [['gilt-fang', 2], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'clay-effigy', kind: 'use', count: 1 }, need: [['stone', 18], ['chitin', 5], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'ochre-sigil', kind: 'use', count: 1 }, need: [['bone', 8], ['topaz', 3], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'clayguard', kind: 'accessory', count: 1 }, need: [['behemoth-core', 1], ['iron-bar', 4]], station: 'anvil' },

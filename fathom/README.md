@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 146 enemies including twenty-two bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 159 enemies including twenty-four bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -267,3 +267,12 @@ Catacomb in the deep Badlands. Some catacomb chests wake as Ochre Mimics.
 
 Use a Clay Effigy on the surface or an Ochre Sigil in the deep Badlands to
 summon Clay Behemoth or Ochre Drake. Both are optional.
+
+
+### Savanna expansion
+
+Find Acacia Waystations on the surface, Termite Galleries in the caves, and
+the trapped Sunken Sun Court in the deep Savanna. Some court chests are Gilt Mimics.
+
+Use a Sunmane Idol on the surface or a Sun Court Seal in the deep Savanna to
+summon Sunmane or the Sun Court Scarab. Both bosses are optional.
