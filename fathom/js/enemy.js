@@ -56,7 +56,11 @@ const ARCHETYPES = {
   hover: { gravity: 0, boss: true, flies: true, speed: 4.6, hoverAbove: 7, drift: 2.2,
     chargeEvery: 3.6, windUp: 0.7, chargeSpeed: 20, chargeFor: 0.85,
     spawnEvery: 4.5, minion: 'demoneye', minions: 3,
-    enrageAt: 0.5, enrageSpeed: 1.5, enrageCharge: 0.5, enrageWindUp: 0.3 }
+    enrageAt: 0.5, enrageSpeed: 1.5, enrageCharge: 0.5, enrageWindUp: 0.3 },
+  furnace: { gravity: 0, boss: true, flies: true, speed: 3.6, hoverAbove: 4, drift: 3.8,
+    chargeEvery: 4.2, windUp: 1, chargeSpeed: 22, chargeFor: 1.0,
+    spawnEvery: 5.8, minion: 'fireimp', minions: 2,
+    enrageAt: 0.42, enrageSpeed: 1.25, enrageCharge: 0.55, enrageWindUp: 0.62 }
 };
 
 // Every enemy drops coins, scaled to what it was: a slime is pocket change, an obsidian
@@ -216,6 +220,11 @@ const ENEMIES = [
     drops: [['lens', 10], ['coin', 420]],
     bossDrops: ['hollow-lens', 'seers-eye'] },
 
+  { key: 'furnacewarden', name: 'The Furnace Warden', kind: 'furnace', body: 'demon',
+    hp: 3200, damage: 48, weight: 0, w: 4.5, h: 3.7, colour: '#e06140',
+    boss: true, summonOnly: true, emit: 8,
+    drops: [['cinder', 15], ['coin', 650]], bossDrops: [['furnace-core', 3]] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -307,7 +316,8 @@ const GAIT = {
   // The king quivers faster than its subjects, and visibly faster as it shrinks.
   king: { perTile: 0.5, perSecond: 3.1 },
   // Wings beat regardless of whether it is getting anywhere, like every other flyer.
-  hover: { perTile: 0.3, perSecond: 8 }
+  hover: { perTile: 0.3, perSecond: 8 },
+  furnace: { perTile: 0.45, perSecond: 6 }
 };
 
 // --- the live population ------------------------------------------------------------------

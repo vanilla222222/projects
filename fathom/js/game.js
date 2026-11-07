@@ -192,18 +192,18 @@ function makeGame(canvas, deps) {
   const RARE_CHANCE = 0.055;
 
   function rareDrop(target) {
-    const table = RARE_BY_ENEMY[target.key];
-    if (!table || !table.length) return;
     // A boss gives up everything it carries, every time. A fight you had to prepare for
     // should not then also be a lottery.
     if (target.spec.bossDrops) {
-      for (const key of target.spec.bossDrops) {
-        dropItem(target.x + target.width / 2, target.y, key, craft.kindOf(key), 1);
+      for (const entry of target.spec.bossDrops) {
+        const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
+        dropItem(target.x + target.width / 2, target.y, key, craft.kindOf(key), count);
       }
       say(target.spec.name + ' is dead', 3.4);
       return;
     }
-    if (Math.random() > RARE_CHANCE) return;
+    const table = RARE_BY_ENEMY[target.key];
+    if (!table || !table.length || Math.random() > RARE_CHANCE) return;
     const prize = table[Math.floor(Math.random() * table.length)];
     dropItem(target.x, target.y, prize.key, prize.kind, 1);
     say(craft.nameOf(prize.key, tiles) + '!', 2.4);
@@ -227,6 +227,14 @@ function makeGame(canvas, deps) {
       statsModule.heal(stats, use.heal);
     } else if (use.summon !== undefined) {
       if (!swarm) return true;
+      if (use.night && light.solarElevation(state.dayPhase) >= 0) {
+        say('Wait until night', 1.8);
+        return true;
+      }
+      if (use.layer && worldgen.layerAt(Math.floor(state.player.y)).key !== use.layer) {
+        say('The idol only awakens in Hell', 1.8);
+        return true;
+      }
       if (swarm.bossAlive()) { say('It is already here', 1.4); return true; }
       const boss = swarm.summon(use.summon, state.player);
       if (!boss) { say('There is no room here', 1.6); return true; }
@@ -1417,7 +1425,7 @@ function makeGame(canvas, deps) {
     const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
       Math.floor(state.player.y + state.player.height * 0.6)));
     if (feet.hot && !gear.fireproof) {
-      const burnt = statsModule.damage(stats, 24);
+      const burnt = statsModule.damage(stats, 24 * (feet.key === 'lava' ? gear.lavaDamage : 1));
       lastHurt = feet.key === 'lava' ? 'the lava' : 'the heat';
       if (burnt > 0) say('Burning!', 0.9);
     }

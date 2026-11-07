@@ -20,7 +20,10 @@ function ok(cond, label) {
 // Everything an enemy drops is a raw input as far as crafting is concerned: you get it
 // by killing something rather than by making it.
 const enemyDrops = require('../js/enemy.js').ENEMIES
-  .flatMap(e => (e.drops || []).map(([k]) => k));
+  .flatMap(e => [
+    ...(e.drops || []).map(([key]) => key),
+    ...(e.bossDrops || []).map(drop => Array.isArray(drop) ? drop[0] : drop)
+  ]);
 // Ores and gems come from the generator's own band table rather than from a list
 // written out here, which went stale the moment six gems were added to it.
 const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);

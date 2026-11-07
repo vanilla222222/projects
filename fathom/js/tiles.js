@@ -29,10 +29,10 @@ const TILES = [
   { id: 9, key: 'basalt', name: 'Basalt', solid: true, opacity: 64, emit: 0, hardness: 1.8, colour: '#3a3740', grain: 0.12 , require: 45 , toughness: 210 },
   { id: 10, key: 'slate', name: 'Deep Slate', solid: true, opacity: 64, emit: 0, hardness: 2.2, colour: '#2f3440', grain: 0.1 , require: 65 , toughness: 300 },
   { id: 11, key: 'copper', name: 'Copper Ore', solid: true, opacity: 56, emit: 0, hardness: 1.1, colour: '#b5703c', grain: 0.2, ore: true , toughness: 110 },
-  { id: 12, key: 'iron', name: 'Iron Ore', solid: true, opacity: 56, emit: 0, hardness: 1.5, colour: '#a08a7a', grain: 0.2, ore: true , toughness: 130 },
-  { id: 13, key: 'silver', name: 'Silver Ore', solid: true, opacity: 56, emit: 0, hardness: 1.9, colour: '#c3cdd6', grain: 0.22, ore: true , require: 35 , toughness: 160 },
-  { id: 14, key: 'gold', name: 'Gold Ore', solid: true, opacity: 56, emit: 0, hardness: 2.3, colour: '#d7ab46', grain: 0.22, ore: true , require: 45 , toughness: 190 },
-  { id: 15, key: 'cobalt', name: 'Cobalt Ore', solid: true, opacity: 56, emit: 0, hardness: 3, colour: '#3f7fb5', grain: 0.24, ore: true , require: 65 , toughness: 250 },
+  { id: 12, key: 'iron', name: 'Iron Ore', require: 45, solid: true, opacity: 56, emit: 0, hardness: 1.5, colour: '#a08a7a', grain: 0.2, ore: true , toughness: 130 },
+  { id: 13, key: 'silver', name: 'Silver Ore', solid: true, opacity: 56, emit: 0, hardness: 1.9, colour: '#c3cdd6', grain: 0.22, ore: true , require: 55 , toughness: 160 },
+  { id: 14, key: 'gold', name: 'Gold Ore', solid: true, opacity: 56, emit: 0, hardness: 2.3, colour: '#d7ab46', grain: 0.22, ore: true , require: 65 , toughness: 190 },
+  { id: 15, key: 'cobalt', name: 'Cobalt Ore', solid: true, opacity: 56, emit: 0, hardness: 3, colour: '#3f7fb5', grain: 0.24, ore: true , require: 75 , toughness: 250 },
   { id: 16, key: 'emberite', name: 'Emberite Ore', solid: true, opacity: 56, emit: 3, hardness: 3.6, colour: '#c6482c', grain: 0.26, ore: true , require: 100 , toughness: 330 },
   { id: 17, key: 'wood', name: 'Wood', solid: true, opacity: 40, emit: 0, hardness: 0.5, colour: '#7a5330', grain: 0.1 , toughness: 90 },
   { id: 18, key: 'leaves', name: 'Leaves', solid: false, opacity: 20, emit: 0, hardness: 0.2, colour: '#3f6b2c', grain: 0.22 },
@@ -100,7 +100,7 @@ const TILES = [
   // where it meets water, and is the hardest thing in the world to cut.
   { id: 58, key: 'ash', name: 'Ash', solid: true, opacity: 52, emit: 0, hardness: 0.6, colour: '#4a4247', grain: 0.14, toughness: 120 },
   { id: 59, key: 'brimstone', name: 'Brimstone', solid: true, opacity: 62, emit: 3, hardness: 2, colour: '#6b3326', grain: 0.13, require: 65, toughness: 280 },
-  { id: 60, key: 'obsidian', name: 'Obsidian', solid: true, opacity: 66, emit: 0, hardness: 2.6, colour: '#241f2e', grain: 0.06, require: 100, toughness: 420 },
+  { id: 60, key: 'obsidian', name: 'Obsidian', solid: true, opacity: 66, emit: 0, hardness: 2.6, colour: '#241f2e', grain: 0.06, require: 75, toughness: 310 },
   { id: 61, key: 'cinderstone', name: 'Cinderstone', solid: true, opacity: 60, emit: 1, hardness: 1.5, colour: '#3b2f33', grain: 0.12, require: 45, toughness: 240 },
 
   // Lava. A liquid like water, so it flows through the same simulation, but it burns and

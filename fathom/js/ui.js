@@ -302,7 +302,7 @@ function makeUI(root, deps) {
       return canvas;
     }
     const itemSpec = craft && craft.ITEMS[item.key];
-    if (itemSpec?.kind === 'loot' || item.key === 'manacrystal' || item.key.endsWith('-fish')) {
+    if (itemSpec?.kind === 'loot' || item.key === 'manacrystal' || item.key === 'cinder-idol' || item.key.endsWith('-fish')) {
       paintLootIcon(ctx, item.key, itemSpec, size);
       return canvas;
     }
@@ -423,9 +423,10 @@ function makeUI(root, deps) {
       bone: [1, 10, 3, 7, 5, 8, 9, 5, 9, 2, 12, 2, 15, 5, 12, 8, 10, 7, 6, 11, 6, 13, 3, 14],
       boot: [5, 2, 11, 2, 10, 8, 14, 9, 15, 13, 3, 13, 3, 10],
       hide: [2, 3, 6, 4, 10, 2, 14, 5, 12, 9, 14, 13, 8, 14, 5, 11, 2, 13],
+      idol: [2, 13, 4, 11, 4, 5, 2, 2, 6, 3, 8, 1, 10, 3, 14, 2, 12, 5, 12, 11, 14, 13, 14, 15, 2, 15],
       lens: [2, 6, 5, 3, 11, 3, 14, 6, 14, 10, 11, 13, 5, 13, 2, 10]
     };
-    const type = fish ? 'fish' : /shrimp|snail|chitin/.test(key) ? 'shell'
+    const type = key === 'cinder-idol' ? 'idol' : fish ? 'fish' : /shrimp|snail|chitin/.test(key) ? 'shell'
       : /star/.test(key) ? 'star' : /feather|finleather/.test(key) ? 'feather'
         : /gel/.test(key) ? 'gel' : /bone/.test(key) ? 'bone' : /junk/.test(key) ? 'boot'
           : /flesh|leather|tissue/.test(key) ? 'hide' : /lens/.test(key) ? 'lens' : 'shard';
@@ -733,6 +734,7 @@ function makeUI(root, deps) {
     if (gear.power !== 1) lines.push('Mining ' + Math.round(gear.power * 100) + '%');
     if (gear.doubleJump) lines.push('Double jump');
     if (gear.fireproof) lines.push('Fireproof');
+    else if (gear.lavaDamage !== 1) lines.push('Lava damage x' + gear.lavaDamage);
     if (gear.breathMul !== 1) {
       lines.push(gear.breathMul === Infinity ? 'Breathes water'
         : 'Breath x' + gear.breathMul);
