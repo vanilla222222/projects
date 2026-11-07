@@ -165,6 +165,29 @@ for (const body of Object.keys(sprite.BODIES)) {
   ok(at(0.7) === at(0.7 + Math.PI * 2), 'the walk cycle does not repeat');
 }
 
+// Every registered species reaches the keyed art pass and every armor slot changes the sprite.
+for (const spec of enemy.ENEMIES) {
+  const base = frame(spec.body, 0, { colour: spec.colour }).calls.join('|');
+  const painted = frame(spec.body, 0, { colour: spec.colour, key: spec.key }).calls.join('|');
+  ok(base !== painted, spec.key + ' has no species art');
+}
+{
+  const draw = (look, gear) => {
+    const ctx = recorder();
+    sprite.drawPerson(ctx, BOX, look, { gear });
+    return ctx.calls.join('|');
+  };
+  const base = draw({}, {});
+  for (const slot of ['head', 'chest', 'legs', 'feet']) {
+    ok(draw({}, { [slot]: { tier: 'gold', colour: '#e0c054' } }) !== base, slot + ' armor is invisible');
+  }
+  ok(draw({}, { accessories: [{ colour: '#849eda' }] }) !== base, 'accessory is invisible');
+  const styles = ['swept', 'braid', 'crest', 'curls', 'shaved'];
+  ok(new Set(styles.map(hairstyle => draw({ hairstyle }, {}))).size === styles.length,
+    'hairstyles do not all change the player');
+  ok(draw({ marking: 'paint', eyes: '#8d588a' }, {}) !== base, 'face settings are invisible');
+}
+
 // --- 6. the gait table covers every archetype ------------------------------------------------------
 for (const kind of Object.keys(enemy.ARCHETYPES)) {
   ok(!!enemy.GAIT[kind], 'the archetype ' + kind + ' has no gait');
