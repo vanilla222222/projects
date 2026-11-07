@@ -149,8 +149,10 @@ function makeGame(canvas, deps) {
   }
 
   function spawnPlayer() {
-    for (let probe = 0; probe < 400; probe += 1) {
+    const edge = worldgen.START_FOREST_EDGE;
+    for (let probe = 0; probe < Math.ceil(edge / 7) * 2; probe += 1) {
       const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
+      if (column < -edge || column >= edge) continue;
       const surface = worldgen.surfaceHeight(seed, column);
       if (!tiles.isSolid(world.get(column, surface))) continue;
       const candidate = physics.makePlayer(column + 0.1, surface - 3);
@@ -1766,7 +1768,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=rift-1');
+      const worker = new Worker('workers/chunk.js?v=forest-spawn-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

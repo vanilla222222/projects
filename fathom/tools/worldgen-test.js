@@ -287,6 +287,7 @@ check(!tiles.isSolid(WATER), 'water must not be solid');
 for (const s of SURVEY_SEEDS) {
   for (let x = -20000; x < 20000; x += 11) {
     const blight = gen.blightAt(s, x);
+    if (x >= -gen.START_FOREST_EDGE && x < gen.START_FOREST_EDGE) continue;
     if (!blight) continue;
     check(blight === 'blight' || blight === 'crimson', 'unknown blight ' + blight);
     const biome = gen.biomeAt(s, x);
@@ -716,6 +717,22 @@ for (let s = 0; s < 60; s += 1) {
 }
 check(driestShore > gen.HOME_FLAT,
   'the nearest ocean across every seed was ' + driestShore + ' tiles from spawn');
+
+for (const seed of [SEED, 0, -777, 4242, 90210, -98765]) {
+  const edge = gen.CHUNK * gen.START_FOREST_CHUNKS / 2;
+  for (let x = -edge; x < edge; x += 1) {
+    const column = gen.columnOf(seed, x);
+    check(column.biome.key === 'forest' && column.height < gen.SEA_LEVEL,
+      'spawn forest contains a non-forest or flooded column at ' + x);
+  }
+  const ground = Array.from({ length: 69 }, (_, i) => (i - 34) * 7);
+  check(ground.some(x => {
+    const y = gen.surfaceHeight(seed, x);
+    return tiles.isSolid(gen.baseTileAt(seed, x, y)) &&
+      !tiles.isSolid(gen.baseTileAt(seed, x, y - 3)) &&
+      !tiles.isSolid(gen.baseTileAt(seed, x, y - 2));
+  }), 'spawn forest has no safe starter ground');
+}
 
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
