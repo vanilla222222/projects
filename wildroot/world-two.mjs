@@ -1,5 +1,5 @@
 import {ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=45';
-import {pointFor,roomLayout} from './layouts.mjs?v=45';
+import {pointFor,roomLayout} from './layouts.mjs?v=49';
 import {skillLevel} from './progression.mjs?v=45';
 import {canPay,pay} from './inventory.mjs?v=45';
 export const tierTwoDiscoveries=s=>[...new Set(s.characters.map(c=>c.advancement).filter(Boolean))];

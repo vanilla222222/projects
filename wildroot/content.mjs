@@ -2,7 +2,7 @@ import {installTideCampaign} from './tide-campaign.mjs?v=45';
 import {installExpansion} from './expansion-content.mjs?v=45';
 import {QUEST_REFORMS} from './quest-content.mjs?v=45';
 import {BADGES,extraItemRoles} from './item-roles.mjs?v=45';
-import {roomLayout} from './layouts.mjs?v=45';
+import {roomLayout} from './layouts.mjs?v=49';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},

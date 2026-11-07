@@ -1,10 +1,12 @@
+import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
+import {drawItemTexture} from './item-textures.mjs?v=49';
 import {NEW_RESOURCES} from './expansion-content.mjs?v=45';
 import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=45';
 import {ATTACKS} from './combat-patterns.mjs?v=45';
 import {zoneUnlocked,routeRequirement} from './engine.mjs?v=45';
 import {drawMonsterArt} from './monster-art.mjs?v=45';
 import {npcMarker} from './conversations.mjs?v=45';
-import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=45';
+import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=49';
 // Original canvas scenery. No external artwork or game assets.
 import {areaById,zoneEnemy,ENEMIES,CLASSES,EQUIPMENT,COSMETICS} from './content.mjs?v=45';
 const PALETTES={forest:['#b0c6a0','#8fae8b','#6f9575','#375c47','#203e32','#75905b'],jungle:['#b0c7a0','#759b7a','#497c63','#2a5745','#1b3d32','#7f9c5b'],caves:['#67777a','#56676c','#3d4f55','#283c42','#192f34','#54726a'],deep:['#565e71','#444f62','#354152','#263442','#1c2937','#657776'],town:['#c7d4b1','#a7bb94','#829c73','#4f6f48','#36533b','#a2af70'],'jungle-town':['#bdcdac','#8eae88','#699373','#3e6b53','#274d3e','#8ea76a']};
@@ -15,7 +17,7 @@ function house(g,x,y,scale,roof='#8b7151'){g.save();g.translate(x,y);g.scale(sca
 function adventurer(g,x,y,c,t){
  const walking=c.activity!=='rest',stride=walking?Math.sin(t*4)*3:0,bob=walking?Math.abs(Math.sin(t*4))*1.5:Math.sin(t)*.5;
  g.save();g.translate(Math.round(x),Math.round(y-bob));g.scale(2.3,2.3);
- const metal=c.loadout?.body?.base,color=metal==='tempered-mail'?'#71a995':metal?.startsWith('gold')?'#c6aa58':metal?.startsWith('iron')?'#8daab6':metal?'#b8885d':c.class?CLASSES[c.class].color:'#b8955b';
+ const metal=c.loadout?.body?.base,color=c.color|| (metal==='tide-mail'?'#5e979c':metal==='tempered-mail'?'#71a995':metal?.startsWith('gold')?'#c6aa58':metal?.startsWith('iron')?'#8daab6':metal?'#b8885d':c.class?CLASSES[c.class].color:'#b8955b');
  R(-8,-5,23,4,'#243e3266',g);R(-5-stride,-15,5,13,'#434b49',g);R(4+stride,-15,5,13,'#434b49',g);
  if(c.loadout?.feet){R(-6-stride,-6,8,5,'#b8a16c',g);R(3+stride,-6,8,5,'#b8a16c',g);}
  R(-8,-34,19,22,color,g);R(-8,-32,4,20,'#ffffff20',g);
@@ -35,7 +37,7 @@ function adventurer(g,x,y,c,t){
  g.restore();}g.restore();
 }
 function enemy(g,x,y,e,t,boss=false){drawMonsterArt(g,e,x,y,t,boss);}
-import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=45';
+import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=49';
 function label(g,text,x,y,color='#fff8db',size=14){g.font=`bold ${size}px Trebuchet MS, sans-serif`;g.textAlign='center';g.fillStyle='#172d38';g.fillText(text,x+1,y+2);g.fillStyle=color;g.fillText(text,x,y);}
 function platform(g,p,cave){const y=p.y;R(p.x,y,p.w,18,cave?'#687e82':'#6eab43',g);R(p.x,y+18,p.w,18,cave?'#50646f':'#7a643c',g);R(p.x,y+36,p.w,p.y===GROUND?90:26,cave?'#364757':'#514c35',g);for(let x=p.x;x<p.x+p.w;x+=32){R(x,y,24,5,cave?'#8da6a3':'#a9d467',g);R(x+8,y+25,8,6,cave?'#749091':'#ae925a',g);R(x+17,y+48,12,5,cave?'#465e6e':'#6d603f',g);}if(!cave)for(let x=p.x+8;x<p.x+p.w;x+=43){R(x,y-5,3,7,'#74ae45',g);R(x+4,y-10,3,12,'#a6cf61',g);}}
 function portal(g,e,t,locked=false,progress=''){g.save();g.translate(e.x,e.y);const color=locked?'#687786':'#5ed5ff';for(let i=3;i>=0;i--){g.strokeStyle=[color+'20',color+'40',color+'80',color][3-i];g.lineWidth=7+i*4;g.beginPath();g.ellipse(0,-62,27+i*2,52+i*3,0,0,Math.PI*2);g.stroke();}R(-43,-8,86,13,'#65788a',g);R(-32,-15,64,8,'#a1b0b1',g);g.fillStyle='#143c6377';g.beginPath();g.ellipse(0,-64,23,49,0,0,Math.PI*2);g.fill();for(let i=0;i<6;i++){const phase=t*1.1+i;R(Math.sin(phase)*17,-60+Math.cos(phase*1.5)*39,3,5,'#d0f9ff',g);}label(g,e.name==='The Rootwarden'?'BOSS GATE':e.name,e.direction<0?55:e.direction>0?-55:0,-135,'#d8f6ff',10);if(progress)label(g,progress,e.direction<0?55:e.direction>0?-55:0,-115,'#ffe3a8',11);g.restore();}
@@ -66,7 +68,7 @@ export function drawWorld(canvas,world,t,reduced=false){
  for(const e of map.stations)station(g,e,time);
  for(const chest of map.storage||[]){const x=chest.x,y=chest.y;R(x-30,y-34,60,31,'#9b754c',g);R(x-32,y-48,64,17,'#bd965d',g);R(x-30,y-32,60,5,'#513c30',g);R(x-25,y-47,7,44,'#6c8893',g);R(x+18,y-47,7,44,'#6c8893',g);R(x-5,y-32,10,13,'#f0d37e',g);label(g,'STORAGE',x,y-63,'#f5dda4',12);}
  for(const entry of map.discoveries||[]){const x=entry.x,y=entry.y;rock(g,x,y,1.3,'#b29bda');label(g,'✦',x,y-65,'#dbc9ff',27);label(g,'Strange markings',x,y+20,'#d2c7ed',11);}
- for(const npc of map.npcs){const fake={class:npc.classId,activity:'rest'};adventurer(g,npc.x,npc.y,fake,time);const marker=npcMarker(world.state,c,npc.classId||npc.role);if(marker.symbol)label(g,marker.symbol,npc.x,npc.y-151,marker.color,31);label(g,npc.name,npc.x,npc.y-123,'#ffe5a8');label(g,(CLASSES[npc.classId]?.name?CLASSES[npc.classId].name+' mentor':(npc.role==='steward'?'Village steward':'Expedition crew')),npc.x,npc.y+22,'#f6f3cc',11);}
+ for(const npc of map.npcs){const fake={class:npc.classId,color:TIDE_NPCS[npc.role]?.color,activity:'rest'};adventurer(g,npc.x,npc.y,fake,time);const marker=npcMarker(world.state,c,npc.classId||npc.role);if(marker.symbol)label(g,marker.symbol,npc.x,npc.y-151,marker.color,31);label(g,npc.name,npc.x,npc.y-123,'#ffe5a8');label(g,(CLASSES[npc.classId]?.name?CLASSES[npc.classId].name+' mentor':(npc.role==='steward'?'Village steward':'Expedition crew')),npc.x,npc.y+22,'#f6f3cc',11);}
  for(const e of map.monsters){if(e.dead>0||e.x<v.x-300||e.x>v.x+v.width+300||e.y<v.y-200||e.y>v.y+950)continue;
  if(e.telegraph){const tell=e.telegraph,d=ATTACKS[tell.kind]||ATTACKS.hop,progress=1-tell.remaining/tell.total;
   g.globalAlpha=world.state.options?.reducedMotion ? .45 : .25+.2*Math.sin(time*10)**2;
@@ -82,7 +84,7 @@ export function drawWorld(canvas,world,t,reduced=false){
  drawAttackEffects(g,world.attackEffects,world.state.options?.reducedMotion);
  const p=world.player;if(COSMETICS[c.cosmetic]){g.strokeStyle=COSMETICS[c.cosmetic].color;g.lineWidth=4;g.beginPath();g.ellipse(p.x,p.y-129,25,8,0,0,Math.PI*2);g.stroke();}g.save();g.translate(p.x,p.y);g.scale(p.facing,1);adventurer(g,0,0,{...c,action:p.flash>0,activity:p.climbing||Math.abs(p.vx)>0?'fight':c.activity},p.walk||time);g.restore();if(p.hurtGrace>0){g.strokeStyle='#f0a08e';g.lineWidth=3;g.beginPath();g.ellipse(p.x,p.y-55,30,52,0,0,Math.PI*2);g.stroke();}label(g,c.name,p.x,p.y-134,'#fff3bd',14);label(g,c.class?CLASSES[c.class].name:'Beginner',p.x,p.y+22,'#d8e9f0',10);
  if(p.climbing){R(p.x-7,p.y-45,14,5,'#e5d8ae',g);}
- for(const d of world.groundLoot){const bob=Math.sin(time*3+d.x)*3;R(d.x-9,d.y-17+bob,18,14,d.itemId==='coins'?'#e8c260':'#c5a879',g);R(d.x-6,d.y-21+bob,12,6,d.itemId==='coins'?'#fff0a0':'#dfc48b',g);R(d.x-2,d.y-17+bob,4,12,d.itemId==='coins'?'#be913f':'#8c6f48',g);}
+ for(const d of world.groundLoot){const bob=Math.sin(time*3+d.x)*3;if(d.itemId==='coins'){R(d.x-7,d.y-15+bob,14,13,'#e8c260',g);R(d.x-4,d.y-13+bob,3,8,'#fff0a0',g);}else drawItemTexture(g,d.itemId,d.x,d.y+bob,27);}
  for(const d of world.drops){g.globalAlpha=Math.min(1,d.life);label(g,d.text,d.x,d.y-20,d.color||'#ffe08d',16);}g.globalAlpha=1;
  for(const particle of world.particles){g.globalAlpha=Math.min(1,particle.life*2);label(g,particle.text,particle.x,particle.y,particle.color,particle.text.length<5?23:14);}g.globalAlpha=1;
  if(p.respawn>0)label(g,'Recovering at the entrance…',p.x,p.y-175,'#ffddae',18);

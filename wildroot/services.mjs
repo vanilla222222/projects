@@ -1,5 +1,5 @@
 import {TELESCOPE} from './content.mjs?v=45';
-import {roomLayout,pointFor} from './layouts.mjs?v=45';
+import {roomLayout,pointFor} from './layouts.mjs?v=49';
 
 export const SERVICES={
  dungeon:{area:'town',zone:3,point:'dungeon',name:'Mossroot Ruins',place:'Legacy Square',lesson:'Four solo chambers. Run gear and boons reset each attempt; credits and relic marks buy permanent rewards. Requires level 4.'},

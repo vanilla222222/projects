@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
-import {World} from './world.mjs?v=45';import {ATTACKS,makeTell,nextAttack,attackDescription} from './combat-patterns.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=45';
+import {World} from './world.mjs?v=49';import {ATTACKS,makeTell,nextAttack,attackDescription} from './combat-patterns.mjs?v=45';
+import * as UI from './ui-panels.mjs?v=49';
 const setup=()=>{const s=E.freshSave(),w=new World(s,{rng:()=>.5});return{s,w,c:w.c,e:w.map.monsters[0]};};
 test('Marked attacks resolve at the warned location and moving away earns dodge feedback',()=>{
  const{s,w,c,e}=setup();e.enemy=D.ENEMIES['jungle-1'];w.player.x=e.x+100;w.player.y=e.y;e.telegraph=makeTell(e,w.player,w.map.width);const mark=e.telegraph.x;w.player.x=mark+100;const hp=c.hp;w.resolveAttack(e);assert.equal(c.hp,hp);assert.ok(w.particles.some(p=>p.text==='DODGED'));assert.equal(e.x,mark);

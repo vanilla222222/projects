@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
-import {World} from './world.mjs?v=45';import {makeTell} from './combat-patterns.mjs?v=45';
+import {World} from './world.mjs?v=49';import {makeTell} from './combat-patterns.mjs?v=45';
 const setup=()=>{const s=E.freshSave(),w=new World(s,{rng:()=>.5});return{s,w,c:w.c,e:w.map.monsters[0]};};
 test('Every class can use its primary skill from the distance where AUTO stops',()=>{
  for(const calling of Object.keys(D.CLASSES)){const{s,w,c,e}=setup();c.class=calling;c.level=10;c.mp=E.maxMana(c);e.hp=100000;w.player.x=e.x-(E.weaponProfile(c).range-20);w.player.y=e.y;w.target=e;w.auto=true;const hp=e.hp;w.follow(.02);assert.ok(w.player.skill>0,calling);assert.ok(e.hp<hp,calling);assert.ok(w.attackEffects.some(f=>f.skill&&f.calling===calling));}

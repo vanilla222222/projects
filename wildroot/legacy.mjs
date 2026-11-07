@@ -1,5 +1,5 @@
 import {recordQuestAction} from './quest-content.mjs?v=45';
-import {roomLayout,pointFor} from './layouts.mjs?v=45';
+import {roomLayout,pointFor} from './layouts.mjs?v=49';
 import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=45';
 import * as I from './inventory.mjs?v=45';
 export const DAY=86400000;
