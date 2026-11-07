@@ -32,10 +32,30 @@ const TOOLS = {
   'iron-hammer': { name: 'Iron Hammer', job: 'hammer', power: 60, useTime: 0.28, tier: 3 },
 
   'silver-pick': { name: 'Silver Pickaxe', job: 'pick', power: 65, useTime: 0.22, tier: 4 },
+  'silver-axe': { name: 'Silver Axe', job: 'axe', power: 72, useTime: 0.23, tier: 4 },
+  'silver-hammer': { name: 'Silver Hammer', job: 'hammer', power: 70, useTime: 0.25, tier: 4 },
+
   'gold-pick': { name: 'Gold Pickaxe', job: 'pick', power: 75, useTime: 0.2, tier: 5 },
+  'gold-axe': { name: 'Gold Axe', job: 'axe', power: 84, useTime: 0.21, tier: 5 },
+  'gold-hammer': { name: 'Gold Hammer', job: 'hammer', power: 80, useTime: 0.23, tier: 5 },
+
   'cobalt-pick': { name: 'Cobalt Pickaxe', job: 'pick', power: 100, useTime: 0.17, tier: 6 },
+  'cobalt-axe': { name: 'Cobalt Axe', job: 'axe', power: 108, useTime: 0.18, tier: 6 },
+  'cobalt-hammer': { name: 'Cobalt Hammer', job: 'hammer', power: 104, useTime: 0.20, tier: 6 },
+
   'emberite-pick': { name: 'Emberite Pickaxe', job: 'pick', power: 125, useTime: 0.14, tier: 7 },
-  'rift-pick': { name: 'Rift Pickaxe', job: 'pick', power: 180, useTime: 0.12, tier: 8 }
+  'emberite-axe': { name: 'Emberite Axe', job: 'axe', power: 134, useTime: 0.15, tier: 7 },
+  'emberite-hammer': { name: 'Emberite Hammer', job: 'hammer', power: 128, useTime: 0.17, tier: 7 },
+
+  'rift-pick': { name: 'Rift Pickaxe', job: 'pick', power: 180, useTime: 0.12, tier: 8 },
+
+  'meteor-pick': { name: 'Meteor Pickaxe', job: 'pick', power: 55, useTime: 0.23, tier: 9 },
+  'meteor-axe': { name: 'Meteor Axe', job: 'axe', power: 64, useTime: 0.23, tier: 9 },
+  'meteor-hammer': { name: 'Meteor Hammer', job: 'hammer', power: 62, useTime: 0.25, tier: 9 },
+
+  'aetherite-pick': { name: 'Aetherite Pickaxe', job: 'pick', power: 200, useTime: 0.105, tier: 10 },
+  'aetherite-axe': { name: 'Aetherite Axe', job: 'axe', power: 208, useTime: 0.115, tier: 10 },
+  'aetherite-hammer': { name: 'Aetherite Hammer', job: 'hammer', power: 205, useTime: 0.13, tier: 10 }
 };
 
 // Which tool a given tile answers to. Anything with a background wall is hammer work,
@@ -67,7 +87,7 @@ function jobFor(spec, isWall) {
 // Doubled power, as Terraria does for dirt, clay and sand: the soft ground you move through
 // rather than the rock you work at.
 // Head colour per tier, so a glance at the hotbar says which pickaxe you are holding.
-const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5'];
+const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5', '#a06a5c', '#8de8d3'];
 
 const SOFT = new Set(['dirt', 'grass', 'sand', 'snow', 'clay', 'mud']);
 

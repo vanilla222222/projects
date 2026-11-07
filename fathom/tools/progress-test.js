@@ -243,6 +243,17 @@ for (const key of ['furnace-lance', 'cinder-scepter', 'warden-heart']) {
   ok(ladder.arrived.get('furnace-core') < ladder.arrived.get(key), key + ' is available before the Warden');
 }
 
+for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite', 'meteor', 'aetherite']) {
+  const keys = ['pick', 'axe', 'hammer', 'helmet', 'chest', 'legs', 'boots', 'bow']
+    .map(piece => metal + '-' + piece);
+  keys.push(metal === 'aetherite' ? 'aether-sabre' : metal + '-sword');
+  for (const key of keys) {
+    const recipe = craft.RECIPES.find(r => r.out.key === key);
+    ok(recipe?.need.some(([item]) => item === metal + '-bar'), key + ' lacks a recipe using its own metal');
+    ok(ladder.held.has(key), key + ' is missing from the reachable set');
+  }
+}
+
 // --- 4. nothing is reachable before the thing that is supposed to gate it -----------------
 // A gem staff cannot be makeable before its gem, and a tier of armour cannot be makeable
 // before its bar. Stated as a rule over the recipes rather than case by case.
