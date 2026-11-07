@@ -225,18 +225,7 @@ function makeUI(root, deps) {
       return canvas;
     }
     if (mining && mining.isTool(item)) {
-      const u = size / 16;
-      ctx.fillStyle = '#6b4a2c';
-      ctx.fillRect(7 * u, 4 * u, 2 * u, 10 * u);
-      ctx.fillStyle = '#4e351e';
-      ctx.fillRect(7 * u, 4 * u, 1 * u, 10 * u);
-      const head = mining.tierColour(item);
-      ctx.fillStyle = head;
-      ctx.fillRect(3 * u, 3 * u, 10 * u, 2 * u);
-      ctx.fillRect(2 * u, 4 * u, 2 * u, 2 * u);
-      ctx.fillRect(12 * u, 4 * u, 2 * u, 2 * u);
-      ctx.fillStyle = 'rgba(255,255,255,0.32)';
-      ctx.fillRect(3 * u, 3 * u, 10 * u, 1 * u);
+      paintToolIcon(ctx, mining.toolSpec(item.key).job, mining.tierColour(item), size);
       return canvas;
     }
     // Accessories. Twenty-five of them, and every one was the same grey square: a
@@ -373,6 +362,37 @@ function makeUI(root, deps) {
     ctx.fillStyle = '#8894a8';
     ctx.fillRect(size * 0.2, size * 0.2, size * 0.6, size * 0.6);
     return canvas;
+  }
+
+  function paintToolIcon(ctx, job, colour, size) {
+    const u = size / 16;
+    function facet(points, fill, outline = false) {
+      ctx.beginPath();
+      ctx.moveTo(points[0] * u, points[1] * u);
+      for (let i = 2; i < points.length; i += 2) ctx.lineTo(points[i] * u, points[i + 1] * u);
+      ctx.closePath();
+      if (outline) {
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = u;
+        ctx.strokeStyle = '#221d32';
+        ctx.stroke();
+      }
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    facet([3, 15, 1.5, 13.5, 10, 5, 12, 6.5], '#986239', true);
+    facet([3, 14, 2.4, 13.3, 10, 5.4, 10.8, 6], '#d8a568');
+    if (job === 'axe') {
+      facet([7, 5, 9, 2, 13, 1, 15, 4, 14, 8, 12, 10, 11, 7], colour, true);
+      facet([13, 1, 15, 4, 14, 8, 12, 10, 12, 8, 13.7, 4], '#fff1cb99');
+    } else if (job === 'hammer') {
+      facet([5, 3, 8, 1, 15, 6, 15, 8, 12, 11, 5, 5], colour, true);
+      facet([5, 3, 8, 1, 15, 6, 12, 7], '#fff1cb88');
+      facet([12, 7, 15, 6, 15, 8, 12, 11], '#211d365c');
+    } else {
+      facet([4, 4, 6, 2, 10, 2, 14, 5, 15, 9, 14, 11, 12, 7, 9, 5, 6, 4], colour, true);
+      facet([4, 4, 6, 2, 10, 2, 14, 5, 15, 9, 13, 6, 9, 3.5], '#fff1cb99');
+    }
   }
 
   function paintLootIcon(ctx, key, spec, size) {

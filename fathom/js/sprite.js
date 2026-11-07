@@ -832,6 +832,17 @@ function drawHeld(ctx, g, held, hx, hy, angle) {
     poly(ctx, g, [tipX, tipY, tipX + Math.cos(angle - 1.4) * 0.2,
       tipY + Math.sin(angle - 1.4) * 0.2, tipX + Math.cos(angle - 0.4) * 0.22,
       tipY + Math.sin(angle - 0.4) * 0.22], head);
+  } else if (held.shape === 'hammer') {
+    const crossX = -Math.sin(angle) * 0.19;
+    const crossY = Math.cos(angle) * 0.19;
+    const depthX = Math.cos(angle) * 0.07;
+    const depthY = Math.sin(angle) * 0.07;
+    poly(ctx, g, [
+      tipX - crossX - depthX, tipY - crossY - depthY,
+      tipX + crossX - depthX, tipY + crossY - depthY,
+      tipX + crossX + depthX, tipY + crossY + depthY,
+      tipX - crossX + depthX, tipY - crossY + depthY
+    ], head);
   } else if (held.shape === 'block') {
     rect(ctx, g, hx - 0.08, hy - 0.08, 0.16, 0.16, head);
   }
