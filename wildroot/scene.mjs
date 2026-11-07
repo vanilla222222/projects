@@ -5,7 +5,7 @@ import {drawItemTexture} from './item-textures.mjs?v=50';
 import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=45';
 import {ATTACKS} from './combat-patterns.mjs?v=45';
 import {zoneUnlocked,routeRequirement} from './engine.mjs?v=45';
-import {drawMonsterArt} from './monster-art.mjs?v=52';
+import {drawMonsterArt} from './monster-art.mjs?v=53';
 import {npcMarker} from './conversations.mjs?v=45';
 import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=52';
 // Original canvas scenery. No external artwork or game assets.
@@ -41,16 +41,26 @@ function shop(g,{x,y,name},area){
 }
 function anvil(g,x,y,area){
  const orbit=area.startsWith('orbit-'),coastal=area.startsWith('tide-');
- const [base,light,metal,accent]=orbit?['#4c507c','#b5a6e5','#727fa8','#87e7dd']:coastal?['#466c6c','#d1ded1','#6e8c91','#dbba82']:['#76533d','#d3d8d2','#7d8d98','#edb363'];
- R(x-31,y-42,62,42,'#28313a',g);R(x-25,y-38,50,33,base,g);
- R(x-28,y-29,56,5,accent,g);R(x-35,y-7,70,7,base,g);
- R(x-58,y-72,108,16,'#28313a',g);R(x-48,y-57,89,10,'#28313a',g);
- R(x-32,y-47,66,9,'#28313a',g);R(x-17,y-40,34,5,'#28313a',g);
- R(x-53,y-68,99,6,light,g);R(x-43,y-62,84,9,metal,g);R(x-27,y-53,56,10,metal,g);
- R(x+15,y-81,21,8,accent,g);R(x+26,y-95,8,14,base,g);R(x+21,y-99,20,8,metal,g);
- if(orbit){R(x-51,y-36,12,28,base,g);R(x+39,y-36,12,28,base,g);R(x-51,y-37,12,4,accent,g);R(x+39,y-37,12,4,accent,g);}
+ const [base,light,steel,accent]=orbit?['#504a72','#d6ccf2','#8285af','#77e0d2']:coastal?['#49655b','#d8e3df','#728e95','#e4bc75']:['#79513b','#e0e4da','#808f99','#d79a58'];
+ const ink='#25303a';
+ // The wide face and stepped horn are separate from the tapered waist.
+ R(x-65,y-71,108,10,ink,g);R(x-55,y-61,98,10,ink,g);
+ R(x-42,y-51,77,8,ink,g);R(x-22,y-43,43,13,ink,g);
+ R(x-30,y-31,59,8,ink,g);R(x-59,y-67,97,5,light,g);
+ R(x-49,y-62,87,7,steel,g);R(x-35,y-55,63,7,steel,g);
+ R(x-17,y-48,28,15,steel,g);R(x-21,y-32,43,4,light,g);
+ R(x+22,y-69,6,4,ink,g);
+ // A low timber block or orbital mounting plinth keeps the outline clear.
+ R(x-34,y-26,67,26,ink,g);R(x-29,y-24,57,22,base,g);
+ R(x-29,y-23,57,4,accent,g);R(x-23,y-13,4,10,ink,g);
+ R(x+15,y-14,4,11,ink,g);
+ // Quench bucket and heated stock sit off the working surface.
+ R(x+43,y-25,30,25,ink,g);R(x+47,y-21,22,17,base,g);
+ R(x+43,y-27,30,7,steel,g);R(x+47,y-26,22,3,orbit?accent:'#84b5bb',g);
+ R(x-14,y-76,24,5,orbit?accent:'#e89052',g);
+ R(x+2,y-75,8,3,orbit?light:'#f9ce83',g);
 }
-function station(g,e,area){const x=e.x,y=e.y;if(e.station==='anvil'){anvil(g,x,y,area);}else if(e.station==='foundry'){R(x-47,y-122,94,122,'#8b756a',g);R(x-57,y-138,114,19,'#bba08a',g);R(x-26,y-65,52,65,'#302b31',g);R(x-19,y-50,38,47,'#df7540',g);R(x-11,y-34,23,31,'#ffcb67',g);R(x-46,y-85,92,8,'#624f4c',g);}else{R(x-55,y-53,110,13,'#a68558',g);R(x-45,y-40,9,40,'#665944',g);R(x+36,y-40,9,40,'#665944',g);if(e.station==='alchemy'){R(x-25,y-88,35,35,'#426b84',g);R(x-19,y-94,23,9,'#a1d8b7',g);R(x-17,y-78,22,22,'#9ddb75',g);R(x+20,y-76,22,23,'#b985c1',g);R(x+25,y-88,11,13,'#e2d6b3',g);}else{R(x-27,y-75,55,22,'#8171b0',g);label(g,'✦',x,y-89,'#d8c9ff',34);}}label(g,e.name,x,y-(e.station==='anvil'?119:159),'#ffdea3');}
+function station(g,e,area){const x=e.x,y=e.y;if(e.station==='anvil'){anvil(g,x,y,area);}else if(e.station==='foundry'){R(x-47,y-122,94,122,'#8b756a',g);R(x-57,y-138,114,19,'#bba08a',g);R(x-26,y-65,52,65,'#302b31',g);R(x-19,y-50,38,47,'#df7540',g);R(x-11,y-34,23,31,'#ffcb67',g);R(x-46,y-85,92,8,'#624f4c',g);}else{R(x-55,y-53,110,13,'#a68558',g);R(x-45,y-40,9,40,'#665944',g);R(x+36,y-40,9,40,'#665944',g);if(e.station==='alchemy'){R(x-25,y-88,35,35,'#426b84',g);R(x-19,y-94,23,9,'#a1d8b7',g);R(x-17,y-78,22,22,'#9ddb75',g);R(x+20,y-76,22,23,'#b985c1',g);R(x+25,y-88,11,13,'#e2d6b3',g);}else{R(x-27,y-75,55,22,'#8171b0',g);label(g,'✦',x,y-89,'#d8c9ff',34);}}label(g,e.name,x,y-(e.station==='anvil'?96:159),'#ffdea3');}
 export function viewFor(canvas,p){const ratio=canvas.clientWidth/Math.max(1,canvas.clientHeight);const width=Math.min(1280,Math.max(480,HEIGHT*ratio));return{x:Math.max(0,Math.min((p.roomWidth||WIDTH)-width,p.x-width*.43)),y:Math.max(p.roomMinY||0,Math.min(0,(p.y??GROUND)-HEIGHT*.76)),width,height:HEIGHT};}
 export function drawWorld(canvas,world,t,reduced=false){
  const ctx=canvas.getContext('2d');if(!ctx)return;const dpr=Math.min(2,devicePixelRatio||1),cw=Math.round(canvas.clientWidth*dpr),ch=Math.round(canvas.clientHeight*dpr);if(cw&&ch&&(canvas.width!==cw||canvas.height!==ch)){canvas.width=cw;canvas.height=ch;}
