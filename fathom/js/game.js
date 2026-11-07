@@ -1230,6 +1230,8 @@ function makeGame(canvas, deps) {
       ['amberroot', 'Amberroot Strangler', 'amberroot-idol', 'Optional. Summon in the deep Jungle.'],
       ['reedking', 'Reed King', 'reed-sigil', 'Optional. Summon on the Mire surface.'],
       ['fenwidow', 'Blackfen Widow', 'blackfen-spool', 'Optional. Summon in the deep Mire.'],
+      ['cragbreaker', 'Cragbreaker', 'crag-totem', 'Optional. Summon on the Highlands surface.'],
+      ['cairnshade', 'Cairnshade', 'cairn-bell', 'Optional. Summon in the deep Highlands.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1800,7 +1802,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=mire-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=highlands-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

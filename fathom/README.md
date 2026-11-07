@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 120 enemies including eighteen bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 133 enemies including twenty bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -249,3 +249,12 @@ Blackfen Ossuary in the deep Mire. Some ossuary chests awaken as Siltbound Mimic
 
 Use a Reed Sigil on the surface or a Blackfen Spool in the deep Mire to summon
 the Reed King or Blackfen Widow. Both are optional.
+
+
+### Highlands expansion
+
+Crag Watch is on the surface, Echo Quarry is in the caves, and Granite
+Sepulcher guards its deep cache with floor traps. Some caches awaken as Cairn Mimics.
+
+Use a Crag Totem on the surface or a Cairn Bell in the deep Highlands to summon
+Cragbreaker or Cairnshade. Both fights are optional.

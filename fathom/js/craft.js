@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'cairn-fang': { name: 'Cairn Fang', kind: 'loot', colour: '#b6acd0' },
+  'cragbreaker-horn': { name: 'Cragbreaker Horn', kind: 'loot', colour: '#a99c84' },
+  'cairn-echo': { name: 'Cairn Echo', kind: 'loot', colour: '#b6acd0' },
+  'crag-totem': { name: 'Crag Totem', kind: 'use', colour: '#a99c84',
+    use: { summon: 'cragbreaker', layer: 'surface', biome: 'highlands' }, text: 'Summon on the Highlands surface' },
+  'cairn-bell': { name: 'Cairn Bell', kind: 'use', colour: '#b6acd0',
+    use: { summon: 'cairnshade', layer: 'deep', biome: 'highlands' }, text: 'Summon in the deep Highlands' },
   'siltbound-fang': { name: 'Siltbound Fang', kind: 'loot', colour: '#a69a75' },
   'reed-crown': { name: 'Reed Crown', kind: 'loot', colour: '#a2ad70' },
   'blackfen-silk': { name: 'Blackfen Silk', kind: 'loot', colour: '#b38eaf' },
@@ -305,6 +312,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'crag-belt': { name: 'Crag Belt', colour: '#a99c84', text: 'Defence +6 and take 30% less fall damage', defense: 6, fallMul: 0.7 },
+  'cairn-chime': { name: 'Cairn Chime', colour: '#b6acd0', text: 'Magic damage +12% and mana regenerates 20% faster', magic: 1.12, manaRegen: 1.2 },
+  'cairn-clasp': { name: 'Cairn Clasp', colour: '#b6acd0', text: 'Defence +4 and pick up items from farther away', defense: 4, pickup: 1.4 },
   'reed-circlet': { name: 'Reed Circlet', colour: '#a2ad70', text: 'Health regenerates 25% faster and breath lasts twice as long', regen: 1.25, breathMul: 2 },
   'blackfen-wrap': { name: 'Blackfen Wrap', colour: '#b38eaf', text: 'Magic costs 15% less mana and defence +5', manaCost: 0.85, defense: 5 },
   'siltbound-clasp': { name: 'Siltbound Clasp', colour: '#a69a75', text: 'Move 10% faster and pick up items from farther away', speed: 1.1, pickup: 1.35 },
@@ -787,6 +797,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'crag-totem', kind: 'use', count: 1 }, need: [['stone', 20], ['bone', 5], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'cairn-bell', kind: 'use', count: 1 }, need: [['crystal', 7], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'crag-belt', kind: 'accessory', count: 1 }, need: [['cragbreaker-horn', 1], ['leather', 6]], station: 'anvil' },
+  { out: { key: 'cairn-chime', kind: 'accessory', count: 1 }, need: [['cairn-echo', 1], ['sapphire', 2]], station: 'anvil' },
+  { out: { key: 'cairn-clasp', kind: 'accessory', count: 1 }, need: [['cairn-fang', 2], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'reed-sigil', kind: 'use', count: 1 }, need: [['peat', 12], ['gel', 10], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'blackfen-spool', kind: 'use', count: 1 }, need: [['chitin', 8], ['amethyst', 3], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'reed-circlet', kind: 'accessory', count: 1 }, need: [['reed-crown', 1], ['shell', 6]], station: 'anvil' },
