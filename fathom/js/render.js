@@ -767,7 +767,7 @@ function makeRenderer(canvas, deps) {
       swimming: !!p.swimming,
       swingArm: state.swingArm === null ? undefined : state.swingArm,
       held: state.held,
-      gear: state.gear,
+      gear: state.wornAppearance,
       time: state.time,
       phase: 0
     });

@@ -1237,9 +1237,8 @@ function makeGame(canvas, deps) {
         handle: '#6d4f30', length: w.ranged ? 0.4 : 0.5 };
     }
     if (mining.isTool(item)) {
-      const job = mining.TOOLS[key] ? mining.TOOLS[key].job : 'pick';
-      return { shape: job === 'axe' ? 'axe' : (job === 'hammer' ? 'block' : 'pick'),
-        head: '#b9c0ca', handle: '#6d4f30', length: 0.46 };
+      return { shape: mining.toolSpec(key).job,
+        head: mining.tierColour(item), handle: '#6d4f30', length: 0.46 };
     }
     const spec = tiles.BY_KEY[key];
     if (spec) return { shape: 'block', head: spec.colour, handle: spec.colour, length: 0.2 };
@@ -1534,7 +1533,7 @@ function makeGame(canvas, deps) {
         guard += 1;
       }
     }
-    state.gear = wornAppearance();
+    state.wornAppearance = wornAppearance();
     lastView = renderer.draw(state);
     maintainChunks();
     if (minimap && (minimap.isLarge || !window.matchMedia?.('(max-width: 900px)').matches)) minimap.draw(state, dt);

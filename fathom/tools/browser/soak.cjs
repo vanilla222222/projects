@@ -23,6 +23,22 @@ const { chromium } = require('playwright');
   const res = await page.evaluate((minutes) => {
     const g = window.fathom, T = g.deps.tiles, P = g.deps.player;
     const problems = [];
+    // The first swing comes after a real rendered frame, which must leave the
+    // simulation's equipment modifiers in place for the next mining step.
+    const player = g.state.player;
+    const x = Math.floor(player.x + player.width / 2) + 2;
+    const y = Math.floor(player.y + player.height / 2);
+    const stone = T.idOf('stone');
+    const previous = g.state.world.get(x, y);
+    g.state.world.set(x, y, stone);
+    g.swingAt(x, y, 1 / 120);
+    if (g.state.world.get(x, y) !== stone || g.state.player.mining?.damage !== g.deps.mining.powerOf(g.selectedItem())) {
+      problems.push('Starter pick must damage stone without breaking it on the first swing');
+    }
+    for (let i = 0; i < 125; i += 1) g.swingAt(x, y, 1 / 120);
+    if (g.state.world.get(x, y) !== T.AIR) problems.push('Starter pick never finished mining stone');
+    g.state.world.set(x, y, previous);
+    g.state.player.mining = null;
     const peak = { drops: 0, particles: 0, arrows: 0, chunks: 0, edits: 0, enemies: 0,
       stars: 0, heap: 0 };
     // mulberry32. The obvious LCG - rng * 1103515245 + 12345 - overflows 2^53 in a
