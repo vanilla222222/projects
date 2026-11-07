@@ -5,6 +5,10 @@
 // REFERENCE.md records the Terraria layout this follows and where Fathom departs.
 
 const STACK_MAX = 999;
+const COIN_VALUES = { coin: 1, 'copper-coin': 1, 'silver-coin': 100, 'gold-coin': 10000,
+  'platinum-coin': 1000000, 'onyx-coin': 100000000 };
+const COIN_TIERS = Object.keys(COIN_VALUES).slice(1);
+const WALLET_LIMIT = STACK_MAX * COIN_VALUES['onyx-coin'] + COIN_VALUES['onyx-coin'] - 1;
 
 const LAYOUT = [
   { key: 'hotbar', label: 'Hotbar', size: 10 },
@@ -13,7 +17,9 @@ const LAYOUT = [
   { key: 'armor', label: 'Armour', size: 4, accepts: 'armor' },
   { key: 'accessory', label: 'Accessories', size: 6, accepts: 'accessory' },
   { key: 'vanity', label: 'Vanity', size: 4, accepts: 'armor' },
-  { key: 'trash', label: 'Trash', size: 1 }
+  { key: 'trash', label: 'Trash', size: 1 },
+  { key: 'ammo', label: 'Ammo', size: 4, accepts: 'ammo' },
+  { key: 'coins', label: 'Coins', size: 5, accepts: 'coin' }
 ];
 
 function makeInventory(spec) {
@@ -60,6 +66,14 @@ function makeInventory(spec) {
   // Fills partial stacks before empty slots, which is what makes picking things up feel
   // right: a mined block joins the stack you already have rather than opening a new slot.
   function add(item, count, range) {
+    if (sections.coins && !range && item.kind === 'coin' && COIN_VALUES[item.key]) {
+      const value = COIN_VALUES[item.key];
+      const total = coinBalance();
+      const moved = Math.min(count, Math.max(0, Math.floor((WALLET_LIMIT - total) / value)));
+      if (moved) writeCoins(total + moved * value);
+      return count - moved;
+    }
+    if (sections.ammo && !range && item.kind === 'ammo') count = add(item, count, 'ammo');
     let left = count;
     const from = range ? section(range).from : 0;
     const to = range ? section(range).to : slots.length;
@@ -86,13 +100,44 @@ function makeInventory(spec) {
     return left;
   }
 
+  function coinBalance() {
+    let total = 0;
+    for (let i = 0; i < slots.length; i += 1) {
+      const item = slots[i];
+      if (item?.kind === 'coin' && i !== sections.trash?.from) {
+        total += (COIN_VALUES[item.key] || 0) * item.count;
+      }
+    }
+    return total;
+  }
+
+  function writeCoins(value) {
+    for (let i = 0; i < slots.length; i += 1) {
+      const item = slots[i];
+      if (item?.kind === 'coin' && COIN_VALUES[item.key] && i !== sections.trash?.from) slots[i] = null;
+    }
+    for (let i = COIN_TIERS.length - 1; i >= 0; i -= 1) {
+      const key = COIN_TIERS[i], denomination = COIN_VALUES[key];
+      const count = Math.floor(value / denomination);
+      if (count) slots[sections.coins.from + i] = { key, kind: 'coin', count };
+      value %= denomination;
+    }
+  }
+
   function countOf(key) {
+    if (key === 'coin' && sections.coins) return coinBalance();
     let n = 0;
     for (const slot of slots) if (slot && slot.key === key) n += slot.count;
     return n;
   }
 
   function take(key, count) {
+    if (key === 'coin' && sections.coins) {
+      const total = coinBalance();
+      const moved = Math.min(total, count);
+      if (moved) writeCoins(total - moved);
+      return moved;
+    }
     let left = count;
     for (let i = slots.length - 1; i >= 0 && left > 0; i -= 1) {
       const slot = slots[i];
@@ -169,7 +214,9 @@ function makeInventory(spec) {
     const slot = slots[index];
     if (!slot) return false;
     const s = sectionOf(index);
-    const target = s && s.key === 'hotbar' ? 'main' : 'hotbar';
+    const target = s?.key === 'ammo' || s?.key === 'coins' ? 'main'
+      : slot.kind === 'ammo' && sections.ammo ? 'ammo'
+        : s?.key === 'hotbar' ? 'main' : 'hotbar';
     const left = add(slot, slot.count, target);
     if (left === slot.count) return false;
     slot.count = left;
@@ -211,6 +258,7 @@ function makeInventory(spec) {
       const entry = saved[i];
       slots[i] = entry && entry.key ? { ...entry } : null;
     }
+    if (sections.coins && saved.length <= sections.coins.from) writeCoins(coinBalance());
   }
 
   return {
@@ -225,7 +273,7 @@ function makeInventory(spec) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_inventory = { makeInventory, LAYOUT, STACK_MAX };
+const EXPORTS_inventory = { makeInventory, LAYOUT, STACK_MAX, COIN_VALUES };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_inventory;

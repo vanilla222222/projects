@@ -1749,6 +1749,36 @@ function isSolidId(id) {
   return !!tile(id).solid;
 }
 
+const HALLOW_BIOME = { key: 'hallow', name: 'The Hallow' };
+const HALLOW_SURFACES = new Set(['grass', 'junglegrass', 'snow', 'sand', 'peat', 'redclay', 'blightgrass', 'fleshgrass', 'stone']);
+const HARDMODE_STONE = new Set(['stone', 'granite', 'basalt', 'slate', 'brimstone', 'cinderstone', 'ash', 'voidstone']);
+const HALLOW_CRYSTALS = ['ray-crystal', 'storm-crystal', 'ward-crystal'];
+
+function isHallowRegion(seed, x) {
+  if (Math.abs(x) < 480) return false;
+  const region = Math.floor(x / 420);
+  return Math.abs(x - (region * 420 + 210)) < 160 && unit(seed, region, 0, 8811) < 0.45
+    && !columnOf(seed, x).biome.drowned;
+}
+
+function hardmodeTileAt(seed, x, y, id) {
+  const key = tile(id).key;
+  const altitude = altitudeOf(y);
+  if (altitude < -110) return id;
+  if (HALLOW_SURFACES.has(key) && isHallowRegion(seed, x)
+    && y === surfaceHeight(seed, x)) return idOf('hallowgrass');
+  if (!HARDMODE_STONE.has(key)) return id;
+  const vein = unit(seed, Math.floor(x / 4), Math.floor(y / 4), 8819);
+  if (altitude >= 1950 && vein > 0.972) return idOf('adamantite');
+  if (altitude >= 850 && altitude < 1950 && vein > 0.969) return idOf('mythril');
+  if (altitude >= 160 && altitude < 850 && vein > 0.966) return idOf('palladium');
+  if (!isHallowRegion(seed, x) || altitude < 25 || altitude > 740) return id;
+  if (vein > 0.94) {
+    return idOf(HALLOW_CRYSTALS[Math.floor(unit(seed, Math.floor(x / 4), Math.floor(y / 4), 8821) * 3)]);
+  }
+  return vein > 0.55 ? idOf('prismstone') : id;
+}
+
 function generateChunk(seed, cx, cy) {
   // Sixteen bits per tile, not eight. Six wood species with a full furniture set each
   // had the registry at 151 of a possible 255, and beds alone would have added 48 more;
@@ -1786,7 +1816,7 @@ function generateChunk(seed, cx, cy) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
-    CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
+    CHUNK, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,

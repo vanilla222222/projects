@@ -379,6 +379,15 @@ BODIES.golem = function (ctx, g, c) {
       0.13, -0.69, -0.02, -0.56], ink);
   }
 
+  if (c.key === 'prismsentinel') {
+    for (let i = 0; i < 3; i += 1) {
+      const x = -0.29 + i * 0.24;
+      const y = -0.74 + Math.sin(c.anim + i) * 0.07;
+      poly(ctx, g, [x, y - 0.21, x + 0.12, y, x, y + 0.16, x - 0.11, y],
+        c.enraged ? '#fff0e6' : ['#e7aff2', '#a8e7f0', '#ffd5ab'][i]);
+    }
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -990,6 +999,9 @@ function drawHeld(ctx, g, held, hx, hy, angle) {
     poly(ctx, g, [tipX, tipY, tipX + Math.cos(angle - 1.4) * 0.2,
       tipY + Math.sin(angle - 1.4) * 0.2, tipX + Math.cos(angle - 0.4) * 0.22,
       tipY + Math.sin(angle - 0.4) * 0.22], head);
+  } else if (held.shape === 'rifle') {
+    limb(ctx, g, hx - 0.11, hy + 0.04, tipX, tipY, 0.16, head);
+    rect(ctx, g, hx - 0.12, hy, 0.18, 0.075, '#514052');
   } else if (held.shape === 'torch') {
     dot(ctx, g, tipX, tipY, 0.085, head);
     dot(ctx, g, tipX, tipY, 0.04, '#fff3c4');

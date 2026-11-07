@@ -368,6 +368,26 @@ defineMulti('highlands-mimic', 'Iron Chest', 2, 2, () => ({
   toughness: 70, chest: 'highlands-mimic', mimic: 'highlandsmimic', drops: null
 }));
 
+pushTile({ key: 'hallowgrass', name: 'Hallow Grass', colour: '#aa8bc7', solid: true,
+  opacity: 48, emit: 0, hardness: 0.4, grassTop: true, soil: '#755d88', grain: 0.14 });
+pushTile({ key: 'prismstone', name: 'Prismstone', colour: '#817298', solid: true,
+  opacity: 56, emit: 0, hardness: 2, toughness: 160, grain: 0.18 });
+for (const [key, name, colour] of [
+  ['ray-crystal', 'Ray Crystal', '#ffd6a1'], ['storm-crystal', 'Storm Crystal', '#8bd4ea'],
+  ['ward-crystal', 'Ward Crystal', '#d4a5ef']
+]) {
+  pushTile({ key, name, colour, solid: true, opacity: 45, emit: 7, hardness: 2.4,
+    toughness: 245, require: 175, basePowerGate: true, ore: true, grain: 0.15 });
+}
+for (const [key, name, colour, require] of [
+  ['palladium', 'Palladium Ore', '#cf8457', 200],
+  ['mythril', 'Mythril Ore', '#68b9a8', 225],
+  ['adamantite', 'Adamantite Ore', '#db6f8b', 255]
+]) {
+  pushTile({ key, name, colour, solid: true, opacity: 56, emit: 4, hardness: 4,
+    toughness: require * 3, require, basePowerGate: true, ore: true, grain: 0.21 });
+}
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

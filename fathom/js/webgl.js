@@ -20,7 +20,7 @@ function makeTerrainGL(doc, atlas) {
   const buffer = gl.createBuffer();
   const texture = gl.createTexture();
   try {
-    if (atlas.height > gl.getParameter(gl.MAX_TEXTURE_SIZE)) throw Error('Terrain atlas is too large.');
+    if (Math.max(atlas.width, atlas.height) > gl.getParameter(gl.MAX_TEXTURE_SIZE)) throw Error('Terrain atlas is too large.');
     gl.attachShader(program, shader(gl.VERTEX_SHADER, `#version 300 es
       layout(location=0) in vec2 point;
       layout(location=1) in vec2 uv;

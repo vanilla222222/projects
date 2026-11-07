@@ -928,17 +928,25 @@ function finishTileArt(ctx, spec, variant, x, y) {
   ctx.restore();
 }
 
+const ATLAS_ROWS = 128;
+function atlasX(id, variant) {
+  return (Math.floor(id / ATLAS_ROWS) * VARIANTS + variant) * TILE;
+}
+function atlasY(id) {
+  return (id % ATLAS_ROWS) * TILE;
+}
+
 function bakeAtlas(document, tiles) {
   const canvas = document.createElement('canvas');
-  canvas.width = TILE * VARIANTS;
-  canvas.height = TILE * tiles.TILES.length;
+  canvas.width = TILE * VARIANTS * Math.ceil(tiles.TILES.length / ATLAS_ROWS);
+  canvas.height = TILE * Math.min(ATLAS_ROWS, tiles.TILES.length);
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   for (const spec of tiles.TILES) {
     if (!spec.colour) continue;
     for (let v = 0; v < VARIANTS; v += 1) {
-      const ox = v * TILE;
-      const oy = spec.id * TILE;
+      const ox = atlasX(spec.id, v);
+      const oy = atlasY(spec.id);
       const band = Math.floor(v / PATTERNS);
       if (spec.gem || spec.key === 'void-crystal') paintGem(ctx, spec, v, ox, oy);
       else if (spec.ore) paintOre(ctx, spec, v, ox, oy);
@@ -1031,7 +1039,7 @@ function bandAt(x, y, size, salt) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_texture = { TILE, VARIANTS, PATTERNS, SHADE_BANDS, BAND_SIZE,
+const EXPORTS_texture = { TILE, atlasX, atlasY, VARIANTS, PATTERNS, SHADE_BANDS, BAND_SIZE,
   bakeAtlas, variantFor, shade };
 
 if (typeof module !== 'undefined' && module.exports) {

@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale', 'sunmane-tuft', 'sun-carat', 'pinemaw-claw', 'winterroot-core', 'windmill-gear', 'standard-thread', 'spore-crown-fragment', 'hollowroot-knot', 'bloodcrest-plume', 'veinward-core', 'reef-fin', 'abyssal-pearl', 'breakwater-claw', 'saltmarrow-bone'].includes(k)));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale', 'sunmane-tuft', 'sun-carat', 'pinemaw-claw', 'winterroot-core', 'windmill-gear', 'standard-thread', 'spore-crown-fragment', 'hollowroot-knot', 'bloodcrest-plume', 'veinward-core', 'reef-fin', 'abyssal-pearl', 'breakwater-claw', 'saltmarrow-bone', 'prism-heart'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -60,7 +60,7 @@ function minableTiles() {
     // Meteorite is in no band: it arrives in a crater when the King dies. Counted here
     // as minable because what this test measures is the pickaxe gate, and meteorite's
     // gate is a pickaxe like everything else's - the boss is a separate question.
-    'meteorite', 'void-crystal', 'aetherite',
+    'meteorite', 'void-crystal', 'aetherite', 'palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal',
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
@@ -167,7 +167,10 @@ function climb() {
     if (was.has('breakwater-shell')) gain('breakwater-claw');
     if (was.has('saltmarrow-token')) gain('saltmarrow-bone');
     if (was.has('rift-sigil')) gain('rift-core');
+    if (was.has('prism-sigil')) gain('prism-heart');
     for (const tile of MINABLE) {
+      if (['palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal'].includes(tile.key)
+        && !was.has('prism-heart')) continue;
       if (was.has(tile.key) || tile.require > power) continue;
       gain(tile.key);
     }
@@ -259,6 +262,10 @@ for (const [ore, previous] of Object.entries({
 
 ok(ladder.arrived.get('briar-idol') < ladder.arrived.get('briar-brooch'), 'Briar reward bypasses its boss');
 ok(ladder.arrived.get('rootcrown-idol') < ladder.arrived.get('rootcrown-ring'), 'Root Crown reward bypasses its boss');
+ok(ladder.arrived.get('prism-heart') < ladder.arrived.get('palladium')
+  && ladder.arrived.get('palladium-pick') < ladder.arrived.get('mythril')
+  && ladder.arrived.get('mythril-pick') < ladder.arrived.get('adamantite'),
+  'Hardmode ore progression bypasses its gate');
 ok(ladder.arrived.get('rift-core') < ladder.arrived.get('rift-pick')
   && ladder.arrived.get('rift-pick') < ladder.arrived.get('aetherite'), 'sky ore bypasses the Rift Archon');
 ok(mining.damagePerHit(250, tiles.BY_KEY.aetherite, mining.TOOLS['emberite-pick'].power) === 0,
@@ -273,7 +280,7 @@ for (const key of ['furnace-lance', 'cinder-scepter', 'warden-heart']) {
   ok(ladder.arrived.get('furnace-core') < ladder.arrived.get(key), key + ' is available before the Warden');
 }
 
-for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite', 'meteor', 'aetherite']) {
+for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'emberite', 'meteor', 'aetherite', 'palladium', 'mythril', 'adamantite']) {
   const keys = ['pick', 'axe', 'hammer', 'helmet', 'chest', 'legs', 'boots', 'bow']
     .map(piece => metal + '-' + piece);
   keys.push(metal === 'aetherite' ? 'aether-sabre' : metal + '-sword');
@@ -340,7 +347,7 @@ for (const r of craft.RECIPES) {
 // If everything arrived in one or two rounds there would be no progression at all; if it
 // took thirty, something is gated behind a chain nobody would ever follow.
 ok(ladder.rounds >= 5, 'the whole game is reachable in ' + ladder.rounds + ' rounds');
-ok(ladder.rounds <= 36, 'the ladder is ' + ladder.rounds + ' rounds deep');
+ok(ladder.rounds <= 48, 'the ladder is ' + ladder.rounds + ' rounds deep');
 
 // --- 6. the deepest things really are the last ones --------------------------------------------
 {
