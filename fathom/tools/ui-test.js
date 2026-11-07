@@ -146,6 +146,32 @@ for (const [key, what] of CONTROLS) {
   }
 }
 
+// Check the same art path used by the hotbar and drops, at one shared material tier.
+{
+  const mining = require('../js/mining.js');
+  const { makeUI } = require('../js/ui.js');
+  const signatures = [];
+  global.document = {
+    createElement() {
+      const points = [];
+      const ctx = {
+        beginPath() {}, closePath() {}, fill() {}, stroke() {}, fillRect() {},
+        moveTo(x, y) { points.push([x, y]); },
+        lineTo(x, y) { points.push([x, y]); }
+      };
+      return { points, getContext: () => ctx };
+    }
+  };
+  const ui = makeUI(null, { mining });
+  for (const job of ['pick', 'axe', 'hammer']) {
+    const art = ui.itemArt({ key: 'tin-' + job, kind: 'tool' });
+    ok(art.points.length > 8, job + ' did not draw its tool silhouette');
+    signatures.push(JSON.stringify(art.points));
+  }
+  ok(new Set(signatures).size === 3, 'same-tier tools share icon geometry');
+  delete global.document;
+}
+
 console.log('\n' + CONTROLS.length + ' controls listed: '
   + CONTROLS.map(([k]) => k).join(', '));
 console.log(checks + ' checks, ' + failures + ' failures');
