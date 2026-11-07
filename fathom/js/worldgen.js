@@ -483,8 +483,8 @@ function inGallery(seed, x, depth, bore) {
     const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
     const shape = fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5);
     // Swell narrow corridors into chambers without severing their centerlines.
-    const chamber = Math.max(0, shape - 0.61) ** 2 * 68;
-    const radius = (2.5 + unit(seed, b, 0, 5207) * 3.8
+    const chamber = Math.max(0, shape - 0.65) ** 2 * 45;
+    const radius = (2.5 + unit(seed, b, 0, 5207) * 3.2
       + (shape - 0.5) * 3 + chamber) * bore;
     if (Math.abs(depth - (base + wander + (shape - 0.5) * 7)) < radius) return true;
   }
@@ -502,7 +502,7 @@ function inShaft(seed, x, depth, bore) {
     // on average, two of three sample windows contained none at all, and a cave with no
     // door is indistinguishable from no cave.
     const top = unit(seed, s, 0, 5313) < 0.72 ? -3 : 30 + unit(seed, s, 0, 5317) * 180;
-    const bottom = 380 + unit(seed, s, 0, 5319) * 860;
+    const bottom = 510 + unit(seed, s, 0, 5319) * 730;
     if (depth < top || depth > bottom) continue;
     const base = s * SHAFT_SPACING + (unit(seed, s, 0, 5303) - 0.5) * SHAFT_SPACING * 0.72;
     const wander = (fbm1(seed, depth * 0.0062 + s * 23, 5307, 3, 2, 0.5) - 0.5) * 76;
@@ -574,7 +574,7 @@ function caveDensity(seed, x, y, depth, column) {
 }
 
 function caveThreshold(column) {
-  return (column ? caveProfile(column) : CAVE_PROFILES.normal).threshold;
+  return (column ? caveProfile(column) : CAVE_PROFILES.normal).threshold + 0.045;
 }
 
 // How far down standing water reaches. Beneath an ocean the sea soaks into the rock, so

@@ -656,7 +656,7 @@ function makeRenderer(canvas, deps) {
   let lightImage, lastLight = null;
   function drawLighting(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
-    const margin = 6;
+    const margin = 12;
     const lw = cols + margin * 2;
     const lh = rows + margin * 2;
     const phaseBucket = Math.round(state.dayPhase * 384);
@@ -664,7 +664,8 @@ function makeRenderer(canvas, deps) {
     const signature = [x0, y0, lw, lh, phaseBucket, revision].join(':');
     if (revision === undefined || !lastLight || lastLight.world !== state.world || lastLight.signature !== signature) {
       field.compute(state.world, x0 - margin, y0 - margin, lw, lh,
-        Math.round(255 * light.sunStrength(phaseBucket / 384)), phaseBucket / 384);
+        Math.round(255 * light.sunStrength(phaseBucket / 384)), phaseBucket / 384,
+        x => cachedSurface(state.world, x));
       if (lightCanvas.width !== lw || lightCanvas.height !== lh) {
         lightCanvas.width = lw;
         lightCanvas.height = lh;
@@ -672,14 +673,16 @@ function makeRenderer(canvas, deps) {
       if (!lightImage || lightImage.width !== lw || lightImage.height !== lh) lightImage = lightCtx.createImageData(lw, lh);
       const image = lightImage;
       const buffer = field.buffer;
-      // A floor under the light so unlit rock reads as rock. At zero the multiply blend
-      // turns everything pure black and the underground becomes an unreadable void.
-      const ambient = 88;
-      for (let i = 0; i < lw * lh; i += 1) {
-        image.data[i * 4] = Math.min(255, buffer[i * 3] + ambient);
-        image.data[i * 4 + 1] = Math.min(255, buffer[i * 3 + 1] + ambient);
-        image.data[i * 4 + 2] = Math.min(255, buffer[i * 3 + 2] + ambient);
-        image.data[i * 4 + 3] = 255;
+      for (let x = 0; x < lw; x += 1) {
+        const surface = cachedSurface(state.world, x0 - margin + x);
+        for (let y = 0; y < lh; y += 1) {
+          const ambient = light.ambientAtDepth(y0 - margin + y - surface);
+          const i = y * lw + x;
+          image.data[i * 4] = Math.min(255, buffer[i * 3] + ambient);
+          image.data[i * 4 + 1] = Math.min(255, buffer[i * 3 + 1] + ambient);
+          image.data[i * 4 + 2] = Math.min(255, buffer[i * 3 + 2] + ambient + 2);
+          image.data[i * 4 + 3] = 255;
+        }
       }
       lightCtx.putImageData(image, 0, 0);
       lastLight = { world: state.world, signature };
@@ -697,7 +700,7 @@ function makeRenderer(canvas, deps) {
   // than fed into the tile light field, because the field is computed per tile from the
   // world and the player is not in the world.
   function drawCarriedLight(state, view) {
-    const glow = state.gear && state.gear.glow;
+    const glow = Math.max(state.gear?.glow || 0, state.held?.shape === 'torch' ? 5 : 0);
     if (!glow) return;
     const { x0, y0, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
@@ -725,13 +728,15 @@ function makeRenderer(canvas, deps) {
         const id = sample.ids[(ty + 1) * sample.stride + tx + 1];
         const emit = tiles.emitOf(id);
         if (emit <= 0) continue;
-        const tint = light.EMIT_TINTS[tiles.tile(id).key] || [255, 255, 255];
+        const key = tiles.tile(id).key;
+        const flame = key === 'torch' || key === 'lantern' || key === 'campfire';
+        const tint = light.EMIT_TINTS[key] || [255, 255, 255];
         const cx = tx * size - offsetX + size / 2;
         const cy = ty * size - offsetY + size / 2;
-        const radius = size * (1.2 + emit * 0.16);
+        const radius = size * (flame ? 1.2 + emit * 0.16 : 0.8 + emit * 0.09);
         const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
         const flicker = 0.78 + 0.22 * Math.sin(state.time * 7 + (x0 + tx) * 1.7 + (y0 + ty) * 2.3);
-        g.addColorStop(0, 'rgba(' + tint.join(',') + ',' + (0.3 * flicker).toFixed(3) + ')');
+        g.addColorStop(0, 'rgba(' + tint.join(',') + ',' + ((flame ? 0.30 : 0.12) * flicker).toFixed(3) + ')');
         g.addColorStop(1, 'rgba(' + tint.join(',') + ',0)');
         ctx.fillStyle = g;
         ctx.beginPath();

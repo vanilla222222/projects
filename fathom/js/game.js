@@ -1496,6 +1496,7 @@ function makeGame(canvas, deps) {
       return { shape: mining.toolSpec(key).job,
         head: mining.tierColour(item), handle: '#6d4f30', length: 0.46 };
     }
+    if (key === 'torch') return { shape: 'torch', head: '#ffbd5b', handle: '#795335', length: 0.36 };
     const spec = tiles.BY_KEY[key];
     if (spec) return { shape: 'block', head: spec.colour, handle: spec.colour, length: 0.2 };
     return null;
@@ -1718,7 +1719,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=void-1');
+      const worker = new Worker('workers/chunk.js?v=cave-light-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
