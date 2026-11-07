@@ -958,3 +958,37 @@ read a `const` before its declaration and threw on page load - the exact trap th
 lookups at the top of craft.js are written around, with a comment explaining it. Node
 tests all passed, because in Node it is a `require`. The game was broken and only the
 browser check found it.
+
+## Does the game load?
+
+Four times now this project has had every suite green and a game that did not run. The
+reason is structural: every other test `require`s the modules it tests, and in Node that
+gives each module its own scope and its own dependency graph. The browser does neither.
+`index.html` lists classic scripts, they share one global scope, and they run strictly in
+the order listed. Two classes of bug live in that gap and no amount of unit testing can
+see them.
+
+**Order.** A module naming a `const` from a module listed after it reads it before its
+declaration and throws on page load. craft.js named the buff table at load time; buffs.js
+is listed later; the game was broken while twenty suites passed. The file already carried
+two comments warning about exactly that.
+
+**Collision.** Two files declaring `const shade` are two separate modules in Node and a
+redeclaration error in the browser. This has happened three times - `BY_KEY` in two
+modules, `EXPORTS` in all of them, a local named `mining`.
+
+`tools/boot-test.js` does what the browser does: reads the script list out of index.html,
+concatenates those files in that order, and runs the result in a fresh VM context with
+just enough of a browser stubbed to get through load. Anything that would throw on page
+load throws here, and because each file is labelled in the concatenation the failure names
+the file rather than a line number into a twenty-file bundle.
+
+It then checks that every module registered itself, that none registered an empty export,
+that every name `game.js` destructures out of `deps` is something that registers, that
+every file in `js/` is actually listed in index.html, and that `makeGame` exists at the
+end of it.
+
+Both bugs were reintroduced deliberately to confirm it catches them. It names
+`js/craft.js: Cannot access 'BUFFS' before initialization` and `js/sprite.js: Identifier
+'shade' has already been declared`, while craft-test, buff-test, ui-test and sprite-test
+all pass through either one without noticing.

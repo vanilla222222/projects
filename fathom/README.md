@@ -56,6 +56,14 @@ that a sealed box holds, that terminal velocity is enforced, and that reach is c
 
 `node tools/autotile-test.js` exercises all 256 neighbour masks.
 
+`node tools/boot-test.js` loads the game the way a browser does: it reads the script list
+out of `index.html`, concatenates those files in that order into one program — which is
+what sharing one global scope amounts to — and runs it against a stubbed browser. It
+catches the two classes of bug that every other suite here is structurally blind to,
+because every other suite `require`s its modules and so gives each one its own scope: a
+module naming a `const` from a module listed after it, and two modules declaring the same
+global name. Both have happened, more than once.
+
 `node tools/sprite-test.js` draws every body plan into a recording context and requires
 that each produces different frames at different animation phases. A sprite that ignores
 its phase looks perfect in a screenshot and is a still photograph in motion.
