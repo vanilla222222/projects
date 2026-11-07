@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=39';
-import * as D from './content.mjs?v=39';
-import * as U from './panels.mjs?v=39';
-import {World,GROUND} from './world.mjs?v=39';
+import * as E from './engine.mjs?v=40';
+import * as D from './content.mjs?v=40';
+import * as U from './panels.mjs?v=40';
+import {World,GROUND} from './world.mjs?v=40';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const sum=(c,id)=>E.bagSlots(c).reduce((n,t)=>n+(t?.id===id?t.qty:0),0);
 test('Positional grid keeps holes and split stacks through saves and crafting deltas',()=>{
@@ -13,7 +13,7 @@ test('Locks protect exact stacks, empty reservations, equipment and deposit-all 
  const{s,c}=setup();E.give(c,'oak',150);E.toggleSlotLock(c,0);E.toggleSlotLock(c,4);E.travel(s,c,'town',0);assert.equal(E.depositAll(s,c),51);assert.equal(c.bag.oak,99);assert.equal(E.takeSlot(c,0),null);assert.equal(E.moveSlot(c,0,2),false);assert.equal(E.moveSlot(c,0,4),false);E.give(c,'copper',99);assert.equal(E.bagSlots(c)[4],null);const piece=E.createEquipment(s,'copper-pick');let index=E.bagSlots(c).findIndex(t=>t?.uid===piece.uid);E.toggleSlotLock(c,index);assert.equal(E.depositGear(s,c,piece.uid),false);assert.equal(E.equip(s,c,piece.uid),false);const loaded=E.restoreSave(JSON.parse(JSON.stringify(s)));assert.deepEqual(E.selected(loaded).lockedSlots,c.lockedSlots);E.toggleSlotLock(c,0);assert.equal(E.deposit(s,c,'oak'),99);
 });
 test('Every pouch tier is useful, personal, additive and cannot be consumed twice',()=>{
- const{s,c}=setup();for(const[id,d]of Object.entries(D.CAPACITY_BAGS)){E.give(c,id,2);const sample={materials:'moss-slime',mining:'copper',logging:'oak',food:'tonic'}[d.type],before=E.stackLimit(c,sample);assert.ok(E.useCapacityBag(c,id));assert.equal(E.stackLimit(c,sample),before+d.bonus);assert.equal(c.bag[id],1);assert.equal(E.useCapacityBag(c,id),false);assert.equal(c.bag[id],1);}assert.equal(E.stackLimit(c,'copper'),1099);s.unlockedClasses=['warrior'];E.createCharacter(s,'Other');assert.equal(E.stackLimit(E.selected(s),'copper'),99);assert.equal(E.selected(E.restoreSave(JSON.parse(JSON.stringify(s)))).usedCapacityBags.length,0);assert.equal(E.bagCapacity(c),16);
+ const{s,c}=setup();for(const[id,d]of Object.entries(D.CAPACITY_BAGS)){E.give(c,id,2);const sample={materials:'moss-slime',mining:'copper',logging:'oak',food:'tonic',fishing:'reed-fish',bugcatching:'glowbug',digging:'clay',foraging:'tideberry'}[d.type],before=E.stackLimit(c,sample);assert.ok(E.useCapacityBag(c,id));assert.equal(E.stackLimit(c,sample),before+d.bonus);assert.equal(c.bag[id],1);assert.equal(E.useCapacityBag(c,id),false);assert.equal(c.bag[id],1);}assert.equal(E.stackLimit(c,'copper'),1099);s.unlockedClasses=['warrior'];E.createCharacter(s,'Other');assert.equal(E.stackLimit(E.selected(s),'copper'),99);assert.equal(E.selected(E.restoreSave(JSON.parse(JSON.stringify(s)))).usedCapacityBags.length,0);assert.equal(E.bagCapacity(c),16);
 });
 test('Expanded category stacks extend gathering room without affecting other types or storage',()=>{
  const{s,c}=setup();E.give(c,'woven-mining-bag',1);E.useCapacityBag(c,'woven-mining-bag');E.give(c,'copper',199*16);assert.equal(E.bagUsed(c),16);assert.equal(c.bag.copper,3184);assert.equal(E.carry(c,'copper',1),0);assert.equal(E.carryRoom(c,'oak'),0);E.travel(s,c,'town',0);assert.equal(E.depositAll(s,c),3184);assert.equal(E.chestUsed(s),4);assert.equal(E.withdraw(s,c,'copper'),3184);assert.equal(E.bagUsed(c),16);

@@ -7,7 +7,7 @@
 const CHEST_SLOTS = 20;
 
 function makeUI(root, deps) {
-  const { tiles, texture, inventory, atlas, mining, craft } = deps;
+  const { tiles, texture, inventory, atlas, mining, craft, controls } = deps;
   let craftRows = [];
   let craftSignature = null;
   let onCraft = null;
@@ -223,6 +223,31 @@ function makeUI(root, deps) {
       ctx.fill();
       return canvas;
     }
+    // A rod: a tapering pole with a line and a float on the end.
+    if (craft && craft.ITEMS[item.key] && craft.ITEMS[item.key].rod) {
+      const u = size / 16;
+      ctx.strokeStyle = craft.ITEMS[item.key].colour;
+      ctx.lineWidth = 1.6 * u;
+      ctx.beginPath();
+      ctx.moveTo(2 * u, 14 * u);
+      ctx.lineTo(12 * u, 3 * u);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(230,236,244,0.7)';
+      ctx.lineWidth = 0.9 * u;
+      ctx.beginPath();
+      ctx.moveTo(12 * u, 3 * u);
+      ctx.quadraticCurveTo(14 * u, 8 * u, 11 * u, 11 * u);
+      ctx.stroke();
+      ctx.fillStyle = '#d8524c';
+      ctx.beginPath();
+      ctx.arc(11 * u, 12 * u, 1.8 * u, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#f2efe6';
+      ctx.beginPath();
+      ctx.arc(11 * u, 12 * u, 1.8 * u, 0, Math.PI);
+      ctx.fill();
+      return canvas;
+    }
     // A hook: a shaft with two barbs and a length of chain.
     const hooked = craft && craft.grappleOf(item);
     if (hooked) {
@@ -399,6 +424,25 @@ function makeUI(root, deps) {
 
     els.gearNote = el('p', 'gear-note', els.screen.querySelector('.equip-panel'));
 
+    // The controls, in the one screen every player is told how to open. Three keys had
+    // been added - the hook, sound, music - with no way for anybody to discover them.
+    if (controls && controls.length) {
+      const keysPanel = el('div', 'panel keys-panel', els.screen);
+      el('h2', null, keysPanel).textContent = 'Controls';
+      const list = el('div', 'keys', keysPanel);
+      for (const [key, what] of controls) {
+        const row = el('div', 'keys-row', list);
+        el('kbd', null, row).textContent = key;
+        el('span', null, row).textContent = what;
+      }
+    }
+
+    // Active buffs. An effect with a clock on it has to show the clock, or the player
+    // cannot tell a potion about to run out from one that just started. They sit down
+    // the left rather than under the hearts, because the top right already has the
+    // hearts and the map in it and a third thing there is a collision.
+    els.buffs = el('div', 'buffs', root);
+
     els.bar = el('div', 'hotbar', root);
     els.hotbarSlots = [];
     const hotbar = inventory.section('hotbar');
@@ -463,6 +507,24 @@ function makeUI(root, deps) {
     }
     count.textContent = item && item.count > 1 ? String(item.count) : '';
     node.classList.toggle('filled', !!item);
+  }
+
+  function paintBuffs(state) {
+    if (!els.buffs) return;
+    const list = (state && state.buffs) || [];
+    const signature = list.map(b => b.key + Math.ceil(b.seconds)).join(',');
+    if (els.buffs.dataset.sig === signature) return;
+    els.buffs.dataset.sig = signature;
+    els.buffs.textContent = '';
+    for (const entry of list) {
+      const node = el('span', 'buff', els.buffs);
+      node.style.borderColor = entry.spec.colour;
+      el('span', 'buff-dot', node).style.background = entry.spec.colour;
+      const secs = Math.ceil(entry.seconds);
+      const clock = secs >= 60 ? Math.ceil(secs / 60) + 'm' : secs + 's';
+      el('span', null, node).textContent = entry.spec.name + ' ' + clock;
+      node.title = entry.spec.text;
+    }
   }
 
   function meter(node, filled, total, kind) {
@@ -552,6 +614,9 @@ function makeUI(root, deps) {
     if (gear.swing !== 1) lines.push('Swing ' + Math.round(gear.swing * 100) + '%');
     if (gear.pickup !== 1) lines.push('Reach for drops ' + Math.round(gear.pickup * 100) + '%');
     if (gear.slimeFriend) lines.push('Slimes ignore you');
+    // Health regeneration: the Gilded set bonus and the Blood Charm both change it, and
+    // both were doing so silently.
+    if (gear.regen !== 1) lines.push('Healing ' + Math.round(gear.regen * 100) + '%');
     els.gearNote.textContent = lines.join('  \u00b7  ');
   }
 
@@ -612,6 +677,9 @@ function makeUI(root, deps) {
   }
 
   function sync(state) {
+    // Buffs are painted whether or not the backpack is open: they belong to the heads-up
+    // display, not to the inventory screen.
+    paintBuffs(state);
     for (let i = 0; i < els.hotbarSlots.length; i += 1) {
       paintSlot(els.hotbarSlots[i], inventory.section('hotbar').from + i);
     }

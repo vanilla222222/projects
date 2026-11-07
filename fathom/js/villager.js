@@ -15,11 +15,12 @@ const VILLAGERS = [
     key: 'guide', name: 'the Guide', colour: '#7fa35c', hair: '#5d4322',
     wants: () => true,
     wantsText: 'moves in as soon as there is a room',
-    greeting: 'Dig down and you will find copper before long. Dig further and you will find worse.',
+    greeting: 'Dig down and you will find copper before long. Dig further and you will find worse. Carry rope.',
     stock: [
       { key: 'torch', count: 20, price: 10 },
       { key: 'oakwood', count: 25, price: 20 },
-      { key: 'wood-pick', count: 1, price: 80 }
+      { key: 'wood-pick', count: 1, price: 80 },
+      { key: 'rope', count: 20, price: 50 }
     ]
   },
   {
@@ -30,8 +31,10 @@ const VILLAGERS = [
     stock: [
       { key: 'bucket', count: 1, price: 180 },
       { key: 'arrow', count: 50, price: 60 },
+      { key: 'rope', count: 30, price: 70 },
       { key: 'tin-bar', count: 5, price: 90 },
       { key: 'copper-bar', count: 5, price: 120 },
+      { key: 'healing-salve', count: 3, price: 150 },
       { key: 'lantern-charm', count: 1, price: 900 }
     ]
   },
@@ -44,8 +47,11 @@ const VILLAGERS = [
       { key: 'iron-bar', count: 5, price: 160 },
       { key: 'iron-pick', count: 1, price: 700 },
       { key: 'iron-sword', count: 1, price: 650 },
+      { key: 'iron-bow', count: 1, price: 620 },
+      { key: 'iron-arrow', count: 40, price: 180 },
       { key: 'iron-helmet', count: 1, price: 420 },
-      { key: 'iron-chest', count: 1, price: 540 }
+      { key: 'iron-chest', count: 1, price: 540 },
+      { key: 'grapple', count: 1, price: 1100 }
     ]
   },
   {
@@ -65,8 +71,11 @@ const VILLAGERS = [
     stock: [
       { key: 'diving-gear', count: 1, price: 1200 },
       { key: 'feather-fall', count: 1, price: 1100 },
+      { key: 'crystal-hook', count: 1, price: 1900 },
       { key: 'silver-bar', count: 5, price: 320 },
-      { key: 'crystal', count: 10, price: 240 }
+      { key: 'crystal', count: 10, price: 240 },
+      { key: 'amethyst', count: 4, price: 260 },
+      { key: 'topaz', count: 4, price: 320 }
     ]
   }
 ];

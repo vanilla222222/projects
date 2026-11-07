@@ -225,8 +225,13 @@ function makeRenderer(canvas, deps) {
     const size = TILE * zoom;
     for (let ty = 0; ty < rows; ty += 1) {
       for (let tx = 0; tx < cols; tx += 1) {
-        const id = state.world.getWall(x0 + tx, y0 + ty);
+        const wx = x0 + tx;
+        const wy = y0 + ty;
+        const id = state.world.getWall(wx, wy);
         if (id === 0) continue;
+        // A solid block covers its whole cell, so the wall behind it is painted and then
+        // painted over. Underground that is almost every cell on the screen.
+        if (tiles.isSolid(state.world.get(wx, wy))) continue;
         const spec = tiles.wall(id);
         ctx.fillStyle = spec.colour;
         ctx.fillRect(tx * size - offsetX, ty * size - offsetY, size + 1, size + 1);
@@ -246,10 +251,21 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  const EDGE_TOP = 'rgba(255,255,255,0.16)';
+  const EDGE_BOTTOM = 'rgba(0,0,0,0.28)';
+  const EDGE_SIDE = 'rgba(0,0,0,0.16)';
+  const GRASS_FRINGE = '#5f9440';
+
   function drawTiles(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const wind = (state.weather && state.weather.wind) || 0;
+    const lip = Math.max(1, Math.round(zoom * 1.5));
+    // One closure for the whole pass rather than one per tile: maskAt is called for
+    // every solid tile on the screen and was being handed a freshly allocated function
+    // each time.
+    const solidAt = (nx, ny) => tiles.isSolid(state.world.get(nx, ny));
+    let ink = null;
     ctx.imageSmoothingEnabled = false;
     for (let ty = 0; ty < rows; ty += 1) {
       for (let tx = 0; tx < cols; tx += 1) {
@@ -307,28 +323,28 @@ function makeRenderer(canvas, deps) {
         }
         ctx.drawImage(atlas, variant * TILE, id * TILE, TILE, TILE, sx, sy, size, size);
         if (!spec.solid) continue;
-        const mask = autotile.maskAt((nx, ny) => tiles.isSolid(state.world.get(nx, ny)), wx, wy);
+        const mask = autotile.maskAt(solidAt, wx, wy);
         if (autotile.isBuried(mask)) continue;
         const e = autotile.edges(mask);
-        const lip = Math.max(1, Math.round(zoom * 1.5));
+        // Assigning fillStyle makes the canvas parse the colour string, so the four
+        // edge shades are set at most once each per tile and in a fixed order rather
+        // than being re-stated for every rectangle.
         if (e.top) {
-          ctx.fillStyle = 'rgba(255,255,255,0.16)';
+          if (ink !== EDGE_TOP) { ctx.fillStyle = EDGE_TOP; ink = EDGE_TOP; }
           ctx.fillRect(sx, sy, size, lip);
         }
         if (e.bottom) {
-          ctx.fillStyle = 'rgba(0,0,0,0.28)';
+          if (ink !== EDGE_BOTTOM) { ctx.fillStyle = EDGE_BOTTOM; ink = EDGE_BOTTOM; }
           ctx.fillRect(sx, sy + size - lip, size, lip);
         }
-        if (e.left) {
-          ctx.fillStyle = 'rgba(0,0,0,0.16)';
-          ctx.fillRect(sx, sy, lip, size);
-        }
-        if (e.right) {
-          ctx.fillStyle = 'rgba(0,0,0,0.16)';
-          ctx.fillRect(sx + size - lip, sy, lip, size);
+        if (e.left || e.right) {
+          if (ink !== EDGE_SIDE) { ctx.fillStyle = EDGE_SIDE; ink = EDGE_SIDE; }
+          if (e.left) ctx.fillRect(sx, sy, lip, size);
+          if (e.right) ctx.fillRect(sx + size - lip, sy, lip, size);
         }
         if (e.top && spec.key === 'grass') {
-          ctx.fillStyle = '#5f9440';
+          ctx.fillStyle = GRASS_FRINGE;
+          ink = GRASS_FRINGE;
           ctx.fillRect(sx, sy - lip, size, lip);
           const bend = Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom * 1.6;
           for (let i = 0; i < 3; i += 1) {
@@ -339,7 +355,6 @@ function makeRenderer(canvas, deps) {
         }
       }
     }
-    drawLiquidDetail(state, view);
   }
 
   // --- water -------------------------------------------------------------------------
@@ -370,7 +385,12 @@ function makeRenderer(canvas, deps) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const t = state.time || 0;
-    ctx.save();
+
+    // Where the water each column holds starts and stops. Collected first rather than
+    // drawn as it is found, so that neighbouring columns sharing a surface can be filled
+    // as one shape: a gradient per column cost thirty-one milliseconds a frame over open
+    // ocean, which is precisely where every column has the same surface as its neighbour.
+    const runs = [];
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
       let ty = 0;
@@ -379,47 +399,64 @@ function makeRenderer(canvas, deps) {
         if (!kind) { ty += 1; continue; }
         let end = ty;
         while (end < rows && liquidKindAt(state, wx, y0 + end) === kind) end += 1;
-
-        const look = LIQUID_LOOK[kind];
-        const sx = tx * size - offsetX;
-        // Where the surface of this body actually sits, including a part-filled top tile,
-        // so the wave rides on the water rather than on the tile grid.
         const level = state.world.getLevel ? state.world.getLevel(wx, y0 + ty) : 255;
         const brimming = level >= 250 || liquidKindAt(state, wx, y0 + ty - 1) === kind;
         const frac = brimming ? 1 : Math.max(0.08, level / 255);
-        const topY = ty * size - offsetY + size * (1 - frac);
-        const botY = end * size - offsetY;
-
-        // Depth: light at the surface, dark some way down. One gradient over the whole
-        // run rather than a shade per tile, which is what keeps it smooth.
-        const g = ctx.createLinearGradient(0, topY, 0, topY + size * 13);
-        g.addColorStop(0, 'rgba(' + look.deep + ',0)');
-        g.addColorStop(1, 'rgba(' + look.deep + ',0.42)');
-        ctx.fillStyle = g;
-        ctx.fillRect(sx, topY, size + 1, botY - topY);
-
-        // A slow light roll under the surface. Its depth is a function of x and time only,
-        // so it undulates along the body instead of banding per row.
-        const rollY = topY + (2 + Math.sin(wx * 0.26 + t * look.wave * 0.5) * 1.1) * size;
-        if (rollY + size * 0.6 < botY) {
-          ctx.fillStyle = 'rgba(' + look.light + ',0.07)';
-          ctx.fillRect(sx, rollY, size + 1, size * 0.6);
-        }
-
-        // The surface itself, only where there is air above it.
-        if (!liquidKindAt(state, wx, y0 + ty - 1)
-          && !tiles.isSolid(state.world.get(wx, y0 + ty - 1))) {
-          const wave = Math.sin(wx * 0.5 + t * look.wave) * 0.9
-            + Math.sin(wx * 0.21 - t * look.wave * 0.6) * 0.6;
-          const crest = topY + wave * zoom;
-          const line = Math.max(1, Math.round(zoom));
-          ctx.fillStyle = 'rgba(' + look.light + ',' + look.crest + ')';
-          ctx.fillRect(sx, crest, size + 1, line);
-          ctx.fillStyle = 'rgba(' + look.light + ',0.14)';
-          ctx.fillRect(sx, crest + line, size + 1, line * 2);
-        }
+        runs.push({
+          tx,
+          wx,
+          kind,
+          topY: ty * size - offsetY + size * (1 - frac),
+          botY: end * size - offsetY,
+          open: !liquidKindAt(state, wx, y0 + ty - 1)
+            && !tiles.isSolid(state.world.get(wx, y0 + ty - 1))
+        });
         ty = end;
       }
+    }
+    if (runs.length === 0) return;
+
+    ctx.save();
+    // Depth, light at the surface and dark some way down. One gradient per group of
+    // columns that agree about where the water is.
+    let i = 0;
+    while (i < runs.length) {
+      const first = runs[i];
+      let j = i + 1;
+      while (j < runs.length && runs[j].tx === runs[j - 1].tx + 1
+        && runs[j].kind === first.kind
+        && Math.abs(runs[j].topY - first.topY) < 0.5
+        && Math.abs(runs[j].botY - first.botY) < 0.5) j += 1;
+      const look = LIQUID_LOOK[first.kind];
+      const sx = first.tx * size - offsetX;
+      const w = (runs[j - 1].tx - first.tx + 1) * size + 1;
+      const g = ctx.createLinearGradient(0, first.topY, 0, first.topY + size * 13);
+      g.addColorStop(0, 'rgba(' + look.deep + ',0)');
+      g.addColorStop(1, 'rgba(' + look.deep + ',0.42)');
+      ctx.fillStyle = g;
+      ctx.fillRect(sx, first.topY, w, first.botY - first.topY);
+      i = j;
+    }
+
+    // The moving parts stay per column, so they keep varying along the body. These are
+    // plain fills and cost almost nothing.
+    for (const run of runs) {
+      const look = LIQUID_LOOK[run.kind];
+      const sx = run.tx * size - offsetX;
+      const rollY = run.topY + (2 + Math.sin(run.wx * 0.26 + t * look.wave * 0.5) * 1.1) * size;
+      if (rollY + size * 0.6 < run.botY) {
+        ctx.fillStyle = 'rgba(' + look.light + ',0.07)';
+        ctx.fillRect(sx, rollY, size + 1, size * 0.6);
+      }
+      if (!run.open) continue;
+      const wave = Math.sin(run.wx * 0.5 + t * look.wave) * 0.9
+        + Math.sin(run.wx * 0.21 - t * look.wave * 0.6) * 0.6;
+      const crest = run.topY + wave * zoom;
+      const line = Math.max(1, Math.round(zoom));
+      ctx.fillStyle = 'rgba(' + look.light + ',' + look.crest + ')';
+      ctx.fillRect(sx, crest, size + 1, line);
+      ctx.fillStyle = 'rgba(' + look.light + ',0.14)';
+      ctx.fillRect(sx, crest + line, size + 1, line * 2);
     }
     ctx.restore();
   }
@@ -448,6 +485,9 @@ function makeRenderer(canvas, deps) {
         colour: enemy.spec.colour,
         glow: enemy.spec.emit ? '#ffcf7a' : null,
         anim: enemy.anim || 0,
+        enraged: !!enemy.enraged,
+        windUp: enemy.windUp || 0,
+        charge: enemy.charge || 0,
         phase: (enemy.spec.key.length * 1.7) % 6.28,
         facing: enemy.facing,
         vx: enemy.vx,
@@ -803,6 +843,58 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
+  // The bobber, and the line out to it. It rides the surface, and the whole signal that
+  // something is on the line is that it goes under - so when it bites it is drawn low,
+  // with rings spreading out from it.
+  function drawBobber(state, view) {
+    const b = state.bobber;
+    if (!b) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const p = state.player;
+    const px = (p.x + p.width / 2 - x0) * size - offsetX;
+    const py = (p.y + p.height * 0.35 - y0) * size - offsetY;
+    const biting = b.biting > 0;
+    const bob = biting
+      ? size * (0.42 + Math.sin(b.bob * 22) * 0.1)
+      : Math.sin(b.bob * 2.1) * size * 0.08;
+    const bx = (b.x - x0) * size - offsetX;
+    const by = (b.y - y0) * size - offsetY + bob;
+    ctx.save();
+    // The line: a shallow catenary rather than a straight stroke, because a taut
+    // straight line reads as a crack in the screen.
+    ctx.strokeStyle = 'rgba(230,236,244,0.55)';
+    ctx.lineWidth = Math.max(1, zoom * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.quadraticCurveTo((px + bx) / 2, Math.max(py, by) + size * 0.5, bx, by);
+    ctx.stroke();
+    if (biting) {
+      // Rings, so the bite is visible from across the screen rather than only if you
+      // happen to be looking at the float.
+      ctx.strokeStyle = 'rgba(214,240,255,0.5)';
+      ctx.lineWidth = Math.max(1, zoom * 0.7);
+      for (let i = 0; i < 2; i += 1) {
+        const t = ((b.bob * 1.6 + i * 0.5) % 1);
+        ctx.globalAlpha = 0.55 * (1 - t);
+        ctx.beginPath();
+        ctx.ellipse(bx, by, size * (0.3 + t * 1.1), size * (0.12 + t * 0.42), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    const r = size * 0.17;
+    ctx.fillStyle = '#d8524c';
+    ctx.beginPath();
+    ctx.arc(bx, by, r, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = '#f2efe6';
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Stars falling at night: a bright head with a long tail behind it.
   function drawStars(state, view) {
     if (!state.stars || state.stars.length === 0) return;
@@ -944,6 +1036,36 @@ function makeRenderer(canvas, deps) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
+  // Per-pass timing, off by default and costing one boolean test when it is off. A
+  // renderer with nineteen passes needs a way to answer "which one" that is not guesswork.
+  const timings = {};
+  let profiling = false;
+  let frames = 0;
+
+  function phase(name, run) {
+    if (!profiling) { run(); return; }
+    const t0 = performance.now();
+    run();
+    timings[name] = (timings[name] || 0) + (performance.now() - t0);
+  }
+
+  function setProfiling(on) {
+    profiling = !!on;
+    for (const key of Object.keys(timings)) delete timings[key];
+    frames = 0;
+    return profiling;
+  }
+
+  // Mean milliseconds per frame in each pass, worst first.
+  function profile() {
+    const out = [];
+    for (const [name, total] of Object.entries(timings)) {
+      out.push({ name, ms: +(total / Math.max(1, frames)).toFixed(3) });
+    }
+    out.sort((a, b) => b.ms - a.ms);
+    return { frames, passes: out };
+  }
+
   function draw(state) {
     const zoom = state.camera.zoom;
     const size = TILE * zoom;
@@ -956,29 +1078,32 @@ function makeRenderer(canvas, deps) {
     const view = { x0, y0, cols, rows, zoom,
       offsetX: (leftWorld - x0) * size, offsetY: (topWorld - y0) * size };
 
-    drawSky(state);
-    drawParallax(state);
-    drawWalls(state, view);
-    drawTiles(state, view);
-    drawDrops(state, view);
-    drawEnemies(state, view);
-    drawVillagers(state, view);
-    drawPlayer(state, view);
-    drawLighting(state, view);
-    drawCarriedLight(state, view);
-    drawBloom(state, view);
-    drawHook(state, view);
-    drawShots(state, view);
-    drawStars(state, view);
-    drawParticles(state, view);
-    drawWeather(state, view);
-    drawUnderwater(state);
-    drawVignette();
-    drawBossBar(state);
+    phase('sky', () => drawSky(state));
+    phase('parallax', () => drawParallax(state));
+    phase('walls', () => drawWalls(state, view));
+    phase('tiles', () => drawTiles(state, view));
+    phase('water', () => drawLiquidDetail(state, view));
+    phase('drops', () => drawDrops(state, view));
+    phase('enemies', () => drawEnemies(state, view));
+    phase('villagers', () => drawVillagers(state, view));
+    phase('player', () => drawPlayer(state, view));
+    phase('lighting', () => drawLighting(state, view));
+    phase('carried', () => drawCarriedLight(state, view));
+    phase('bloom', () => drawBloom(state, view));
+    phase('hook', () => drawHook(state, view));
+    phase('bobber', () => drawBobber(state, view));
+    phase('shots', () => drawShots(state, view));
+    phase('stars', () => drawStars(state, view));
+    phase('particles', () => drawParticles(state, view));
+    phase('weather', () => drawWeather(state, view));
+    phase('underwater', () => drawUnderwater(state));
+    phase('vignette', () => drawVignette());
+    phase('bossbar', () => drawBossBar(state));
+    frames += 1;
     return view;
   }
 
-  return { draw, atlas, field };
+  return { draw, atlas, field, setProfiling, profile };
 }
 
 // The module's public surface, declared once. index.html used to repeat these

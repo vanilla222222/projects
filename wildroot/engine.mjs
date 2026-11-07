@@ -1,41 +1,44 @@
-import * as Offline from './offline-progress.mjs?v=39';
-import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=39';
-import {recordQuestAction} from './quest-content.mjs?v=39';
-import * as J from './journey.mjs?v=39';
-export * from './journey.mjs?v=39';
-import * as Builds from './class-builds.mjs?v=39';
-export * from './class-builds.mjs?v=39';
-import * as Books from './special-talents.mjs?v=39';
-export * from './special-talents.mjs?v=39';
-import * as Hunts from './boss-hunts.mjs?v=39';
-export * from './boss-hunts.mjs?v=39';
-import * as Dungeon from './dungeon.mjs?v=39';
-export * from './dungeon.mjs?v=39';
-import {roomLayout} from './layouts.mjs?v=39';
-export * from './exploration.mjs?v=39';
-export * from './item-economy.mjs?v=39';
-import * as S from './services.mjs?v=39';
-export * from './services.mjs?v=39';
-export * from './workshop.mjs?v=39';
-export * from './alchemy.mjs?v=39';
-import * as C from './chronicle.mjs?v=39';
-export * from './chronicle.mjs?v=39';
-import * as A from './adventure.mjs?v=39';
-export * from './adventure.mjs?v=39';
-import * as L from './legacy.mjs?v=39';
-export * from './legacy.mjs?v=39';
-import * as I from './inventory.mjs?v=39';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=39';
-import * as P from './progression.mjs?v=39';
-export * from './progression.mjs?v=39';
-export {initialize,validate} from './progression.mjs?v=39';
-export * from './inventory.mjs?v=39';
-export {canPay,pay} from './inventory.mjs?v=39';
-export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=6;
+import {tierTwoDiscoveries} from './world-two.mjs?v=40';
+export {advanceClass,advancementStatus,advancementName} from './world-two.mjs?v=40';
+import {SKILL_TOOLS,ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=40';
+import * as Offline from './offline-progress.mjs?v=40';
+import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=40';
+import {recordQuestAction} from './quest-content.mjs?v=40';
+import * as J from './journey.mjs?v=40';
+export * from './journey.mjs?v=40';
+import * as Builds from './class-builds.mjs?v=40';
+export * from './class-builds.mjs?v=40';
+import * as Books from './special-talents.mjs?v=40';
+export * from './special-talents.mjs?v=40';
+import * as Hunts from './boss-hunts.mjs?v=40';
+export * from './boss-hunts.mjs?v=40';
+import * as Dungeon from './dungeon.mjs?v=40';
+export * from './dungeon.mjs?v=40';
+import {roomLayout} from './layouts.mjs?v=40';
+export * from './exploration.mjs?v=40';
+export * from './item-economy.mjs?v=40';
+import * as S from './services.mjs?v=40';
+export * from './services.mjs?v=40';
+export * from './workshop.mjs?v=40';
+export * from './alchemy.mjs?v=40';
+import * as C from './chronicle.mjs?v=40';
+export * from './chronicle.mjs?v=40';
+import * as A from './adventure.mjs?v=40';
+export * from './adventure.mjs?v=40';
+import * as L from './legacy.mjs?v=40';
+export * from './legacy.mjs?v=40';
+import * as I from './inventory.mjs?v=40';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=40';
+import * as P from './progression.mjs?v=40';
+export * from './progression.mjs?v=40';
+export {initialize,validate} from './progression.mjs?v=40';
+export * from './inventory.mjs?v=40';
+export {canPay,pay} from './inventory.mjs?v=40';
+export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=11;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
 export function selected(s){return s.characters.find(c=>c.id===s.active)||s.characters[0];}
-export function slots(s){return Math.min(MAX_CHARACTERS,1+s.unlockedClasses.length);}
+export function slots(s){return Math.min(MAX_CHARACTERS,1+s.unlockedClasses.length+tierTwoDiscoveries(s).length);}
 export const note=P.log,addItem=(s,id,n=1)=>s.inventory[id]=(s.inventory[id]||0)+n,hasCost=P.canPay,spend=P.pay,skillLevel=P.skillLevel;
 export function power(s,c){if(c.dungeon)return Math.floor(Dungeon.dungeonAttack(c));const stat=P.stats(c),legacy=c.loadout?.weapon?0:c.gear.weapon*7,b=P.bonusesFor(s,c);return Math.max(1,Math.floor((4+c.level*1.8+Builds.primaryAttribute(c)*.45+legacy+stat.attack+c.gear.rune*2+(c.talents.power||0)*2)*(1+b.attack+(c.classTalents?.force||0)*.01+P.potionValue(c,'attack')+(c.cardBonus?.attack||0))*(c.class==='warrior'?1.18:1)));}
 export function maxHp(c){if(c.dungeon)return Dungeon.dungeonMaxHp(c);const stat=P.stats(c),legacy=c.loadout?.body?0:c.gear.armor*20;return Math.floor((40+(c.level-1)*6+legacy+stat.health+c.gear.vitality*6+(c.talents.vitality||0)*10)*(1+(c.accountBonuses?.health||0)+(c.classTalents?.fortitude||0)*.01+(c.cardBonus?.health||0)));}
@@ -46,27 +49,27 @@ export function movementSpeed(c){if(c.dungeon)return 245*(1+((c.dungeon.boons.sp
 export function skillPower(c){if(c.dungeon)return 1;return 1+(c.accountBonuses?.skill||0)+P.stats(c).skill+(c.talents.signature||0)*.08+(c.classTalents?.primary||0)*.08+(c.cardBonus?.skill||0);}
 export function gainXp(c,n){P.addXp(c,n);c.hp=Math.min(maxHp(c),c.hp);}
 export function skillXp(c,id,n){c.skills[id]+=n*(1+(c.profTalents.mastery||0)*.05+(c.accountBonuses?.skillXP||0)+(c.cardBonus?.skillXP||0)+(!['warrior','mage'].includes(c.class)?(c.classTalents?.specialist||0)*.03:0));}
-export function areaUnlocked(s,id){if(id==='tree')return(s.kills['forest-3']||0)>=12;if(['town','forest','caves'].includes(id))return true;if(id==='jungle')return(s.kills['forest-4']||0)>=12;if(id==='deep')return(s.kills['caves-2']||0)>=12;if(id==='jungle-town')return s.outpostAccess||(s.kills['jungle-3']||0)>=J.PORTAL_GOALS.jungle[3];return false;}
+export function areaUnlocked(s,id){if(worldOf(id)===2)return !!s.storyFlags.complete&&!!s.worldCompletionCrafted;if(id==='depths')return(s.kills['deep-3']||0)>=12;if(id==='tree')return(s.kills['forest-3']||0)>=12;if(['town','forest','caves'].includes(id))return true;if(id==='jungle')return(s.kills['forest-4']||0)>=12;if(id==='deep')return(s.kills['caves-2']||0)>=12;if(id==='jungle-town')return s.outpostAccess||(s.kills['jungle-3']||0)>=J.PORTAL_GOALS.jungle[3];return false;}
 export function zoneUnlocked(s,area,index,c=selected(s)){return areaUnlocked(s,area)&&J.personalRouteOpen(s,c,area,index);}
-export function lockReason(s,area,index=0,c=selected(s)){return zoneUnlocked(s,area,index,c)?'':J.personalLock(s,c,area,index);}
+export function lockReason(s,area,index=0,c=selected(s)){if(worldOf(area)===2&&!areaUnlocked(s,area))return 'Finish the World One story and forge the Greenreach Completion Token.';return zoneUnlocked(s,area,index,c)?'':J.personalLock(s,c,area,index);}
 export function travel(s,c,area,index){const a=areaById(area);if(!a||!Number.isInteger(index)||index<0||index>=a.zones.length||!zoneUnlocked(s,area,index,c)||c.dungeon)return false;c.assignmentWarning=null;c.encounter=null;c.trial=null;c.position=null;c.entryPoint=null;c.area=area;c.zone=index;c.secret=null;c.activity='rest';c.resource=null;c.progress=0;c.recovering=false;s.visited[`${area}-${index}`]=true;c.journey.visited[`${area}-${index}`]=true;return true;}
-export const gatherSkill=resource=>['copper','iron','gold'].includes(resource)?'mining':'logging';
-export function toolTier(c,skill){const slot=skill==='mining'?'pick':'axe';return EQUIPMENT[c.loadout[slot]?.base]?.gatherTier??c.gear[slot]??0;}
-export function gatherRequirement(c,resource){const d=GATHER_NODES[resource];if(!d)return 'Unknown gathering resource';if(skillLevel(c,d.skill)<d.level)return `${SKILLS[d.skill]} level ${d.level} required`;if(toolTier(c,d.skill)<d.tier)return `${d.tier===2?'Iron':'Copper'} ${d.skill==='mining'?'Pickaxe':'Hatchet'} or better required`;return '';}
+export const gatherSkill=resource=>GATHER_NODES[resource]?.skill||'logging';
+export function toolTier(c,skill){const slot=SKILL_TOOLS[skill];return EQUIPMENT[c.loadout[slot]?.base]?.gatherTier??c.gear[slot]??0;}
+export function gatherRequirement(c,resource){const d=GATHER_NODES[resource];if(!d)return 'Unknown gathering resource';if(skillLevel(c,d.skill)<d.level)return `${SKILLS[d.skill]} level ${d.level} required`;if(toolTier(c,d.skill)<d.tier)return `Tier ${d.tier} ${SKILL_TOOLS[d.skill]} tool or better required`;return '';}
 export function start(s,c,activity,resource=null){if(c.dungeon)return false;const a=areaById(c.area);if(activity==='fight'&&!zoneEnemy(c.area,c.zone)&&!c.secret)return false;if(activity==='boss'&&(c.area!=='jungle-town'||c.zone!==2||!s.storyFlags.bossPermit))return false;if(activity==='gather'&&(!a.resources[c.zone].includes(resource)||gatherRequirement(c,resource)))return false;if(!['fight','boss','gather','rest'].includes(activity))return false;c.assignmentWarning=null;c.activity=activity;c.resource=resource;c.progress=0;return true;}
-export function gatherInterval(c,resource){const skill=gatherSkill(resource),specialist=c.class&&CLASSES[c.class].skill===skill,stat=P.stats(c),tool=skill==='mining'?'pick':'axe';return Math.max(.65,(3+(['iron','birch'].includes(resource)?1:['gold','jungle-wood'].includes(resource)?2:0))/(1+(skillLevel(c,skill)-1)*.06+(specialist?.65:0)+(c.loadout[tool]?stat[skill]:c.gear[tool]*.25)+(c.talents.industry||0)*.05+(c.profTalents.efficiency||0)*.05+(c.accountBonuses?.[skill]||0)+(specialist?(c.classTalents?.specialist||0)*.03:0)+P.potionValue(c,skill)));}
+export function gatherInterval(c,resource){const skill=gatherSkill(resource),specialist=c.class&&(CLASSES[c.class].skill===skill||Object.values(ADVANCEMENTS).some(d=>d.id===c.advancement&&d.skill===skill)),stat=P.stats(c),tool=SKILL_TOOLS[skill];return Math.max(.65,(3+(['iron','birch'].includes(resource)?1:['gold','jungle-wood'].includes(resource)?2:0))/(1+(skillLevel(c,skill)-1)*.06+(specialist?.65:0)+(c.loadout[tool]?(stat[skill]||0):(c.gear[tool]||0)*.25)+(c.talents.industry||0)*.05+(c.profTalents.efficiency||0)*.05+(c.accountBonuses?.[skill]||0)+(specialist?(c.classTalents?.specialist||0)*.03:0)+P.potionValue(c,skill)));}
 export function gatherYield(c,n,rng=Math.random){return n+successes(n,Math.min(.5,(c.profTalents.prosperity||0)*.02),rng);}
 export function enemyFor(c){return c.activity==='boss'?ENEMIES.boss:c.secret?ENEMIES[SECRETS[c.secret]?.enemy]:zoneEnemy(c.area,c.zone);}
 export const accuracy=c=>c.dungeon?100:(10+c.level*3+Builds.accuracyAttribute(c)*1.5+(c.talents.precision||0)*2+(P.stats(c).accuracy||0))*(1+(c.cardBonus?.accuracy||0)+(c.accountBonuses?.accuracy||0));
-export const enemyAccuracy=e=>e.id.startsWith('dungeon-')?100:e.id==='boss'?(e.accuracy||125):({forest:[7,15,25,40,60],caves:[15,32,55],jungle:[65,80,100,125],deep:[60,80,110,140],tree:[60,90,135]}[e.area]?.[e.index]||45);
+export const enemyAccuracy=e=>e.accuracy|| (e.id.startsWith('dungeon-')?100:e.id==='boss'?(e.accuracy||125):({forest:[7,15,25,40,60],caves:[15,32,55],jungle:[65,80,100,125],deep:[60,80,110,140],tree:[60,90,135]}[e.area]?.[e.index]||45));
 export const hitChance=(c,e)=>Math.min(1,accuracy(c)/enemyAccuracy(e));
 export const damageRange=(s,c)=>[Math.floor(power(s,c)*.8),Math.ceil(power(s,c)*1.2)];
-export function gatherEfficiency(c,resource){const skill=gatherSkill(resource),tool=c.loadout[skill==='mining'?'pick':'axe']?.base,tier=EQUIPMENT[tool]?.gatherEfficiency||({1:22,2:60}[toolTier(c,skill)]||0);return(5+6*skillLevel(c,skill)+tier)*(1+(P.stats(c)[skill]||0)+(c.accountBonuses?.[skill]||0)+(Books.specialBonuses(c).gathering||0)+(c.cardBonus?.[skill]||0)+(c.profTalents.efficiency||0)*.05+(c.class&&CLASSES[c.class].skill===skill?(c.classTalents.specialist||0)*.03:0));}
+export function gatherEfficiency(c,resource){const skill=gatherSkill(resource),tool=c.loadout[SKILL_TOOLS[skill]]?.base,tier=EQUIPMENT[tool]?.gatherEfficiency||({1:22,2:60}[toolTier(c,skill)]||0);return(5+6*skillLevel(c,skill)+tier)*(1+(P.stats(c)[skill]||0)+(c.accountBonuses?.[skill]||0)+(Books.specialBonuses(c).gathering||0)+(c.cardBonus?.[skill]||0)+(c.profTalents.efficiency||0)*.05+(c.class&&(CLASSES[c.class].skill===skill||Object.values(ADVANCEMENTS).some(d=>d.id===c.advancement&&d.skill===skill))?(c.classTalents.specialist||0)*.03:0));}
 export function gatherOdds(c,resource){const efficiency=gatherEfficiency(c,resource),threshold=GATHER_NODES[resource]?.threshold||8,multi=Math.min(3,1+Math.floor(efficiency/threshold/2));return{efficiency,threshold,chance:Math.min(1,efficiency/threshold),multi,nextMultiAt:multi<3?threshold*multi*2:null};}
 export function recordGather(s,c,id,n,rng=Math.random){recordQuestAction(c,'gather:'+id,n);s.metrics.gather[id]=(s.metrics.gather[id]||0)+n;A.addCards(s,id,successes(n,.015,rng));}
 export function fightStats(s,c){const e=enemyFor(c);if(!e)return null;const guard=e.behavior==='guard'?1.15:1,hits=Math.ceil(e.hp*guard/(power(s,c)*Builds.weaponProfile(c).mult*(1+critChance(c)))),chance=hitChance(c,e),attackTime=hits/chance*attackInterval(c),movementTime=(c.secret?0:260/Math.max(1,movementSpeed(c))),spawns=Math.max(1,roomLayout(c.area,c.zone,false,c.secret||null).spawns.length),respawnLimit=(c.secret?9:5)/spawns,duration=Math.max(attackTime+movementTime,respawnLimit),strikes=Math.max(0,Math.ceil(attackTime/2)-1),incoming=Math.max(0,e.attack-defense(s,c))*strikes;return{duration,incoming,hits,strikes,attackTime,movementTime,respawnLimit,chance};}
 export function successes(n,p,rng=Math.random){if(p>=1)return n;if(p<=0||n<=0)return 0;let hits=0,pos=0;while(pos<n){const u=Math.min(1-Number.EPSILON,Math.max(Number.MIN_VALUE,rng()));pos+=Math.floor(Math.log(1-u)/Math.log(1-p))+1;if(pos<=n)hits++;}return hits;}
-export function grantKills(s,c,e,n,rng=Math.random,{collect=true}={}){const loot=[];if(n<=0)return;A.addCards(s,e.id,successes(n,.025,rng));c.kills+=n;J.recordPersonalKills(c,e.id,n);s.kills[e.id]=(s.kills[e.id]||0)+n;const rawCoins=e.coins*n*(1+(P.bonusesFor(s,c).coins||0)+(c.classTalents?.fortune||0)*.02)+(c.coinRemainder||0),earned=Math.floor(rawCoins+1e-9);c.coinRemainder=Math.max(0,rawCoins-earned);s.coins+=earned;c.earnedCoins+=earned;c.hp=Math.min(maxHp(c),c.hp+maxHp(c)*(Books.specialBonuses(c).killHeal||0)*n);gainXp(c,e.xp*n);for(const drop of [...e.loot,...WORLD_LOOT,...GLOBAL_LOOT,...[{id:'statue-'+({forest:'power',caves:'guard',jungle:'heart',deep:e.index%2?'pace':'miner'}[e.area]||'power'),chance:.02}]]){const count=successes(n,drop.chance,rng);if(count){if(collect)I.give(c,drop.id,count);loot.push({id:drop.id,count});if(['legendary','mythical'].includes(ITEMS[drop.id].rarity))note(s,`${c.name} discovered ${ITEMS[drop.id].name} ×${count}!`);}}if(e.id==='boss'&&!s.bossDefeated){s.bossDefeated=true;note(s,'The Rootwarden falls. Return its heart to Hesta to complete the World One story.');}return loot;}
+export function grantKills(s,c,e,n,rng=Math.random,{collect=true}={}){const loot=[];if(n<=0)return;A.addCards(s,e.id,successes(n,.025,rng));c.kills+=n;J.recordPersonalKills(c,e.id,n);s.kills[e.id]=(s.kills[e.id]||0)+n;const rawCoins=e.coins*n*(1+(P.bonusesFor(s,c).coins||0)+(c.classTalents?.fortune||0)*.02)+(c.coinRemainder||0),earned=Math.floor(rawCoins+1e-9);c.coinRemainder=Math.max(0,rawCoins-earned);s.coins+=earned;c.earnedCoins+=earned;c.hp=Math.min(maxHp(c),c.hp+maxHp(c)*(Books.specialBonuses(c).killHeal||0)*n);gainXp(c,e.xp*n);if(worldOf(e.area)===2)skillXp(c,'hunting',n*(c.advancement==='ranger'?3:2));for(const drop of [...e.loot,...WORLD_LOOT,...GLOBAL_LOOT,...[{id:'statue-'+({forest:'power',caves:'guard',jungle:'heart',deep:e.index%2?'pace':'miner'}[e.area]||'power'),chance:.02}]]){const count=successes(n,drop.chance,rng);if(count){if(collect)I.give(c,drop.id,count);loot.push({id:drop.id,count});if(['legendary','mythical'].includes(ITEMS[drop.id].rarity))note(s,`${c.name} discovered ${ITEMS[drop.id].name} ×${count}!`);}}if(e.id==='boss'&&!s.bossDefeated){s.bossDefeated=true;note(s,'The Rootwarden falls. Return its heart to Hesta to complete the World One story.');}return loot;}
 function advanceCharacter(s,c,seconds,rng){
  if(c.dungeon){Dungeon.finishDungeon(s,c,'abandoned',false);return;}if(c.secret){c.activity='rest';c.encounter=null;return;}if(c.activity==='trial'){c.trial=null;c.activity='rest';c.position={x:2280,y:644,facing:1};note(s,'The solo trial ended while inactive. No idle trial rewards were granted.');return;}if(c.activity==='rest'){c.hp=Math.min(maxHp(c),c.hp+seconds*4);return;}
  if(c.activity==='gather'){if(gatherRequirement(c,c.resource)){c.assignmentWarning='gathering';c.activity='rest';return;}const interval=gatherInterval(c,c.resource),total=c.progress+seconds,n=Math.floor(total/interval);c.progress=total-n*interval;if(n){const odds=gatherOdds(c,c.resource),yielded=gatherYield(c,successes(n,odds.chance,rng),rng)*odds.multi;I.give(c,c.resource,yielded);recordGather(s,c,c.resource,yielded,rng);grantGatherStatues(c,c.resource,n,rng);skillXp(c,gatherSkill(c.resource),n*2);gainXp(c,n*.4);}c.hp=Math.min(maxHp(c),c.hp+seconds);return;}
@@ -135,4 +138,4 @@ export function totalMaterials(s){return Object.values(s.inventory).reduce((a,b)
 export function townAction(s,c,action,id,n){const fn={register:L.registerStamp,stamp:L.upgradeStamp,cap:L.raiseStampCap,statue:L.depositStatues,unlock:(_s,c)=>L.unlockStatues(c)}[action];if(!fn)return false;const ok=fn(s,c,id,n);if(ok)P.syncAccount(s);return ok;}
 export function teleportAllowed(s,c,area,zone,now=Date.now()){if(c.dungeon)return false;L.refreshTeleports(s,now);return zoneUnlocked(s,area,zone)&&L.discovered(s,area,zone)&&(c.area===area&&c.zone===zone&&!c.secret&&c.activity!=='boss'&&c.activity!=='trial'||s.teleports.count>0);}
 
-export function grantGatherStatues(c,resource,n,rng=Math.random){const count=successes(n,.01,rng);if(count)I.give(c,'statue-'+(gatherSkill(resource)==='mining'?'miner':'forester'),count);return count;}
+export function grantGatherStatues(c,resource,n,rng=Math.random){if(!['mining','logging'].includes(gatherSkill(resource)))return 0;const count=successes(n,.01,rng);if(count)I.give(c,'statue-'+(gatherSkill(resource)==='mining'?'miner':'forester'),count);return count;}

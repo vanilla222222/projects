@@ -6,6 +6,7 @@
 const tiles = require('../js/tiles.js');
 const housing = require('../js/housing.js');
 const villager = require('../js/villager.js');
+const craft = require('../js/craft.js');
 
 let checks = 0;
 let failures = 0;
@@ -199,6 +200,12 @@ function withoutTile(rows, ch) {
     ok(typeof v.greeting === 'string' && v.greeting.length > 0, v.key + ' has nothing to say');
     for (const entry of v.stock) {
       ok(entry.price > 0 && entry.count > 0, v.key + ' sells ' + entry.key + ' nonsensically');
+      // A shop selling something with no name is a shop selling a grey square.
+      ok(craft.nameOf(entry.key, tiles) !== entry.key,
+        v.key + ' sells ' + entry.key + ', which has no readable name');
+      ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'loot', 'coin', 'accessory',
+        'use'].includes(craft.kindOf(entry.key)),
+        v.key + ' sells ' + entry.key + ', which is of no known kind');
     }
   }
 }

@@ -865,3 +865,204 @@ add a work bench recipe that was not missing. A station is a property of a tile,
 key: every wood species already has its own, and `oakbench` is an Oak Work Bench providing
 the station `workbench`. The test had compared a station's name against item keys. The
 craft test caught the spurious recipe immediately, which is the argument for having both.
+
+## Measuring the renderer
+
+The renderer has nineteen passes and had never been measured. `renderer.setProfiling(true)`
+times each one and `renderer.profile()` reports mean milliseconds per frame, worst first;
+off, it costs one boolean test per pass. A renderer with nineteen passes needs a way to
+answer "which one" that is not guesswork.
+
+What it found, at 1600x900 and zoom 2:
+
+- **Walls cost 5 to 7.5ms drawing cells that are then painted over.** A solid block covers
+  its whole cell, and underground that is almost every cell on the screen. Skipping them
+  took the pass under a millisecond.
+- **The water pass created a gradient per column.** Over open ocean every column has the
+  same surface as its neighbour, so neighbouring columns that agree are now filled as one
+  shape - one gradient for the screen instead of fifty.
+- **Every read of the world built a string key** (`cx + ':' + cy`) and hashed it, and the
+  tile pass alone does about thirteen thousand reads a frame because each solid tile also
+  asks about its eight neighbours for the edge mask. A one-entry memo in front of the
+  chunk map turns almost all of them into two integer comparisons.
+- `maskAt` was handed a freshly allocated closure per tile; the edge shades were
+  re-assigned per rectangle, and assigning `fillStyle` makes the canvas parse the colour
+  string. Both are now hoisted.
+
+And what it found that is **not** worth acting on: the tile pass costs about the same
+whether it draws 416 tiles or 5,858 of them - 14ms against 29ms for fourteen times the
+count. The cost is pixel fill rate, not per-tile overhead, because headless Chromium has
+no GPU and software-rasterises the whole 1.44-megapixel canvas. That is a property of the
+measuring environment rather than of the game, and contorting the renderer around it
+would be optimising for a browser nobody plays in. The measurements are kept here so the
+next person does not repeat the investigation.
+
+## What kills you
+
+Death used to say "You died" and nothing else. It now names what did it, which matters
+for the same reason a stack trace matters: dying without being told why teaches nothing.
+Every source of damage records itself - the enemy by name, the fall, the water, the lava -
+and the tally is kept so the game can be asked what has been killing a character.
+
+The soak test asks exactly that. Ten minutes of randomised play: 51 deaths, 36 of them
+falls, then vultures, demon eyes and an antlion. That is a statement about random input
+rather than about the game - a player who walks off every ledge they meet dies of falling -
+but it is the kind of number worth being able to get.
+
+It also prompted a check of a rule that turned out to be already there and never tested:
+water arrests a fall. The physics zeroes the fall distance while swimming, so diving into
+a pool is a way down rather than a death, and `tools/physics-test.js` now drops the same
+body down the same shaft twice, once onto rock and once into water, and requires one to
+hurt and the other not to. It is exactly the kind of line that disappears in a refactor
+and is not noticed until someone dies at the bottom of a shaft they have used fifty times.
+
+## Buffs
+
+A buff is deliberately the same kind of thing as an accessory or a set bonus - a bag of
+modifier fields that craft.js folds into the player's effects - so nothing in the game has
+to learn a second way of changing a number. The only thing a buff adds is a clock.
+
+Writing it forced a cleanup that was overdue. The fields an accessory can carry were
+applied in one place, the fields a set bonus can carry in another, and the two lists had
+drifted: a set bonus carrying `arrowSpeed` or `slimeFriend` did nothing at all, and so did
+an accessory carrying `pickup`. Nobody would have found out until they wore the thing and
+it had no effect. There is one table now - `EFFECT_FIELDS`, saying whether each field adds,
+multiplies, takes the maximum or is a flag - and one `applyEffect` that accessories, set
+bonuses and buffs all go through.
+
+Two kinds of buff, and the difference is what makes the campfire simple:
+
+- A **drunk** buff is given once with a duration and counts down. Drinking the same potion
+  again takes the longer of what is left and what is being given, never the sum, which is
+  Terraria's rule and the reason a stack of forty potions is not an hour of invincibility.
+- A **standing** buff is re-given every moment its source is in reach and expires a second
+  or two after it is not. "Am I still near the fire" never has to be asked: it answers
+  itself by the buff running out. The hearth scan is a box of tiles a few times a second,
+  not every frame.
+
+Ten potions, each made from a bottle and something you had to go somewhere to get, and
+drinking one gives the bottle back. Campfires, torches and lanterns grant Cosy.
+
+Standing buffs are not saved - they belong to where you were, not to you, and would be
+re-given within a frame of loading if their source is still there.
+
+`tools/buff-test.js` requires that every field a buff sets is one the effects system is
+made of, and that every buff really changes something when folded through the same path a
+worn accessory takes. It also requires that something in the game can grant every buff -
+which immediately caught a Rested buff nothing could give. Dead code, removed rather than
+exempted.
+
+One bug worth recording: craft.js reads the buff table to describe a potion, and the first
+version named `BUFFS` at load time. buffs.js loads after craft.js in the browser, so that
+read a `const` before its declaration and threw on page load - the exact trap the two
+lookups at the top of craft.js are written around, with a comment explaining it. Node
+tests all passed, because in Node it is a `require`. The game was broken and only the
+browser check found it.
+
+## Does the game load?
+
+Four times now this project has had every suite green and a game that did not run. The
+reason is structural: every other test `require`s the modules it tests, and in Node that
+gives each module its own scope and its own dependency graph. The browser does neither.
+`index.html` lists classic scripts, they share one global scope, and they run strictly in
+the order listed. Two classes of bug live in that gap and no amount of unit testing can
+see them.
+
+**Order.** A module naming a `const` from a module listed after it reads it before its
+declaration and throws on page load. craft.js named the buff table at load time; buffs.js
+is listed later; the game was broken while twenty suites passed. The file already carried
+two comments warning about exactly that.
+
+**Collision.** Two files declaring `const shade` are two separate modules in Node and a
+redeclaration error in the browser. This has happened three times - `BY_KEY` in two
+modules, `EXPORTS` in all of them, a local named `mining`.
+
+`tools/boot-test.js` does what the browser does: reads the script list out of index.html,
+concatenates those files in that order, and runs the result in a fresh VM context with
+just enough of a browser stubbed to get through load. Anything that would throw on page
+load throws here, and because each file is labelled in the concatenation the failure names
+the file rather than a line number into a twenty-file bundle.
+
+It then checks that every module registered itself, that none registered an empty export,
+that every name `game.js` destructures out of `deps` is something that registers, that
+every file in `js/` is actually listed in index.html, and that `makeGame` exists at the
+end of it.
+
+Both bugs were reintroduced deliberately to confirm it catches them. It names
+`js/craft.js: Cannot access 'BUFFS' before initialization` and `js/sprite.js: Identifier
+'shade' has already been declared`, while craft-test, buff-test, ui-test and sprite-test
+all pass through either one without noticing.
+
+## The Hollow Eye
+
+A second boss, and the reason the first one's code was worth generalising: a boss that
+flies has nothing in common with a boss that hops except being a boss. Shrinking, calling
+for help and crossing into a second half are shared; how it moves is not.
+
+It hovers above the player out of reach and charges. The charge is the whole fight: it
+picks a point, commits to it, and **cannot steer once it has started**, so the fight is
+about reading the wind-up and not being where it is going. If it tracked you mid-charge
+there would be nothing to dodge, so the test moves the player sixty tiles sideways during
+a charge and requires its velocity not to change by so much as a float.
+
+Halfway through its health it stops calling for help, loses almost all of the wind-up and
+charges twice as fast and twice as often. That is the same escalation the King gets from
+shrinking, arrived at from the other direction: the King gets harder to hit, the Eye gets
+harder to read.
+
+It is summoned by a Bloodshot Lens - six lenses, which only come off demon eyes, which
+only come out at night, so the cost is the nights you had to survive to afford it. It
+gives up the Hollow Lens and the Seer's Eye, both every time.
+
+The boss tests are now written over the roster rather than over one boss: every boss must
+be summonable into an open arena, refuse to be summoned twice, suppress ordinary spawns,
+stay finite and stay near the player over a minute of fighting, respect its own minion
+limit, **fight differently at 20% health than at full**, and end the fight when killed.
+
+Writing the second boss found a real bug in the first one's structure. `stepOne` dispatched
+to the boss code *after* its archetype branches, and the flying boss has gravity 0 - which
+the ordinary flyer branch claims. The Hollow Eye hovered like a bat and never charged
+once. The dispatch is first now. The test caught it immediately, because "it never charged
+in twenty seconds" is a thing a test can notice and a screenshot cannot.
+
+## Fishing
+
+The design problem with fishing in a game with this much water is that water is
+everywhere - an ocean, a flooded cavern, a bucket's worth in a hole you dug. If a puddle
+fishes like the sea then fishing is a button you press rather than a place you go.
+
+So the catch depends on how much water is actually there, and the amount is **measured**
+rather than assumed: a box of tiles around the bobber is counted, and three bands fall
+out of it. A puddle catches almost nothing but junk. A pond catches the common fish of
+wherever it is. The sea, and the flooded caverns under it, catch everything including
+crates. Where also decides what: cold water has trout and warm has perch, salt water has
+shrimp and swordfish, underground has cave fish - and the flooded caverns under an ocean
+are salt and underground at once, which makes them the one place that fishes like both.
+
+Casting is right click at water, and right click again pulls the line. Between those is a
+wait and then a window of about a second in which the bobber dips, rings spread from it,
+and pulling gets you what was on the line. Walk away and the line breaks; mine the water
+out from under it and it breaks too.
+
+A better rod does not unlock anything. It shortens the wait and tilts the draw away from
+junk - it wastes less of your time, which is the only thing a fishing upgrade should
+ever do. Fish cook at a furnace into the cheapest healing in the game, which is the point
+of a pond near the house.
+
+Three minutes with a gilded rod in open ocean: 84 catches - 27 bass, 18 junk, 14 shrimp,
+12 perch, 8 swordfish, 4 crates and one goldfish.
+
+### The bug this found
+
+`fishing.js` declared `function poolFor` and so did `enemy.js`. Every module shares one
+global scope in the browser, and two function declarations of the same name **do not
+throw** - the later one silently replaces the earlier. fishing.js loads second, so the
+enemy spawner started drawing from the fishing table and crashed trying to read an
+archetype off a bass.
+
+Every Node suite passed, because in Node they are two modules. The boot test - written
+one commit earlier for exactly this class of bug - also passed, because it catches a
+duplicate `const` by running the bundle and a duplicate `function` does not error. It now
+scans every module for top-level declarations and reports any name claimed by two files,
+which is a stronger check than running the bundle and would have caught all four of the
+collisions this project has had.

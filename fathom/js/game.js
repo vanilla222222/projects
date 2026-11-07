@@ -7,11 +7,12 @@ const DAY_SECONDS = 600;
 const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
-  const { tiles, worldgen, chunks, light, texture, render, player: physics,
+  const { rng, tiles, worldgen, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
-    profile: profileModule, menu: menuModule, sprite, audio: audioModule } = deps;
+    profile: profileModule, menu: menuModule, sprite, audio: audioModule,
+    buffs: buffModule, fishing: fishModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -46,6 +47,7 @@ function makeGame(canvas, deps) {
     arrows: [],
     stars: [],
     hook: null,
+    bobber: null,
     stats: null,
     player: null,
     colours: null,
@@ -55,6 +57,7 @@ function makeGame(canvas, deps) {
     particles: [],
     drops: [],
     paused: false,
+    buffs: [],
     weather: { rain: 0, wind: 0, snow: 0 },
     // Which night it is, and whether this one is a blood moon. One integer in the save
     // decides the whole event, because the moon is a pure function of the night's number.
@@ -73,9 +76,34 @@ function makeGame(canvas, deps) {
 
   const input = { left: false, right: false, jump: false, down: false, dig: false };
 
+  // What the keys do, in one place, so the help the player reads cannot drift from the
+  // keys the game listens for. Three of these - the hook, the sound, the music - were
+  // added with no way for anybody to find out they existed.
+  const CONTROLS = [
+    ['A D \u2190\u2192', 'Walk'],
+    ['W Space \u2191', 'Jump, climb, swim up'],
+    ['S \u2193', 'Crouch, drop through, climb down'],
+    ['Click', 'Mine, chop, attack'],
+    ['Right click', 'Place, use, talk'],
+    ['1 \u2013 0', 'Hotbar'],
+    ['E', 'Backpack'],
+    ['G', 'Grappling hook'],
+    ['H', 'Is this room a house?'],
+    ['M', 'Map  ( [ ] zoom )'],
+    ['N', 'Sound'],
+    ['B', 'Music'],
+    ['P', 'Pause']
+  ];
+
+
   // Sound. One object for the whole game; it does nothing at all until a key or a click
   // has been seen, because no browser will start an audio context before one.
   const audio = audioModule ? audioModule.makeAudio(window) : null;
+
+  // Effects that expire. The same kind of thing as a worn accessory - a bag of modifiers
+  // craft.js knows how to fold in - with a clock on it.
+  const buffs = buffModule ? buffModule.makeBuffs() : null;
+  let hearthCheck = 0;
 
   // Sound at a place: quieter the further it is from the player, so a slime dying across
   // the cavern is a detail rather than an event.
@@ -204,6 +232,23 @@ function makeGame(canvas, deps) {
       say(boss.spec.name + ' has awoken', 3.2);
       sfx('roar');
       spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.spec.colour, 26);
+    } else if (use.buff !== undefined) {
+      if (!use.buff) { say('The bottle is empty', 1.4); return true; }
+      if (!buffs) return true;
+      buffs.give(use.buff);
+      const spec = buffModule.BUFFS[use.buff];
+      say(spec ? spec.name : 'Potion', 1.6);
+      // Drinking a potion leaves the bottle, which is most of what makes bottles worth
+      // keeping rather than a one-off cost.
+      inventory.add({ key: 'bottle', kind: 'use' }, 1);
+    } else if (use.open !== undefined) {
+      // A crate holds what it holds because of where it was caught, like a pot.
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      for (const got of fishModule.crateContents(rng.unit, seed, px, py)) {
+        dropItem(px, py, got.key, craft.kindOf(got.key), got.count);
+      }
+      sfx('chest');
     } else if (use.restore !== undefined) {
       if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
       stats.mana = Math.min(stats.maxMana, stats.mana + use.restore);
@@ -269,6 +314,99 @@ function makeGame(canvas, deps) {
     }
     say('A star has fallen to the ' + (site.side > 0 ? 'east' : 'west'), 4.6);
     return site;
+  }
+
+  // --- fishing ------------------------------------------------------------------------
+  // Cast at water, wait, and pull when it dips. The bobber is a thing in the world with
+  // its own position, like the hook, so the same shape applies: the game holds it and
+  // the player is only attached to it.
+  function castLine(item) {
+    if (!fishModule) return false;
+    const spec = craft.ITEMS[item.key];
+    if (!spec || !spec.rod) return false;
+    if (state.bobber) { reelIn(); return true; }
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height * 0.4;
+    const away = Math.hypot(pointer.x - cx, pointer.y - cy);
+    if (away > fishModule.CAST_RANGE) { say('Too far', 1.0); return true; }
+    const tx = Math.floor(pointer.x);
+    const ty = Math.floor(pointer.y);
+    const at = tiles.tile(world.get(tx, ty));
+    if (!at.liquid || at.hot) { say('Cast at water', 1.2); return true; }
+
+    const water = fishModule.waterAround(world, tiles, tx, ty);
+    if (water < fishModule.PUDDLE / 3) { say('There is hardly any water there', 1.6); return true; }
+    const rod = fishModule.RODS[item.key] || { power: 1 };
+    state.bobber = {
+      x: pointer.x,
+      y: pointer.y,
+      tx,
+      ty,
+      rod: item.key,
+      power: rod.power,
+      water,
+      wait: fishModule.biteDelay(Math.random(), rod.power, water),
+      biting: 0,
+      bob: 0
+    };
+    sfx('splash', { gain: 0.5, pitch: 1.3 });
+    return true;
+  }
+
+  // Pull. Early and you get nothing; during the bite and you get what was on the line.
+  function reelIn() {
+    const bobber = state.bobber;
+    state.bobber = null;
+    if (!bobber) return;
+    if (bobber.biting <= 0) {
+      sfx('swing', { gain: 0.4 });
+      say('Nothing yet', 0.9);
+      return;
+    }
+    const ctx = {
+      biome: worldgen.biomeAt(seed, bobber.tx).key,
+      layer: worldgen.layerAt(bobber.ty).key,
+      water: bobber.water
+    };
+    const got = fishModule.rollCatch(ctx, Math.random(), bobber.power);
+    if (!got) { say('Nothing is biting here', 1.4); return; }
+    dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
+    sfx('pickup', { pitch: 1.35 });
+    spawnParticles(bobber.x, bobber.y, '#bfe6ff', 8);
+    say(craft.nameOf(got.key, tiles), 1.6);
+  }
+
+  function stepFishing(dt) {
+    const bobber = state.bobber;
+    if (!bobber) return;
+    // The line breaks if you walk away from it, which is what stops a cast being a
+    // thing you set down and forget.
+    const away = Math.hypot(bobber.x - state.player.x, bobber.y - state.player.y);
+    if (away > fishModule.CAST_RANGE + 6) {
+      state.bobber = null;
+      say('The line broke', 1.2);
+      return;
+    }
+    const still = tiles.tile(world.get(bobber.tx, bobber.ty));
+    if (!still.liquid || still.hot) {
+      state.bobber = null;
+      say('The water is gone', 1.2);
+      return;
+    }
+    bobber.bob += dt;
+    if (bobber.biting > 0) {
+      bobber.biting -= dt;
+      if (bobber.biting <= 0) {
+        say('It got away', 1.1);
+        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.water);
+      }
+      return;
+    }
+    bobber.wait -= dt;
+    if (bobber.wait <= 0) {
+      bobber.biting = fishModule.BITE_WINDOW;
+      sfx('splash', { gain: 0.35, pitch: 1.6 });
+    }
   }
 
   // --- the grappling hook ----------------------------------------------------------
@@ -388,6 +526,12 @@ function makeGame(canvas, deps) {
       }
     }
   }
+
+  // What last took health off the player, so death can say what killed them. Terraria
+  // does this and it matters for the same reason a stack trace matters: dying without
+  // being told why teaches nothing.
+  let lastHurt = null;
+  const deathsBy = {};
 
   // What a heart restores when you walk over it.
   const HEART_HEAL = 20;
@@ -591,7 +735,8 @@ function makeGame(canvas, deps) {
   }
 
   function currentEffects() {
-    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'));
+    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'),
+      buffs ? buffs.effects() : null);
   }
 
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
@@ -750,8 +895,12 @@ function makeGame(canvas, deps) {
     state.player.vy = 0;
     if (swarm) swarm.clear();
     releaseHook();
+    state.bobber = null;
     sfx('death');
-    say('You died', 2.2);
+    const blame = lastHurt || 'something';
+    deathsBy[blame] = (deathsBy[blame] || 0) + 1;
+    say('Killed by ' + blame, 2.6);
+    lastHurt = null;
   }
 
   // A life crystal is used where it stands rather than carried away: it is the one
@@ -998,6 +1147,8 @@ function makeGame(canvas, deps) {
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
     if (!item) return;
+    // A rod casts rather than places, and casting again pulls the line in.
+    if (castLine(item)) return;
     // Something used rather than placed is used wherever you are standing.
     if (useConsumable(item)) return;
     const aim = physics.aimTile(state.player, pointer);
@@ -1147,6 +1298,22 @@ function makeGame(canvas, deps) {
 
     if (village) village.step(dt);
     stepStars(dt);
+    stepFishing(dt);
+    if (buffs) {
+      buffs.step(dt);
+      // Standing buffs are re-given while their source is in reach and expire a second
+      // or two after it is not, so "am I still near the fire" never has to be asked.
+      // The scan is a few times a second rather than every frame: it is a box of tiles.
+      hearthCheck -= dt;
+      if (hearthCheck <= 0) {
+        hearthCheck = 0.4;
+        const warm = buffModule.hearthsNear(world, tiles,
+          state.player.x + state.player.width / 2,
+          state.player.y + state.player.height / 2);
+        for (const key of warm) buffs.give(key);
+      }
+      state.buffs = buffs.list();
+    }
     // What the player has done, which is what decides who is willing to move in.
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
     if (depth > state.progress.deepest) state.progress.deepest = depth;
@@ -1180,6 +1347,7 @@ function makeGame(canvas, deps) {
         && state.gear && state.gear.slimeFriend;
       if (hit && !friendly) {
         const dealt = statsModule.damage(stats, hit.spec.damage);
+        lastHurt = hit.spec.name;
         if (dealt > 0) {
           // Knocked away from whatever hit you, so contact damage is not a death loop.
           const away = Math.sign(state.player.x - hit.x) || 1;
@@ -1199,6 +1367,7 @@ function makeGame(canvas, deps) {
       if (hurt > 0) {
         // Armour does not soften a fall, so the mitigation is explicitly skipped.
         const dealt = statsModule.damage(stats, hurt, 0);
+        lastHurt = 'the fall';
         if (dealt > 0) {
           say('Hard landing', 1.2);
           spawnParticles(state.player.x, state.player.y + state.player.height, '#9a8878', 8);
@@ -1212,6 +1381,7 @@ function makeGame(canvas, deps) {
     if (drowning > 0) {
       stats.invulnerable = 0;
       const dealt = statsModule.damage(stats, drowning, 0);
+      lastHurt = 'the water';
       if (dealt > 0 && Math.random() < 0.08) say('Drowning!', 0.8);
     }
 
@@ -1220,6 +1390,7 @@ function makeGame(canvas, deps) {
       Math.floor(state.player.y + state.player.height * 0.6)));
     if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24);
+      lastHurt = feet.key === 'lava' ? 'the lava' : 'the heat';
       if (burnt > 0) say('Burning!', 0.9);
     }
 
@@ -1434,6 +1605,7 @@ function makeGame(canvas, deps) {
       spawn: state.spawn || null,
       nights: state.nights,
       meteors: state.meteors,
+      buffs: buffs ? buffs.serialize() : {},
       villagers: village ? village.serialize() : [],
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
@@ -1470,7 +1642,8 @@ function makeGame(canvas, deps) {
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
     ui = uiModule.makeUI(document.getElementById('hud'),
-      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft });
+      { tiles, texture, inventory, atlas: renderer.atlas, mining, craft,
+        controls: CONTROLS });
     ui.onChestMove = chestMove;
     ui.onBuy = buyFrom;
     ui.onHeal = healFrom;
@@ -1504,6 +1677,7 @@ function makeGame(canvas, deps) {
     state.colours = characterRecord.colours || choice.character.colours;
     state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
     state.nights = worldRecord.nights || 0;
+    if (buffs) buffs.restore(worldRecord.buffs);
     state.meteors = worldRecord.meteors || 0;
     state.bloodMoon = false;
     wasNight = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
@@ -1608,6 +1782,18 @@ function makeGame(canvas, deps) {
     get ui() { return ui; },
     get profiles() { return profiles; },
     get audio() { return audio; },
+    get controls() { return CONTROLS; },
+    // What has been killing this character, which is worth knowing when tuning.
+    get deathsBy() { return deathsBy; },
+    get buffs() { return buffs; },
+    // Test seams: what the keyboard and the mouse would set, so a long
+    // automated session can play the game through the same path a person does.
+    get input() { return input; },
+    get pointer() { return pointer; },
+    // A test seam: draw one frame without the animation loop, so a measurement can
+    // separate the cost of simulating from the cost of drawing.
+    drawOnce() { lastView = renderer.draw(state); return lastView; },
+    get renderer() { return renderer; },
     dropMeteor, stepEvents, eventKey };
 }
 

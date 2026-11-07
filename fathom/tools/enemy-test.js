@@ -321,6 +321,126 @@ ok(victim.dead, 'a killed enemy is not marked dead');
   ok(swarm.bossAlive() === null, 'the boss is still alive after dying');
 }
 
+// --- 6b. every boss, whatever it is ---------------------------------------------------------
+// The King's own fight is tested above. These are the claims that have to hold for any
+// boss at all, and they are written once over the roster rather than once per boss,
+// because the second boss is the reason the first one's code was worth generalising.
+{
+  const W = 400;
+  const H = 120;
+  const FLOOR = 90;
+  const stone = tiles.idOf('stone');
+  const arena = {
+    seed: 11,
+    get(x, y) {
+      if (x < 0 || x >= W || y < 0 || y >= H) return stone;
+      return y >= FLOOR ? stone : tiles.AIR;
+    },
+    set() { return true; },
+    getWall() { return 0; },
+    setWall() { return true; },
+    isWallSafe() { return false; }
+  };
+  const flat = { biomeAt: () => ({ key: 'plains' }), layerAt: () => ({ key: 'surface' }) };
+
+  const bosses = ENEMIES.filter(e => e.boss);
+  ok(bosses.length >= 2, 'only ' + bosses.length + ' boss(es): nothing proves the shape generalises');
+
+  for (const spec of bosses) {
+    const swarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat, random: () => 0.5 });
+    const player = { x: 200, y: FLOOR - 2, width: 0.8, height: 1.8 };
+    const boss = swarm.summon(spec.key, player);
+    ok(!!boss, spec.key + ' could not be summoned into an open arena');
+    if (!boss) continue;
+
+    ok(boss.boss === true, spec.key + ' does not know it is a boss');
+    ok(swarm.summon(spec.key, player) === null, 'a second ' + spec.key + ' was summoned');
+    ok(swarm.trySpawn(player, 0.5) === null,
+      'ordinary enemies spawned during the ' + spec.key + ' fight');
+    ok(!tiles.isSolid(arena.get(Math.floor(boss.x), Math.floor(boss.y))),
+      spec.key + ' was summoned inside the rock');
+
+    // It stays in the world, it stays finite, and it stays somewhere near the player
+    // over a long fight - a boss that drifts off the map is a fight that cannot end.
+    let worst = 0;
+    for (let i = 0; i < 60 * 60; i += 1) {
+      swarm.step(player, 1 / 60, 0.5);
+      ok(Number.isFinite(boss.x) && Number.isFinite(boss.y),
+        spec.key + ' left the number line at ' + boss.x + ',' + boss.y);
+      if (!Number.isFinite(boss.x)) break;
+      worst = Math.max(worst, Math.hypot(boss.x - player.x, boss.y - player.y));
+      ok(swarm.list.indexOf(boss) !== -1, spec.key + ' despawned mid-fight');
+    }
+    ok(worst < 70, spec.key + ' wandered ' + worst.toFixed(0) + ' tiles from the player');
+
+    // It produces minions, and stops at its own limit.
+    const arch = ARCHETYPES[spec.kind];
+    if (arch.minion) {
+      const mine = swarm.list.filter(e => e.summonedBy === spec.key);
+      ok(mine.length <= arch.minions, spec.key + ' produced ' + mine.length
+        + ' minions, past its limit of ' + arch.minions);
+    }
+
+    // Hurting it changes the fight: the King shrinks, the Eye enrages. One or the other
+    // must happen, or the second half of the fight is the first half again.
+    const beforeW = boss.width;
+    const beforeEnraged = !!boss.enraged;
+    while (boss.hp > boss.maxHp * 0.2) {
+      swarm.damage(boss, 60);
+      swarm.step(player, 1 / 60, 0.5);
+    }
+    const changed = boss.width < beforeW * 0.9 || (!!boss.enraged && !beforeEnraged);
+    ok(changed, spec.key + ' fights exactly the same at 20% health as at full');
+
+    // And killing it ends the fight.
+    swarm.damage(boss, boss.maxHp);
+    ok(boss.dead, spec.key + ' survived its own health being spent');
+    swarm.step(player, 1 / 60, 0.5);
+    ok(swarm.bossAlive() === null, spec.key + ' is still alive after dying');
+  }
+}
+
+// --- 6c. the charge is a charge ------------------------------------------------------------------
+// The Hollow Eye's whole fight is that it commits to a line before it starts and cannot
+// steer afterwards. If it tracked the player mid-charge there would be nothing to dodge.
+{
+  const air = {
+    seed: 3,
+    get: () => tiles.AIR,
+    set: () => true, getWall: () => 0, setWall: () => true, isWallSafe: () => false
+  };
+  const flat = { biomeAt: () => ({ key: 'plains' }), layerAt: () => ({ key: 'surface' }) };
+  const swarm = enemyModule.makeSwarm(air, tiles, { worldgen: flat, random: () => 0.5 });
+  const player = { x: 100, y: 100, width: 0.8, height: 1.8 };
+  const eye = swarm.summon('hollloweye', player);
+  ok(!!eye, 'the Hollow Eye could not be summoned into open air');
+
+  // Run until it commits, then move the player a long way and check it does not follow.
+  let charging = false;
+  for (let i = 0; i < 60 * 20 && !charging; i += 1) {
+    swarm.step(player, 1 / 60, 0.5);
+    charging = eye.charge > 0;
+  }
+  ok(charging, 'the Hollow Eye never charged in twenty seconds');
+  if (charging) {
+    const vx = eye.vx;
+    const vy = eye.vy;
+    player.x += 60;
+    player.y -= 30;
+    swarm.step(player, 1 / 60, 0.5);
+    ok(Math.abs(eye.vx - vx) < 1e-9 && Math.abs(eye.vy - vy) < 1e-9,
+      'the Hollow Eye steered mid-charge: there would be nothing to dodge');
+    ok(Math.hypot(vx, vy) > ARCHETYPES.hover.speed * 2,
+      'a charge is no faster than hovering');
+  }
+
+  // And enraged it charges more often and winds up for less time.
+  const calm = { chargeEvery: ARCHETYPES.hover.chargeEvery, windUp: ARCHETYPES.hover.windUp };
+  ok(ARCHETYPES.hover.enrageCharge < 1, 'enraging does not shorten the gap between charges');
+  ok(ARCHETYPES.hover.enrageWindUp < calm.windUp, 'enraging does not shorten the tell');
+  ok(ARCHETYPES.hover.enrageSpeed > 1, 'enraging does not make the charge faster');
+}
+
 console.log('\nroster by layer:');
 for (const layer of worldgen.LAYERS) {
   const own = ENEMIES.filter(e => e.layers && e.layers.indexOf(layer.key) !== -1);

@@ -1,8 +1,8 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=39';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=40';
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=39';import * as D from './content.mjs?v=39';
-import * as UI from './ui-panels.mjs?v=39';
-import {World,createMap,GROUND} from './world.mjs?v=39';import {viewFor} from './scene.mjs?v=39';
+import * as E from './engine.mjs?v=40';import * as D from './content.mjs?v=40';
+import * as UI from './ui-panels.mjs?v=40';
+import {World,createMap,GROUND} from './world.mjs?v=40';import {viewFor} from './scene.mjs?v=40';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const restored=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 const fullChart=s=>{s.stars={unlocked:true,seen:D.CONSTELLATIONS.map(d=>d.id),claimed:D.CONSTELLATIONS.map(d=>d.id),signs:[]};};

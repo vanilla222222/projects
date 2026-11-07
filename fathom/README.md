@@ -13,9 +13,12 @@ or passed on. Leave it blank for a random one. There is no world size to choose 
 biome to pick: the world is endless, so size means nothing and both evils can simply exist
 somewhere out along the axis.
 
-`E` opens the backpack. Left click digs a block, or the wall behind it if the tile is empty;
-right click places whatever the selected hotbar slot holds. `1`-`0` or the scroll wheel pick
-a slot, `A`/`D` or the arrow keys move, `W`/`Space` jumps, `[` and `]` zoom, `P` pauses.
+`E` opens the backpack, which also lists every control. Left click digs a block, or the wall
+behind it if the tile is empty; right click places whatever the selected hotbar slot holds,
+uses what it is pointed at, or drinks what you are holding. `1`-`0` or the scroll wheel pick
+a slot, `A`/`D` or the arrow keys move, `W`/`Space` jumps and climbs, `G` fires the
+grappling hook, `M` opens the map, `H` asks whether the room you are standing in counts as a
+house, `N` and `B` turn off the sound and the music, `[` and `]` zoom, `P` pauses.
 
 In the backpack, left click picks up a stack and drops it, right click takes half or places
 one at a time, and shift-click sends a stack between the hotbar and the backpack. Equipment
@@ -43,6 +46,10 @@ origin lies within `STRUCTURE_MARGIN` columns of their edge, not just their own.
 
 ## What is checked
 
+`node tools/all.js` runs every suite and prints a summary table; `--quiet` prints only
+the summary and, for anything that failed, its failures. Twenty-one files is past the
+point where running them by hand is reasonable, and a suite nobody runs protects nothing.
+
 `node tools/worldgen-test.js` builds a region as one piece, then builds the same region by
 stitching independently generated chunks, and requires the two to be byte-identical. That is
 the seam oracle, and it runs over 55,296 tiles. It also asserts chunks are pure functions of
@@ -55,6 +62,14 @@ in different biomes and requires that **no step ends with the player inside a so
 that a sealed box holds, that terminal velocity is enforced, and that reach is clamped.
 
 `node tools/autotile-test.js` exercises all 256 neighbour masks.
+
+`node tools/boot-test.js` loads the game the way a browser does: it reads the script list
+out of `index.html`, concatenates those files in that order into one program — which is
+what sharing one global scope amounts to — and runs it against a stubbed browser. It
+catches the two classes of bug that every other suite here is structurally blind to,
+because every other suite `require`s its modules and so gives each one its own scope: a
+module naming a `const` from a module listed after it, and two modules declaring the same
+global name. Both have happened, more than once.
 
 `node tools/sprite-test.js` draws every body plan into a recording context and requires
 that each produces different frames at different animation phases. A sprite that ignores
@@ -107,23 +122,26 @@ the cost of one small canvas.
 | `js/worldgen.js` | biomes, surface, strata, caves, ores, trees, chunk assembly |
 | `js/chunks.js` | the live world: generated chunks plus the player's edit diff |
 | `js/autotile.js` | eight-neighbour masks to edges and inner corners |
-| `js/texture.js` | procedural tile atlas |
+| `js/texture.js` | procedural tile atlas, twelve variants of every tile |
 | `js/light.js` | coloured sun and emitter propagation, day cycle |
 | `js/mining.js` | Pickaxe power, per-tile toughness, the tier gate |
-| `js/craft.js` | Recipes, the bar and tool registry, station reach |
+| `js/craft.js` | Recipes, items, weapons, armour, accessories, and how effects combine |
 | `js/liquid.js` | Flowing water: levels, the active set, the budget |
 | `js/loot.js` | Chest tables, rolled from position rather than stored |
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 40 enemies, six behaviours, spawn pools per biome and layer |
+| `js/enemy.js` | 45 enemies including two bosses, eight behaviours, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
-| `js/sprite.js` | body plans for every creature, and the poses they are drawn in |
+| `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
 | `js/render.js` | sky, weather, parallax, walls, tiles, water, lighting, bloom, particles |
 | `js/profile.js` | characters and worlds, kept apart, and seed parsing |
 | `js/menu.js` | title, character select and creation, world select and creation |
 | `js/inventory.js` | slots, stacking, splitting, equipment restrictions |
 | `js/stats.js` | health, mana, regeneration, death and respawn |
 | `js/ui.js` | hearts and stars, hotbar, backpack and equipment screen |
-| `js/game.js` | loop, input, camera, mining, placing, drops, save |
+| `js/fishing.js` | rods, what is in the water, and how much water a place has |
+| `js/buffs.js` | effects that expire: potions, and what a campfire does |
+| `js/audio.js` | every sound in the game, the ambience beds and the music |
+| `js/game.js` | loop, input, camera, mining, placing, drops, events, save |

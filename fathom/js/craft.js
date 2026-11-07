@@ -13,6 +13,10 @@ const CRAFT_WALLS = (typeof require === 'function')
   ? require('./tiles.js').WALL_BY_KEY : WALL_BY_KEY;
 const CRAFT_TILES = (typeof require === 'function')
   ? require('./tiles.js') : { BY_KEY, TILES, WOODS };
+// Resolved at call time rather than at load time. buffs.js is loaded after this file in
+// the browser, so naming `BUFFS` here would read a `const` before its declaration and
+// throw on load - which is the same trap the two lookups above are written around, and
+// which I walked straight into anyway.
 
 const STATION_REACH_X = 5;
 const STATION_REACH_Y = 3;
@@ -66,6 +70,28 @@ const ITEMS = {
     text: 'Restores 70 health' },
   'mana-salve': { name: 'Mana Salve', kind: 'use', colour: '#5c8ae0', use: { restore: 60 },
     text: 'Restores 60 mana' },
+  // Rods, and what comes out of the water. A fish is food: cooked at a furnace it is the
+  // cheapest healing in the game, which is the point of a pond near the house.
+  'wood-rod': { name: 'Wooden Rod', kind: 'tool', colour: '#8a6038', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  'iron-rod': { name: 'Iron Rod', kind: 'tool', colour: '#a8a29b', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  'gold-rod': { name: 'Gilded Rod', kind: 'tool', colour: '#e0c054', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  junk: { name: 'Old Boot', kind: 'loot', colour: '#6a5b52' },
+  bass: { name: 'Bass', kind: 'loot', colour: '#7f8f6a' },
+  trout: { name: 'Trout', kind: 'loot', colour: '#9fb0c0' },
+  perch: { name: 'Perch', kind: 'loot', colour: '#c0a060' },
+  shrimp: { name: 'Shrimp', kind: 'loot', colour: '#e49a86' },
+  cavefish: { name: 'Cave Fish', kind: 'loot', colour: '#8a8f9a' },
+  glowfish: { name: 'Glowfish', kind: 'loot', colour: '#9fe8d0' },
+  swordfish: { name: 'Swordfish', kind: 'loot', colour: '#5f7f9f' },
+  goldfish: { name: 'Goldfish', kind: 'loot', colour: '#e0a63c' },
+  crate: { name: 'Sealed Crate', kind: 'use', colour: '#8a6038', use: { open: 'crate' },
+    text: 'Open it and see' },
+  'cooked-fish': { name: 'Cooked Fish', kind: 'use', colour: '#d8a06a',
+    use: { heal: 45 }, text: 'Restores 45 health' },
+
   // Grappling hooks. A hook is a tool rather than a weapon: it is fired with its own
   // key, it does no damage, and what it changes is where you can go. `range` is how far
   // the head flies before giving up, `speed` how fast it flies, and `pull` how hard the
@@ -75,10 +101,28 @@ const ITEMS = {
   'crystal-hook': { name: 'Crystal Hook', kind: 'tool', colour: '#8fa8ff',
     grapple: { range: 30, speed: 62, pull: 22 }, text: 'Fire with G. Longer, faster' },
 
+  // A bottle, and the potions made in one. A potion is a `use` item like any other; what
+  // makes it a potion is that what it does is give a buff, which expires.
+  bottle: { name: 'Bottle', kind: 'use', colour: '#bcd4e0', use: { buff: null },
+    text: 'Empty. Fill it with something.' },
+
+  'swift-potion': { name: 'Swiftness Potion', kind: 'use', colour: '#8fd1e8', use: { buff: 'swiftness' } },
+  'ironskin-potion': { name: 'Ironskin Potion', kind: 'use', colour: '#a8a29b', use: { buff: 'ironskin' } },
+  'regen-potion': { name: 'Regeneration Potion', kind: 'use', colour: '#e05c6a', use: { buff: 'regeneration' } },
+  'gills-potion': { name: 'Gills Potion', kind: 'use', colour: '#4f9fd8', use: { buff: 'gills' } },
+  'spelunk-potion': { name: 'Spelunking Potion', kind: 'use', colour: '#c9a542', use: { buff: 'spelunking' } },
+  'shine-potion': { name: 'Shine Potion', kind: 'use', colour: '#ffd79a', use: { buff: 'shine' } },
+  'archery-potion': { name: 'Archery Potion', kind: 'use', colour: '#8a6038', use: { buff: 'archery' } },
+  'rage-potion': { name: 'Rage Potion', kind: 'use', colour: '#c0472f', use: { buff: 'rage' } },
+  'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
+  'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
+
   // A summon. Used where you stand, like everything else of kind `use`, and what it does
   // is put something in the world that will not leave until one of you is dead.
   slimecrown: { name: 'Slime Crown', kind: 'use', colour: '#e0c054',
-    use: { summon: 'kingslime' }, text: 'Summons the King Slime' }
+    use: { summon: 'kingslime' }, text: 'Summons the King Slime' },
+  bloodshotlens: { name: 'Bloodshot Lens', kind: 'use', colour: '#b4484f',
+    use: { summon: 'hollloweye' }, text: 'Summons the Hollow Eye. Use it at night.' }
 };
 
 // Armour. Four pieces rather than Terraria's three, because boots were asked for. Every
@@ -205,60 +249,67 @@ const ACCESSORIES = {
   // The king's. Not rare drops but certain ones: beating a boss gives you both, because
   // a fight you have to prepare for should not then also be a lottery.
   'royal-gel': { name: 'Royal Gel', colour: '#8fd98f', text: 'Slimes no longer attack you', slimeFriend: true, drop: 'kingslime' },
+  'hollow-lens': { name: 'Hollow Lens', colour: '#b4484f', text: 'Arrows hit 15% harder and fly much faster', ranged: 1.15, arrowSpeed: 1.5, drop: 'hollloweye' },
+  'seers-eye': { name: "Seer's Eye", colour: '#d8b0b4', text: 'Magic hits 10% harder, and you see in the dark', magic: 1.1, glow: 10, drop: 'hollloweye' },
   'kings-crown': { name: "King's Crown", colour: '#e0c054', text: 'Everything you do hits 12% harder', melee: 1.12, ranged: 1.12, magic: 1.12, drop: 'kingslime' }
 };
 
 // Every effect the worn equipment adds up to. One function, so the game never has to
 // remember which piece grants what.
-function equipEffects(wornArmour, wornAccessories) {
-  const out = { defense: 0, speed: 1, power: 1, swing: 1, regen: 1, pickup: 1,
-    breathMul: 1, fallMul: 1, doubleJump: false, fireproof: false, glow: 0, bonus: null,
-    slimeFriend: false,
-    // One multiplier per damage class, plus the two numbers that decide whether magic is
-    // worth using at all: what a spell costs and how fast the pool comes back.
-    melee: 1, ranged: 1, magic: 1, manaCost: 1, manaRegen: 1, arrowSpeed: 1 };
+// How each effect field combines. Written once, as a table, because it was written three
+// times - for accessories, for set bonuses, and nearly for buffs - and the three had
+// quietly drifted apart: a set bonus carrying `arrowSpeed` or `slimeFriend` did nothing
+// at all, and so did an accessory carrying `pickup`. Nobody would have noticed until
+// somebody wore the thing and it had no effect.
+const EFFECT_FIELDS = {
+  defense: 'add',
+  speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
+  breathMul: 'mul', fallMul: 'mul',
+  melee: 'mul', ranged: 'mul', magic: 'mul',
+  manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
+  glow: 'max',
+  doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
+};
+
+function baseEffects() {
+  const out = { bonus: null };
+  for (const [field, how] of Object.entries(EFFECT_FIELDS)) {
+    out[field] = how === 'mul' ? 1 : (how === 'flag' ? false : 0);
+  }
+  return out;
+}
+
+// Fold one modifier - an accessory, a set bonus, a buff - into an effects object.
+function applyEffect(out, mod) {
+  if (!mod) return out;
+  for (const [field, how] of Object.entries(EFFECT_FIELDS)) {
+    const value = mod[field];
+    if (value === undefined) continue;
+    if (how === 'add') out[field] += value;
+    else if (how === 'mul') out[field] *= value;
+    else if (how === 'max') out[field] = Math.max(out[field], value);
+    else if (value) out[field] = true;
+  }
+  // `breath` is a word rather than a number: it means the limit goes away entirely.
+  if (mod.breath) out.breathMul = Infinity;
+  return out;
+}
+
+function equipEffects(wornArmour, wornAccessories, buffEffects) {
+  const out = baseEffects();
   for (const key of wornArmour) {
     const piece = key && ARMOUR[key];
     if (piece) out.defense += piece.defense;
   }
-  for (const key of wornAccessories) {
-    const acc = key && ACCESSORIES[key];
-    if (!acc) continue;
-    if (acc.defense) out.defense += acc.defense;
-    if (acc.speed) out.speed *= acc.speed;
-    if (acc.power) out.power *= acc.power;
-    if (acc.breathMul) out.breathMul *= acc.breathMul;
-    if (acc.fallMul) out.fallMul *= acc.fallMul;
-    if (acc.doubleJump) out.doubleJump = true;
-    if (acc.fireproof) out.fireproof = true;
-    if (acc.glow) out.glow = Math.max(out.glow, acc.glow);
-    if (acc.swing) out.swing *= acc.swing;
-    if (acc.melee) out.melee *= acc.melee;
-    if (acc.ranged) out.ranged *= acc.ranged;
-    if (acc.magic) out.magic *= acc.magic;
-    if (acc.manaCost) out.manaCost *= acc.manaCost;
-    if (acc.manaRegen) out.manaRegen *= acc.manaRegen;
-    if (acc.arrowSpeed) out.arrowSpeed *= acc.arrowSpeed;
-    if (acc.slimeFriend) out.slimeFriend = true;
-    if (acc.regen) out.regen *= acc.regen;
-  }
+  for (const key of wornAccessories) applyEffect(out, key && ACCESSORIES[key]);
   const bonus = setBonusFor(wornArmour);
   if (bonus) {
     out.bonus = bonus;
-    if (bonus.defense) out.defense += bonus.defense;
-    if (bonus.speed) out.speed *= bonus.speed;
-    if (bonus.power) out.power *= bonus.power;
-    if (bonus.swing) out.swing *= bonus.swing;
-    if (bonus.regen) out.regen *= bonus.regen;
-    if (bonus.pickup) out.pickup *= bonus.pickup;
-    if (bonus.breath) out.breathMul = Infinity;
-    if (bonus.fireproof) out.fireproof = true;
-    if (bonus.melee) out.melee *= bonus.melee;
-    if (bonus.ranged) out.ranged *= bonus.ranged;
-    if (bonus.magic) out.magic *= bonus.magic;
-    if (bonus.manaCost) out.manaCost *= bonus.manaCost;
-    if (bonus.manaRegen) out.manaRegen *= bonus.manaRegen;
+    applyEffect(out, bonus);
   }
+  // Buffs are the same kind of thing as everything else here: a bag of modifiers that
+  // happens to expire.
+  for (const mod of buffEffects || []) applyEffect(out, mod);
   return out;
 }
 
@@ -377,6 +428,20 @@ function describe(key, tilesModule) {
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   const item = ITEMS[key];
+  if (item && item.rod) {
+    const rod = (typeof require === 'function')
+      ? require('./fishing.js').RODS[key]
+      : (typeof RODS === 'undefined' ? null : RODS[key]);
+    lines.push('Fishing rod');
+    if (rod) lines.push('Power ' + rod.power.toFixed(2));
+    lines.push('Right click at water to cast, and again when it dips');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  if (item && item.use && item.use.open) {
+    lines.push('Used where you stand');
+    lines.push('Open it and see what is inside');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
   if (item && item.grapple) {
     lines.push('Grappling hook');
     lines.push(item.grapple.range + ' tiles of rope');
@@ -385,6 +450,16 @@ function describe(key, tilesModule) {
   }
   if (item && item.use) {
     lines.push('Used where you stand');
+    if (item.use.buff) {
+      const table = (typeof require === 'function')
+        ? require('./buffs.js').BUFFS
+        : (typeof BUFFS === 'undefined' ? {} : BUFFS);
+      const buff = table[item.use.buff];
+      if (buff) {
+        lines.push(buff.text);
+        lines.push('Lasts ' + Math.round(buff.seconds / 60) + ' minutes');
+      }
+    }
     if (item.text) lines.push(item.text);
     return { name: nameOf(key, tilesModule), kind, lines };
   }
@@ -577,10 +652,29 @@ RECIPES.push(
   // The blaster fires fast and cheap rather than hard: with the Meteor set its bolts
   // cost almost nothing, which is Terraria's joke about the Space Gun and worth keeping.
   { out: { key: 'meteor-blaster', kind: 'tool', count: 1 }, need: [['meteor-bar', 14], ['diamond', 2]], station: 'anvil' },
+  { out: { key: 'bottle', kind: 'use', count: 2 }, need: [['glass', 1]], station: 'workbench' },
+  { out: { key: 'swift-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['feather', 3]], station: 'workbench' },
+  { out: { key: 'ironskin-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['iron-bar', 1]], station: 'workbench' },
+  { out: { key: 'regen-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['glowmoss', 3]], station: 'workbench' },
+  { out: { key: 'gills-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['shell', 3]], station: 'workbench' },
+  { out: { key: 'spelunk-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['crystal', 2]], station: 'workbench' },
+  { out: { key: 'shine-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['blightshroom', 2]], station: 'workbench' },
+  { out: { key: 'archery-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['lens', 1], ['feather', 2]], station: 'workbench' },
+  { out: { key: 'rage-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['chitin', 2]], station: 'workbench' },
+  { out: { key: 'clarity-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['amethyst', 2]], station: 'workbench' },
+  { out: { key: 'feather-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['feather', 5]], station: 'workbench' },
+  { out: { key: 'campfire', kind: 'block', count: 1 }, need: [['#wood', 10], ['torch', 3]], station: null },
+  { out: { key: 'wood-rod', kind: 'tool', count: 1 }, need: [['#wood', 12]], station: 'workbench' },
+  { out: { key: 'iron-rod', kind: 'tool', count: 1 }, need: [['iron-bar', 6], ['#wood', 6]], station: 'anvil' },
+  { out: { key: 'gold-rod', kind: 'tool', count: 1 }, need: [['gold-bar', 8], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'cooked-fish', kind: 'use', count: 1 }, need: [['#fish', 1]], station: 'furnace' },
   { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
   { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 40], ['gold-bar', 5]], station: 'anvil' },
+  // Six lenses, which only come off demon eyes, which only come out at night. The cost
+  // is the nights you had to survive to afford it.
+  { out: { key: 'bloodshotlens', kind: 'use', count: 1 }, need: [['lens', 6], ['gold-bar', 3]], station: 'anvil' },
   { out: { key: 'healing-salve', kind: 'use', count: 2 }, need: [['gel', 4], ['glowmoss', 2]], station: 'workbench' },
   { out: { key: 'mana-salve', kind: 'use', count: 2 }, need: [['fallenstar', 1], ['glowmoss', 2]], station: 'workbench' }
 );
@@ -625,16 +719,25 @@ function stationsNear(world, tiles, px, py) {
 // pickaxe be made from whichever tree happened to be nearest without the recipe list
 // having to be written out once per species.
 const TAGS = {
+  // Any fish cooks the same way, so the furnace takes a tag rather than nine recipes.
+  '#fish': (key) => ['bass', 'trout', 'perch', 'shrimp', 'cavefish', 'glowfish',
+    'swordfish', 'goldfish'].includes(key),
   '#wood': (key) => {
     const spec = CRAFT_TILES.BY_KEY[key];
     return !!(spec && spec.wood && key.endsWith('wood'));
   }
 };
 
+// Everything a tag stands for. Tiles and items both, because `#wood` is a family of
+// tiles and `#fish` is a family of items, and a tag that could only ever mean tiles would
+// have quietly matched nothing at all.
 function tagMembers(tag) {
   const test = TAGS[tag];
   if (!test) return [];
-  return CRAFT_TILES.TILES.filter(t => test(t.key)).map(t => t.key);
+  const out = [];
+  for (const spec of CRAFT_TILES.TILES) if (test(spec.key)) out.push(spec.key);
+  for (const key of Object.keys(ITEMS)) if (test(key) && out.indexOf(key) === -1) out.push(key);
+  return out;
 }
 
 // How much of an ingredient the inventory holds, counting every member of a tag.
@@ -715,8 +818,13 @@ function kindOf(key) {
 
 
 
+// Tags need names of their own: the crafting list shows what a recipe costs, and "#fish"
+// is not something to show a player. Kept beside the tag table rather than inside it so
+// a tag is a predicate and nothing else.
+const TAG_NAMES = { '#wood': 'Wood', '#fish': 'Fish' };
+
 function nameOf(key, tiles) {
-  if (key === '#wood') return 'Wood';
+  if (TAG_NAMES[key]) return TAG_NAMES[key];
   if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return CRAFT_TILES.MULTI[key].name;
   if (ACCESSORIES[key]) return ACCESSORIES[key].name;
   if (ARMOUR[key]) return ARMOUR[key].name;
@@ -737,7 +845,8 @@ function nameOf(key, tiles) {
 const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
-    classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe };
+    classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe,
+    EFFECT_FIELDS, baseEffects, applyEffect };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_craft;

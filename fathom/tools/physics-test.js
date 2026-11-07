@@ -6,6 +6,7 @@ const tiles = require('../js/tiles.js');
 const gen = require('../js/worldgen.js');
 const { makeWorld } = require('../js/chunks.js');
 const physics = require('../js/player.js');
+const stats = require('../js/stats.js');
 
 const SEED = 20260105;
 const world = makeWorld(SEED, gen);
@@ -174,6 +175,59 @@ checks += 3;
   for (let i = 0; i < 30; i += 1) physics.step(hung, air, tiles, {}, 1 / 60);
   assert.ok(hung.vy > 1, 'letting go of the hook left the player floating');
   checks += 3;
+}
+
+
+// --- water arrests a fall ------------------------------------------------------------
+// Terraria's rule, and the one that makes diving into a pool a way down rather than a
+// death. The code has always had it; nothing had ever checked it, and it is exactly the
+// kind of line that gets lost in a refactor and is never noticed until someone dies at
+// the bottom of a shaft they have used fifty times.
+{
+  const H = 90;
+  const FLOOR = 70;
+  const POOL_TOP = 64;
+  const stone = tiles.idOf('stone');
+  const water = tiles.idOf('water');
+  const shaft = {
+    get(x, y) {
+      if (y >= FLOOR) return stone;
+      if (x < -2 || x > 2) return stone;
+      return y >= POOL_TOP ? water : tiles.AIR;
+    },
+    getLevel(x, y) { return (y >= POOL_TOP && y < FLOOR && x >= -2 && x <= 2) ? 255 : 0; },
+    LEVEL_FULL: 255
+  };
+  const dry = {
+    get(x, y) {
+      if (y >= FLOOR) return stone;
+      return (x < -2 || x > 2) ? stone : tiles.AIR;
+    },
+    getLevel() { return 0; },
+    LEVEL_FULL: 255
+  };
+
+  // The same fall, once onto rock and once into water.
+  const onto = (world) => {
+    const faller = physics.makePlayer(0, 10);
+    let worst = 0;
+    for (let i = 0; i < 60 * 12; i += 1) {
+      physics.step(faller, world, tiles, {}, 1 / 60);
+      worst = Math.max(worst, faller.landed);
+      if (faller.onGround && i > 30) break;
+    }
+    return { landed: worst, y: faller.y };
+  };
+
+  const hard = onto(dry);
+  const wet = onto(shaft);
+  assert.ok(hard.landed > stats.SAFE_FALL,
+    'the dry fall was only ' + hard.landed.toFixed(1) + ' tiles: the fixture is wrong');
+  assert.ok(stats.fallDamage(hard.landed) > 0, 'a fifty-tile drop onto rock did not hurt');
+  assert.equal(wet.landed, 0,
+    'falling into water recorded a ' + wet.landed.toFixed(1) + '-tile landing');
+  assert.equal(stats.fallDamage(wet.landed), 0, 'falling into water hurt');
+  checks += 4;
 }
 
 console.log('Physics: ' + checks + ' invariants held over ' + steps.toLocaleString()

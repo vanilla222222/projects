@@ -1,21 +1,22 @@
-import * as Rewards from './reward-progression.mjs?v=39';
-import {roomLayout} from './layouts.mjs?v=39';
-import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=39';
-import * as J from './journey.mjs?v=39';
-import * as Builds from './class-builds.mjs?v=39';
-import * as Books from './special-talents.mjs?v=39';
-import * as Hunts from './boss-hunts.mjs?v=39';
-import * as Dungeon from './dungeon.mjs?v=39';
-import {validateSurveys} from './exploration.mjs?v=39';
-import * as X from './item-economy.mjs?v=39';
-import * as S from './services.mjs?v=39';
-import * as B from './workshop.mjs?v=39';
-import * as H from './alchemy.mjs?v=39';
-import * as C from './chronicle.mjs?v=39';
-import * as A from './adventure.mjs?v=39';
-import * as L from './legacy.mjs?v=39';
-import * as I from './inventory.mjs?v=39';
-import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=39';
+import {validateAdvancements} from './world-two.mjs?v=40';
+import * as Rewards from './reward-progression.mjs?v=40';
+import {roomLayout} from './layouts.mjs?v=40';
+import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=40';
+import * as J from './journey.mjs?v=40';
+import * as Builds from './class-builds.mjs?v=40';
+import * as Books from './special-talents.mjs?v=40';
+import * as Hunts from './boss-hunts.mjs?v=40';
+import * as Dungeon from './dungeon.mjs?v=40';
+import {validateSurveys} from './exploration.mjs?v=40';
+import * as X from './item-economy.mjs?v=40';
+import * as S from './services.mjs?v=40';
+import * as B from './workshop.mjs?v=40';
+import * as H from './alchemy.mjs?v=40';
+import * as C from './chronicle.mjs?v=40';
+import * as A from './adventure.mjs?v=40';
+import * as L from './legacy.mjs?v=40';
+import * as I from './inventory.mjs?v=40';
+import {CLASSES,ITEMS,RECIPES,EQUIPMENT,GEAR_SLOTS,RUNES,POTIONS,ALCHEMY,GUILD,TALENTS,PROF_TALENTS,STORY,SECRETS,ENEMIES,CLASS_TALENTS,STONES} from './content.mjs?v=40';
 export const xpNeeded=c=>Math.round(20*c.level**1.5);
 export function addXp(c,n){n*=1+(Books.specialBonuses(c).characterXP||0);c.lifetimeXp=(c.lifetimeXp||0)+n;c.xp+=n;while(c.xp>=xpNeeded(c)){c.xp-=xpNeeded(c);c.level++;if(c.dungeon)c.dungeon.home.hp+=6;else c.hp+=6;}}
 export const skillLevel=(c,id)=>1+Math.floor(Math.sqrt((c.skills[id]||0)/12));
@@ -24,6 +25,7 @@ export const canPay=I.canPay;
 export const pay=I.pay;
 export function log(s,message){s.log.unshift(message);s.log=s.log.slice(0,30);}
 export function initializeCharacter(c,s,migrate=false){
+ c.skills??={};for(const id of ['fishing','bugcatching','digging','foraging','hunting'])c.skills[id]??=0;c.advancement??=null;
  c.assignmentWarning??=null;c.upgradeRewardClaims??=[];J.initJourney(c);Builds.initBuild(c);c.bossTier??=0;c.encounter??=null;c.dungeon??=null;c.lifetimeXp??=0;c.earnedCoins??=0;c.coinRemainder??=0;c.metMentors??=Object.keys(c.quests||{});c.classTalents??=Object.fromEntries(Object.keys(Builds.classTalentDefs(c)).map(id=>[id,0]));c.hotbar??=[0,1,2];c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;
  c.loadout??={};c.profTalents??={efficiency:0,prosperity:0,mastery:0,workmanship:0};c.builds??=[null,null];c.buffs??=[];
  c.talents={power:0,vitality:0,industry:0,precision:0,haste:0,signature:0,...c.talents};
@@ -79,6 +81,7 @@ export function validate(s){
  const finite=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0;
  if(!Array.isArray(s.armory)||!Array.isArray(s.jobs)||!Array.isArray(s.recipeUnlocks)||!Array.isArray(s.secretUnlocks)||!s.alchemy||!finite(s.alchemy.liquid)||!s.story||!s.guild)throw Error('Invalid progression data.');
  const ids=new Set();for(const item of [...s.armory,...s.characters.flatMap(c=>[...Object.values(c.loadout),...c.packGear,...(c.groundLoot||[]).filter(d=>d.gear).map(d=>d.gear)])]){if(!item||!Number.isInteger(item.uid)||item.uid<1||ids.has(item.uid)||!EQUIPMENT[item.base]||!Array.isArray(item.runes)||item.runes.length>2||item.runes.some(id=>!RUNES[id])||item.upgrades!==undefined&&(!Array.isArray(item.upgrades)||item.upgrades.length>3||item.upgrades.some(id=>!STONES[id]?.slots.includes(EQUIPMENT[item.base].slot))))throw Error('Invalid equipment instance.');ids.add(item.uid);}
+ validateAdvancements(s);
  for(const c of s.characters){if(c.groundLoot!==undefined&&(!Array.isArray(c.groundLoot)||c.groundLoot.some(d=>!d||!Number.isFinite(d.count)||d.count<=0||d.gear&&(d.count!==1||d.itemId!==d.gear.base))))throw Error('Invalid ground items.');}
  for(const c of s.characters){if(!Array.isArray(c.builds)||c.builds.length!==2||c.builds.some(b=>b!==null&&(!b||!b.talents||!b.profTalents)))throw Error('Invalid saved builds.');if(Object.keys(c.profTalents).some(id=>!PROF_TALENTS[id]))throw Error('Unknown profession talent.');if(Object.entries(c.loadout).some(([slot,item])=>EQUIPMENT[item.base].slot!==slot&&!(EQUIPMENT[item.base].slot==='ring'&&slot==='ring2')))throw Error('Equipment is in the wrong slot.');for(const bag of [c.talents,c.profTalents])if(Object.values(bag).some(n=>!Number.isInteger(n)||n<0))throw Error('Invalid talent data.');if(professionPoints(c)===0&&Object.values(c.profTalents).reduce((a,b)=>a+b,0)>Object.keys(c.skills).reduce((n,id)=>n+skillLevel(c,id)-1,0))throw Error('Too many profession points.');if(!Array.isArray(c.buffs)||c.buffs.some(b=>(!Object.values(POTIONS).some(p=>p.type===b.type&&p.value===b.value)&&!(['attack','speed','defense'].includes(b.type)&&[.12,.3,3,4].includes(b.value)&&b.source==='ability'))||!finite(b.remaining)||b.remaining>1200))throw Error('Invalid timed bonus.');if(c.secret&&!SECRETS[c.secret])throw Error('Unknown secret map.');}
  for(const job of s.jobs){const r=RECIPES.find(r=>r.id===job.recipe);if(!r||r.station!=='foundry'||!s.characters.some(c=>c.id===job.owner)||!Number.isInteger(job.remaining)||job.remaining<1||job.remaining>20||!finite(job.progress)||!finite(job.yield)||job.yield>r.count*2||!job.reserved||Object.entries(r.cost).some(([k,n])=>job.reserved[k]!==n)||job.fee!==2)throw Error('Invalid production queue.');}

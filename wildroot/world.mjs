@@ -1,8 +1,9 @@
-import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=39';
-import {surveyPoint} from './exploration.mjs?v=39';
-import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=39';
-import {roomLayout,pointFor} from './layouts.mjs?v=39';
-import * as E from './engine.mjs?v=39';
+import {EXPANSION_AREAS,ADVANCEMENTS} from './expansion-content.mjs?v=40';
+import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=40';
+import {surveyPoint} from './exploration.mjs?v=40';
+import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=40';
+import {roomLayout,pointFor} from './layouts.mjs?v=40';
+import * as E from './engine.mjs?v=40';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];
 export const LADDERS=[{x:370,top:462,bottom:GROUND},{x:1000,top:342,bottom:GROUND}];
@@ -20,7 +21,7 @@ export function abilitySet(c){if(c.dungeon)return E.dungeonAbilities;return[ABIL
 export function assignedAbilities(c){const all=abilitySet(c);return(c.hotbar||[0,1,2]).map(i=>all[i]);}
 export function abilityAvailable(c,index){return !!c.dungeon||index===0||!!c.class&&c.level>=(index===1?6:10)&&(c.classTalents?.[index===1?'secondary':'utility']||0)>0;}
 export function createMap(area,index,boss=false,secret=null,trial=false){
- const layout=roomLayout(area,index,boss,secret);const town=!boss&&!secret&&['town','jungle-town'].includes(area),enemy=boss?ENEMIES.boss:secret?ENEMIES[SECRETS[secret]?.enemy]:zoneEnemy(area,index);
+ const layout=roomLayout(area,index,boss,secret);const town=!boss&&!secret&&['town','jungle-town','tide-town','tide-gate'].includes(area),enemy=boss?ENEMIES.boss:secret?ENEMIES[SECRETS[secret]?.enemy]:zoneEnemy(area,index);
  const monsters=enemy?layout.spawns.map((p,i)=>({...p,ledgeMin:layout.platforms.find(f=>f.y===p.y&&p.x>=f.x&&p.x<=f.x+f.w).x+25,ledgeMax:(()=>{const f=layout.platforms.find(f=>f.y===p.y&&p.x>=f.x&&p.x<=f.x+f.w);return f.x+f.w-25;})(),home:p.x,id:`enemy-${i}`,kind:'enemy',enemy,hp:enemy.hp,dead:0,attack:1.5+i*.15,phase:i,facing:-1})):[];
  const resources=areaById(area).resources[index].map((resource,i)=>({id:`node-${i}`,kind:'node',resource,...(layout.resources[i]||layout.resources[0]||{x:425,y:GROUND}),progress:0}));
  const npcs=[];
@@ -28,11 +29,12 @@ export function createMap(area,index,boss=false,secret=null,trial=false){
  if(area==='town'&&index===0)npcs.push({id:'npc-steward',kind:'npc',classId:null,role:'steward',name:'Hesta',...pointFor(layout,'npc-steward')});
  const station=area==='town'?(index===1?'anvil':index===2?'foundry':null):area==='jungle-town'?(index===0?'enchanting':index===1?'alchemy':null):null;
  const stations=station?[{id:'station',kind:'station',station,...pointFor(layout,'station'),name:station[0].toUpperCase()+station.slice(1)}]:[];
- const facilities=town?(area==='town'&&index===3?[{id:'stamps',kind:'stamps',name:'Stamp Registry',x:350,y:GROUND},{id:'statues',kind:'statues',name:'Statue Keeper',x:650,y:GROUND},{id:'vault',kind:'vault',name:'Upgrade Vault',x:1670,y:GROUND},{id:'tasks',kind:'tasks',name:'World Task Board',x:1990,y:GROUND},{id:'world-gate',kind:'worldgate',name:'World 2 Gate · dormant',x:1030,y:GROUND}]:index===0?[{id:'shop',kind:'shop',name:area==='town'?'Pip’s General Store':'Nori’s Supply Stall',x:area==='town'?680:565,y:GROUND}]:[]):[];
+ const facilities=town?(area==='town'&&index===3?[{id:'stamps',kind:'stamps',name:'Stamp Registry',x:350,y:GROUND},{id:'statues',kind:'statues',name:'Statue Keeper',x:650,y:GROUND},{id:'vault',kind:'vault',name:'Upgrade Vault',x:1670,y:GROUND},{id:'tasks',kind:'tasks',name:'World Task Board',x:1990,y:GROUND},{id:'world-gate',kind:'worldgate',name:'World 2 · Tidewilds',x:1030,y:GROUND}]:index===0?[{id:'shop',kind:'shop',name:area==='town'?'Pip’s General Store':area.startsWith('tide-')?'Expedition Supplies':'Nori’s Supply Stall',x:area==='town'?680:565,y:GROUND}]:[]):[];
  if(town&&area==='town'&&index===3)facilities.push({id:'dungeon',kind:'dungeon',name:'Mossroot Ruins'});if(town&&area==='jungle-town'&&index===2)facilities.push({id:'bossboard',kind:'bossboard',name:'Rootwarden Hunt Board'});
  for(const e of facilities)Object.assign(e,pointFor(layout,e.id));
  if(area===TELESCOPE.area&&index===TELESCOPE.zone&&!boss&&!secret)facilities.push({id:'telescope',kind:'telescope',name:'Crown Telescope',...pointFor(layout,'telescope')});if(town&&area==='town'&&index===3)facilities.push({id:'arena',kind:'arena',name:'Solo Trial Board',...pointFor(layout,'arena')});for(const d of CONSTELLATIONS)if(d.area===area&&d.zone===index&&(d.secret||null)===(secret||null)&&!boss)facilities.push({id:'constellation-'+d.id,kind:'constellation',constellation:d.id,name:d.name,x:d.x,y:d.y});
  if(!boss)facilities.push({id:'survey',kind:'survey',name:'High-route Survey Cache',...surveyPoint(layout)});
+ if(!boss&&!secret&&Object.values(ADVANCEMENTS).some(d=>d.area===area&&d.zone===index))facilities.push({id:'advancement',kind:'advancement',name:'Pathfinder · Tier 2 Training',...pointFor(layout,'advancement')});
  const portals=roomPortals(area,index,boss,secret);
  const storage=town&&!secret?[{id:'storage',kind:'storage',name:'Storage Chest',x:160,y:GROUND}]:[];
  const discoveries=!secret&&!boss?Object.entries(SECRETS).filter(([id,d])=>d.area===area&&d.zone===index).map(([id,d])=>({id:'secret-'+id,kind:'discovery',secret:id,name:d.name,...pointFor(layout,'secret-'+id)})):[];
@@ -42,6 +44,7 @@ export function createMap(area,index,boss=false,secret=null,trial=false){
 }
 export function createDungeonMap(c){const r=c.dungeon,d=E.DUNGEON_ROOMS[r.room],map=createMap(d.area,d.zone,false,d.secret||null);const spots=map.layout.spawns;const monsters=Array.from({length:d.count},(_,i)=>{const p=spots[i%spots.length],f=map.platforms.find(f=>f.y===p.y&&p.x>=f.x&&p.x<=f.x+f.w),enemy={...ENEMIES[d.enemy],artId:['ruin-bat','ruin-creeper','archive-golem','ruin-heart'][r.room],id:'dungeon-'+r.room+'-'+i,hp:d.hp,attack:d.attack,xp:0,coins:0};return{...p,id:enemy.id,kind:'enemy',enemy,hp:enemy.hp,dead:0,home:p.x,ledgeMin:f.x+25,ledgeMax:f.x+f.w-25,attack:2,phase:i};});return{...map,town:false,boss:false,secret:null,dungeon:true,title:d.name,monsters,resources:[],npcs:[],stations:[],facilities:[],portals:[],discoveries:[],storage:[],entities:monsters};}
 export function nextRoute(area,index,direction){
+ const expansion=EXPANSION_AREAS.find(a=>a.id===area);if(expansion){if(direction<0)return index?{area,zone:index-1}:{area:expansion.entry?.[0]||'town',zone:expansion.entry?.[1]??3};if(index<expansion.zones.length-1)return{area,zone:index+1};return{area:expansion.entry?.[0]||'town',zone:expansion.entry?.[1]??3};}
  const zones=area==='town'?3:areaById(area).zones.length;
  if(area==='tree'){if(direction<0)return index?{area,zone:index-1}:{area:'forest',zone:4};return index<2?{area,zone:index+1}:{area:'forest',zone:4};}
  if(area==='town'&&index===3)return{area:'town',zone:0};
@@ -53,9 +56,19 @@ export function nextRoute(area,index,direction){
 // Every doorway names both its destination room and the entrance in that room.
 export function entrancePoint(id='portal-left',area='forest',index=0,boss=false,secret=null){const layout=roomLayout(area,index,boss,secret),point=pointFor(layout,id),facing=id==='portal-left'||id.startsWith('secret-')?1:-1;return{x:point.x+70*facing,y:point.y,facing};}
 export function roomPortals(area,index,boss=false,secret=null){
+ const expansion=EXPANSION_AREAS.find(a=>a.id===area);
  const make=(id,direction,to)=>{const point=pointFor(roomLayout(area,index,boss,secret),id);return{id,kind:'portal',...point,direction,destination:to,name:to.boss?'The Rootwarden':to.secret?SECRETS[to.secret].name:areaById(to.area).zones[to.zone]};};
+ if(expansion){
+ const parent=expansion.entry||['town',3],last=index===expansion.zones.length-1;
+ const back=index?{area,zone:index-1,entrance:'portal-right'}:{area:parent[0],zone:parent[1],entrance:'portal-branch-'+area};
+ const forward=last?{area:parent[0],zone:parent[1],entrance:'portal-return-'+area}:{area,zone:index+1,entrance:'portal-left'};
+ const list=[make('portal-left',-1,back),make('portal-right',1,forward)];
+ addBranches(list);return list;
+ }
+ function addBranches(list){for(const child of EXPANSION_AREAS.filter(a=>a.entry?.[0]===area&&a.entry[1]===index)){
+ list.push(make('portal-branch-'+child.id,0,{area:child.id,zone:0,entrance:'portal-left'}));list.push(make('portal-return-'+child.id,0,{area:child.id,zone:child.zones.length-1,entrance:'portal-right'}));}}
  if(area==='tree')return[make('portal-left',-1,{...nextRoute(area,index,-1),entrance:index?'portal-right':'portal-tree'}),make('portal-right',1,{...nextRoute(area,index,1),entrance:index===2?'portal-tree-summit':'portal-left'})];
- if(area==='town'&&index===3&&!secret&&!boss)return[make('portal-left',-1,{area:'town',zone:0,entrance:'portal-town-square'})];
+ if(area==='town'&&index===3&&!secret&&!boss)return[make('portal-left',-1,{area:'town',zone:0,entrance:'portal-town-square'}),make('portal-branch-tide-town',0,{area:'tide-town',zone:0,entrance:'portal-left'}),make('portal-return-tide-town',0,{area:'tide-town',zone:2,entrance:'portal-right'})];
  if(secret)return[make('portal-left',-1,{area,zone:index,entrance:'secret-'+secret})];
  if(boss)return[make('portal-left',-1,{area,zone:index,entrance:'portal-right'})];
  const portals=[-1,1].map(direction=>{const route=nextRoute(area,index,direction),to=route.boss?{area,zone:index,boss:true,entrance:'portal-left'}:{...route};
@@ -66,7 +79,7 @@ export function roomPortals(area,index,boss=false,secret=null){
  if(area==='town'&&index===0)portals.push(make('portal-town-square',0,{area:'town',zone:3,entrance:'portal-left'}));
  if(area==='forest'&&index===4){portals.push(make('portal-tree',0,{area:'tree',zone:0,entrance:'portal-left'}));portals.push({...make('portal-tree-summit',0,{area:'tree',zone:2,entrance:'portal-right'}),summit:true});}
  if(area==='caves'&&index===2)portals.push(make('portal-deep-return',0,{area:'deep',zone:3,entrance:'portal-right'}));
- return portals;
+ addBranches(portals);return portals;
 }
 export function makePlayer(c,layout=roomLayout(c.area||'forest',c.zone||0,c.activity==='boss',c.secret||null)){
  const saved=c.position,x=Math.max(25,Math.min(layout.width-25,Number.isFinite(saved?.x)?saved.x:190)),ladder=saved?.climbing?layout.ladders.find(l=>Math.abs(l.x-x)<30&&saved.y>=l.top&&saved.y<=l.bottom):null;
@@ -103,7 +116,7 @@ export class World {
  }
  usePortal(portal){if(!this.map.portals.includes(portal))return false;if(portal.summit&&!this.state.stars.unlocked){this.onEvent({type:'notice',text:'Reach the telescope by climbing all three Elder Tree zones first.'});return false;}const to=portal.destination;if(this.travel(to.area,to.zone,to))return true;this.onEvent({type:'notice',text:to.boss?(E.encounterReason(this.state,this.c,'boss')||'Complete An Unquiet Seal with Mira to open the boss gate.'):E.lockReason(this.state,to.area,to.zone)||'That route is not open yet.'});return false;}
  teleport(area,index,now=Date.now()){if(!E.teleportAllowed(this.state,this.c,area,index,now))return false;if(this.c.area===area&&this.c.zone===index&&!this.map.boss&&!this.map.secret&&!this.map.trial)return true;if(this.state.teleports.count<=0)return false;if(!this.travel(area,index))return false;this.state.teleports.count--;return true;}
- townReturn(area='town'){if(!['town','jungle-town'].includes(area)||!E.discovered(this.state,area,0)||!this.c.bag['town-teleport'])return false;if(this.c.area===area&&this.c.zone===0&&!this.map.boss&&!this.map.secret)return false;if(!this.travel(area,0))return false;this.c.bag['town-teleport']--;return true;}
+ townReturn(area='town'){if(!['town','jungle-town','tide-town','tide-gate'].includes(area)||!E.discovered(this.state,area,0)||!this.c.bag['town-teleport'])return false;if(this.c.area===area&&this.c.zone===0&&!this.map.boss&&!this.map.secret)return false;if(!this.travel(area,0))return false;this.c.bag['town-teleport']--;return true;}
  select(id){const entity=this.map.entities.find(e=>e.id===id);if(!entity||entity.kind==='enemy'&&entity.dead>0)return false;if(entity.kind==='node'&&E.gatherRequirement(this.c,entity.resource)){this.onEvent({type:'notice',text:E.gatherRequirement(this.c,entity.resource)});return false;}this.c.assignmentWarning=null;this.target=entity;this.destination=null;this.pendingSkill=false;if(entity.kind==='enemy'){this.c.activity=this.c.dungeon?'dungeon':this.map.trial?'trial':this.map.boss?'boss':'fight';this.c.resource=null;}else if(entity.kind==='node'){this.c.activity='gather';this.c.resource=entity.resource;}else{this.c.activity='rest';this.auto=false;}this.c.progress=0;return true;}
  walkTo(x,y=GROUND){let floor=this.map.platforms.filter(p=>x>=p.x&&x<=p.x+p.w).sort((a,b)=>Math.abs(a.y-y)-Math.abs(b.y-y))[0]||this.map.platforms[0];this.destination={x:Math.max(25,Math.min(this.map.width-25,x)),y:floor.y};this.target=null;this.c.activity=this.c.dungeon?'dungeon':this.map.trial?'trial':'rest';this.c.progress=0;this.auto=false;}
  stop(){this.target=null;this.destination=null;this.auto=false;this.c.activity=this.c.dungeon?'dungeon':this.map.trial?'trial':'rest';this.c.progress=0;}

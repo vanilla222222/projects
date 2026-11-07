@@ -42,7 +42,21 @@ const ARCHETYPES = {
   // dangerous as you win it.
   king: { gravity: 50, maxFall: 42, hop: 13.5, hopEvery: 1.5, speed: 4.2, air: 0.62,
     boss: true, teleportAfter: 3.4, teleportRange: 26, spawnEvery: 3.2, minion: 'greenslime',
-    minions: 4, shrinkTo: 0.52 }
+    minions: 4, shrinkTo: 0.52 },
+
+  // The second boss, and the reason the first one's code was worth generalising: a boss
+  // that flies has nothing in common with a boss that hops except being a boss.
+  //
+  // It hovers above the player out of reach and charges. The charge is the whole fight:
+  // it picks a point, commits to it, and cannot steer once it has started, so the fight
+  // is about reading the wind-up and not being where it is going. Halfway through its
+  // health it stops calling for help, loses the wind-up almost entirely and charges
+  // twice as often - the same escalation the King gets from shrinking, arrived at a
+  // different way.
+  hover: { gravity: 0, boss: true, flies: true, speed: 4.6, hoverAbove: 7, drift: 2.2,
+    chargeEvery: 3.6, windUp: 0.7, chargeSpeed: 20, chargeFor: 0.85,
+    spawnEvery: 4.5, minion: 'demoneye', minions: 3,
+    enrageAt: 0.5, enrageSpeed: 1.5, enrageCharge: 0.5, enrageWindUp: 0.3 }
 };
 
 // Every enemy drops coins, scaled to what it was: a slime is pocket change, an obsidian
@@ -196,6 +210,12 @@ const ENEMIES = [
     drops: [['gel', 40], ['coin', 260]],
     bossDrops: ['royal-gel', 'kings-crown'] },
 
+  { key: 'hollloweye', name: 'The Hollow Eye', kind: 'hover', body: 'bigeye', hp: 1800,
+    damage: 30, weight: 0, w: 3.4, h: 3.4, colour: '#b4484f',
+    boss: true, summonOnly: true, emit: 5,
+    drops: [['lens', 10], ['coin', 420]],
+    bossDrops: ['hollow-lens', 'seers-eye'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -260,6 +280,9 @@ function makeEnemy(spec, x, y) {
     // reading width and height and nothing has to know a boss is special.
     scale: 1,
     minionCooldown: 0,
+    charge: 0,
+    windUp: 0,
+    enraged: false,
     sinceSeen: 0,
     // How far through its own gait this creature is. Advanced by the distance it actually
     // covers rather than by the clock, so a shambling walker's legs move at the speed its
@@ -282,7 +305,9 @@ const GAIT = {
   crawler: { perTile: 3.2, perSecond: 0 },
   worm: { perTile: 1.4, perSecond: 1.2 },
   // The king quivers faster than its subjects, and visibly faster as it shrinks.
-  king: { perTile: 0.5, perSecond: 3.1 }
+  king: { perTile: 0.5, perSecond: 3.1 },
+  // Wings beat regardless of whether it is getting anywhere, like every other flyer.
+  hover: { perTile: 0.3, perSecond: 8 }
 };
 
 // --- the live population ------------------------------------------------------------------
@@ -377,10 +402,19 @@ function makeSwarm(world, tiles, deps) {
     const spec = ENEMY_BY_KEY[key];
     if (!spec || !spec.boss) return null;
     if (list.some(e => e.boss)) return null;        // one at a time
+    const arch = ARCHETYPES[spec.kind];
     for (const side of [1, -1]) {
       for (let away = 7; away < 26; away += 1) {
         const x = Math.floor(player.x + side * away);
         const probe = { width: spec.w, height: spec.h };
+        if (arch && arch.flies) {
+          // Something that flies wants open air above the player, not a floor.
+          const y = Math.floor(player.y) - 9;
+          if (overlaps(probe, x, y)) continue;
+          const boss = makeEnemy(spec, x, y);
+          list.push(boss);
+          return boss;
+        }
         const y = findFloor(x, Math.floor(player.y) - 14, Math.floor(player.y) + 10, probe);
         if (y === null) continue;
         const boss = makeEnemy(spec, x, y);
@@ -442,6 +476,15 @@ function makeSwarm(world, tiles, deps) {
     enemy.timer += dt;
     if (enemy.hurt > 0) enemy.hurt = Math.max(0, enemy.hurt - dt);
 
+    // Bosses first, before any of the archetype branches below. The flying boss has
+    // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
+    // never ran at all: the Hollow Eye hovered like a bat and never charged once.
+    if (arch.boss) {
+      if (arch.flies) stepHoverBoss(enemy, arch, player, dt, toward);
+      else stepBoss(enemy, arch, player, dt, toward);
+      return;
+    }
+
     if (arch.burrows) {
       // Worms ignore terrain: they swim through rock straight at the player.
       const dx = player.x - enemy.x;
@@ -485,11 +528,6 @@ function makeSwarm(world, tiles, deps) {
       moveAxis(enemy, enemy.vx * dt, 0);
       moveAxis(enemy, 0, enemy.vy * dt);
       enemy.facing = toward;
-      return;
-    }
-
-    if (arch.boss) {
-      stepBoss(enemy, arch, player, dt, toward);
       return;
     }
 
@@ -565,20 +603,7 @@ function makeSwarm(world, tiles, deps) {
     }
 
     // Throw off minions, so ignoring the room is not an answer either.
-    enemy.minionCooldown -= dt;
-    if (enemy.minionCooldown <= 0) {
-      enemy.minionCooldown = arch.spawnEvery;
-      const spec = ENEMY_BY_KEY[arch.minion];
-      const alive = list.filter(e => e.summonedBy === enemy.key).length;
-      if (spec && alive < arch.minions) {
-        const child = makeEnemy(spec, enemy.x + enemy.width / 2 - spec.w / 2,
-          enemy.y + enemy.height * 0.4);
-        child.summonedBy = enemy.key;
-        child.vy = -8;
-        child.vx = (Math.random() - 0.5) * 8;
-        list.push(child);
-      }
-    }
+    bossMinions(enemy, arch, dt);
 
     enemy.vy = Math.min(arch.maxFall, enemy.vy + arch.gravity * dt);
     if (enemy.onGround && enemy.timer > arch.hopEvery / rush) {
@@ -592,6 +617,95 @@ function makeSwarm(world, tiles, deps) {
     }
     moveAxis(enemy, enemy.vx * dt, 0);
     enemy.onGround = false;
+    moveAxis(enemy, 0, enemy.vy * dt);
+    enemy.facing = toward;
+  }
+
+  // Everything a boss does that is not about how it moves: shrinking, calling for help,
+  // and crossing into its second half. Shared, because the two bosses disagree about
+  // movement and agree about everything else.
+  function bossMinions(enemy, arch, dt) {
+    if (!arch.minion) return;
+    enemy.minionCooldown -= dt;
+    if (enemy.minionCooldown > 0) return;
+    enemy.minionCooldown = arch.spawnEvery;
+    const spec = ENEMY_BY_KEY[arch.minion];
+    if (!spec) return;
+    const alive = list.filter(e => e.summonedBy === enemy.key).length;
+    if (alive >= arch.minions) return;
+    const child = makeEnemy(spec, enemy.x + enemy.width / 2 - spec.w / 2,
+      enemy.y + enemy.height * 0.4);
+    child.summonedBy = enemy.key;
+    child.vy = -8;
+    child.vx = (Math.random() - 0.5) * 8;
+    list.push(child);
+  }
+
+  // A boss that flies, hovers out of reach, and charges in a straight line it chooses
+  // before it starts and cannot change afterwards.
+  function stepHoverBoss(enemy, arch, player, dt, toward) {
+    const left = Math.max(0, enemy.hp / enemy.maxHp);
+    enemy.enraged = left <= arch.enrageAt;
+    // Enraged it stops calling for help: the second half of the fight is only the boss.
+    if (!enemy.enraged) bossMinions(enemy, arch, dt);
+
+    const px = player.x + 0.4;
+    const py = player.y + 0.9;
+    const cx = enemy.x + enemy.width / 2;
+    const cy = enemy.y + enemy.height / 2;
+
+    enemy.charge = enemy.charge || 0;
+    enemy.chargeCooldown = enemy.chargeCooldown === undefined
+      ? arch.chargeEvery : enemy.chargeCooldown;
+
+    if (enemy.charge > 0) {
+      // Committed. It cannot steer, which is what makes a charge dodgeable.
+      enemy.charge -= dt;
+      moveAxis(enemy, enemy.vx * dt, 0);
+      moveAxis(enemy, 0, enemy.vy * dt);
+      if (enemy.charge <= 0) {
+        enemy.chargeCooldown = arch.chargeEvery
+          * (enemy.enraged ? arch.enrageCharge : 1);
+        enemy.vx = 0;
+        enemy.vy = 0;
+      }
+      return;
+    }
+
+    if (enemy.windUp > 0) {
+      // The tell. It hangs still, and then it comes.
+      enemy.windUp -= dt;
+      enemy.vx = 0;
+      enemy.vy = 0;
+      if (enemy.windUp <= 0) {
+        const dx = px - cx;
+        const dy = py - cy;
+        const len = Math.hypot(dx, dy) || 1;
+        const speed = arch.chargeSpeed * (enemy.enraged ? arch.enrageSpeed : 1);
+        enemy.vx = (dx / len) * speed;
+        enemy.vy = (dy / len) * speed;
+        enemy.charge = arch.chargeFor;
+      }
+      return;
+    }
+
+    enemy.chargeCooldown -= dt;
+    if (enemy.chargeCooldown <= 0) {
+      enemy.windUp = enemy.enraged ? arch.enrageWindUp : arch.windUp;
+      return;
+    }
+
+    // Otherwise hover above the player, drifting rather than tracking exactly, so it is
+    // somewhere near rather than welded to the top of your head.
+    const wantX = px - enemy.width / 2;
+    const wantY = py - arch.hoverAbove - enemy.height / 2;
+    const dx = wantX - enemy.x;
+    const dy = wantY - enemy.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const bob = Math.sin(enemy.timer * 1.7) * arch.drift;
+    enemy.vx = (dx / len) * arch.speed;
+    enemy.vy = (dy / len) * arch.speed + bob;
+    moveAxis(enemy, enemy.vx * dt, 0);
     moveAxis(enemy, 0, enemy.vy * dt);
     enemy.facing = toward;
   }
