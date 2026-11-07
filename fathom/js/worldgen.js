@@ -836,9 +836,18 @@ const biomeSite = cacheStructure((seed, slot) => {
     biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome) return null;
   const make = (layer, top, height) => ({ x, top, height, layer, biome,
     name: names[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
-  return [make(0, surface - 7, 8),
+  const sites = [make(0, surface - 7, 8),
     make(1, SEA_LEVEL + 175 + Math.floor(unit(seed, slot, 0, 6317) * 330), 12),
     make(2, SEA_LEVEL + 810 + Math.floor(unit(seed, slot, 0, 6319) * 335), 16)];
+  // Keep older generated chests intact instead of cutting off one of their cells.
+  const structureSlot = Math.floor(x / STRUCTURE_SPACING);
+  for (let n = structureSlot - 1; n <= structureSlot + 1; n += 1) {
+    const chest = cachedStructureChest(seed, n);
+    if (!chest || chest.x + 1 < x - 12 || chest.x > x + 12) continue;
+    const overlap = sites.findIndex(site => chest.y + 1 >= site.top && chest.y < site.top + site.height);
+    if (overlap > 0) sites[overlap].top = chest.y + 3;
+  }
+  return sites;
 });
 
 function biomeSiteAt(seed, x, y) {
