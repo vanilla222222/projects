@@ -1,5 +1,5 @@
 import {persistReset} from './reset-save.mjs?v=40';
-import {onboarding} from './onboarding.mjs?v=40';
+import {onboarding} from './onboarding.mjs?v=42';
 import {WORLD_TWO,ADVANCEMENTS,EXPANSION_AREAS,worldOf} from './expansion-content.mjs?v=40';
 import * as InventoryGuide from './inventory-guidance.mjs?v=40';
 import * as Roster from './roster.mjs?v=40';
