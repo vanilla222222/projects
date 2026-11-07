@@ -1,3 +1,5 @@
+import {EXTRA_SKILL_TOOLS,worldSkillBonus} from './world-rewards.mjs';
+import {EQUIPMENT} from './content.mjs?v=45';
 import {ORBIT_JOBS,ORBIT_ADVANCEMENTS,ORBIT_SECRETS} from './world-three-content.mjs';
 import {recordQuestAction} from './quest-content.mjs?v=45';
 import {canPay,pay,give} from './inventory.mjs?v=45';
@@ -16,13 +18,13 @@ export function workOrbitJob(s,c,skill,now=Date.now()){
   const {yieldCount}=c.orbitJobs[skill];
   delete c.orbitJobs[skill];
   give(c,d.output,yieldCount);
-  c.skills[skill]+=48;
+  c.skills[skill]+=48*(1+worldSkillBonus(c,skill,EQUIPMENT));
   recordQuestAction(c,'orbit:'+skill);
   return 'Collected '+d.name+' output and earned 48 XP.';
  }
  if(!d?.canStart||!pay(s,d.cost,c))return '';
  const specialist=ORBIT_ADVANCEMENTS[c.class]?.id===c.advancement;
- c.orbitJobs[skill]={ready:now+d.seconds*1000*(specialist?.65:1),yieldCount:specialist?4:2};
+ c.orbitJobs[skill]={ready:now+Math.ceil(d.seconds*1000*(specialist?.65:1)/(1+(EQUIPMENT[c.loadout[EXTRA_SKILL_TOOLS[skill]]?.base]?.stats['skill-'+skill]||0))),yieldCount:specialist?4:2};
  return d.name+' started.';
 }
 export function orbitSecretReason(c,id){

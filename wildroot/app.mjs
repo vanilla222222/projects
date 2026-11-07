@@ -2,6 +2,8 @@ import {orbitJobStatus,workOrbitJob} from './world-three.mjs';
 import {installAtlasZoom} from './atlas-zoom.mjs?v=48';
 import {rememberMenuScroll} from './menu-scroll.mjs?v=47';
 import {installAtlasPanning} from './atlas-panning.mjs?v=47';
+import {museumPanel} from './museum-panel.mjs';
+import {SIDE_NPCS} from './world-rewards.mjs';
 import {ORBIT_NPCS} from './orbit-campaign.mjs';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {persistReset} from './reset-save.mjs?v=45';
@@ -14,7 +16,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=50';
 import * as Parity from './parity-panels.mjs?v=50';
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as Prof from './profession-panels.mjs?v=50';
-import * as UI from './ui-panels.mjs?v=54';
+import * as UI from './ui-panels.mjs?v=55';
 import {icon,portrait} from './ui-art.mjs?v=50';
 import * as AUI from './adventure-panels.mjs?v=50';
 import * as T from './town-panels.mjs?v=50';
@@ -23,7 +25,7 @@ import {GameAudio} from './audio.mjs?v=45';
 import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=49';
-import {drawWorld,viewFor} from './scene.mjs?v=54';
+import {drawWorld,viewFor} from './scene.mjs?v=55';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
 const atlasZoom=installAtlasZoom($('panel-content'));
@@ -47,7 +49,7 @@ function handleIntent(event){
  if(E.SERVICES[service]){uiView.profession=service;uiView.firstVisit=E.discoverService(state,world.c,service)?service:null;save();}
  if(event.type==='telescope'){if(E.unlockStars(state,world.c)){save();openPanel('stars');}}
  if(event.type==='constellation'){const result=E.observeConstellation(state,world.c,event.entity.constellation);toast(result==='complete'?'Constellation completed · +2 star points':result?'Constellation observed. Meet its requirement and return.':'Climb to the telescope in Crown Observatory first.');save();}
- if(['dungeon','bossboard'].includes(event.type))openPanel(event.type);
+ if(['dungeon','bossboard','museum'].includes(event.type))openPanel(event.type);
  if(event.type==='dungeon-result'){dungeonResult=event.result;save();openPanel('dungeon-result');}
  if(event.type==='arena')openPanel('trial');
  if(event.type==='trial-result'){trialResult=event.result;save();openPanel('trial-result');}
@@ -85,12 +87,13 @@ function renderPanel(preserveScroll=false){
  if(kind==='npc'&&npc&&conversation){const voice=Talk.NPC_VOICES[conversation.giver];title=voice.name;eyebrow=voice.role.toUpperCase();body=npcDialogue(state,c,conversation,performance.now());}
  if(kind==='skills'){title='Class builds & professions';body=UI.talents(state,c,talentView)+Parity.buildExtras(state,c);}
  if(kind==='craft'){const station=['anvil','foundry','alchemy','enchanting'].includes(uiView.profession)?uiView.profession:E.stationFor(c)||'anvil';title=E.SERVICES[station]?.name||'Professions';body=station==='anvil'?Prof.anvil(state,c,uiView):station==='alchemy'?Prof.alchemy(state,c,uiView):station==='enchanting'?Prof.enchanting(state,c,uiView):E.serviceAccess(state,c,'foundry')?EconomyUI.foundry(state,c,uiView):Prof.locked(state,c,'foundry');}
+ if(kind==='museum'){title='Wildroot Museum';body=museumPanel(state,c,uiView);}
  if(kind==='map'){title='World Map · Routes & teleports';eyebrow='GREENREACH · TIDEWILDS · ASTRAL REACH';body=UI.map(state,c,uiView);}
  if(kind==='stamps'){title='Legacy Square · Stamp Registry';body=UI.stamps(state,c,uiView);}
  if(kind==='statues'){title='Legacy Square · Statue Keeper';body=UI.statues(state,c,uiView);}
  if(kind==='shop'){title=worldOf(c.area)===3?'Orbital Supply Counter':worldOf(c.area)===2?'Expedition Supply Store':c.area==='town'?'Pip’s General Store':'Nori’s Supply Stall';body=UI.shop(state,c,shopView);}
  if(kind==='gems'){title='Gem wardrobe';body=T.gems(state,c);}
- if(kind==='world-gate'){title='The World Gate';body=`<div class="world-gate-card"><span>⌖</span><h3>World Two · ${WORLD_TWO.name}</h3><p>32 rooms across eight areas: shores, marshes, buried ruins, berry uplands, hunting highlands and storm cliffs. Fishing uses rods; bugs use nets; digging uses shovels; foraging uses gloves. Hunting trains through kills.</p><p>${E.areaUnlocked(state,'tide-town')?'Your completion token has opened the gate.':'Finish the World One story and forge the Greenreach Completion Token to enter.'}</p><button data-enter-world-two="" ${E.areaUnlocked(state,'tide-town')?'':'disabled'}>ENTER TIDEHAVEN</button><button data-reveal-room="tide-town:0">VIEW WORLD TWO MAP</button></div>`;}
+ if(kind==='world-gate'){title='The World Gate';body=`<div class="world-gate-card"><span>⌖</span><h3>World Two · ${WORLD_TWO.name}</h3><p>32 rooms across eight areas: shores, marshes, buried ruins, berry uplands, hunting highlands and storm cliffs. Fishing uses rods; bugs use nets; digging uses shovels; foraging uses gloves. Hunting trains through kills.</p><p>${E.areaUnlocked(state,'tide-town')?'The Rootwarden has fallen. The gate is open.':'Defeat the Rootwarden to enter.'}</p><button data-enter-world-two="" ${E.areaUnlocked(state,'tide-town')?'':'disabled'}>ENTER TIDEHAVEN</button><button data-reveal-room="tide-town:0">VIEW WORLD TWO MAP</button></div>`;}
  if(kind==='orbit-job'){const d=orbitJobStatus(state,c,orbitJob);if(d){title=d.name;body=costs(d.cost)+`<p>Output: ${ITEMS[d.output].name}. Collect batches for skill XP.</p><button data-orbit-job="${orbitJob}" ${d.canStart||d.canClaim?'':'disabled'}>${d.remaining===null?d.action:d.remaining?'Ready in '+d.remaining+'s':'Collect batch'}</button>`;}}
  if(kind==='advancement'){title='Pathfinder · Tier 2 Class';const d=E.advancementStatus(state,c);body=`<h3>${d.name||'Choose a calling first'}</h3><p>${d.reason}</p>${d.needs?costs(d.needs):''}<p>Each calling has two Tier 2 branches across Worlds Two and Three. Each first Tier 2 discovery adds a character slot. You cannot repeat a Tier 2 class until all ten different upgrades are discovered.</p><button data-advance-class="" ${d.open?'':'disabled'}>CHOOSE ${d.name||'CLASS'}</button>`;}
  if(kind==='onboarding'){title='Getting Started';const guide=onboarding(state,c);body=`<p>${guide.done}/${guide.steps.length} lessons complete. Follow the next step, or revisit any lesson. These are guidance, not extra quests.</p>`+guide.steps.map(step=>`<article class="quest-card"><h3>${step.done?'✓':'○'} ${step.name}</h3><p>${step.text}</p>${step.room?`<button data-reveal-room="${step.room}">SHOW ROOM</button>`:''}</article>`).join('');}
@@ -125,7 +128,7 @@ function renderPanel(preserveScroll=false){
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'&&$('panel').open)atlasZoom.refresh();
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
-function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
+function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
 function findStation(station){const [area,zone]={anvil:['town',1],foundry:['town',2],enchanting:['jungle-town',0],alchemy:['jungle-town',1]}[station];if(!E.zoneUnlocked(state,area,zone)){toast(E.lockReason(state,area,zone));return;}if(!travel(area,zone))return;world.select('station');}
 let targetKey='',lastPanelRefresh=0,panelInteraction=false;
 $('panel').addEventListener('pointerdown',()=>{panelInteraction=true;});
@@ -174,6 +177,9 @@ document.addEventListener('click',event=>{
  if(d.talkComplete!==undefined&&conversation){const id=conversation.questId;if(Talk.completeConversationQuest(state,c,conversation,npc)){audio.play('quest');conversation={...conversation,mode:'complete',page:0,revealed:false,started:performance.now()};save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
  if(d.talkTrain!==undefined&&conversation&&conversation.mode==='training'&&Talk.conversationAccess(c,npc)){if(E.progressClass(state,c,conversation.giver)){toast(c.class?'Calling chosen: '+CLASSES[c.class].name:'Training step complete.');conversation=Talk.conversationTopic(state,c,conversation,'training',performance.now());save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
  if(d.attribute){E.investAttribute(c,d.attribute,Number(d.count)||1);E.syncAccount(state);save();renderPanel();refresh();return;}
+ if(d.museumFilter){uiView.museumFilter=d.museumFilter;renderPanel();return;}
+ if(d.museumExhibit||d.museumRetrieve){const ok=d.museumExhibit?E.exhibitItem(state,c,d.museumExhibit):E.retrieveExhibit(state,c,d.museumRetrieve);toast(ok?'Museum collection updated.':'Visit the museum with room in your backpack.');save();renderPanel();refresh();return;}
+ if(d.worldReward){toast(E.useWorldReward(state,c,d.worldReward)?'Reward unlocked for your roster.':'This reward is already unlocked or unavailable.');save();renderPanel();refresh();return;}
  if(d.book){toast(E.learnBook(state,d.book)?'Talent book learned for your roster.':'Meet the source requirement and visit its facility if needed.');save();renderPanel();return;}
  if(d.special){E.trainSpecial(state,c,d.special);E.syncAccount(state);save();renderPanel();refresh();return;}
  if(d.bossKeys!==undefined){toast(E.claimBossKeys(state,c)?'Three keys added.':'Visit the Hunt Board after opening the boss gate. Keys can be claimed once daily.');save();renderPanel();return;}
@@ -336,7 +342,7 @@ $('secondary-button').addEventListener('click',()=>{world.useSkill(1);refresh();
 $('utility-button').addEventListener('click',()=>{world.useSkill(2);refresh();});
 $('manage-roster').addEventListener('click',()=>openPanel('roster'));
 document.addEventListener('change',e=>{if(e.target.id==='assignment-route'){assignmentView={route:e.target.value,task:null};renderPanel();return;}if(e.target.id==='assignment-task'){assignmentView={route:$('assignment-route').value,task:e.target.value};renderPanel();return;}if(e.target.id==='infusion-material'){uiView.infusionMaterial=e.target.value;uiView.infusionConfirm=false;renderPanel();return;}if(e.target.dataset.cauldronWorker){const ok=E.assignCauldron(state,world.c,Number(e.target.dataset.cauldronWorker),e.target.value);if(!ok)toast('That cauldron is full or locked.');save();renderPanel();}});
-document.addEventListener('input',e=>{if(['recipe-search','item-search'].includes(e.target.id)){const id=e.target.id,key=id==='recipe-search'?'recipeSearch':'itemSearch',start=e.target.selectionStart;uiView[key]=e.target.value;renderPanel();const input=$(id);input.focus();input.setSelectionRange(start,start);return;}if(e.target.id==='audio-volume'){audio.volume=Number(e.target.value);state.settings={...state.settings,volume:audio.volume};save();}});
+document.addEventListener('input',e=>{if(e.target.id==='museum-search'){const start=e.target.selectionStart;uiView.museumSearch=e.target.value;renderPanel(true);$('museum-search')?.focus();$('museum-search')?.setSelectionRange(start,start);return;}if(['recipe-search','item-search'].includes(e.target.id)){const id=e.target.id,key=id==='recipe-search'?'recipeSearch':'itemSearch',start=e.target.selectionStart;uiView[key]=e.target.value;renderPanel();const input=$(id);input.focus();input.setSelectionRange(start,start);return;}if(e.target.id==='audio-volume'){audio.volume=Number(e.target.value);state.settings={...state.settings,volume:audio.volume};save();}});
 document.addEventListener('pointerdown',()=>{if(state.settings?.audio&&!audio.enabled){audio.volume=state.settings.volume??.2;audio.enable(true);}},{once:true});
 $('interact-button').addEventListener('click',()=>world.interact());
 $('jump-button').addEventListener('click',()=>{input.jump=true;});

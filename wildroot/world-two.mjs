@@ -8,7 +8,7 @@ export function advancementStatus(s,c){
  const d=(worldOf(c.area)===3?ORBIT_ADVANCEMENTS:ADVANCEMENTS)[c.class];if(!d)return{open:false,reason:'Choose your first class through its mentor first.'};
  const result={...d,open:false};
  if(c.advancement)return{...result,reason:'This character has already chosen a Tier 2 class.'};
- if(!s.worldCompletionCrafted||!s.storyFlags.complete)return{...result,reason:'Finish World One and forge its completion token.'};
+ if(!s.bossDefeated&&!s.worldCompletionCrafted)return{...result,reason:'Defeat the Rootwarden first.'};
  const point=pointFor(roomLayout(d.area,d.zone),'advancement');
  if(c.area!==d.area||c.zone!==d.zone||c.secret||c.dungeon||c.trial||Math.abs((c.position?.x??0)-point.x)>=110||Math.abs((c.position?.y??0)-point.y)>=65)return{...result,reason:'Walk to the Pathfinder at '+roomLayout(d.area,d.zone).title+'.'};
  const discoveries=tierTwoDiscoveries(s);

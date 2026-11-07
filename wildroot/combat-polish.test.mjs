@@ -34,6 +34,6 @@ test('Rare enchantments apply actual stats and have readable sources in the code
 test('One guardian sample completes the spring delivery without waiting for repeated cooldowns',()=>{
  assert.equal(D.STORY.find(q=>q.id==='spring').deliver['sap-essence'],1);
 });
-test('Fresh-save completion covers all eighteen NPC quests and the combined world token',async()=>{
- const{runWorldOne}=await import('./world1-sim.mjs?v=45');const r=runWorldOne({completeNpcChains:true});assert.equal(D.STORY.filter(q=>r.state.characters[0].journey.story[q.id]?.done).length,18);assert.equal(r.state.npcTokens.length,6);assert.equal(r.state.worldCompletionCrafted,true);assert.ok(r.minutes<360);
+test('Fresh-save completion covers all twenty Greenreach quests and the combined world token',async()=>{
+ const{runWorldOne}=await import('./world1-sim.mjs?v=45');const r=runWorldOne({completeNpcChains:true});assert.equal(D.STORY.filter(q=>r.state.characters[0].journey.story[q.id]?.done).length,20);assert.equal(r.state.npcTokens.length,8);assert.equal(r.state.worldCompletionCrafted,true);assert.ok(r.minutes<360);
 });

@@ -1,7 +1,8 @@
 import {installTideCampaign} from './tide-campaign.mjs?v=45';
+import {COMPLETION_ITEMS,SIDE_NPCS,SIDE_QUESTS,WORLD_GIVERS,STAR_BOOKS,PRODUCTION_REWARDS,WORLD_SKILL_STATUES,WORLD_EXTRA_STATUES,EXTRA_TOOL_LABELS} from './world-rewards.mjs';
 import {ORBIT_QUESTS,EXPEDITION_TASKS} from './orbit-campaign.mjs';
 import {installOrbit,ORBIT_JOBS,ORBIT_ADVANCEMENTS} from './world-three-content.mjs';
-import {installExpansion} from './expansion-content.mjs?v=45';
+import {installExpansion,SKILL_TOOLS} from './expansion-content.mjs?v=45';
 import {QUEST_REFORMS} from './quest-content.mjs?v=45';
 import {BADGES,extraItemRoles} from './item-roles.mjs?v=45';
 import {roomLayout} from './layouts.mjs?v=49';
@@ -78,7 +79,7 @@ export function purposes(id){
  if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
  if(POTIONS[id])uses.push('Drink: 20 minute profession or combat boost');
  if(id==='rootbound-key')uses.push('Permanent access to the Rootwarden');
- if(id==='tide-completion-token')uses.push('Proof of Farwatch’s restoration and clearance to the Astral Reach');
+ if(Object.values(COMPLETION_ITEMS).includes(id))uses.push('Consume a crafted token once per world for +10% character and profession XP across the roster');
  if(id==='astral-completion-token')uses.push('Proof of the completed Astral Reach expedition');
  if(id==='world-one-completion')uses.push('Required to craft the Greenreach Trophy; proof of World One completion');
  if(id==='tonic')uses.push('Recover health');
@@ -168,7 +169,7 @@ export const STORY=[
  {id:'under-roots',name:'Under the Roots',giver:'warrior',text:'The echo golems guard a seam of iron. Clear the passage and bring proof from the caves.',requires:['tools'],kills:{'caves-2':12},deliver:{'bat-fang':8},reward:{coins:80,recipes:['ironworking']}},
  {id:'canopy-letter',name:'Letters from the Canopy',giver:'mage',text:'Old birch marks describe a spring behind Firefly Bend. Willow can translate them with living bark.',requires:['tools'],deliver:{birch:20,'bark-shard':8},reward:{coins:60,recipes:['sunwell'],secrets:['sunwell']}},
  {id:'outpost',name:'Outpost Supplies',giver:'alchemist',text:'Fern needs timber and iron for the outpost. In return she will teach advanced brewing and verdant steel.',requires:['under-roots'],deliver:{'jungle-wood':20,'iron-bar':6},reward:{coins:100,recipes:['brewing','gilding','verdant-steel'],liquid:20}},
- {id:'seal',name:'An Unquiet Seal',giver:'enchanter',text:'Five callings must work together to quiet the gate: metal, timber, runes and medicine. Bring the completed seal to the Rootwarden.',requires:['canopy-letter','outpost'],classes:5,deliver:{dust:12,tonic:4,'tempered-bar':2},reward:{coins:120,items:{'rootbound-key':1},permit:true}},
+ {id:'seal',name:'An Unquiet Seal',giver:'enchanter',text:'Learn a calling and gather the supplies to quiet the gate. Bring the completed seal to the Rootwarden.',requires:['canopy-letter','outpost'],classes:1,deliver:{dust:12,tonic:4,'tempered-bar':2},reward:{coins:120,items:{'rootbound-key':1},permit:true}},
  {id:'heart',name:'Heart of the Wild',giver:'steward',text:'Return the Rootwarden’s heart to Hesta. The village can finally repair its well.',requires:['seal'],kills:{boss:1},deliver:{'boss-heart':1},reward:{coins:250,recipes:['heartwood'],complete:true}},
  {id:'spring',name:'A Living Spring',giver:'mage',text:'The Sunwell Keeper sheds living sap. A sample will help Willow restore the grove.',requires:['canopy-letter'],deliver:{'sap-essence':3},reward:{coins:100,items:{dust:12},guild:'lodge'}},
  {id:'vault',name:'The Forgotten Makers',giver:'blacksmith',text:'The old forge vault opens for a roster that has learned all five professions. Its keeper carries a maker’s seal.',requires:['outpost'],deliver:{'vault-seal':1},reward:{coins:150,guild:'supply'}}
@@ -235,7 +236,7 @@ export const CLASS_TALENTS={primary:{name:'Signature Technique',description:'+8%
 
 for(const[id,town,zone,x]of [['warrior','caves',0,270],['mage','forest',0,270],['blacksmith','town',1,355],['enchanter','jungle-town',0,355],['alchemist','jungle-town',1,355]])Object.assign(CLASSES[id],{town,zone,x});
 
-export const NPC_TOKEN_GIVERS=['steward','warrior','mage','blacksmith','enchanter','alchemist'];
+export const NPC_TOKEN_GIVERS=WORLD_GIVERS[1].slice(0,6);
 const lateQuests=[
  ['village-memory','A Village Remembered','steward',['heart'],{plank:20,'statue-power':5},'Help Hesta preserve the restored village for the next generation.'],
  ['seam-work','Read the Seams','warrior',['under-roots'],{iron:40,copper:30},'Brann wants samples from the deeper seams before teaching his final lesson.'],
@@ -456,19 +457,127 @@ for(const[id,name,calling,stats,cost]of [
 // The first supply lesson introduces food before the copper route.
 STORY.find(q=>q.id==='first-roots').reward.items.bread=6;
 
+const expansionRecipeStart=RECIPES.length;
 installExpansion({AREAS,ITEMS,ENEMIES,RECIPES,EQUIPMENT,GEAR_SLOTS,GATHER_NODES,SKILLS,CAPACITY_BAGS,FOODS});
+for(const r of RECIPES.slice(expansionRecipeStart)){r.world=r.id.startsWith('orbit-')?3:/^(cobalt-bar|obsidian-bar|depths-supply|gear-tide-(pick|axe)-3)$/.test(r.id)?1:2;}
 for(const area of ['tide-town','tide-gate'])TOWN_SHOPS[area]={name:area==='tide-town'?'Tidehaven Supplies':'Farwatch Stores',stock:[['stew',12,30],['feast',25,20],['town-teleport',30,10]]};
 
 for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+' Card',effect:'attack',amount:.015,kind:'monster'};
 for(const id of Object.keys(ITEMS).filter(id=>id.startsWith('tide-')||id.startsWith('depths-')))if(!EQUIPMENT[id]&&!RECIPES.some(r=>r.cost[id])&&!OFFERINGS.includes(id))OFFERINGS.push(id);
 
+const orbitRecipeStart=RECIPES.length;
 installOrbit({ITEMS,ENEMIES,SKILLS,SECRETS,FOODS,EQUIPMENT,RECIPES});
+for(const r of RECIPES.slice(orbitRecipeStart))r.world=3;
 STORY.push(...ORBIT_QUESTS.map(q=>({...q,world:3})));
 WORLD_TASKS.push(...EXPEDITION_TASKS);
 item('astral-completion-token','Astral Reach Completion Token','rare','✦');
 
 for(const id of ['orbit-dock','orbit-loom','orbit-chart'])TOWN_SHOPS[id]={name:'Orbital Supply Counter',stock:[['feast',35,20],['town-teleport',25,10],['reset-fragment',35,5]]};
 for(const id of Object.keys(ITEMS))if(id.startsWith('orbit-')&&!OFFERINGS.includes(id))OFFERINGS.push(id);
+const tideRecipeStart=RECIPES.length;
 installTideCampaign({STORY,ITEMS,ENEMIES,RECIPES,EQUIPMENT,SECRETS});
 
 CARDS.tempest={name:'Tempest Sovereign Card',effect:'accuracy',amount:.03,kind:'monster'};
+
+for(const r of RECIPES.slice(tideRecipeStart))r.world=2;
+STORY.push(...SIDE_QUESTS);
+for(const [giver,d] of Object.entries(SIDE_NPCS))item('world-token-'+giver,d.name+'’s Token','legendary','✺');
+for(const giver of [...WORLD_GIVERS[2],...WORLD_GIVERS[3]])if(!ITEMS['world-token-'+giver])item('world-token-'+giver,'Expedition Token · '+giver,'legendary','✺');
+delete STORY.find(q=>q.id==='tide-restored').reward.items['tide-completion-token'];
+delete STORY.find(q=>q.id==='orbit-eventide').reward.items['astral-completion-token'];
+for(const [world,id] of Object.entries(COMPLETION_ITEMS)){
+ const r=RECIPES.find(r=>r.id===id)||{id,name:'Combine '+ITEMS[id].name,station:'anvil',skill:'smithing',output:id,count:1};
+ Object.assign(r,{world:Number(world),completionWorld:Number(world),cost:Object.fromEntries(WORLD_GIVERS[world].map(giver=>['world-token-'+giver,1]))});
+ delete r.unique;
+ if(!RECIPES.includes(r))RECIPES.push(r);
+}
+for(const [id,d] of Object.entries(STAR_BOOKS)){
+ const book='star-book-'+id;
+ item(book,'Star Talent · '+d.name,'rare','✦');
+ if(d.enemy)ENEMIES[d.enemy].loot.push({id:book,chance:.025});
+ else STORY.find(q=>q.id===d.quest).reward.items[book]=1;
+}
+for(const [id,name,world,level,seconds,material,enemy,stat,value] of PRODUCTION_REWARDS){
+ ANVIL_PRODUCTS[id]={name,seconds,xp:world+3,level,world};
+ item(id,name,'common','▱');
+ const gear=id+'-band',blueprint='pattern-'+gear,gearName=name+' Band';
+ item(gear,gearName,'rare','◉');item(blueprint,'Blueprint · '+gearName,'rare','▤');
+ EQUIPMENT[gear]={name:gearName,slot:'ring',stats:{[stat]:value}};
+ RECIPES.push({id:'gear-'+gear,name:gearName,equipment:gear,station:'anvil',skill:'smithing',world,dropBlueprint:blueprint,cost:{[id]:8,[material]:12}});
+ ENEMIES[enemy].loot.push({id:blueprint,chance:.04});
+ const stamp='workshop-'+world;
+ STAMPS[stamp]={name:name+' Stamp',group:'Skills',effect:'crafting',amount:.015,material:id,source:ENEMIES[enemy].name};
+ item('stamp-'+stamp,STAMPS[stamp].name,'rare','▧');
+ ENEMIES[enemy].loot.push({id:'stamp-'+stamp,chance:.025});
+ const giver=Object.entries(SIDE_NPCS).find(([,d])=>d.world===world)[0];
+ STORY.find(q=>q.id==='field-'+giver).reward.items['stamp-'+stamp]=1;
+ const enemies=Object.values(ENEMIES).filter(e=>(AREAS.find(a=>a.id===e.area)?.world||1)===world);
+ for(const [i,effect] of [...WORLD_SKILL_STATUES[world-1],...WORLD_EXTRA_STATUES[world-1]].entries()){
+  const key='world'+world+'-'+effect,skill=!!SKILLS[effect],label=SKILLS[effect]||effect[0].toUpperCase()+effect.slice(1);
+  const source=enemies[i%enemies.length];
+  STATUES[key]={name:label+' Statue',effect:skill?'skill-'+effect:effect,amount:skill?.012:['accuracy','defense'].includes(effect)?.15:.004,source:source.name};
+  item('statue-'+key,STATUES[key].name,'rare','♜');
+  source.loot.push({id:'statue-'+key,chance:.025});
+ }
+}
+for(const id of Object.keys(ITEMS))if(/^(star-book-|pattern-|stamp-workshop-|statue-world)/.test(id)&&!OFFERINGS.includes(id))OFFERINGS.push(id);
+
+// Main-line equipment beyond Gold. Other recipes remain available as specialist sidegrades.
+for(const [index,[id,name,world,bar,prior,attack,defense,health]] of [
+ ['cobalt','Cobalt',2,'cobalt-bar','gold-bar',39,12,88],
+ ['obsidian','Obsidian',2,'obsidian-bar','cobalt-bar',55,22,130],
+ ['meteor','Meteorsteel',3,'meteor-bar','obsidian-bar',75,34,205],
+ ['void','Voidglass',3,'void-bar','meteor-bar',102,48,290]
+].entries()){
+ for(const [suffix,slot,stats] of [['sword','weapon',{attack,accuracy:12+index*12}],['mail','body',{defense,health}]]){
+  const equipment=id+'-'+suffix,gearName=name+' '+(suffix==='sword'?'Sword':'Mail');
+  item(equipment,gearName,'rare',suffix==='sword'?'⚔':'▣');
+  EQUIPMENT[equipment]={name:gearName,slot,stats};
+  RECIPES.push({id:'gear-'+equipment,name:gearName,world,station:'anvil',skill:'smithing',equipment,cost:{[bar]:6+index*2,[prior]:2+index}});
+ }
+}
+for(const [id,name,level,threshold,area,zone,bar,previous] of [
+ ['meteoric-ore','Meteoric Ore',11,165,'orbit-comets',0,'meteor-bar','obsidian-bar'],
+ ['voidglass-ore','Voidglass Ore',14,205,'orbit-rim',2,'void-bar','meteor-bar']
+]){
+ item(id,name,'rare','◈');GATHER_NODES[id]={name,skill:'digging',level,tier:2,threshold};
+ areaById(area).resources[zone].push(id);
+ item(bar,bar==='meteor-bar'?'Meteorsteel Bar':'Voidglass Bar','rare','▱');
+ RECIPES.push({id:bar,name:ITEMS[bar].name,world:3,station:'foundry',skill:'smithing',output:bar,count:1,cost:{[id]:8,[previous]:2,charcoal:3}});
+}
+for(const r of RECIPES)if(['cobalt-bar','obsidian-bar'].includes(r.id))r.world=2;
+
+Object.assign(GEAR_SLOTS,EXTRA_TOOL_LABELS);
+const equipmentMetals=[
+ ['copper','Copper','copper-bar',1],['iron','Iron','iron-bar',1],['gold','Gold','gold-bar',1],
+ ['cobalt','Cobalt','cobalt-bar',2],['obsidian','Obsidian','obsidian-bar',2],
+ ['meteor','Meteorsteel','meteor-bar',3],['void','Voidglass','void-bar',3]
+];
+for(const [index,[metal,name,bar,world]] of equipmentMetals.entries()){
+ for(const [skill,slot] of Object.entries(SKILL_TOOLS)){
+  const start=['fishing','bugcatching','digging','foraging','hunting'].includes(skill)?2:WORLD_SKILL_STATUES[2].includes(skill)?3:1;
+  if(world<start)continue;
+  if(['pick','axe'].includes(slot)&&index<2)continue;
+  if(['rod','net','shovel','gloves'].includes(slot)&&metal==='cobalt'){
+   const r=RECIPES.find(r=>r.equipment==='tide-'+slot+'-2');
+   r.cost={'cobalt-bar':6,'binding-resin':3};
+   continue;
+  }
+  const id=metal+'-'+slot,label=name+' '+GEAR_SLOTS[slot],tier=start===1?index+1:index-1;
+  const gathering=['pick','axe','rod','net','shovel','gloves'].includes(slot);
+  item(id,label,'rare','⚒');
+  EQUIPMENT[id]={name:label,slot,stats:gathering?{[skill]:.12+tier*.1}:{['skill-'+skill]:.06+tier*.03},
+   ...(gathering?{gatherTier:tier,gatherEfficiency:30+tier*28}:{})};
+  RECIPES.push({id:'gear-'+id,name:label,world,station:'anvil',skill:'smithing',equipment:id,
+   cost:{[bar]:4+index,[index<2?'oak':'binding-resin']:1+Math.floor(index/2)}});
+ }
+}
+
+for(const [world,id,name,slots,quest,cost] of [
+ [2,'tide-expedition-chest','Tidewilds Expedition Chest',24,'tide-landfall',{'cobalt-bar':4,nails:12}],
+ [3,'orbit-expedition-chest','Astral Reach Expedition Chest',32,'orbit-arrival',{'meteor-bar':4,'storm-fasteners':10}]
+]){
+ item(id,name,'rare','▤');EXPANSIONS[id]={name,slots,target:'chest'};
+ RECIPES.push({id,name,world,station:'anvil',skill:'smithing',output:id,count:1,cost});
+ STORY.find(q=>q.id===quest).reward.items[id]=1;
+}
