@@ -992,3 +992,35 @@ Both bugs were reintroduced deliberately to confirm it catches them. It names
 `js/craft.js: Cannot access 'BUFFS' before initialization` and `js/sprite.js: Identifier
 'shade' has already been declared`, while craft-test, buff-test, ui-test and sprite-test
 all pass through either one without noticing.
+
+## The Hollow Eye
+
+A second boss, and the reason the first one's code was worth generalising: a boss that
+flies has nothing in common with a boss that hops except being a boss. Shrinking, calling
+for help and crossing into a second half are shared; how it moves is not.
+
+It hovers above the player out of reach and charges. The charge is the whole fight: it
+picks a point, commits to it, and **cannot steer once it has started**, so the fight is
+about reading the wind-up and not being where it is going. If it tracked you mid-charge
+there would be nothing to dodge, so the test moves the player sixty tiles sideways during
+a charge and requires its velocity not to change by so much as a float.
+
+Halfway through its health it stops calling for help, loses almost all of the wind-up and
+charges twice as fast and twice as often. That is the same escalation the King gets from
+shrinking, arrived at from the other direction: the King gets harder to hit, the Eye gets
+harder to read.
+
+It is summoned by a Bloodshot Lens - six lenses, which only come off demon eyes, which
+only come out at night, so the cost is the nights you had to survive to afford it. It
+gives up the Hollow Lens and the Seer's Eye, both every time.
+
+The boss tests are now written over the roster rather than over one boss: every boss must
+be summonable into an open arena, refuse to be summoned twice, suppress ordinary spawns,
+stay finite and stay near the player over a minute of fighting, respect its own minion
+limit, **fight differently at 20% health than at full**, and end the fight when killed.
+
+Writing the second boss found a real bug in the first one's structure. `stepOne` dispatched
+to the boss code *after* its archetype branches, and the flying boss has gravity 0 - which
+the ordinary flyer branch claims. The Hollow Eye hovered like a bat and never charged
+once. The dispatch is first now. The test caught it immediately, because "it never charged
+in twenty seconds" is a thing a test can notice and a screenshot cannot.

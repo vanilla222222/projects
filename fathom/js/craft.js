@@ -98,7 +98,9 @@ const ITEMS = {
   // A summon. Used where you stand, like everything else of kind `use`, and what it does
   // is put something in the world that will not leave until one of you is dead.
   slimecrown: { name: 'Slime Crown', kind: 'use', colour: '#e0c054',
-    use: { summon: 'kingslime' }, text: 'Summons the King Slime' }
+    use: { summon: 'kingslime' }, text: 'Summons the King Slime' },
+  bloodshotlens: { name: 'Bloodshot Lens', kind: 'use', colour: '#b4484f',
+    use: { summon: 'hollloweye' }, text: 'Summons the Hollow Eye. Use it at night.' }
 };
 
 // Armour. Four pieces rather than Terraria's three, because boots were asked for. Every
@@ -225,6 +227,8 @@ const ACCESSORIES = {
   // The king's. Not rare drops but certain ones: beating a boss gives you both, because
   // a fight you have to prepare for should not then also be a lottery.
   'royal-gel': { name: 'Royal Gel', colour: '#8fd98f', text: 'Slimes no longer attack you', slimeFriend: true, drop: 'kingslime' },
+  'hollow-lens': { name: 'Hollow Lens', colour: '#b4484f', text: 'Arrows hit 15% harder and fly much faster', ranged: 1.15, arrowSpeed: 1.5, drop: 'hollloweye' },
+  'seers-eye': { name: "Seer's Eye", colour: '#d8b0b4', text: 'Magic hits 10% harder, and you see in the dark', magic: 1.1, glow: 10, drop: 'hollloweye' },
   'kings-crown': { name: "King's Crown", colour: '#e0c054', text: 'Everything you do hits 12% harder', melee: 1.12, ranged: 1.12, magic: 1.12, drop: 'kingslime' }
 };
 
@@ -628,6 +632,9 @@ RECIPES.push(
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
   { out: { key: 'slimecrown', kind: 'use', count: 1 }, need: [['gel', 40], ['gold-bar', 5]], station: 'anvil' },
+  // Six lenses, which only come off demon eyes, which only come out at night. The cost
+  // is the nights you had to survive to afford it.
+  { out: { key: 'bloodshotlens', kind: 'use', count: 1 }, need: [['lens', 6], ['gold-bar', 3]], station: 'anvil' },
   { out: { key: 'healing-salve', kind: 'use', count: 2 }, need: [['gel', 4], ['glowmoss', 2]], station: 'workbench' },
   { out: { key: 'mana-salve', kind: 'use', count: 2 }, need: [['fallenstar', 1], ['glowmoss', 2]], station: 'workbench' }
 );

@@ -183,6 +183,38 @@ BODIES.kingslime = function (ctx, g, c) {
   ctx.restore();
 };
 
+// The Hollow Eye. The same plan as a demon eye and four times the size, because a boss
+// that is visibly a bigger version of something you have been swatting all game lands
+// better than a new shape would. Enraged, the sclera splits and the iris goes black.
+BODIES.bigeye = function (ctx, g, c) {
+  const beat = Math.sin(c.anim) * 0.7;
+  const dark = spriteShade(c.colour, -0.45);
+  membraneWing(ctx, g, -0.16, -0.58, 0.58, beat, dark, spriteShade(c.colour, -0.6));
+  membraneWing(ctx, g, 0.16, -0.58, 0.5, -beat, spriteShade(c.colour, -0.2), dark);
+  // The ball.
+  ell(ctx, g, 0, -0.5, 0.44, 0.44, c.enraged ? '#d8cfc4' : '#efe6d8');
+  // Veins, more of them and angrier in the second half.
+  ctx.save();
+  ctx.globalAlpha *= c.enraged ? 0.85 : 0.45;
+  const veins = c.enraged ? 9 : 5;
+  for (let i = 0; i < veins; i += 1) {
+    const a = c.phase + i * (TAU / veins);
+    limb(ctx, g, -0.38 * Math.cos(a), -0.5 + 0.38 * Math.sin(a),
+      -0.12 * Math.cos(a), -0.5 + 0.12 * Math.sin(a), 0.05, '#a8303a');
+  }
+  ctx.restore();
+  // The iris, which looks at you. Winding up it opens wide; charging it is a slit.
+  const open = c.windUp > 0 ? 1.18 : (c.charge > 0 ? 0.74 : 1);
+  dot(ctx, g, 0.12, -0.5, 0.34 * open, c.enraged ? '#5a1c22' : c.colour);
+  dot(ctx, g, 0.16, -0.5, 0.2 * open, c.enraged ? '#120a0e' : '#1a1016');
+  dot(ctx, g, 0.06, -0.6, 0.08, 'rgba(255,255,255,0.65)');
+  if (c.enraged) {
+    // A torn lower lid, so the second phase is legible at a glance.
+    poly(ctx, g, [-0.3, -0.2, -0.1, -0.06, 0.1, -0.2, 0.3, -0.05, 0.3, -0.3, -0.3, -0.3],
+      spriteShade(c.colour, -0.3));
+  }
+};
+
 // The walk cycle every two-legged plan shares: one swing value per limb, in box units.
 function gaitOf(c, reach) {
   const swing = Math.sin(c.anim);
