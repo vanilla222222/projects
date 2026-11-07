@@ -3,7 +3,7 @@ import {VOID_NPCS,VOID_PROJECTS} from './void-content.mjs';
 import {COMPLETION_ITEMS,SIDE_NPCS,WORLD_GIVERS} from './world-rewards.mjs';
 import {ORBIT_NPCS,ORBIT_QUESTS} from './orbit-campaign.mjs';
 import {TIDE_NPCS,TIDE_QUESTS} from './tide-campaign.mjs?v=45';
-import {travelAtlas} from './travel-atlas.mjs?v=50';
+import {travelAtlas} from './travel-atlas.mjs?v=59';
 import {worldOf,WORLD_TWO,ALL_ADVANCEMENTS,SKILL_TOOLS} from './expansion-content.mjs?v=45';
 import * as InventoryGuide from './inventory-guidance.mjs?v=45';
 import {roomPreparation} from './route-preparation.mjs?v=45';

@@ -21,3 +21,27 @@ button,input,select,textarea{font-family:inherit}button{border-radius:7px;transi
 
 /* The atlas uses the same outlined pixel sprites as the playable rooms. */
 .atlas-pin{display:flex;align-items:center;justify-content:center;width:100%;height:100%}.atlas-sprite{display:block;width:42px;height:42px;image-rendering:pixelated;pointer-events:none;filter:drop-shadow(0 2px #1b382e55)}.atlas-redesign .atlas-node{border-radius:5px!important}.atlas-redesign .atlas-node small{border-radius:3px}.character-art{image-rendering:pixelated}
+
+/* Illustrated world charts. Dimensions still come from the zoomable atlas canvas. */
+.atlas-theme .atlas-toolbar{background:linear-gradient(125deg,var(--atlas-deep),var(--atlas-light));border:1px solid var(--atlas-light);box-shadow:inset 0 0 0 3px #ffffff0e;color:#fff4d9;padding:10px 13px}
+.atlas-theme .atlas-masthead{display:grid;gap:2px;color:var(--atlas-gold);margin-right:auto}
+.atlas-masthead small{font:700 9px/1.3 system-ui;letter-spacing:1.6px}
+.atlas-masthead strong{font:700 clamp(18px,2.2vw,26px)/1.08 Georgia,serif;letter-spacing:.2px;color:#fff5dc}
+.atlas-masthead em{font:italic 11px/1.4 Georgia,serif;letter-spacing:.4px;color:#fff0d3c9}
+.atlas-theme .atlas-toolbar output{color:#fff4d9}
+.atlas-theme .atlas-toolbar button{background:#ffffff15!important;color:#fff4d9!important;border-color:#ffffff38!important}
+.atlas-theme .atlas-scroll{border:1px solid var(--atlas-light);background:var(--atlas-ink);box-shadow:0 5px 14px #10241e30;scrollbar-color:var(--atlas-light) var(--atlas-ink)}
+.atlas-theme .atlas-legend{color:#405951}
+.atlas-theme .atlas-legend>span{padding:2px 8px;background:#f4f0e3;border:1px solid #d6cfbc;border-radius:12px}
+.atlas-theme .atlas-route{stroke:var(--atlas-glow);stroke-opacity:.45;stroke-width:2.5;stroke-dasharray:3 7}
+.atlas-theme .atlas-route.open{stroke:var(--atlas-route);stroke-opacity:.9;stroke-width:3.5;filter:drop-shadow(0 0 3px var(--atlas-ink))}
+.atlas-theme .region-name{fill:var(--atlas-gold);stroke:var(--atlas-ink);stroke-width:3px;font-weight:700;letter-spacing:1.5px}
+.atlas-theme .atlas-rose{font:700 12px Georgia,serif;letter-spacing:2px}
+.atlas-theme .atlas-node{border-radius:12px!important;background:var(--atlas-deep)!important;border-color:var(--atlas-light)!important;box-shadow:inset 0 0 0 2px #ffffff18,0 4px 0 var(--atlas-ink),0 7px 12px #0005!important}
+.atlas-theme .atlas-node.discovered{background:linear-gradient(155deg,var(--region),var(--atlas-deep))!important;border-color:var(--atlas-gold)!important}
+.atlas-theme .atlas-node.route-locked{background:var(--atlas-ink)!important;border-color:var(--atlas-light)!important}
+.atlas-theme .atlas-node small{background:var(--atlas-ink)!important;border-color:#ffffff37!important;border-radius:7px;color:#fff4d9!important;font-size:11px!important}
+.atlas-theme .atlas-node.current{outline-color:var(--atlas-gold)}
+.atlas-theme .atlas-node.selected{box-shadow:0 0 0 4px var(--atlas-glow),0 0 15px var(--atlas-glow)!important}
+@media(max-width:600px){.atlas-theme .atlas-toolbar{padding:9px}.atlas-theme .atlas-masthead{margin-bottom:3px}}
+.atlas-chart-icon{width:35px;height:35px;color:var(--atlas-route);filter:drop-shadow(0 1px 2px #0008)}

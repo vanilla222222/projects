@@ -1,7 +1,7 @@
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=58';
+import * as UI from './ui-panels.mjs?v=59';
 import {icon,itemArt,esc,tabs,section,fmt} from './ui-art.mjs?v=50';
 const button=(text,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
