@@ -322,6 +322,7 @@ for (const [key, name, colour, solid, emit] of [
 ]) {
   pushTile({ key, name, colour, solid, emit, opacity: solid ? 60 : 2, hardness: 2.8,
     toughness: key === 'void-crystal' ? 410 : 240, require: key === 'void-crystal' ? 125 : 0,
+    spikeDamage: key === 'ashvault-spikes' ? 34 : 0,
     drops: key === 'ashvault-gate' ? null : key });
 }
 defineMulti('ashvault-cache', 'Ashvault Reliquary', 2, 2, () => ({
@@ -343,6 +344,14 @@ defineMulti('desert-mimic', 'Iron Chest', 2, 2, () => ({
   solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
   toughness: 70, chest: 'desert-mimic', mimic: 'desertmimic', drops: null
 }));
+
+defineMulti('tundra-mimic', 'Iron Chest', 2, 2, () => ({
+  solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
+  toughness: 70, chest: 'tundra-mimic', mimic: 'tundramimic', drops: null
+}));
+
+pushTile({ key: 'glacier-spikes', name: 'Glacier Spikes', colour: '#a2cfdf',
+  solid: false, opacity: 2, emit: 2, hardness: 0.4, toughness: 55, spikeDamage: 37 });
 
 const WALL_BY_KEY = {};
 for (const w of WOODS) {

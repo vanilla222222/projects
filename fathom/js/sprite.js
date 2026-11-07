@@ -319,6 +319,11 @@ BODIES.golem = function (ctx, g, c) {
   dot(ctx, g, -0.06, -0.89, 0.065, c.glow || '#e8a84a');
   limb(ctx, g, 0.08, -0.4, 0.08 + k.frontLeg, -0.02, 0.32, c.colour);
   limb(ctx, g, 0.2, -0.74, 0.34, -0.3 + k.frontArm, 0.28, light);
+  if (c.key === 'rimehorn') {
+    poly(ctx, g, [-0.29, -0.74, -0.47, -0.99, -0.19, -0.91, -0.08, -0.76], '#dbf6fa');
+    poly(ctx, g, [0.16, -0.75, 0.37, -1.03, 0.39, -0.8, 0.28, -0.72], '#9bd2e6');
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -644,6 +649,14 @@ BODIES.cloud = function (ctx, g, c) {
   ctx.restore();
   eyes(ctx, g, 0.16, -0.5, 0.08, '#48506a', '#1a1d2a');
   eyes(ctx, g, -0.02, -0.5, 0.075, '#48506a', '#1a1d2a');
+  if (c.key === 'aurorawraith') {
+    const wave = Math.sin(c.anim) * 0.10;
+    poly(ctx, g, [-0.53, -0.68, -0.25, -0.80 + wave, 0.12, -0.62, 0.49, -0.75,
+      0.14, -0.47, -0.23, -0.67 + wave, -0.52, -0.55], c.windUp > 0 ? '#dbfff1' : '#8fe7d8');
+    poly(ctx, g, [-0.42, -0.39, -0.10, -0.55 - wave, 0.20, -0.41, 0.46, -0.5,
+      0.19, -0.28, -0.11, -0.42 - wave], '#d5a6e9');
+  }
+
 };
 
 // --- people ----------------------------------------------------------------------------

@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 81 enemies including twelve bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 94 enemies including fourteen bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -221,3 +221,13 @@ Amber Tomb in the deep Desert. Some tomb chests awaken as Dune Mimics.
 Use a Storm Feather on the Desert surface to summon Thunderbird or a Desert
 Medallion in the Underground Desert to summon the burrowing Desert Scourge.
 Both are optional and reward materials for their own accessories.
+
+
+### Tundra expansion
+
+The Snowbound Lodge sits on the surface, the Rime Observatory lights the caves,
+and the Glacier Crypt guards its deep cache with ice spikes. Some crypt chests
+wake as Rime Mimics.
+
+Use a Rime Horn on the Tundra surface to summon Rimehorn. Use an Aurora Lantern
+in the deep Tundra to summon the Aurora Wraith. Both fights are optional.

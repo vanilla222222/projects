@@ -1224,6 +1224,8 @@ function makeGame(canvas, deps) {
       ['rootcrown', 'Root Crown', 'rootcrown-idol', 'Optional. Summon in the deep Forest.'],
       ['thunderbird', 'Thunderbird', 'storm-feather', 'Optional. Summon on the Desert surface.'],
       ['desertscourge', 'Desert Scourge', 'desert-medallion', 'Optional. Summon in the Underground Desert.'],
+      ['rimehorn', 'Rimehorn', 'rime-horn', 'Optional. Summon on the Tundra surface.'],
+      ['aurorawraith', 'Aurora Wraith', 'aurora-lantern', 'Optional. Summon in the deep Tundra.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1748,9 +1750,9 @@ function makeGame(canvas, deps) {
     // Check hazards at the player's feet.
     const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
       Math.floor(state.player.y + state.player.height * 0.6)));
-    if (feet.key === 'ashvault-spikes') {
-      const hit = statsModule.damage(stats, 34);
-      if (hit > 0) { lastHurt = 'Ashvault spikes'; say('Watch the floor', 1.3); }
+    if (feet.spikeDamage) {
+      const hit = statsModule.damage(stats, feet.spikeDamage);
+      if (hit > 0) { lastHurt = feet.name; say('Watch the floor', 1.3); }
     }
     if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24 * (feet.key === 'lava' ? gear.lavaDamage : 1));
@@ -1794,7 +1796,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=desert-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=tundra-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

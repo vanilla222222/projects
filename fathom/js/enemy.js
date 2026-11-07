@@ -80,7 +80,11 @@ const ARCHETYPES = {
   scourge: { gravity: 0, boss: true, flies: true, burrows: true, speed: 5.4, hoverAbove: -7, drift: 3,
     chargeEvery: 3.6, windUp: 0.85, chargeSpeed: 25, chargeFor: 0.87, spawnEvery: 5.8,
     minion: 'glassborer', minions: 2, enrageAt: 0.45, enrageSpeed: 1.33, enrageCharge: 0.62,
-    enrageWindUp: 0.5 }
+    enrageWindUp: 0.5 },
+  aurora: { gravity: 0, boss: true, flies: true, speed: 5.5, hoverAbove: 5, drift: 5,
+    chargeEvery: 3.5, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.78, spawnEvery: 5.4,
+    minion: 'rimewisp', minions: 3, enrageAt: 0.48, enrageSpeed: 1.2,
+    enrageCharge: 0.58, enrageWindUp: 0.66, followUp: 0.48 }
 
 };
 
@@ -342,6 +346,33 @@ const ENEMIES = [
     damage: 47, weight: 0, w: 4.1, h: 2.9, colour: '#cb9a58', boss: true, summonOnly: true, emit: 3,
     drops: [['wormtooth', 12], ['coin', 710]], bossDrops: ['scourge-scale'] },
 
+  ...[
+    ['snowhare', 'Snow Hare', 'surface', 'walker', 'lizard', 31, 8, '#cbdde2', 'leather'],
+    ['frostkite', 'Frost Kite', 'surface', 'flyer', 'bird', 39, 11, '#81a4bf', 'feather'],
+    ['snowprowler', 'Snow Prowler', 'surface', 'walker', 'humanoid', 57, 15, '#8fa9ad', 'rottenflesh'],
+    ['sleetmite', 'Sleet Mite', 'surface', 'crawler', 'beetle', 42, 12, '#93b6c5', 'chitin'],
+    ['iceborer', 'Ice Borer', 'caves', 'worm', 'worm', 81, 18, '#88c0d3', 'wormtooth'],
+    ['rimewisp', 'Rime Wisp', 'caves', 'flyer', 'cloud', 74, 17, '#acd4e1', 'glowmoss'],
+    ['frostweaver', 'Frostweaver', 'caves', 'crawler', 'spider', 93, 19, '#819ac5', 'chitin'],
+    ['glacierhusk', 'Glacier Husk', 'deep', 'walker', 'golem', 184, 29, '#6588a9', 'crystal'],
+    ['paleoracle', 'Pale Oracle', 'deep', 'flyer', 'eye', 138, 24, '#ada0d0', 'lens'],
+    ['icebound', 'Icebound', 'deep', 'walker', 'skeleton', 165, 27, '#b2c7d5', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.25 : 1, h: ['skeleton', 'golem', 'humanoid'].includes(body) ? 1.8 : 1,
+    biomes: ['tundra'], layers: [layer], emit: key === 'rimewisp' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 12 : layer === 'caves' ? 7 : 4]]
+  })),
+  { key: 'tundramimic', name: 'Rime Mimic', kind: 'walker', body: 'mimic', hp: 330,
+    damage: 37, weight: 0, w: 1.8, h: 1.5, colour: '#8fbdca', hiddenSpawn: true,
+    drops: [['rime-fang', 2], ['coin', 155]] },
+  { key: 'rimehorn', name: 'Rimehorn', kind: 'king', body: 'golem', hp: 2050,
+    damage: 38, weight: 0, w: 4.2, h: 3, colour: '#a1bacb', boss: true, summonOnly: true, emit: 4,
+    drops: [['snow', 16], ['coin', 440]], bossDrops: ['rimehorn-shard'] },
+  { key: 'aurorawraith', name: 'Aurora Wraith', kind: 'aurora', body: 'cloud', hp: 3800,
+    damage: 51, weight: 0, w: 4.3, h: 3.2, colour: '#9d9bdb', boss: true, summonOnly: true, emit: 8,
+    drops: [['crystal', 7], ['coin', 750]], bossDrops: ['aurora-thread'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -439,7 +470,8 @@ const GAIT = {
   sovereign: { perTile: 0.4, perSecond: 10 },
   archon: { perTile: 0.45, perSecond: 11 },
   thunderbird: { perTile: 0.4, perSecond: 10 },
-  scourge: { perTile: 0.45, perSecond: 7 }
+  scourge: { perTile: 0.45, perSecond: 7 },
+  aurora: { perTile: 0.5, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------

@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'rime-fang': { name: 'Rime Fang', kind: 'loot', colour: '#a8d7e0' },
+  'rimehorn-shard': { name: 'Rimehorn Shard', kind: 'loot', colour: '#b1d9e6' },
+  'aurora-thread': { name: 'Aurora Thread', kind: 'loot', colour: '#b7a4e8' },
+  'rime-horn': { name: 'Rime Horn', kind: 'use', colour: '#b1d9e6',
+    use: { summon: 'rimehorn', layer: 'surface', biome: 'tundra' }, text: 'Summon on the Tundra surface' },
+  'aurora-lantern': { name: 'Aurora Lantern', kind: 'use', colour: '#b7a4e8',
+    use: { summon: 'aurorawraith', layer: 'deep', biome: 'tundra' }, text: 'Summon in the deep Tundra' },
   'dune-fang': { name: 'Dune Fang', kind: 'loot', colour: '#d9be89' },
   'storm-plume': { name: 'Storm Plume', kind: 'loot', colour: '#e6bf69' },
   'scourge-scale': { name: 'Scourge Scale', kind: 'loot', colour: '#cd9b63' },
@@ -284,6 +291,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'rimeguard': { name: 'Rimeguard', colour: '#b1d9e6', text: 'Defence +6 and 20% less fall damage', defense: 6, fallMul: 0.8 },
+  'aurora-veil': { name: 'Aurora Veil', colour: '#b7a4e8', text: 'Magic damage +15% and emits light', magic: 1.15, glow: 4 },
+  'glacier-clasp': { name: 'Glacier Clasp', colour: '#a8d7e0', text: 'Move 12% faster and defence +3', speed: 1.12, defense: 3 },
+
   'storm-crest': { name: 'Storm Crest', colour: '#e6bf69', text: 'Arrows deal 12% more damage and move 25% faster', ranged: 1.12, arrowSpeed: 1.25 },
   'scourge-guard': { name: 'Scourge Guard', colour: '#cd9b63', text: 'Defence +6 and mining power +8%', defense: 6, power: 1.08 },
   'dune-clasp': { name: 'Dune Clasp', colour: '#d9be89', text: 'Move 10% faster and pick up items from farther away', speed: 1.10, pickup: 1.35 },
@@ -754,6 +765,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'rime-horn', kind: 'use', count: 1 }, need: [['snow', 15], ['bone', 4], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'aurora-lantern', kind: 'use', count: 1 }, need: [['crystal', 6], ['sapphire', 2], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'rimeguard', kind: 'accessory', count: 1 }, need: [['rimehorn-shard', 1], ['iron-bar', 4]], station: 'anvil' },
+  { out: { key: 'aurora-veil', kind: 'accessory', count: 1 }, need: [['aurora-thread', 1], ['sapphire', 3]], station: 'anvil' },
+  { out: { key: 'glacier-clasp', kind: 'accessory', count: 1 }, need: [['rime-fang', 2], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'storm-feather', kind: 'use', count: 1 }, need: [['feather', 8], ['topaz', 2], ['copper-bar', 2]], station: 'anvil' },
   { out: { key: 'desert-medallion', kind: 'use', count: 1 }, need: [['wormtooth', 5], ['chitin', 6], ['iron-bar', 3]], station: 'anvil' },
   { out: { key: 'storm-crest', kind: 'accessory', count: 1 }, need: [['storm-plume', 1], ['copper-bar', 4]], station: 'anvil' },

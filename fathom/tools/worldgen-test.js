@@ -576,6 +576,21 @@ for (const seed of [SEED, 4242, -98765]) {
   check(!!tiles.tile(cache).chest, 'Amber Tomb has no cache');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -1363, y);
+    if (site?.biome === 'tundra') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Tundra is missing a structure depth');
+  const observatory = sites.get('Rime Observatory');
+  check(gen.baseTileAt(SEED, observatory.x - 2, observatory.top + observatory.height - 2) === tiles.idOf('crystal'),
+    'Rime Observatory has no crystal');
+  const crypt = sites.get('Glacier Crypt');
+  check(gen.baseTileAt(SEED, crypt.x - 10, crypt.top + crypt.height - 2) === tiles.idOf('glacier-spikes'),
+    'Glacier Crypt has no spikes');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;
