@@ -419,6 +419,11 @@ BODIES.wasp = function (ctx, g, c) {
     const sweep = Math.sin(c.anim * 2 + i) * 0.06;
     limb(ctx, g, -0.04 + i * 0.12, -0.42, -0.02 + i * 0.12 + sweep, -0.12, 0.05, dark);
   }
+  if (c.key === 'orchidqueen') {
+    poly(ctx, g, [-0.09, -0.66, -0.16, -0.96, 0.07, -0.84, 0.23, -0.99, 0.27, -0.68],
+      c.windUp > 0 ? '#fff0ac' : '#d895b6');
+  }
+
 };
 
 BODIES.beetle = function (ctx, g, c) {
@@ -568,6 +573,14 @@ BODIES.maw = function (ctx, g, c) {
       0.28 + i * 0.09, -0.5 + gape * 0.9], '#f2ecdc');
   }
   dot(ctx, g, -0.14, -0.56, 0.06, c.glow || '#f0e2a0');
+  if (c.key === 'amberroot') {
+    for (let i = 0; i < 4; i += 1) {
+      const x = -0.31 + i * 0.16;
+      limb(ctx, g, x, -0.37, x + Math.sin(c.anim + i) * 0.17, -0.09, 0.10, '#694e35');
+      dot(ctx, g, x, -0.38, 0.035, '#e9c177');
+    }
+  }
+
 };
 
 BODIES.worm = function (ctx, g, c) {

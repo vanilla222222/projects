@@ -84,7 +84,15 @@ const ARCHETYPES = {
   aurora: { gravity: 0, boss: true, flies: true, speed: 5.5, hoverAbove: 5, drift: 5,
     chargeEvery: 3.5, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.78, spawnEvery: 5.4,
     minion: 'rimewisp', minions: 3, enrageAt: 0.48, enrageSpeed: 1.2,
-    enrageCharge: 0.58, enrageWindUp: 0.66, followUp: 0.48 }
+    enrageCharge: 0.58, enrageWindUp: 0.66, followUp: 0.48 },
+  hornetqueen: { gravity: 0, boss: true, flies: true, speed: 6.6, hoverAbove: 5.2, drift: 4,
+    chargeEvery: 3.4, windUp: 0.86, chargeSpeed: 24, chargeFor: 0.74, spawnEvery: 4.3,
+    minion: 'orchidwasp', minions: 4, enrageAt: 0.48, enrageSpeed: 1.3,
+    enrageCharge: 0.63, enrageWindUp: 0.6, followUp: 0.42 },
+  strangler: { gravity: 0, boss: true, flies: true, speed: 4.6, hoverAbove: 3.5, drift: 3,
+    chargeEvery: 4.1, windUp: 1.2, chargeSpeed: 29, chargeFor: 0.9, spawnEvery: 5.2,
+    minion: 'templeroot', minions: 2, enrageAt: 0.44, enrageSpeed: 1.35,
+    enrageCharge: 0.55, enrageWindUp: 0.72 }
 
 };
 
@@ -373,6 +381,33 @@ const ENEMIES = [
     damage: 51, weight: 0, w: 4.3, h: 3.2, colour: '#9d9bdb', boss: true, summonOnly: true, emit: 8,
     drops: [['crystal', 7], ['coin', 750]], bossDrops: ['aurora-thread'] },
 
+  ...[
+    ['orchidwasp', 'Orchid Wasp', 'surface', 'flyer', 'wasp', 49, 14, '#c798b6', 'stinger'],
+    ['canopytoucan', 'Canopy Toucan', 'surface', 'flyer', 'bird', 43, 11, '#e1ad55', 'feather'],
+    ['vinepanther', 'Vine Panther', 'surface', 'walker', 'lizard', 64, 15, '#516752', 'leather'],
+    ['bambooscarab', 'Bamboo Scarab', 'surface', 'crawler', 'beetle', 55, 12, '#859e52', 'chitin'],
+    ['mossviper', 'Moss Viper', 'caves', 'worm', 'worm', 89, 20, '#749163', 'wormtooth'],
+    ['poolleech', 'Pool Leech', 'caves', 'swimmer', 'leech', 82, 18, '#647d77', 'gel'],
+    ['lanternmantis', 'Lantern Mantis', 'caves', 'crawler', 'spider', 102, 23, '#a5b76a', 'chitin'],
+    ['templeroot', 'Temple Root', 'deep', 'walker', 'golem', 193, 31, '#8a6d46', 'mahoganylog'],
+    ['emeraldmaw', 'Emerald Maw', 'deep', 'flyer', 'maw', 164, 27, '#679379', 'stinger'],
+    ['sporeoracle', 'Spore Oracle', 'deep', 'flyer', 'cloud', 148, 26, '#b6a37f', 'glowmoss']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: body === 'golem' ? 1.9 : 1,
+    biomes: ['jungle'], layers: [layer], wet: kind === 'swimmer', emit: key === 'lanternmantis' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'junglemimic', name: 'Vinebound Mimic', kind: 'walker', body: 'mimic', hp: 360,
+    damage: 40, weight: 0, w: 1.8, h: 1.5, colour: '#879763', hiddenSpawn: true,
+    drops: [['vinebound-fang', 2], ['coin', 175]] },
+  { key: 'orchidqueen', name: 'Orchid Queen', kind: 'hornetqueen', body: 'wasp', hp: 2350,
+    damage: 41, weight: 0, w: 4.3, h: 2.9, colour: '#d6a766', boss: true, summonOnly: true, emit: 5,
+    drops: [['stinger', 12], ['coin', 490]], bossDrops: ['orchid-stinger'] },
+  { key: 'amberroot', name: 'Amberroot Strangler', kind: 'strangler', body: 'maw', hp: 4250,
+    damage: 54, weight: 0, w: 4.5, h: 3.4, colour: '#b58e53', boss: true, summonOnly: true, emit: 6,
+    drops: [['mahoganylog', 12], ['coin', 820]], bossDrops: ['amberroot-heart'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -471,7 +506,9 @@ const GAIT = {
   archon: { perTile: 0.45, perSecond: 11 },
   thunderbird: { perTile: 0.4, perSecond: 10 },
   scourge: { perTile: 0.45, perSecond: 7 },
-  aurora: { perTile: 0.5, perSecond: 9 }
+  aurora: { perTile: 0.5, perSecond: 9 },
+  hornetqueen: { perTile: 0.46, perSecond: 10 },
+  strangler: { perTile: 0.4, perSecond: 7 }
 };
 
 // --- the live population ------------------------------------------------------------------

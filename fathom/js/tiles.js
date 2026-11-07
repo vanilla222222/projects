@@ -353,6 +353,11 @@ defineMulti('tundra-mimic', 'Iron Chest', 2, 2, () => ({
 pushTile({ key: 'glacier-spikes', name: 'Glacier Spikes', colour: '#a2cfdf',
   solid: false, opacity: 2, emit: 2, hardness: 0.4, toughness: 55, spikeDamage: 37 });
 
+defineMulti('jungle-mimic', 'Iron Chest', 2, 2, () => ({
+  solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
+  toughness: 70, chest: 'jungle-mimic', mimic: 'junglemimic', drops: null
+}));
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

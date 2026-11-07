@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'vinebound-fang': { name: 'Vinebound Fang', kind: 'loot', colour: '#a6b87e' },
+  'orchid-stinger': { name: 'Orchid Stinger', kind: 'loot', colour: '#e3ac72' },
+  'amberroot-heart': { name: 'Amberroot Heart', kind: 'loot', colour: '#bf925c' },
+  'orchid-lure': { name: 'Orchid Lure', kind: 'use', colour: '#e3ac72',
+    use: { summon: 'orchidqueen', layer: 'surface', biome: 'jungle' }, text: 'Summon on the Jungle surface' },
+  'amberroot-idol': { name: 'Amberroot Idol', kind: 'use', colour: '#bf925c',
+    use: { summon: 'amberroot', layer: 'deep', biome: 'jungle' }, text: 'Summon in the deep Jungle' },
   'rime-fang': { name: 'Rime Fang', kind: 'loot', colour: '#a8d7e0' },
   'rimehorn-shard': { name: 'Rimehorn Shard', kind: 'loot', colour: '#b1d9e6' },
   'aurora-thread': { name: 'Aurora Thread', kind: 'loot', colour: '#b7a4e8' },
@@ -291,6 +298,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'orchid-quiver': { name: 'Orchid Quiver', colour: '#e3ac72', text: 'Arrows deal 14% more damage and move 20% faster', ranged: 1.14, arrowSpeed: 1.2 },
+  'amberroot-bulwark': { name: 'Amberroot Bulwark', colour: '#bf925c', text: 'Defence +8 and health regenerates 25% faster', defense: 8, regen: 1.25 },
+  'vinebound-clasp': { name: 'Vinebound Clasp', colour: '#a6b87e', text: 'Move 10% faster and take 25% less fall damage', speed: 1.1, fallMul: 0.75 },
+
   'rimeguard': { name: 'Rimeguard', colour: '#b1d9e6', text: 'Defence +6 and 20% less fall damage', defense: 6, fallMul: 0.8 },
   'aurora-veil': { name: 'Aurora Veil', colour: '#b7a4e8', text: 'Magic damage +15% and emits light', magic: 1.15, glow: 4 },
   'glacier-clasp': { name: 'Glacier Clasp', colour: '#a8d7e0', text: 'Move 12% faster and defence +3', speed: 1.12, defense: 3 },
@@ -765,6 +776,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'orchid-lure', kind: 'use', count: 1 }, need: [['stinger', 5], ['mahoganylog', 10], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'amberroot-idol', kind: 'use', count: 1 }, need: [['mahoganylog', 14], ['emerald', 2], ['gold-bar', 3]], station: 'anvil' },
+  { out: { key: 'orchid-quiver', kind: 'accessory', count: 1 }, need: [['orchid-stinger', 1], ['leather', 5]], station: 'anvil' },
+  { out: { key: 'amberroot-bulwark', kind: 'accessory', count: 1 }, need: [['amberroot-heart', 1], ['gold-bar', 4]], station: 'anvil' },
+  { out: { key: 'vinebound-clasp', kind: 'accessory', count: 1 }, need: [['vinebound-fang', 2], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'rime-horn', kind: 'use', count: 1 }, need: [['snow', 15], ['bone', 4], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'aurora-lantern', kind: 'use', count: 1 }, need: [['crystal', 6], ['sapphire', 2], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'rimeguard', kind: 'accessory', count: 1 }, need: [['rimehorn-shard', 1], ['iron-bar', 4]], station: 'anvil' },
