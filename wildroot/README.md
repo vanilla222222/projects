@@ -1,12 +1,12 @@
-# Wildroot — World One
+# Wildroot — Greenreach and Tidewilds
 
-An original side-view browser idle RPG for Vanilla and friends, hosted in the existing Projects website. World One is the only playable world. This release develops its progression, professions, inventory, exploration and combat; it does not enable World Two.
+An original side-view browser idle RPG for Vanilla and friends, hosted in the existing Projects website. World One has a complete campaign. World Two is a playable map with gathering and Tier 2 progression; its story campaign and boss remain future work. Complete the World One story and craft the Greenreach Completion Token to open it. See [WORLD-TWO.md](WORLD-TWO.md) for routes, tools and class requirements.
 
 ## Controls and world
 
 Click/tap the ground to walk, enemies to fight, nodes to gather, and NPCs, stations, storage or portals to interact. Characters navigate ladders through individually authored rooms and vertical routes. A/D or arrow keys move, W/S climb, Space jumps, F attacks, 1/2/3 use class abilities, E interacts, I opens inventory and M opens the map. Touch movement and ability controls support portrait and landscape. Sound effects are original Web Audio synthesis and can be enabled/muted in Save & help with a volume control.
 
-World One keeps the user's six-area plan: Caves (3 zones/copper), Deep Caverns (4/iron and gold), Forest (5/oak and birch), Jungle (4/jungle wood), Hearthstead (4/anvil, foundry and Legacy Square), Verdant Outpost or Jungle Town (3/enchanting, alchemy and boss entrance). With the three-zone Elder Tree ascent, World One has 19 regular enemy species and 26 regular zones. Two secret rooms branch from existing zones, rather than creating another world or main area.
+World One keeps the user's six-area plan: Caves (3 zones/copper), Deep Caverns (4/iron and gold), Lower Reaches (3/cobalt and obsidian), Forest (5/oak and birch), Jungle (4/jungle wood), Hearthstead (4/anvil, foundry and Legacy Square), Verdant Outpost or Jungle Town (3/enchanting, alchemy and boss entrance). With the three-zone Elder Tree ascent, World One has 19 regular enemy species and 29 regular zones (including the three Lower Reaches mining rooms). Two secret rooms branch from existing zones, rather than creating another world or main area.
 
 ## Character inventories and universal storage
 

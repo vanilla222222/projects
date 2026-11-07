@@ -1,5 +1,5 @@
 import {persistReset} from './reset-save.mjs?v=40';
-import {onboarding} from './onboarding.mjs?v=40';
+import {onboarding} from './onboarding.mjs?v=42';
 import {WORLD_TWO,ADVANCEMENTS,EXPANSION_AREAS,worldOf} from './expansion-content.mjs?v=40';
 import * as InventoryGuide from './inventory-guidance.mjs?v=40';
 import * as Roster from './roster.mjs?v=40';
@@ -109,7 +109,7 @@ function renderPanel(){
  const serviceId=kind==='industry'?(uiView.industryTab==='furnaces'?'foundry':'anvil'):['shop','tasks','stamps','statues','vault'].includes(kind)?kind:kind==='stars'&&state.stars.unlocked?'stars':null;
  if(serviceId&&!E.serviceAccess(state,c,serviceId))body=Prof.locked(state,c,serviceId);
  if(uiView.firstVisit&&(kind==='craft'&&uiView.profession===uiView.firstVisit||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
- const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ONE · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
+ const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ${worldOf(c.area)} · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
@@ -132,7 +132,8 @@ function refresh(){
  E.syncAccount(state);const c=world.c,a=areaById(c.area),abilities=assignedAbilities(c);E.claimGems(state);E.refreshTeleports(state);
  html('roster',state.characters.map(ch=>`<button data-character="${ch.id}" class="${ch.id===c.id?'active':''}" aria-pressed="${ch.id===c.id}"><span class="portrait">${portrait(ch)}</span><span>${esc(ch.name)}<span class="sub">${ch.class?CLASSES[ch.class].name:'Beginner'} · Lv. ${ch.level}</span></span></button>`).join(''));
  $('new-character').disabled=!!c.dungeon||state.characters.length>=E.slots(state);$('new-character').title=`${state.characters.length} / ${E.slots(state)} slots. Discover a class to unlock another.`;
- $('scene').parentElement.dataset.boss=String(world.map.boss);$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD 1 · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
+ document.querySelector('.brand small').textContent='WORLD '+worldOf(c.area);document.title='Wildroot · '+(worldOf(c.area)===2?'Tidewilds':'Greenreach');
+ $('scene').parentElement.dataset.boss=String(world.map.boss);$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD ${worldOf(c.area)} · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
  $('mana-status').textContent='AFK INFO';$('mana-bar').style.width=(c.mp/E.maxMana(c)*100)+'%';$('mana-label').textContent=`${Math.floor(c.mp)} / ${E.maxMana(c)} MP`;$('food-count').textContent='FOOD '+c.foodSlots.reduce((n,t)=>n+(t?.count||0),0);$('quest-tracker').hidden=!!c.dungeon||!state.options.questHelper;document.body.classList.toggle('ui-compact',state.options.compact);$('trial-hud').hidden=!c.trial&&!c.dungeon;document.querySelector('[data-instance-menu]').textContent=c.dungeon?'RUN MENU':'LEAVE TRIAL';if(c.dungeon)$('trial-status').textContent=`ROOM ${c.dungeon.room+1}/4 · ${Math.ceil(c.dungeon.time)}s · ${c.dungeon.cash} RUN COINS`;if(c.trial)$('trial-status').textContent=`WAVE ${c.trial.wave+1}/8 · ${Math.ceil(c.trial.time)}s · ${c.trial.score} POINTS`;
  document.querySelectorAll('.game-menu [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panelKind));
  $('bag-count').textContent=`Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}`;
