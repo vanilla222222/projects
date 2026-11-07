@@ -1,3 +1,4 @@
+import {SIDE_NPCS,SIDE_QUESTS} from './world-rewards.mjs';
 import {ORBIT_DIALOGUE,ORBIT_VOICES} from './orbit-campaign.mjs';
 import {ORBIT_JOBS} from './world-three-content.mjs';
 import {TIDE_VOICES,TIDE_DIALOGUE} from './tide-campaign.mjs?v=45';
@@ -57,6 +58,6 @@ export const QUEST_DIALOGUE={
  panacea:{offer:['A cure for every problem? No. Four useful bottles and the sense to choose between them? That we can manage.','Brew four advanced draughts yourself and bring one mining, logging, battle and warding draught.','Do not drink the samples on the way here. That is why I am saying this twice.'],reminder:'Four advanced brews made personally. Keep one of each of the four draughts for the hand-in.',ready:['All four, properly labelled. I am almost suspicious.','Give them here. I will record the mixtures for the next generation.'],complete:['Your roster has earned my token once all my tasks are complete.','There. World saved, medicine bottled. Now somebody can finally label my lunch.']}
 };
 
-Object.assign(NPC_VOICES,TIDE_VOICES,ORBIT_VOICES);Object.assign(QUEST_DIALOGUE,TIDE_DIALOGUE,ORBIT_DIALOGUE);
+Object.assign(NPC_VOICES,TIDE_VOICES,ORBIT_VOICES);for(const [id,d] of Object.entries(SIDE_NPCS))NPC_VOICES[id]={...d,greeting:[d.work],idle:'Thanks for helping with the expedition.',locked:'Come back when you can help.'};for(const q of SIDE_QUESTS)QUEST_DIALOGUE[q.id]={offer:[q.text,q.hint],ready:['That is everything.','Let me check the supplies.'],complete:['The trail crew has what it needs.','Take this token for your help.'],reminder:q.hint};Object.assign(QUEST_DIALOGUE,TIDE_DIALOGUE,ORBIT_DIALOGUE);
 for(const [id,d] of Object.entries(ORBIT_JOBS))QUEST_ACTIONS['orbit:'+id]='Collect '+d.name+' batches';
 for(const id of ['reed-fish','glowbug','tideberry','clay','fossil'])QUEST_ACTIONS['gather:'+id]='Gather '+id.replaceAll('-',' ')+' yourself';

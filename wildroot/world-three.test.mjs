@@ -9,16 +9,13 @@ import {World,abilitySet} from './world.mjs?v=49';
 import {atlasNodes,travelAtlas} from './travel-atlas.mjs?v=50';
 import {pointFor,roomLayout} from './layouts.mjs?v=49';
 
-test('Astral Reach contains fifty rooms, three towns and an equipment-gated entrance with no shortcut',()=>{
+test('Astral Reach contains fifty rooms, three towns and a boss-gated entrance with no shortcut',()=>{
  const s=E.freshSave(),c=E.selected(s);
  assert.equal(atlasNodes(3).length+Object.values(ORBIT_SECRETS).filter(d=>d.area.startsWith('orbit-')).length,50);
  assert.equal(WORLD_THREE.areas.filter(a=>a.town).length,3);
  assert.match(travelAtlas(s,c,3,'orbit-dock:0'),/Landing Ring/);
  assert.equal(E.zoneUnlocked(s,'orbit-dock',0),false);
- s.story['tide-restored']={done:true,accepted:true};
- E.createEquipment(s,'tide-mail',c);
- assert.equal(E.zoneUnlocked(s,'orbit-dock',0),false);
- E.createEquipment(s,'storm-charm',c);
+ s.bossHunt.kills.tempest=1;
  assert.equal(E.zoneUnlocked(s,'orbit-dock',0),true);
  Object.assign(c,{area:'tide-gate',zone:1});
  const w=new World(s);

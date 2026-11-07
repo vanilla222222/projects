@@ -58,10 +58,11 @@ test('Astral Reach quests connect NPCs, workstations, hidden rooms, boss and com
   dialogue=Talk.conversationTopic(s,c,dialogue,'work');
   assert.equal(dialogue.mode,'ready',JSON.stringify(E.questStatus(s,q.id,c).tasks));
   assert.ok(Talk.completeConversationQuest(s,c,dialogue,npc));
+  if(q.id==='orbit-arrival')assert.ok(E.useExpansion(s,c,'orbit-expedition-chest'));
   assert.equal(Talk.completeConversationQuest(s,c,dialogue,npc),false);
  }
  assert.ok(s.story['orbit-eventide'].done);
- assert.equal((c.bag['astral-completion-token']||0)+(c.overflow['astral-completion-token']||0),1);
+ assert.equal((c.bag['astral-completion-token']||0)+(c.overflow['astral-completion-token']||0),0);
  assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
 });
 

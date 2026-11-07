@@ -1,10 +1,9 @@
 import {recordQuestAction} from './quest-content.mjs?v=45';
-import {NEW_RESOURCES} from './expansion-content.mjs?v=45';
-import {areaById,ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=45';
+import {areaById,GATHER_NODES,ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=45';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={fishing:'Fishing',bugcatching:'Bug Catching',digging:'Digging',foraging:'Foraging',materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}
-export function carryType(id){if(NEW_RESOURCES[id])return NEW_RESOURCES[id].skill;return ['copper','iron','gold'].includes(id)?'mining':['oak','birch','jungle-wood'].includes(id)?'logging':id==='tonic'||POTIONS[id]||FOODS[id]?'food':'materials';}
+export function carryType(id){if(GATHER_NODES[id])return GATHER_NODES[id].skill;return ['copper','iron','gold'].includes(id)?'mining':['oak','birch','jungle-wood'].includes(id)?'logging':id==='tonic'||POTIONS[id]||FOODS[id]?'food':'materials';}
 export function stackLimit(c,id){return Math.floor((1+(c.accountBonuses?.carry||0)+(c.accountBonuses?.[carryType(id)+'Carry']||0))*(BAG_STACK+(c.usedCapacityBags||[]).reduce((n,key)=>n+(CAPACITY_BAGS[key]?.type===carryType(id)?CAPACITY_BAGS[key].bonus:0),0)));}
 export function bagCapacity(c){return 16+(c.usedExpansions||[]).reduce((n,id)=>n+(EXPANSIONS[id]?.target==='bag'?EXPANSIONS[id].slots:0),0);}
 export function chestCapacity(s){return 24+(s.usedChestExpansions||[]).reduce((n,id)=>n+(EXPANSIONS[id]?.target==='chest'?EXPANSIONS[id].slots:0),0);}

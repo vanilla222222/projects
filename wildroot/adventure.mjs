@@ -1,3 +1,4 @@
+import {worldSkillBonus} from './world-rewards.mjs';
 import {recordQuestAction} from './quest-content.mjs?v=45';
 import {FOODS,CARDS,ANVIL_PRODUCTS,STONES,EQUIPMENT,MERITS,WORLD_TASKS,DAILY_TASKS,CARD_COLLECTIONS} from './content.mjs?v=45';
 import * as I from './inventory.mjs?v=45';
@@ -26,7 +27,7 @@ export const anvilPoints=c=>3+Math.floor(Math.sqrt(c.skills.smithing/12))+c.anvi
 export function chooseProduct(c,id,s){if(!s||!serviceAccess(s,c,'anvil','upgrade')||!ANVIL_PRODUCTS[id]||!productOpen(c,id))return false;c.anvil.product=id;c.anvil.progress=0;return true;}
 export function upgradeAnvil(c,id,s){if(!s||!serviceAccess(s,c,'anvil','upgrade')||!['speed','capacity','xp'].includes(id)||anvilPoints(c)<1)return false;c.anvil.upgrades[id]++;return true;}
 export function buyAnvilPoint(s,c){const cost=Math.ceil(15*1.25**c.anvil.purchased);if(!serviceAccess(s,c,'anvil','upgrade')||c.anvil.purchased>=40||s.coins<cost)return false;s.coins-=cost;c.anvil.purchased++;return true;}
-export function claimAnvil(s,c,id){if(!serviceAccess(s,c,'anvil','claim')||!ANVIL_PRODUCTS[id])return 0;const n=Math.min(c.anvil.stored[id]||0,I.carryRoom(c,id));if(!n)return 0;I.carry(c,id,n);c.anvil.stored[id]-=n;c.skills.smithing+=n*ANVIL_PRODUCTS[id].xp*(1+c.anvil.upgrades.xp*.05);s.metrics.anvil+=n;return n;}
+export function claimAnvil(s,c,id){if(!serviceAccess(s,c,'anvil','claim')||!ANVIL_PRODUCTS[id])return 0;const n=Math.min(c.anvil.stored[id]||0,I.carryRoom(c,id));if(!n)return 0;I.carry(c,id,n);c.anvil.stored[id]-=n;c.skills.smithing+=n*ANVIL_PRODUCTS[id].xp*(1+c.anvil.upgrades.xp*.05+worldSkillBonus(c,'smithing',EQUIPMENT));s.metrics.anvil+=n;return n;}
 export const furnaceRecipes={copper:{bar:'copper-bar',seconds:8,fuel:1},iron:{bar:'iron-bar',seconds:14,fuel:2,unlock:'ironworking'},gold:{bar:'gold-bar',seconds:24,fuel:2,unlock:'gilding'}};
 export function configureFurnace(s,c,i,ore){const f=s.furnaces[i],r=furnaceRecipes[ore];if(!serviceAccess(s,c,'foundry','upgrade')||!f||!r||f.oreCount||f.output||r.unlock&&!s.recipeUnlocks.includes(r.unlock))return false;f.ore=ore;f.progress=0;return true;}
 export function loadFurnace(s,c,i,kind,n=10){const f=s.furnaces[i],field=kind==='fuel'?'fuel':'oreCount',cap=kind==='fuel'?100:200;if(!serviceAccess(s,c,'foundry','upgrade')||!f||!['fuel','ore'].includes(kind)||!Number.isInteger(n)||n<1||f[field]+n>cap||!I.pay(s,{[kind==='fuel'?'charcoal':f.ore]:n},c))return false;f[field]+=n;f.owner=c.id;return true;}

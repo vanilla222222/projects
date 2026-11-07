@@ -24,7 +24,7 @@ test('Remote actions cannot spend materials or claim production before their own
 });
 test('Anvil pages consume crafted books once and critical blueprints have guaranteed quest sources',()=>{
  const{s,c}=setup();stock(s);visit(s,c,'anvil');const iron=D.RECIPES.find(r=>r.id==='iron-blade');
- assert.equal(E.recipeOpen(s,iron),false);E.unlock(s,'ironworking');assert.equal(E.recipeOpen(s,iron),false);assert.match(E.blueprintHint(s,iron),/Expansion 2/);
+ assert.equal(E.recipeOpen(s,iron),false);E.unlock(s,'ironworking');assert.equal(E.recipeOpen(s,iron),true);assert.match(E.blueprintHint(s,iron),/Under the Roots/);
  assert.ok(E.craft(s,c,'anvil-expansion-2'));assert.equal(c.bag['anvil-expansion-2'],1);assert.ok(E.useAnvilExpansion(s,c,2));assert.equal(c.bag['anvil-expansion-2'],0);assert.equal(E.useAnvilExpansion(s,c,2),false);assert.ok(E.recipeOpen(s,iron));
  assert.equal(E.useAnvilExpansion(s,c,3),false);E.unlock(s,'gilding');assert.ok(E.craft(s,c,'anvil-expansion-3'));assert.ok(E.useAnvilExpansion(s,c,3));assert.ok(E.recipeOpen(s,D.RECIPES.find(r=>r.id==='gold-blade')));
  assert.doesNotThrow(()=>restore(s));
@@ -81,7 +81,7 @@ test('Every combat route scales increasingly faster and rewards cannot replace e
 });
 
 test('Recipe page browsing keeps a local station focused and shows only its selected page',()=>{
- const{s,c}=setup();visit(s,c,'anvil');const page1=Panels.anvil(s,c,{recipePage:1}),page2=Panels.anvil(s,c,{recipePage:2});assert.match(page1,/PAGE 1/);assert.match(page1,/data-select-recipe="anvil-expansion-2"/);assert.doesNotMatch(page1,/data-select-recipe="iron-blade"/);assert.match(page2,/data-select-recipe="iron-blade"/);assert.doesNotMatch(page2,/data-select-recipe="blade"/);assert.doesNotMatch(page1,/data-recipe-filter="alchemy"/);
+ const{s,c}=setup();visit(s,c,'anvil');const page1=Panels.anvil(s,c,{recipePage:1}),page2=Panels.anvil(s,c,{recipePage:2});assert.match(page1,/WORLD 1/);assert.match(page1,/data-select-recipe="anvil-expansion-2"/);assert.match(page1,/data-select-recipe="iron-blade"/);assert.match(page2,/data-select-recipe="gear-tide-mail"/);assert.doesNotMatch(page2,/data-select-recipe="blade"/);assert.doesNotMatch(page1,/data-recipe-filter="alchemy"/);
 });
 test('Both town shops require their own physical position for viewing',()=>{
  const{s,c}=setup();assert.equal(E.serviceAccess(s,c,'shop'),false);visit(s,c,'shop');assert.ok(E.serviceAccess(s,c,'shop'));c.area='jungle-town';c.position={x:1200,y:644};assert.ok(E.serviceAccess(s,c,'shop'));c.position.x=1700;assert.equal(E.serviceAccess(s,c,'shop'),false);
