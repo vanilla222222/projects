@@ -1190,7 +1190,44 @@ function nameOf(key, tiles) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_craft = { RECIPES, ITEMS, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
+// Each chapter's optional fights unlock after its main fight. They never gate the
+// next chapter. Keep the journal and summon checks on the same order.
+const BOSS_CHAPTERS = [
+  ['kingslime', 'briarwarden', 'windmillwarden', 'mirebrood'],
+  ['hollloweye', 'thunderbird', 'desertscourge', 'rimehorn', 'pinemaw', 'orchidqueen',
+    'reedking', 'claybehemoth', 'sunmane', 'cragbreaker', 'breakwatercrab'],
+  ['furnacewarden', 'rootcrown', 'aurorawraith', 'winterroot', 'amberroot', 'fenwidow',
+    'granitecolossus', 'cairnshade', 'ochredrake', 'sunscarab', 'buriedstandard',
+    'sporecrown', 'bloodcrest', 'reefleviathan', 'saltmarrow'],
+  ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],
+  ['voidsovereign'],
+  ['riftarchon']
+];
+
+const BOSS_PREREQUISITES = new Map();
+for (const [index, [main, ...optional]] of BOSS_CHAPTERS.entries()) {
+  BOSS_PREREQUISITES.set(main, BOSS_CHAPTERS[index - 1]?.[0] || null);
+  for (const boss of optional) BOSS_PREREQUISITES.set(boss, main);
+}
+
+function bossPrerequisite(key, defeated) {
+  const required = BOSS_PREREQUISITES.get(key);
+  return required && !defeated.has(required) ? required : null;
+}
+
+function restoreBossProgress(saved) {
+  const defeated = new Set(saved || []);
+  let latest = -1;
+  for (const [index, [main]] of BOSS_CHAPTERS.entries()) {
+    if (defeated.has(main)) latest = index;
+  }
+  // Older worlds could fight these out of order. A recorded later main win
+  // preserves access to earlier chapters when those worlds load.
+  for (let i = 0; i < latest; i += 1) defeated.add(BOSS_CHAPTERS[i][0]);
+  return defeated;
+}
+
+const EXPORTS_craft = { RECIPES, ITEMS, BOSS_CHAPTERS, bossPrerequisite, restoreBossProgress, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
     classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe,

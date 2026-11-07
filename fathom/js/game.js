@@ -238,6 +238,11 @@ function makeGame(canvas, deps) {
       statsModule.heal(stats, use.heal);
     } else if (use.summon !== undefined) {
       if (!swarm) return true;
+      const required = craft.bossPrerequisite(use.summon, defeatedBosses);
+      if (required) {
+        say('Defeat ' + enemyModule.BY_KEY[required].name + ' first', 2.4);
+        return true;
+      }
       if (use.night && light.solarElevation(state.dayPhase) >= 0) {
         say('Wait until night', 1.8);
         return true;
@@ -1217,46 +1222,26 @@ function makeGame(canvas, deps) {
       if (rank < 2) rows.push('Build a Furnace, then craft an Anvil at a Work Bench using ' + recipeLine('anvil') + '.');
     }
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
-    for (const [boss, title, summon, hint] of [
-      ['kingslime', 'King Slime', 'slimecrown', 'Iron-tier side fight. A win brings down a meteor.'],
-      ['hollloweye', 'The Hollow Eye', 'bloodshotlens', 'Summon at night. Its lens improves ranged combat.'],
-      ['furnacewarden', 'Furnace Warden', 'cinder-idol', 'Summon in Hell. Forge an Ashvault Key from a core.'],
-      ['ashguardian', 'Ashvault Guardian', 'guardian-effigy', 'Bring the key to an Ashvault in the Trench.'],
-      ['briarwarden', 'Briar Warden', 'briar-idol', 'Optional. Summon on the Forest surface.'],
-      ['rootcrown', 'Root Crown', 'rootcrown-idol', 'Optional. Summon in the deep Forest.'],
-      ['thunderbird', 'Thunderbird', 'storm-feather', 'Optional. Summon on the Desert surface.'],
-      ['desertscourge', 'Desert Scourge', 'desert-medallion', 'Optional. Summon in the Underground Desert.'],
-      ['rimehorn', 'Rimehorn', 'rime-horn', 'Optional. Summon on the Tundra surface.'],
-      ['aurorawraith', 'Aurora Wraith', 'aurora-lantern', 'Optional. Summon in the deep Tundra.'],
-      ['orchidqueen', 'Orchid Queen', 'orchid-lure', 'Optional. Summon on the Jungle surface.'],
-      ['amberroot', 'Amberroot Strangler', 'amberroot-idol', 'Optional. Summon in the deep Jungle.'],
-      ['reedking', 'Reed King', 'reed-sigil', 'Optional. Summon on the Mire surface.'],
-      ['fenwidow', 'Blackfen Widow', 'blackfen-spool', 'Optional. Summon in the deep Mire.'],
-      ['cragbreaker', 'Cragbreaker', 'crag-totem', 'Optional. Summon on the Highlands surface.'],
-      ['cairnshade', 'Cairnshade', 'cairn-bell', 'Optional. Summon in the deep Highlands.'],
-      ['claybehemoth', 'Clay Behemoth', 'clay-effigy', 'Optional. Summon on the Badlands surface.'],
-      ['ochredrake', 'Ochre Drake', 'ochre-sigil', 'Optional. Summon in the deep Badlands.'],
-      ['sunmane', 'Sunmane', 'sunmane-idol', 'Optional. Summon on the Savanna surface.'],
-      ['sunscarab', 'Sun Court Scarab', 'sun-court-seal', 'Optional. Summon in the deep Savanna.'],
-      ['pinemaw', 'Pinemaw', 'pine-totem', 'Optional. Summon on the Taiga surface.'],
-      ['winterroot', 'Winterroot Keeper', 'winterroot-bell', 'Optional. Summon in the deep Taiga.'],
-      ['windmillwarden', 'Windmill Warden', 'windmill-token', 'Optional. Summon on the Plains surface.'],
-      ['buriedstandard', 'Buried Standard', 'standard-pennant', 'Optional. Summon in the deep Plains.'],
-      ['sporecrown', 'Spore Crown', 'spore-idol', 'Optional. Summon in the Blight at the surface layer.'],
-      ['hollowroot', 'Hollowroot', 'hollowroot-sigil', 'Optional. Summon in the Blight at the deep layer.'],
-      ['bloodcrest', 'Bloodcrest', 'bloodcrest-lure', 'Optional. Summon in the Crimson at the surface layer.'],
-      ['veinwarden', 'Vein Warden', 'vein-seal', 'Optional. Summon in the Crimson at the deep layer.'],
-      ['reefleviathan', 'Reef Leviathan', 'reef-conch', 'Optional. Summon in the Ocean at the surface layer.'],
-      ['abyssaleye', 'Abyssal Eye', 'abyssal-signal', 'Optional. Summon in the Ocean at the deep layer.'],
-      ['breakwatercrab', 'Breakwater Crab', 'breakwater-shell', 'Optional. Summon in the Shore at the surface layer.'],
-      ['saltmarrow', 'Saltmarrow', 'saltmarrow-token', 'Optional. Summon in the Shore at the deep layer.'],
-      ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
-      ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
-      ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
-      ['riftarchon', 'Rift Archon', 'rift-sigil', 'Use a Void Heart to summon the final boss in the Void.']
-    ]) {
-      rows.push((defeatedBosses.has(boss) ? 'Defeated · ' : '') + title + ' · ' + hint);
-      if (!defeatedBosses.has(boss)) rows.push(craft.nameOf(summon, tiles) + ' · ' + recipeLine(summon));
+    const summons = new Map(Object.entries(craft.ITEMS)
+      .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
+    const mainHints = {
+      kingslime: 'Its defeat brings down a meteor.',
+      hollloweye: 'Summon at night. Its lens improves ranged combat.',
+      furnacewarden: 'Summon in Hell. Forge an Ashvault Key from a core.',
+      ashguardian: 'Bring the key to an Ashvault in the Trench.',
+      voidsovereign: 'Mine Void Crystals with an Emberite Pickaxe.',
+      riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.'
+    };
+    for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
+      rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
+      for (const boss of [main, ...optional]) {
+        const [summon, item] = summons.get(boss);
+        const required = craft.bossPrerequisite(boss, defeatedBosses);
+        const done = defeatedBosses.has(boss);
+        const status = done ? 'Defeated' : required ? 'Locked until ' + enemyModule.BY_KEY[required].name : 'Unlocked';
+        rows.push((boss === main ? 'Main' : 'Optional') + ' · ' + enemyModule.BY_KEY[boss].name + ' · ' + status);
+        if (!done) rows.push(item.name + ' · ' + recipeLine(summon) + ' · ' + (mainHints[boss] || item.text));
+      }
     }
     ui.showTown('Progression Journal', rows, [{ label: 'Back to Town Hall', run: checkHousing }]);
   }
@@ -2109,7 +2094,7 @@ function makeGame(canvas, deps) {
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
     townDevices = worldRecord.townDevices || [];
     completedOrders = new Set(worldRecord.completedOrders || []);
-    defeatedBosses = new Set(worldRecord.defeatedBosses || []);
+    defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
