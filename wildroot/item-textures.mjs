@@ -1,3 +1,4 @@
+import {PIXEL_STYLE,finishSprite,drawSprite} from './pixel-style.mjs?v=50';
 import {ITEMS,EQUIPMENT,FOODS,POTIONS,GATHER_NODES} from './content.mjs?v=45';
 // Original 32px inventory sprites. Families determine anatomy; an item's material,
 // cut, surface grain, fittings and engraved motif give it its own visible texture.
@@ -14,7 +15,7 @@ export function textureFamily(id){const d=EQUIPMENT[id],skill=GATHER_NODES[id]?.
  if(/expansion|book/.test(id))return'book';if(/token|completion/.test(id))return'token';if(/key/.test(id))return'key';if(/heart/.test(id))return'heart';if(/bar/.test(id))return'bar';if(/plank|charcoal/.test(id))return'log';if(/thread|fiber/.test(id))return'thread';if(/nail/.test(id))return'nails';if(/brick|clay/.test(id))return'clay';if(/seed/.test(id))return'seed';if(/petal|leaf/.test(id))return'leaf';if(/fang/.test(id))return'fang';if(/wing/.test(id))return'wing';if(/shell|scale|husk/.test(id))return'shell';if(/hide|slime/.test(id))return'hide';if(/ember|flame/.test(id))return'flame';if(/pearl/.test(id))return'pearl';if(/seal|relic|legend/.test(id))return'relic';if(/dust/.test(id))return'dust';if(/sculpting/.test(id))return'chisel';if(/stone|crystal|shard|splinter|fragment|rare/.test(id))return'crystal';return'curio';
 }
 function makeTexture(id){
- const item=ITEMS[id],seed=hash(id),family=textureFamily(id),base=EQUIPMENT[id]?.gatherTier&&id.startsWith('tide-')?['','#b8a270','#679bdb','#527bbc'][EQUIPMENT[id].gatherTier]:/mining-tonic/.test(id)?'#78a7ca':/logging-tonic/.test(id)?'#8eb775':/battle-tonic/.test(id)?'#d48c79':/ward-tonic/.test(id)?'#b298ce':Object.entries(named).find(([key])=>id.includes(key))?.[1]||['#92b6ab','#ac95b9','#c4a57b','#86a9b9','#b8b77f'][seed%5],palette={o:'#24383c',s:shade(base,-48),b:base,l:shade(base,34),w:'#f1e4bd',g:['#edc777','#85d5c3','#c1a7e5','#d3dd8c'][seed%4],wood:'#92704e',iron:'#a8bec3'},pixels=Array(SIZE*SIZE).fill(null);
+ const item=ITEMS[id],seed=hash(id),family=textureFamily(id),base=EQUIPMENT[id]?.gatherTier&&id.startsWith('tide-')?['','#b8a270','#679bdb','#527bbc'][EQUIPMENT[id].gatherTier]:/mining-tonic/.test(id)?'#78a7ca':/logging-tonic/.test(id)?'#8eb775':/battle-tonic/.test(id)?'#d48c79':/ward-tonic/.test(id)?'#b298ce':Object.entries(named).find(([key])=>id.includes(key))?.[1]||['#92b6ab','#ac95b9','#c4a57b','#86a9b9','#b8b77f'][seed%5],palette={o:PIXEL_STYLE.outline,s:shade(base,-48),b:base,l:shade(base,34),w:'#f1e4bd',g:['#edc777','#85d5c3','#c1a7e5','#d3dd8c'][seed%4],wood:'#92704e',iron:'#a8bec3'},pixels=Array(SIZE*SIZE).fill(null);
  const r=(x,y,w,h,k)=>{for(let yy=Math.max(0,Math.round(y));yy<Math.min(SIZE,Math.round(y+h));yy++)for(let xx=Math.max(0,Math.round(x));xx<Math.min(SIZE,Math.round(x+w));xx++)pixels[yy*SIZE+xx]=palette[k]||k;};
  const line=(x,y,a,b,k,width=1)=>{const n=Math.max(Math.abs(a-x),Math.abs(b-y));for(let i=0;i<=n;i++)r(Math.round(x+(a-x)*i/(n||1)),Math.round(y+(b-y)*i/(n||1)),width,width,k);};
  const oval=(x,y,rx,ry,k)=>{for(let yy=Math.floor(y-ry);yy<=y+ry;yy++)for(let xx=Math.floor(x-rx);xx<=x+rx;xx++)if(((xx-x)/rx)**2+((yy-y)/ry)**2<=1)r(xx,yy,1,1,k);};
@@ -73,9 +74,9 @@ function makeTexture(id){
  // number/badge pasted over an otherwise identical shared icon.
  let rng=seed;for(let i=0;i<44;i++){rng=(Math.imul(rng,1664525)+1013904223)>>>0;const x=3+rng%26,y=3+(rng>>>8)%26,at=y*SIZE+x;if(pixels[at]&&pixels[at]!==palette.o)pixels[at]=[palette.l,palette.s,palette.g][i%3];}
  const runs=[];for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;){const color=pixels[y*SIZE+x];let end=x+1;while(end<SIZE&&pixels[y*SIZE+end]===color)end++;if(color)runs.push({x,y,w:end-x,color});x=end;}
- return{id,family,pixels,runs,width:SIZE,height:SIZE};
+ return{id,family,base,palette,...finishSprite(pixels,SIZE,SIZE,{outline:false})};
 }
 export function itemTexture(id){if(!ITEMS[id])return null;if(!cache.has(id))cache.set(id,makeTexture(id));return cache.get(id);}
 export function itemTextureSvg(id,cls='item-art'){const t=itemTexture(id);if(!t)return'';const safe=String(cls).replace(/[^a-zA-Z0-9 _-]/g,'');if(!t.dataUrl){const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges">${t.runs.map(p=>`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="1" fill="${p.color}"/>`).join('')}</svg>`;t.dataUrl='data:image/svg+xml;base64,'+btoa(svg);}return`<svg class="${safe}" viewBox="0 0 32 32" aria-hidden="true" data-item-texture="${id}"><image width="32" height="32" href="${t.dataUrl}" style="image-rendering:pixelated"/></svg>`;}
 
-export function drawItemTexture(g,id,x,y,size=26){const t=itemTexture(id);if(!t)return false;g.save();g.translate(x-size/2,y-size);g.scale(size/32,size/32);for(const p of t.runs){g.fillStyle=p.color;g.fillRect(p.x,p.y,p.w,1);}g.restore();return true;}
+export function drawItemTexture(g,id,x,y,size=26){const t=itemTexture(id);if(!t)return false;drawSprite(g,t,x-size/2,y-size,size/32);return true;}

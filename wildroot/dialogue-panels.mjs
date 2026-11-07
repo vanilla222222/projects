@@ -2,7 +2,7 @@ import {questRewardPlan} from './reward-progression.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
 import * as C from './conversations.mjs?v=45';
-import {portrait,esc,fmt} from './ui-art.mjs?v=49';
+import {portrait,esc,fmt} from './ui-art.mjs?v=50';
 const button=(text,data,disabled=false)=>`<button ${data} ${disabled?'disabled':''}>${text}</button>`;
 export function questRewards(q,s=null,c=null){const plan=s&&c?questRewardPlan(s,c,q):null,r=plan?{...q.reward,coins:plan.coins,items:plan.items}:q.reward;return[`${r.coins||0} coins`,'20 base character XP',...(plan?.replacementCoins?[plan.replacementCoins+' coins included for previously earned upgrades']:[]),...Object.entries(r.items||{}).map(([id,n])=>`${n} ${D.ITEMS[id].name}${D.EXPANSIONS[id]?' (+'+D.EXPANSIONS[id].slots+' '+(D.EXPANSIONS[id].target==='bag'?'personal':'shared chest')+' slots)':D.CAPACITY_BAGS[id]?' (+'+D.CAPACITY_BAGS[id].bonus+' '+D.CAPACITY_BAGS[id].type+' / stack)':''}`),...(r.recipes||[]).map(id=>id.replaceAll('-',' ')+' blueprints'),...(r.secrets||[]).map(id=>D.SECRETS[id].name+' passage'),...(r.permit?['Rootwarden gate access']:[]),...(r.complete?['World One story completion']:[]),...(r.liquid?[r.liquid+' alchemy liquid']:[]),...(r.guild?['Permanent roster workshop bonus']:[])].join(' · ');}
 export function npcDialogue(s,c,t,now=0){

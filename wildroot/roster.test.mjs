@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
-import * as R from './roster.mjs?v=45';import * as UI from './roster-panels.mjs?v=49';
-import * as Parity from './parity-panels.mjs?v=49';
+import * as R from './roster.mjs?v=45';import * as UI from './roster-panels.mjs?v=50';
+import * as Parity from './parity-panels.mjs?v=50';
 import {World} from './world.mjs?v=49';
 const setup=()=>{const s=E.freshSave(1000),a=E.selected(s);s.unlockedClasses=['warrior'];E.createCharacter(s,'Second');const b=E.selected(s);s.active=a.id;const w=new World(s);return{s,a,b,w};};
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

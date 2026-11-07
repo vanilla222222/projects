@@ -286,3 +286,6 @@ Runtime 43–45 follow-up: rebuilt the teleport atlas with illustrated regions, 
 
 
 Visual refresh (runtime 49): forest-green controls, warm-paper panels, consistent type and focus states across the HUD and menus; distinct class portraits; 316 unique original item textures shared by inventory, recipes, rewards and ground loot. The atlas supports anchored zoom, fit-world, reset and drag panning. Dialog content stays in its own bounded grid row even when the tab bar is hidden. Full live desktop/mobile visual QA still depends on browser availability.
+
+
+World art pass (runtime 50): player and NPC sprites, class portraits, all 58 enemy textures, trees, buildings, resource nodes, terrain edges, ladders and atlas landmarks now share the item art’s dark contour, warm highlights and stepped pixel shading. Equipped armour changes actor colours and held weapons reuse the actual item artwork. Tidewild creatures have region palettes and attached crests rather than floating identifier marks. Coasts, dunes and highlands have distinct backdrops. Cached raster sprites and viewport culling retain the existing rendering budget; map geometry and progression are unchanged.

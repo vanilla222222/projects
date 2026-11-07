@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
-import * as UI from './adventure-panels.mjs?v=49';import * as Parity from './parity-panels.mjs?v=49';
+import * as UI from './adventure-panels.mjs?v=50';import * as Parity from './parity-panels.mjs?v=50';
 import {commonLootSeconds} from './assignment-forecast.mjs?v=45';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

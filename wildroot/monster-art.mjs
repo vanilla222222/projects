@@ -1,13 +1,13 @@
+import {PIXEL_STYLE,shade,finishSprite,drawSprite,spriteSvg} from './pixel-style.mjs?v=50';
 import {EXPANSION_AREAS} from './expansion-content.mjs?v=45';
 // Hand-authored pixel textures: silhouettes, anatomy and surface patterns are species-specific.
 const SIZE=48;
 function art(colors,paint,description,motion='bob'){
- const palette={o:'#1b2530',w:'#f4e9c4',e:'#10191d',...colors},pixels=Array(SIZE*SIZE).fill(null);
+ const palette={o:PIXEL_STYLE.outline,w:PIXEL_STYLE.light,e:'#142a27',...colors},pixels=Array(SIZE*SIZE).fill(null);
  const r=(x,y,w,h,k)=>{for(let j=Math.max(0,y);j<Math.min(SIZE,y+h);j++)for(let i=Math.max(0,x);i<Math.min(SIZE,x+w);i++)pixels[j*SIZE+i]=palette[k];};
  const line=(x,y,a,b,k)=>{const n=Math.max(Math.abs(a-x),Math.abs(b-y));for(let i=0;i<=n;i++)r(Math.round(x+(a-x)*i/(n||1)),Math.round(y+(b-y)*i/(n||1)),1,1,k);};
  const oval=(x,y,rx,ry,k)=>{for(let j=Math.floor(y-ry);j<=y+ry;j++)for(let i=Math.floor(x-rx);i<=x+rx;i++)if(((i-x)/rx)**2+((j-y)/ry)**2<=1)r(i,j,1,1,k);};
- paint(r,line,oval);const runs=[];for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;){const color=pixels[y*SIZE+x];let end=x+1;while(end<SIZE&&pixels[y*SIZE+end]===color)end++;if(color)runs.push({x,y,w:end-x,color});x=end;}
- return{pixels,runs,description,motion};
+ paint(r,line,oval,pixels);return{...finishSprite(pixels,SIZE,SIZE,{description}),motion};
 }
 export const MONSTER_ART={
  'forest-0':art({b:'#78ad65',l:'#c4df7b',s:'#487e62',f:'#edc071'},(r,l,o)=>{o(24,34,17,12,'o');o(24,33,15,11,'b');r(14,20,19,8,'b');r(16,19,10,3,'l');r(12,36,6,6,'s');r(34,31,4,7,'s');r(18,28,4,5,'e');r(29,28,4,5,'e');r(19,28,1,2,'w');r(24,37,4,2,'s');r(17,15,4,7,'s');r(20,12,7,4,'l');r(24,10,5,3,'b');r(10,29,2,2,'l');r(32,40,3,2,'l');},'Moss dome with a leaf sprout and translucent lime patches'),
@@ -40,21 +40,24 @@ export const MONSTER_ART={
 };
 MONSTER_ART.tempest=art({b:'#426c8d',l:'#a5d8d8',s:'#253d65',g:'#f5d68f'},(r,l,o)=>{o(24,25,19,15,'s');o(24,24,16,13,'b');for(let i=0;i<5;i++){l(9+i*7,20,12+i*6,7,'l');r(8+i*7,7,6,4,'g');}r(11,26,27,8,'l');r(14,25,6,4,'g');r(29,25,6,4,'g');for(const side of [-1,1]){l(24+side*15,30,24+side*21,40,'b');l(24+side*10,35,24+side*16,47,'l');r(24+side*21-3,35,6,8,'g');}o(24,30,5,7,'s');o(24,30,3,5,'g');},'Stormglass sovereign with a five-spired shell, lantern eyes, coral claws and a luminous tidal heart','sway');
 export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;return MONSTER_ART[id]?id:null;}
-export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.sin(time*2)*5:Math.sin(time*3)*1.5;g.save();g.translate(Math.round(x),Math.round(y+bob));const scale=boss?5:2.3;g.scale(scale,scale);g.fillStyle='#16243055';g.fillRect(-17,-1,34,3);g.translate(-24,-48);for(const p of a.runs){g.fillStyle=p.color;g.fillRect(p.x,p.y,p.w,1);}if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#d6a4ed':'#f1d68b';for(let i=0;i<3;i++)g.fillRect(17+i*6,9-i%2*3,4,4);}g.restore();return true;}
-const svgCache=new Map();
-export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);if(!id)return'';const key=id+':'+cls;if(svgCache.has(key))return svgCache.get(key);const a=MONSTER_ART[id],svg=`<svg class="${cls}" viewBox="0 0 48 48" aria-hidden="true" shape-rendering="crispEdges">${a.runs.map(p=>`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="1" fill="${p.color}"/>`).join('')}</svg>`;svgCache.set(key,svg);return svg;}
+export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.round(Math.sin(time*2)*3):Math.round(Math.sin(time*3)),scale=boss?5:2.3;g.fillStyle='#24383c33';g.fillRect(Math.round(x-17*scale),Math.round(y-2),34*scale,4);drawSprite(g,a,x-24*scale,y-48*scale+bob,scale);if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#c2a7da':'#e3c47c';for(let i=0;i<3;i++)g.fillRect(Math.round(x+(i*6-7)*scale),Math.round(y-41*scale-i%2*3),4*scale,4*scale);}return true;}
+
+export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);return id?spriteSvg(MONSTER_ART[id],cls):'';}
 
 // Tidewild silhouettes have area anatomy, then room-specific crests and palettes.
 for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i)=>{
- const hue=(region*41+i*23+175)%360,b=`hsl(${hue} 35% 53%)`,l=`hsl(${hue} 55% 76%)`,s=`hsl(${hue} 25% 29%)`,f=`hsl(${(hue+65)%360} 65% 68%)`;
- MONSTER_ART[a.id+'-'+i]=art({b,l,s,f},(r,line,oval)=>{
-  const shape=(region+i)%5;
+ const colours=({depths:['#6899bb','#81738f','#a99874'],'tide-shore':['#9ba991','#b78c71','#699da8'],'tide-marsh':['#879a69','#b49a62','#779f99'],'tide-dunes':['#c0a17a','#a88d78','#c7b98e'],'tide-bramble':['#8c9c72','#ab8a8d','#6e8a8a'],'tide-hunt':['#aa886f','#8e819c','#a9a185'],'tide-cliffs':['#7b98a8','#8b829e','#b0aa8d']})[a.id]||['#7b9b87','#b29877','#8d90a6'],b=colours[i%3],l=shade(b,34),s=shade(b,-38),f=colours[(i+1)%3];
+ MONSTER_ART[a.id+'-'+i]=art({b,l,s,f},(r,line,oval,pixels)=>{
+  const shape=({depths:[5,3,2],'tide-shore':[0,0,4,5,1],'tide-marsh':[1,1,1,6,2],'tide-dunes':[0,5,2,2],'tide-bramble':[3,3,4,3],'tide-hunt':[3,3,4,3,3],'tide-cliffs':[1,0,3,2]})[a.id]?.[i]??(region+i)%5;
   if(shape===0){oval(24,31,15,10,'o');oval(24,30,13,8,'b');for(let n=0;n<3;n++){line(12,28+n*4,4,24+n*7,'s');line(35,28+n*4,44,24+n*7,'s');}r(9,17,6,11,'f');r(34,17,6,11,'f');r(19,25,3,4,'e');r(28,25,3,4,'e');}
   if(shape===1){oval(11,22,9,13,'s');oval(37,22,9,13,'s');oval(11,20,7,10,'l');oval(37,20,7,10,'b');r(21,15,7,23,'b');r(21,14,8,6,'f');r(22,17,2,2,'e');r(27,17,2,2,'e');line(21,14,16,6,'s');line(28,14,33,6,'s');}
   if(shape===2){r(13,23,22,17,'b');r(8,20,8,20,'s');r(34,20,8,20,'s');r(16,40,7,7,'s');r(28,40,7,7,'s');r(17,11,15,13,'l');r(19,16,4,3,'e');r(27,16,3,3,'e');r(22,29,5,7,'f');}
   if(shape===3){oval(22,31,15,10,'b');r(30,18,11,15,'b');r(9,38,5,9,'s');r(28,38,5,9,'s');r(34,23,2,3,'e');r(38,30,7,4,'s');line(10,29,3,19,'f');line(32,19,28,7,'l');line(36,19,41,8,'l');}
   if(shape===4){oval(24,27,12,13,'b');oval(24,24,8,9,'l');r(19,22,3,4,'e');r(28,22,3,4,'e');line(13,29,3,15,'s');line(34,29,44,15,'s');line(22,39,17,47,'f');line(27,39,33,47,'f');}
-  for(let bit=0;bit<7;bit++)r(4+bit*6,3,3,((region*8+i)>>bit)&1?8:3,'f');
-  for(let n=0;n<=i;n++){r(15+n*4,8+(n%2)*3,3,5,'f');r(14+n*4,33+(n%2)*4,2,2,'l');}
+  if(shape===5){oval(24,30,17,12,'s');oval(24,26,16,13,'b');oval(24,24,11,9,'l');for(let n=0;n<4;n++)line(14+n*6,20,13+n*6,33,'s');r(37,27,8,8,'b');r(40,28,2,2,'e');r(12,39,5,7,'s');r(30,39,5,7,'s');}
+  if(shape===6){for(let n=0;n<5;n++){const x=7+n*7,y=31+Math.round(Math.sin(n*1.6)*7);oval(x,y,6,5,'s');oval(x,y-2,5,3,'b');}oval(38,23,7,7,'l');r(39,21,3,3,'e');line(12,29,16,18,'f',2);line(25,30,29,20,'f',2);}
+  // Crests grow from the silhouette rather than floating as an identifier row.
+  for(let bit=0;bit<7;bit++){const x=8+bit*5;let top=8;while(top<40&&!pixels[top*SIZE+x])top++;if(top<40){const h=1+(((region*8+i)>>bit)&1)*4;line(x,top,x,Math.max(2,top-h),'f',2);}}
+  for(let n=0;n<=i;n++)r(14+n*4,33+(n%2)*4,2,2,'l');
  },a.names[i]+' — distinct Tidewild anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
 });

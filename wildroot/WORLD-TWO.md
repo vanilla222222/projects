@@ -53,3 +53,6 @@ Desktop and mobile live visual verification remains outstanding when the preview
 
 
 Runtime 49 refreshes the interface with a forest-and-paper visual system across the HUD, menus, inventory, recipes, NPCs and atlas. All 316 current items have distinct, locally generated pixel textures, reused in item panes and ground loot. Class portraits have separate hats, tools and silhouettes. Texture generation and SVG image payloads are cached; menus do not create hundreds of SVG rectangle DOM nodes per item. Dialog sections have explicit grid rows so hiding an empty tab bar cannot displace the scrollable body.
+
+
+Runtime 50 unifies actors and environments with the item textures. Natural Tidewild palettes, creature anatomy, coastal water horizons, dune/highland silhouettes, pixel resource patches and shared atlas landmarks replace the mismatched art. Players keep class silhouettes and visible equipped armour/weapons. The shared renderer caches bitmaps and merges pixel spans; offscreen details are culled while collision and navigation remain unchanged. Representative forest, cave, coast and town frames were rendered with the actual canvas drawing code for visual inspection; this does not replace live browser interaction checks.

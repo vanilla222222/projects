@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';import * as UI from './ui-panels.mjs?v=49';
+import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';import * as UI from './ui-panels.mjs?v=50';
 import {WORLD_TWO,EXPANSION_AREAS,ADVANCEMENTS,NEW_RESOURCES,SKILL_TOOLS,RESOURCE_POLICY} from './expansion-content.mjs?v=45';
 import {World,createMap} from './world.mjs?v=49';import {pointFor,roomLayout} from './layouts.mjs?v=49';
 import {assignCharacter} from './roster.mjs?v=45';

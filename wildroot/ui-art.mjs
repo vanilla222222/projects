@@ -1,4 +1,5 @@
-import {itemTextureSvg} from './item-textures.mjs?v=49';
+import {characterSvg} from './player-art.mjs?v=50';
+import {itemTextureSvg} from './item-textures.mjs?v=50';
 import {ITEMS,EQUIPMENT,CLASSES} from './content.mjs?v=45';
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const fmt=n=>Math.floor(n||0).toLocaleString();
@@ -40,18 +41,7 @@ const shapes={
 };
 export function icon(kind='star',color='#e8c67c',cls='ui-icon'){return`<svg class="${cls}" viewBox="0 0 32 32" aria-hidden="true" shape-rendering="geometricPrecision"><g fill="${color}33" stroke="${color}" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter">${shapes[kind]||shapes.star}</g></svg>`;}
 export function itemArt(id,cls='item-art'){return itemTextureSvg(id,cls)||icon('gem','#d8cba2',cls);}
-export function portrait(c,cls='character-art'){
- const col=c.color||CLASSES[c.class]?.color||'#a19163',skin='#e6be91',dark='#293c36',rect=(x,y,w,h,fill)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
- let body=rect(9,68,31,4,'#283d3626')+rect(15,50,8,18,'#40514b')+rect(27,50,8,18,'#40514b')+rect(13,65,11,5,'#33433b')+rect(26,65,12,5,'#33433b')+rect(12,28,26,27,col)+rect(12,29,5,23,'#ffffff22')+rect(32,29,6,23,'#17372b33')+rect(8,32,6,20,skin)+rect(37,32,6,20,skin)+rect(16,8,22,21,skin)+rect(14,5,24,8,'#785d41')+rect(13,10,7,12,'#785d41')+rect(18,14,3,4,'#f5d1a2')+rect(28,17,3,3,dark)+rect(35,17,2,3,dark)+rect(29,24,5,2,'#b78c66')+rect(13,49,24,4,'#69543b')+rect(24,48,5,5,'#d6bc7e');
- if(c.class==='warrior')body+=rect(12,7,28,6,'#acbabb')+rect(13,10,5,15,'#7f9696')+rect(36,10,4,14,'#7f9696')+rect(25,2,5,7,'#c89b66')+rect(10,28,11,7,'#91a7a0')+rect(32,28,9,7,'#91a7a0')+rect(40,32,3,27,'#dbe3cb')+rect(35,51,13,3,'#c8a862');
- if(c.class==='mage')body+=`<path d="M13 6h29l-8-18-9 7-4 11Z" fill="${col}"/>`+rect(10,5,34,5,'#4d758b')+rect(16,9,24,3,'#c7be85')+rect(18,32,4,18,'#d8c589')+rect(41,21,3,44,'#977348')+rect(37,17,11,10,'#7cc2c4')+rect(39,18,3,4,'#d2e8c4');
- if(c.class==='blacksmith')body+=rect(18,30,18,25,'#775a41')+rect(19,32,3,18,'#ad8253')+rect(21,40,12,8,'#5b4c3b')+rect(38,34,3,31,'#a7885e')+rect(32,29,16,10,'#91a7ad')+rect(33,29,14,3,'#c7d5c7')+rect(18,7,20,3,'#566b5b');
- if(c.class==='enchanter')body+=rect(14,6,26,5,'#b1a1cc')+rect(24,5,5,7,'#e4d295')+rect(15,29,7,18,'#d6c7a0')+rect(33,29,4,18,'#d6c7a0')+rect(40,24,3,37,'#817386')+`<path d="m42 16 7 9-7 9-7-9Z" fill="#c1a9e2"/>`+rect(40,22,3,6,'#eee0bd');
- if(c.class==='alchemist')body+=rect(6,31,7,25,'#6e8054')+rect(7,33,4,9,'#b7b779')+rect(15,28,21,5,'#ded3ae')+rect(24,33,5,14,'#b4b694')+rect(39,44,7,12,'#86bda8')+rect(41,38,3,6,'#c2d9b8')+rect(38,52,9,4,'#c4df86')+rect(14,8,25,4,'#748c60');
- if(!c.class)body+=rect(7,30,8,23,'#927f57')+rect(8,31,5,6,'#b6a377')+rect(19,31,4,16,'#d2bf83');
- if(c.loadout?.head)body+=rect(13,5,27,6,'#abbdb3')+rect(13,11,5,11,'#859e94')+rect(36,11,4,11,'#859e94');
- return`<svg class="${String(cls).replace(/[^a-zA-Z0-9 _-]/g,'')}" viewBox="0 -12 50 86" aria-hidden="true" shape-rendering="crispEdges">${body}</svg>`;
-}
+export function portrait(c,cls='character-art'){return characterSvg(c,cls);}
 
 export const section=(title,body,cls='')=>`<section class="ledger-box ${cls}"><h3 class="ledger-title">${title}</h3>${body}</section>`;
 export function tabs(entries,active,attribute){return`<div class="rpg-tabs" role="tablist">${entries.map(([id,name])=>`<button role="tab" aria-selected="${id===active}" ${attribute}="${id}" class="${id===active?'selected':''}">${name}</button>`).join('')}</div>`;}
