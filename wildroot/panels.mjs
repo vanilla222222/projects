@@ -1,6 +1,6 @@
-import {assignment as rosterAssignment} from './roster-panels.mjs?v=49';
+import {assignment as rosterAssignment} from './roster-panels.mjs?v=50';
 import {upgradeSource,questRewardPlan} from './reward-progression.mjs?v=45';
-import {food} from './adventure-panels.mjs?v=49';
+import {food} from './adventure-panels.mjs?v=50';
 import * as D from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {abilitySet,abilityAvailable} from './world.mjs?v=49';

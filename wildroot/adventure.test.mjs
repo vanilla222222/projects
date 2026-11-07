@@ -1,7 +1,7 @@
 import {seedKill,seedStory} from './test-fixtures.mjs?v=45';
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
-import * as UI from './adventure-panels.mjs?v=49';import {World} from './world.mjs?v=49';
+import * as UI from './adventure-panels.mjs?v=50';import {World} from './world.mjs?v=49';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const roundtrip=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 test('Food moves exact unlocked stacks and heals only a living character below half health',()=>{const{s,c}=setup();E.give(c,'bread',12);const i=E.bagSlots(c).findIndex(t=>t?.id==='bread');E.toggleSlotLock(c,i);assert.equal(E.equipFood(c,0,i,5),false);E.toggleSlotLock(c,i);assert.ok(E.equipFood(c,0,i,5));assert.equal(c.bag.bread,7);assert.equal(c.foodSlots[0].count,5);assert.equal(E.useFood(c,40),false);c.hp=10;assert.ok(E.useFood(c,40));assert.equal(c.hp,40);assert.equal(c.foodSlots[0].count,4);c.hp=10;assert.equal(E.useFood(c,40,19),false);assert.ok(E.useFood(c,40,1));c.hp=0;assert.equal(E.useFood(c,40,30),false);assert.ok(E.unequipFood(c,0));assert.equal(c.bag.bread,10);assert.equal(c.foodSlots[0],null);assert.doesNotThrow(()=>roundtrip(s));});

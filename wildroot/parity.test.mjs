@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
-import * as UI from './parity-panels.mjs?v=49';
+import * as UI from './parity-panels.mjs?v=50';
 import {World,abilitySet} from './world.mjs?v=49';
 import {roomLayout,pointFor} from './layouts.mjs?v=49';
 const setup=()=>{const s=E.freshSave(1000);return{s,c:E.selected(s)};};

@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
 import * as R from './reward-progression.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=49';
-import {questRewards} from './dialogue-panels.mjs?v=49';
+import * as UI from './ui-panels.mjs?v=50';
+import {questRewards} from './dialogue-panels.mjs?v=50';
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));
 function ready(s,c,id){const q=D.STORY.find(q=>q.id===id);for(const before of q.requires)c.journey.story[before]={accepted:true,done:true};c.journey.story[id]={accepted:true,done:false,extrasVersion:1};Object.assign(c.journey.kills,q.kills);Object.assign(c.journey.events,q.actions);for(const room of q.visits||[])c.journey.visited[room]=true;if(q.minigame)c.minigames.best[q.minigame.skill]=q.minigame.score;for(const[k,n]of Object.entries(q.deliver||{}))s.inventory[k]=n;s.unlockedClasses=Object.keys(D.CLASSES);return q;}
 test('Quest storage rewards grant actual usable personal and shared slots, once',()=>{

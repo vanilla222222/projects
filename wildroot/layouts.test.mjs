@@ -6,7 +6,7 @@ import * as E from './engine.mjs?v=45';
 import {AREAS,SECRETS} from './content.mjs?v=45';
 import {World,createMap,GROUND} from './world.mjs?v=49';
 import {roomLayout,ROOM_KEYS} from './layouts.mjs?v=49';
-import {viewFor} from './scene.mjs?v=49';
+import {viewFor} from './scene.mjs?v=50';
 const rooms=()=>[...AREAS.flatMap(a=>a.zones.map((_,i)=>({area:a.id,index:i}))),...Object.entries(SECRETS).map(([secret,d])=>({area:d.area,index:d.zone,secret})),{area:'jungle-town',index:2,boss:true}];
 const open=()=>{const s=E.freshSave();for(const a of AREAS)for(let i=0;i<a.zones.length;i++)seedKill(s,`${a.id}-${i}`,12);s.storyFlags.bossPermit=true;s.storyFlags.complete=true;s.worldCompletionCrafted=true;s.secretUnlocks=['sunwell'];s.stars.unlocked=true;return s;};
 const tick=(w,t)=>{for(let i=0;i<t*50;i++)w.step(.02);};
