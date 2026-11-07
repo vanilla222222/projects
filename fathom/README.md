@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 159 enemies including twenty-four bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 172 enemies including twenty-six bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -276,3 +276,12 @@ the trapped Sunken Sun Court in the deep Savanna. Some court chests are Gilt Mim
 
 Use a Sunmane Idol on the surface or a Sun Court Seal in the deep Savanna to
 summon Sunmane or the Sun Court Scarab. Both bosses are optional.
+
+
+### Taiga expansion
+
+Find Pinewatch Huts on the surface, Resinworks in the caves, and Winterroot
+Barrows in the deep Taiga. Some barrow chests awaken as Pitchlock Mimics.
+
+Use a Pine Totem on the surface or a Winterroot Bell in the deep Taiga to
+summon Pinemaw or the Winterroot Keeper. Both bosses are optional.

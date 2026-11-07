@@ -827,7 +827,8 @@ const MARSH_SITES = ['Reedwalk Post', 'Drowned Pumpworks', 'Blackfen Ossuary'];
 const HIGHLAND_SITES = ['Crag Watch', 'Echo Quarry', 'Granite Sepulcher'];
 const BADLAND_SITES = ['Claybreak Camp', 'Redstone Kiln', 'Ochre Catacomb'];
 const SAVANNA_SITES = ['Acacia Waystation', 'Termite Galleries', 'Sunken Sun Court'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES };
+const TAIGA_SITES = ['Pinewatch Hut', 'Resinworks', 'Winterroot Barrow'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
@@ -875,23 +876,27 @@ function biomeSiteTile(site, x, y) {
   const highland = site.biome === 'highlands';
   const badlands = site.biome === 'badlands';
   const savanna = site.biome === 'savanna';
-  const material = savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const taiga = site.biome === 'taiga';
+  const material = taiga ? ['pinewood', 'granite', 'slate'][site.layer] : savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
   if (site.layer === 0) {
     // A roof and posts over an open camp rather than a sealed underground room.
     if (row === (Math.abs(dx) > 8 ? 2 : Math.abs(dx) > 4 ? 1 : 0)) return idOf(material);
-    if (Math.abs(dx) === 11 && row >= 3) return idOf(savanna ? 'acacialog' : jungle ? 'mahoganylog' : tundra ? 'pinelog' : desert ? 'sandstone' : 'oaklog');
+    if (Math.abs(dx) === 11 && row >= 3) return idOf(savanna ? 'acacialog' : jungle ? 'mahoganylog' : tundra || taiga ? 'pinelog' : desert ? 'sandstone' : 'oaklog');
   } else {
     if (row === 0) return idOf(material);
     if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
   }
   if (dx >= 7 && dx <= 8 && row >= floor - 2) {
-    const chest = site.mimic ? (badlands || savanna ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
+    const chest = site.mimic ? (badlands || savanna || taiga ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
     return cellOf(chest, dx - 7, row - floor + 2).id;
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (taiga && site.layer === 0 && row === floor - 1 && dx === -7) return idOf('pinebench');
+  if (taiga && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('furnace');
+  if (taiga && site.layer === 2 && row === floor - 1 && (dx === -5 || dx === -4)) return idOf('glacier-spikes');
   if (savanna && site.layer === 0 && row === floor - 1 && dx === -7) return idOf('acaciabench');
   if (savanna && site.layer === 1 && row === floor - 5 && (dx < -3 || dx > 3)) return idOf('acaciaplatform');
   if (savanna && site.layer === 2 && row === floor - 1 && (dx === -6 || dx === -5)) return idOf('ashvault-spikes');

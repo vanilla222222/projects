@@ -108,7 +108,11 @@ const ARCHETYPES = {
   sunscarab: { gravity: 0, boss: true, flies: true, speed: 5.8, hoverAbove: 3, drift: 3,
     chargeEvery: 3.9, windUp: 1.15, chargeSpeed: 30, chargeFor: 0.78, spawnEvery: 4.8,
     minion: 'courtcarapace', minions: 2, enrageAt: 0.47, enrageSpeed: 1.28,
-    enrageCharge: 0.60, enrageWindUp: 0.68, followUp: 0.48 }
+    enrageCharge: 0.60, enrageWindUp: 0.68, followUp: 0.48 },
+  winterroot: { gravity: 0, boss: true, flies: true, speed: 5.4, hoverAbove: 4, drift: 4,
+    chargeEvery: 4, windUp: 1.15, chargeSpeed: 29, chargeFor: 0.8, spawnEvery: 5.1,
+    minion: 'winterbark', minions: 2, enrageAt: 0.46, enrageSpeed: 1.28,
+    enrageCharge: 0.59, enrageWindUp: 0.69, followUp: 0.46 }
 
 };
 
@@ -532,6 +536,33 @@ const ENEMIES = [
     damage: 57, weight: 0, w: 4.6, h: 3.1, colour: '#c49e55', boss: true, summonOnly: true, emit: 6,
     drops: [['chitin', 13], ['coin', 870]], bossDrops: ['sun-carat'] },
 
+  ...[
+    ['pinehare', 'Pine Hare', 'surface', 'walker', 'lizard', 37, 10, '#b6a18a', 'leather'],
+    ['needlejay', 'Needle Jay', 'surface', 'flyer', 'bird', 46, 12, '#788d9e', 'feather'],
+    ['barkscarab', 'Bark Scarab', 'surface', 'crawler', 'beetle', 51, 13, '#847558', 'chitin'],
+    ['sleetowl', 'Sleet Owl', 'surface', 'flyer', 'bird', 55, 14, '#a4b5b8', 'feather'],
+    ['resinborer', 'Resin Borer', 'caves', 'worm', 'worm', 94, 21, '#a88a62', 'wormtooth'],
+    ['pitchmite', 'Pitch Mite', 'caves', 'crawler', 'spider', 88, 20, '#806d6a', 'chitin'],
+    ['pinewisp', 'Pine Wisp', 'caves', 'flyer', 'cloud', 83, 18, '#86a499', 'glowmoss'],
+    ['winterbark', 'Winterbark', 'deep', 'walker', 'golem', 195, 31, '#80949d', 'pinelog'],
+    ['barroweye', 'Barrow Eye', 'deep', 'flyer', 'eye', 156, 26, '#a094b6', 'lens'],
+    ['needlebones', 'Needle Bones', 'deep', 'walker', 'skeleton', 183, 29, '#bdc2b1', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: ['golem', 'skeleton'].includes(body) ? 1.9 : 1,
+    biomes: ['taiga'], layers: [layer], emit: key === 'pinewisp' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'taigamimic', name: 'Pitchlock Mimic', kind: 'walker', body: 'mimic', hp: 365,
+    damage: 40, weight: 0, w: 1.8, h: 1.5, colour: '#827c64', hiddenSpawn: true,
+    drops: [['pitchlock-fang', 2], ['coin', 175]] },
+  { key: 'pinemaw', name: 'Pinemaw', kind: 'king', body: 'lizard', hp: 2300,
+    damage: 42, weight: 0, w: 4.3, h: 3, colour: '#887153', boss: true, summonOnly: true, emit: 3,
+    drops: [['pinelog', 15], ['coin', 500]], bossDrops: ['pinemaw-claw'] },
+  { key: 'winterroot', name: 'Winterroot Keeper', kind: 'winterroot', body: 'golem', hp: 4300,
+    damage: 55, weight: 0, w: 4.4, h: 3.3, colour: '#8ba6aa', boss: true, summonOnly: true, emit: 6,
+    drops: [['crystal', 8], ['coin', 840]], bossDrops: ['winterroot-core'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -636,7 +667,8 @@ const GAIT = {
   fenwidow: { perTile: 0.46, perSecond: 10 },
   cairnshade: { perTile: 0.43, perSecond: 9 },
   ochredrake: { perTile: 0.45, perSecond: 9 },
-  sunscarab: { perTile: 0.47, perSecond: 9 }
+  sunscarab: { perTile: 0.47, perSecond: 9 },
+  winterroot: { perTile: 0.44, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------
