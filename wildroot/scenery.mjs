@@ -5,8 +5,43 @@ const line=(g,points,c,w=4)=>{g.strokeStyle=c;g.lineWidth=w;g.beginPath();points
 const circle=(g,x,y,r,c)=>{const step=Math.max(2,Math.round(r/12));for(let yy=-r;yy<=r;yy+=step){const half=Math.sqrt(Math.max(0,r*r-yy*yy));rect(g,x-half,y+yy,half*2,step,c);}};
 function gear(g,x,y,r,t,c){g.save();g.translate(x,y);g.rotate(t);for(let i=0;i<12;i++){g.rotate(Math.PI/6);rect(g,-r*.12,-r*1.12,r*.24,r*.3,c);}circle(g,0,0,r,c);circle(g,0,0,r*.68,'#273647');for(let i=0;i<6;i++){g.rotate(Math.PI/3);rect(g,-r*.07,-r*.8,r*.14,r*.75,c);}circle(g,0,0,r*.2,'#d1ad77');g.restore();}
 function trunk(g,x,bottom,top,w,c){rect(g,x-w/2,top,w,bottom-top,c);for(let i=0;i<5;i++)rect(g,x-w*.4+i*w*.17,top+30+(i%2)*80,8,bottom-top-60,'#162d302b');}
+function horizonLandmark(g,layout,coastal,space,voidSky,cave){
+ const x=layout.width*.31,d=layout.design;
+ g.save();g.globalAlpha=.32;
+ if(space&&!voidSky){
+  // A small station silhouette sets scale against the planet.
+  const y=305;
+  rect(g,x-78,y-10,156,20,d.rock);rect(g,x-24,y-32,48,60,d.rock);
+  for(const side of [-1,1]){
+   const panel=x+side*64;
+   rect(g,panel-32,y-25,64,35,d.rock);
+   for(let i=0;i<4;i++)rect(g,panel-26+i*15,y-21,2,26,d.trim);
+  }
+  rect(g,x-12,y-18,24,5,d.trim);
+ }else if(coastal){
+  const y=300;
+  rect(g,x-23,y-100,46,100,d.rock);rect(g,x-28,y-106,56,11,d.rock);
+  rect(g,x-13,y-128,26,22,d.rock);rect(g,x-8,y-123,16,11,d.trim);
+  rect(g,x-64,y-4,128,6,d.rock);
+ }else if(cave){
+  const y=440;
+  for(const [offset,w,h] of [[-67,22,50],[-30,34,85],[14,25,61],[49,17,39]]){
+   const xx=x+offset;
+   g.fillStyle=d.rock;g.beginPath();g.moveTo(xx,y);g.lineTo(xx,y-h+14);g.lineTo(xx+w*.6,y-h);g.lineTo(xx+w,y-h+12);g.lineTo(xx+w,y);g.fill();
+   rect(g,xx+w*.6,y-h+12,3,h*.44,d.trim);
+  }
+ }else if(!voidSky){
+  const y=445;
+  rect(g,x-10,y-132,20,132,d.rock);
+  for(const [offset,dy,w,h] of [[-54,-155,83,36],[-34,-181,77,39],[3,-150,67,32]]){
+   rect(g,x+offset,y+dy,w,h,d.rock);
+   rect(g,x+offset+12,y+dy-5,w-26,6,d.trim);
+  }
+ }
+ g.restore();
+}
 export function drawRoomBackdrop(g,layout,v,t){
- const d=layout.design,depth=layout.minY,seed=[...layout.key].reduce((n,c)=>n+c.charCodeAt(0),0),cave=/caves|deep|depths|vault/.test(layout.key),voidSky=d.motif.startsWith('void:'),space=/^(orbit|void):/.test(d.motif),night=/orbit|lanterns|observatory|rootcrown/.test(d.motif),coastal=/tide-shore|tide-town|tide-gate/.test(layout.key),dunes=/tide-dunes/.test(layout.key),highland=/tide-hunt|tide-cliffs/.test(layout.key);
+ const d=layout.design,depth=layout.minY,seed=[...layout.key].reduce((n,c)=>n+c.charCodeAt(0),0),cave=/caves|deep|depths|vault/.test(layout.key),voidSky=d.motif.startsWith('void:'),space=/^(orbit|void):/.test(d.motif),night=/orbit|lanterns|observatory|rootcrown/.test(d.motif),coastal=/tide-shore|tide-town|tide-gate|void-reef/.test(layout.key),dunes=/tide-dunes/.test(layout.key),highland=/tide-hunt|tide-cliffs/.test(layout.key);
  const grad=g.createLinearGradient(0,0,0,720);grad.addColorStop(0,d.sky[0]);grad.addColorStop(1,d.sky[1]);g.fillStyle=grad;g.fillRect(0,0,v.width,720);
  g.save();g.translate(-v.x*.16,-v.y*.12);
  if(space){for(let i=0;i<54;i++)rect(g,(i*137+seed*3)%layout.width,(i*71+seed)%900-180,2+i%3,2+i%3,i%5?'#d9e8ffaa':'#bd87ff');const x=layout.width*.18;circle(g,x,150,95,voidSky?'#281932':'#967ac3');g.save();g.translate(x,150);g.rotate(-.25);g.strokeStyle='#d8a6e78a';g.lineWidth=10;g.beginPath();g.ellipse(0,0,154,29,0,0,Math.PI*2);g.stroke();g.restore();}
@@ -24,6 +59,7 @@ export function drawRoomBackdrop(g,layout,v,t){
   else if(cave){rect(g,x,low,80,h,d.rock+'55');rect(g,x+10,low+h,35,70,d.rock+'44');rect(g,x+30,550-h,75,h+350,d.rock+'44');}
   else{g.fillStyle=d.rock+'55';g.beginPath();g.moveTo(x-200,680);g.lineTo(x,220+(i*31+seed)%180);g.lineTo(x+250,680);g.fill();trunk(g,x,800,low+120,35,d.rock+'55');circle(g,x,low+140,100,d.rock+'44');}
  }
+ horizonLandmark(g,layout,coastal,space,voidSky,cave);
  g.restore();
  // Weather stays decorative: no random state or gameplay effects.
  const weather=d.weather;

@@ -681,3 +681,21 @@ for(const [id,name,heal,cost] of [
  item(id,name,'rare','♨');FOODS[id]={name,heal,cooldown:18};
  RECIPES.push({id,name,world:4,station:'alchemy',skill:'alchemy',output:id,count:4,cost});
 }
+
+// The three return expeditions each reward a different kind of progress.
+item('pattern-ravine-axe','Blueprint · Ravine Hewing Axe','rare','▤');
+item('ravine-axe','Ravine Hewing Axe','rare','⚒');
+EQUIPMENT['ravine-axe']={name:'Ravine Hewing Axe',slot:'axe',stats:{logging:.95},gatherTier:8,gatherEfficiency:245};
+RECIPES.push({id:'gear-ravine-axe',name:'Ravine Hewing Axe',world:4,station:'anvil',skill:'smithing',equipment:'ravine-axe',dropBlueprint:'pattern-ravine-axe',cost:{'null-bar':5,'void-watch-hide':10,riftwood:12}});
+ENEMIES['void-watch-1'].loot.push({id:'pattern-ravine-axe',chance:.12});
+
+item('wrecklight-koi','Wrecklight Koi','rare','◇');
+GATHER_NODES['wrecklight-koi']={name:'Wrecklight Koi',skill:'fishing',level:17,tier:5,threshold:285};
+areaById('void-reef').resources[1].push('wrecklight-koi');
+item('wrecklight-chowder','Wrecklight Chowder','rare','♨');
+FOODS['wrecklight-chowder']={name:'Wrecklight Chowder',heal:690,cooldown:18};
+RECIPES.push({id:'wrecklight-chowder',name:'Wrecklight Chowder',world:4,station:'alchemy',skill:'alchemy',output:'wrecklight-chowder',count:4,cost:{'wrecklight-koi':4,gloamfruit:6}});
+
+item('sealed-orrery-relic','Sealed Orrery Relic','legendary','✦');
+CONSTELLATIONS.push({id:'sealed-orrery',name:'The Clockwork Orbit',area:'void-vault',zone:1,x:1480,y:644,type:'orrery',goal:1,text:'Defeat the Orrery Keeper and return to the constellation for the Sealed Orrery Relic.',reward:'sealed-orrery-relic'});
+OFFERINGS.push('pattern-ravine-axe','sealed-orrery-relic');

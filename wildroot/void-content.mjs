@@ -39,6 +39,7 @@ for(const a of VOID_AREAS){
  else a.resources=a.zones.map(()=>[]);
 }
 for(const [i,a] of RETRO_AREAS.entries()){
+ a.motif=['watchtower','reservoir','observatory'][i];
  a.names=[['Ravine Mite','Watchtower Sentinel'],['Reef Wisp','Wreck Guardian'],['Survey Drone','Orrery Keeper']][i];
  a.resources=a.zones.map(()=>[[ 'birch','silverfin','starwood'][i]]);
 }
@@ -57,9 +58,9 @@ export const VOID_PROJECTS={
  'void-quarry':{name:'Far Anchor Bridge',cost:{'void-fragments-hide':8,plank:8},xp:72},
  'void-hollows':{name:'Lamplight Span',cost:{'void-quarry-hide':8,'binding-resin':5},xp:84},
  'void-rim':{name:'Meridian Crossing',cost:{'void-relics-hide':8,'tempered-bar':4},xp:96},
- 'void-watch':{name:'Greenreach Ravine Bridge',cost:{birch:12,'void-fragments-hide':5},xp:72},
- 'void-reef':{name:'Cutaway Reef Catwalk',cost:{saltwillow:12,'void-fragments-hide':5},xp:72},
- 'void-vault':{name:'Orrery Maintenance Bridge',cost:{starwood:8,'void-quarry-hide':5},xp:84}
+ 'void-watch':{name:'Greenreach Ravine Bridge',reward:'The Watchtower Sentinel drops the Ravine Hewing Axe blueprint.',cost:{birch:12,'void-fragments-hide':5},xp:72},
+ 'void-reef':{name:'Cutaway Reef Catwalk',reward:'Fish for Wrecklight Koi below the wreck to make healing chowder.',cost:{saltwillow:12,'void-fragments-hide':5},xp:72},
+ 'void-vault':{name:'Orrery Maintenance Bridge',reward:'Defeat the Orrery Keeper and complete The Clockwork Orbit to recover a museum relic.',cost:{starwood:8,'void-quarry-hide':5},xp:84}
 };
 export const VOID_WORK={
  riftkeeping:{area:'void-landing',zone:3,output:'rift-shard',cost:{'void-fragments-hide':4},name:'Stabilize a rift'},
