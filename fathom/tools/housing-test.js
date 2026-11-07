@@ -304,6 +304,30 @@ function withoutTile(rows, ch) {
     'crafting did not consume and produce stored items');
 }
 
+{
+  const ids = new Set();
+  for (const order of villager.TOWN_ORDERS) {
+    ok(!ids.has(order.id), 'duplicate town order ' + order.id);
+    ids.add(order.id);
+    ok(!!villager.BY_KEY[order.sponsor], 'missing sponsor for ' + order.id);
+    for (const [key, count] of [...order.needs, ...order.rewards]) {
+      ok(count > 0 && craft.nameOf(key, tiles) !== key, order.id + ' uses unknown item ' + key);
+    }
+  }
+  const inventory = require('../js/inventory.js').makeInventory();
+  const order = villager.TOWN_ORDERS[0];
+  ok(villager.completeTownOrder(inventory, order, craft.kindOf) === 'missing', 'order accepted without supplies');
+  inventory.add({ key: 'gel', kind: 'loot' }, 8);
+  ok(villager.completeTownOrder(inventory, order, craft.kindOf) === 'complete', 'order could not be completed');
+  ok(inventory.countOf('gel') === 0 && inventory.countOf('torch') === 30 && inventory.countOf('coin') === 55,
+    'order did not exchange supplies and rewards');
+  inventory.add({ key: 'gel', kind: 'loot' }, 8);
+  const before = inventory.serialize();
+  const oversized = { ...order, rewards: [['torch', 1000000]] };
+  ok(villager.completeTownOrder(inventory, oversized, craft.kindOf) === 'full', 'oversized reward should fail');
+  ok(JSON.stringify(inventory.serialize()) === JSON.stringify(before), 'failed order changed the inventory');
+}
+
 console.log('\n' + villager.VILLAGERS.length + ' villagers: '
   + villager.VILLAGERS.map(v => v.name.replace(/^the /, '') + ' (' + v.wantsText + ')').join('; '));
 console.log(checks + ' checks, ' + failures + ' failures');

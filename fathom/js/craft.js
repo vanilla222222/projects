@@ -248,6 +248,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'trail-buckle': { name: 'Trail Buckle', colour: '#bd955f', text: 'Move 8% faster and take 20% less fall damage', speed: 1.08, fallMul: 0.8 },
+  'tidal-locket': { name: 'Tidal Locket', colour: '#62b9c6', text: 'Breath lasts twice as long and defence +3', breathMul: 2, defense: 3 },
+  'prism-brooch': { name: 'Prism Brooch', colour: '#b28ddd', text: 'Mana regenerates 25% faster and gives off light', manaRegen: 1.25, glow: 3 },
+  'forge-gauntlet': { name: 'Forge Gauntlet', colour: '#e18359', text: 'Melee damage +12% and lava damage reduced by 20%', melee: 1.12, lavaDamage: 0.8 },
   'cloud-charm': { name: 'Cloud Charm', colour: '#dfe7f2', text: 'Jump a second time in mid-air', doubleJump: true },
   'diving-gear': { name: 'Diving Gear', colour: '#4f9fd8', text: 'Breath lasts three times as long', breathMul: 3 },
   'feather-fall': { name: 'Feather Charm', colour: '#d8d2c2', text: 'Falls hurt far less', fallMul: 0.25 },
@@ -658,6 +662,10 @@ RECIPES.push(
   { out: { key: 'miners-charm', kind: 'accessory', count: 1 }, need: [['gold-bar', 8], ['crystal', 6]], station: 'anvil' },
   { out: { key: 'swift-boots', kind: 'accessory', count: 1 }, need: [['leather', 8], ['iron-bar', 10]], station: 'anvil' },
   { out: { key: 'shellguard', kind: 'accessory', count: 1 }, need: [['shell', 12], ['chitin', 8], ['iron-bar', 6]], station: 'anvil' },
+  { out: { key: 'trail-buckle', kind: 'accessory', count: 1 }, need: [['leather', 5], ['copper-bar', 3]], station: 'anvil' },
+  { out: { key: 'tidal-locket', kind: 'accessory', count: 1 }, need: [['shell', 12], ['sapphire', 2]], station: 'anvil' },
+  { out: { key: 'prism-brooch', kind: 'accessory', count: 1 }, need: [['topaz', 2], ['ruby', 2], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'forge-gauntlet', kind: 'accessory', count: 1 }, need: [['emberite-bar', 4], ['obsidian', 5], ['leather', 3]], station: 'anvil' },
   { out: { key: 'obsidian-charm', kind: 'accessory', count: 1 }, need: [['obsidian', 6], ['gold-bar', 2]], station: 'anvil' },
   { out: { key: 'cinder-idol', kind: 'use', count: 1 }, need: [['cinder', 8], ['emberite-bar', 3]], station: 'anvil' },
   { out: { key: 'warden-heart', kind: 'accessory', count: 1 }, need: [['furnace-core', 1], ['obsidian', 6]], station: 'anvil' },

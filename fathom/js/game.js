@@ -32,6 +32,7 @@ function makeGame(canvas, deps) {
   let minimap = null;
   let village = null;
   let townDevices = [];
+  let completedOrders = new Set();
   let storageItems = [];
   const PYLON_RADIUS = 45;
   const STORAGE_RADIUS = 24;
@@ -1117,7 +1118,7 @@ function makeGame(canvas, deps) {
     else if (room.valid) rows.unshift('This room is ready for a resident.');
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
-    const actions = [];
+    const actions = [{ label: 'Town Contracts', run: openTownOrders }];
     for (const spec of villagerModule.VILLAGERS) {
       const housed = village.list.some(v => v.key === spec.key);
       if (!housed && !available.has(spec.key)) {
@@ -1133,6 +1134,39 @@ function makeGame(canvas, deps) {
     }
     rows.push('Two occupied homes in range power a pylon. Shops discount prices in clusters of two or more.');
     ui.showTown('Town Hall', rows, actions);
+  }
+
+  function openTownOrders() {
+    const rows = [completedOrders.size + ' / ' + villagerModule.TOWN_ORDERS.length + ' completed in this world.',
+      'Visit a settlement to fulfill orders from its residents. Each order pays once.'];
+    const actions = [{ label: 'Back to Town Hall', run: checkHousing }];
+    const sponsors = new Set(village.list.filter(v =>
+      Math.hypot(v.home.x - state.player.x, v.home.y - state.player.y) <= PYLON_RADIUS).map(v => v.key));
+    const items = entries => entries.map(([key, count]) => count + ' ' + craft.nameOf(key, tiles)).join(', ');
+    let unavailable = 0;
+    for (const order of villagerModule.TOWN_ORDERS) {
+      if (completedOrders.has(order.id)) continue;
+      if (!sponsors.has(order.sponsor)) { unavailable += 1; continue; }
+      const ready = order.needs.every(([key, count]) => inventory.countOf(key) >= count);
+      actions.push({
+        label: (ready ? 'Complete ' : 'Needs supplies · ') + order.name + ' · ' + items(order.needs)
+          + ' → ' + items(order.rewards),
+        run() {
+          if (completedOrders.has(order.id) || !village.list.some(v => v.key === order.sponsor &&
+            Math.hypot(v.home.x - state.player.x, v.home.y - state.player.y) <= PYLON_RADIUS)) return;
+          const result = villagerModule.completeTownOrder(inventory, order, key => craft.kindOf(key));
+          if (result !== 'complete') {
+            say(result === 'full' ? 'Make room for the rewards' : 'Bring the listed supplies', 2);
+            return;
+          }
+          completedOrders.add(order.id);
+          say('Contract complete · ' + order.name, 2.5);
+          openTownOrders();
+        }
+      });
+    }
+    if (unavailable) rows.push(unavailable + ' more orders need other residents nearby.');
+    ui.showTown('Town Contracts', rows, actions);
   }
 
   function deviceAt(x, y) {
@@ -1891,6 +1925,7 @@ function makeGame(canvas, deps) {
       buffs: buffs ? buffs.serialize() : {},
       villagers: village ? village.serialize() : [],
       townDevices,
+      completedOrders: [...completedOrders],
       storageItems,
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
@@ -1925,6 +1960,7 @@ function makeGame(canvas, deps) {
     village = villagerModule.makeVillage(world, tiles, { housing });
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
     townDevices = worldRecord.townDevices || [];
+    completedOrders = new Set(worldRecord.completedOrders || []);
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
