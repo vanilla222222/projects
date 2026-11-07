@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 55 enemies including eight bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 68 enemies including ten bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -199,3 +199,15 @@ Use one of the Void Sovereign's hearts to craft a Rift Sigil and summon the Rift
 Archon in the Void. Forge its Rift Core into a Rift Pickaxe, then look in the
 underside of sky islands for Aetherite. An Aether Sabre and Aetherstep accessory
 can be crafted from the smelted ore.
+
+
+### Forest expansion
+
+The Forest has four surface enemies, three cave enemies, and three deep enemies.
+Look for a Ranger Camp on the surface, a Moss Shrine underground, and a Heartwood
+Vault in the deep Forest. Some vault chests are Heartwood Mimics that wake when
+opened or struck.
+
+The Briar Warden and Root Crown are optional summons. Use a Briar Idol on the
+Forest surface or a Root Crown Idol in its deep caverns. Each drops a material for
+its own accessory. The Mimic Clasp uses teeth from a Heartwood Mimic.

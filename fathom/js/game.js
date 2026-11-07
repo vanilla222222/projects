@@ -248,6 +248,10 @@ function makeGame(canvas, deps) {
         say('Bring an Ashvault Key forged from a Furnace Core', 2);
         return true;
       }
+      if (use.biome && worldgen.biomeAt(seed, Math.floor(state.player.x)).key !== use.biome) {
+        say('Use this in the Forest', 2);
+        return true;
+      }
       let arena;
       if (use.vault) {
         const x = Math.floor(state.player.x), y = Math.floor(state.player.y);
@@ -656,6 +660,11 @@ function makeGame(canvas, deps) {
       say('This seal must be opened with a key', 1.4);
       return;
     }
+    if (spec.chest === 'forest-mimic') {
+      wakeForestMimic(tiles.originOf(spec, aim.x, aim.y));
+      state.player.mining = null;
+      return;
+    }
     const wanted = mining.jobFor(diggingWall ? null : spec, diggingWall);
     if (!tool) {
       state.player.mining = null;
@@ -1005,6 +1014,16 @@ function makeGame(canvas, deps) {
   // case and walling the doorway up instead would be infuriating.
   // Open the chest under the cursor, or shut the one that is open. A chest is a
   // multi-tile object, so any of its four cells opens the same box.
+  function wakeForestMimic(origin) {
+    const mimic = swarm && swarm.wakeMimic(origin.x, origin.y);
+    if (mimic) {
+      breakMulti(origin);
+      sfx('roar');
+      say('That chest has teeth', 2);
+    }
+    return true;
+  }
+
   function useChest(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.chest) return false;
@@ -1014,6 +1033,7 @@ function makeGame(canvas, deps) {
     }
     const origin = tiles.originOf(spec, aim.x, aim.y);
     if (!origin) return false;
+    if (spec.chest === 'forest-mimic') return wakeForestMimic(origin);
     if (openChest && openChest.x === origin.x && openChest.y === origin.y) {
       closeChest();
       return true;
@@ -1198,6 +1218,8 @@ function makeGame(canvas, deps) {
       ['hollloweye', 'The Hollow Eye', 'bloodshotlens', 'Summon at night. Its lens improves ranged combat.'],
       ['furnacewarden', 'Furnace Warden', 'cinder-idol', 'Summon in Hell. Forge an Ashvault Key from a core.'],
       ['ashguardian', 'Ashvault Guardian', 'guardian-effigy', 'Bring the key to an Ashvault in the Trench.'],
+      ['briarwarden', 'Briar Warden', 'briar-idol', 'Optional. Summon on the Forest surface.'],
+      ['rootcrown', 'Root Crown', 'rootcrown-idol', 'Optional. Summon in the deep Forest.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1768,7 +1790,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=regions-1');
+      const worker = new Worker('workers/chunk.js?v=forest-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

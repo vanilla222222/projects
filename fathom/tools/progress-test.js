@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye'].includes(k)));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -138,6 +138,8 @@ function climb() {
     if (was.has('void-beacon')) gain('void-heart');
     if (was.has('mire-idol')) gain('mire-pearl');
     if (was.has('granite-idol')) gain('granite-eye');
+    if (was.has('briar-idol')) gain('briar-heart');
+    if (was.has('rootcrown-idol')) gain('rootcrown-core');
     if (was.has('rift-sigil')) gain('rift-core');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;
@@ -229,6 +231,8 @@ for (const [ore, previous] of Object.entries({
   ok(!mining.canMine(mining.TOOLS[earlier + '-pick'].power, tiles.BY_KEY[ore]), earlier + ' skips to ' + ore);
 }
 
+ok(ladder.arrived.get('briar-idol') < ladder.arrived.get('briar-brooch'), 'Briar reward bypasses its boss');
+ok(ladder.arrived.get('rootcrown-idol') < ladder.arrived.get('rootcrown-ring'), 'Root Crown reward bypasses its boss');
 ok(ladder.arrived.get('rift-core') < ladder.arrived.get('rift-pick')
   && ladder.arrived.get('rift-pick') < ladder.arrived.get('aetherite'), 'sky ore bypasses the Rift Archon');
 ok(mining.damagePerHit(250, tiles.BY_KEY.aetherite, mining.TOOLS['emberite-pick'].power) === 0,

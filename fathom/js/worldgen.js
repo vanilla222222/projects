@@ -817,7 +817,60 @@ function lootKindOf(key) {
 }
 
 // What is in the chest whose origin is here, before anybody has touched it.
+// One signature structure in each Forest depth band.
+const FOREST_SITE_SPACING = 144;
+const FOREST_SITES = ['Ranger Camp', 'Moss Shrine', 'Heartwood Vault'];
+const forestSite = cacheStructure((seed, slot) => {
+  const x = slot * FOREST_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
+  const surface = columnOf(seed, x).height;
+  if (biomeAt(seed, x - 14).key !== 'forest' || biomeAt(seed, x + 14).key !== 'forest'
+    || biomeAt(seed, x).key !== 'forest') return null;
+  const make = (layer, top, height) => ({ x, top, height, layer,
+    name: FOREST_SITES[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
+  return [make(0, surface - 7, 8),
+    make(1, SEA_LEVEL + 175 + Math.floor(unit(seed, slot, 0, 6317) * 330), 12),
+    make(2, SEA_LEVEL + 810 + Math.floor(unit(seed, slot, 0, 6319) * 335), 16)];
+});
+
+function forestSiteAt(seed, x, y) {
+  const alt = altitudeOf(y);
+  if (alt < -100 || alt > 1165) return null;
+  const sites = forestSite(seed, Math.floor(x / FOREST_SITE_SPACING));
+  if (!sites || Math.abs(x - sites[0].x) > 12) return null;
+  return sites.find(site => y >= site.top && (y < site.top + site.height
+    || (site.layer === 0 && y <= columnOf(seed, x).height))) || null;
+}
+
+function forestSiteTile(site, x, y) {
+  const dx = x - site.x, row = y - site.top, floor = site.height - 1;
+  const material = site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
+  if (row >= floor) return idOf(material);
+  if (site.layer === 0) {
+    // A roof and posts over an open camp rather than a sealed underground room.
+    if (row === (Math.abs(dx) > 8 ? 2 : Math.abs(dx) > 4 ? 1 : 0)) return idOf('oakwood');
+    if (Math.abs(dx) === 11 && row >= 3) return idOf('oaklog');
+  } else {
+    if (row === 0) return idOf(material);
+    if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
+  }
+  if (dx >= 7 && dx <= 8 && row >= floor - 2) {
+    const chest = site.mimic ? 'forest-mimic' : site.layer === 2 ? 'goldchest' : 'woodchest';
+    return cellOf(chest, dx - 7, row - floor + 2).id;
+  }
+  if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
+  if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (site.layer === 1 && row === floor - 5 && Math.abs(dx) < 8) return idOf('oakplatform');
+  if (site.layer === 1 && dx === -8 && row >= floor - 4) return idOf('rope');
+  if (site.layer === 2 && (dx === -4 || dx === 2) && row < floor - 3) return idOf(material);
+  return AIR;
+}
+
 function baseContainerAt(seed, x, y) {
+  const forest = forestSiteAt(seed, x, y);
+  if (forest && x === forest.x + 7 && y === forest.top + forest.height - 3) {
+    if (forest.mimic) return null;
+    return rollChest(seed, x, y, ['caves', 'deep', 'rich'][forest.layer], { unit, kindOf: lootKindOf });
+  }
   const vault = ashvaultAt(seed, x, y);
   if (vault && x === vault.x + 17 && y === vault.y + 8) {
     return [['vault-relic', 4], ['emberite-bar', 6], ['coin', 350]]
@@ -1057,6 +1110,8 @@ function weatherAt(seed, at, biomeKey) {
 
 function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
   const surface = column.height;
+  const forest = forestSiteAt(seed, x, y);
+  if (forest) return forestSiteTile(forest, x, y);
   // Above the ground: air, unless this column's ground lies below sea level, in which
   // case everything between the two is water. That single rule is the whole ocean.
   if (y < surface) {
@@ -1528,6 +1583,8 @@ function decorate(write, seed, x, yFrom, yTo) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
+  const forest = forestSiteAt(seed, x, y);
+  if (forest) return wallIdOf(forest.layer === 0 ? 'plankwall' : 'brickwall');
   const depth = y - column.height;
   if (depth < 0) {
     // A sky structure carries its own wall, so digging into an island leaves a room
@@ -1649,7 +1706,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
