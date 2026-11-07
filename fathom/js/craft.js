@@ -150,12 +150,15 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'furnace-core': { name: 'Furnace Core', kind: 'loot', colour: '#f28e59' },
+  'cinder-idol': { name: 'Cinder Idol', kind: 'use', colour: '#bd624e',
+    use: { summon: 'furnacewarden', layer: 'hell' }, text: 'Summons the Furnace Warden in Hell' },
   // A summon. Used where you stand, like everything else of kind `use`, and what it does
   // is put something in the world that will not leave until one of you is dead.
   slimecrown: { name: 'Slime Crown', kind: 'use', colour: '#e0c054',
     use: { summon: 'kingslime' }, text: 'Summons the King Slime' },
   bloodshotlens: { name: 'Bloodshot Lens', kind: 'use', colour: '#b4484f',
-    use: { summon: 'hollloweye' }, text: 'Summons the Hollow Eye. Use it at night.' }
+    use: { summon: 'hollloweye', night: true }, text: 'Summons the Hollow Eye. Use it at night.' }
 };
 
 // Armour. Four pieces rather than Terraria's three, because boots were asked for. Every
@@ -251,6 +254,10 @@ const ACCESSORIES = {
   'miners-charm': { name: "Miner's Charm", colour: '#c9a542', text: 'Mining power +15%', power: 1.15 },
   'swift-boots': { name: 'Swift Boots', colour: '#b5733c', text: 'Move 20% faster', speed: 1.2 },
   'shellguard': { name: 'Shellguard', colour: '#e8d8c6', text: 'Defence +5', defense: 5 },
+  'obsidian-charm': { name: 'Obsidian Charm', colour: '#534263',
+    text: 'Lava damage reduced by 45%', lavaDamage: 0.55 },
+  'warden-heart': { name: 'Warden Heart', colour: '#f28e59',
+    text: 'Health regenerates 40% faster and defence +4', regen: 1.4, defense: 4 },
   'ember-ward': { name: 'Ember Ward', colour: '#d2622f', text: 'Lava does not burn you', fireproof: true },
   'lantern-charm': { name: 'Glowstone Charm', colour: '#ffd79a', text: 'You give off light', glow: 9 },
 
@@ -297,7 +304,7 @@ const ACCESSORIES = {
 const EFFECT_FIELDS = {
   defense: 'add',
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
-  breathMul: 'mul', fallMul: 'mul',
+  breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max',
@@ -384,6 +391,8 @@ const WEAPONS = {
   'emerald-staff': { name: 'Emerald Staff', damage: 35, useTime: 0.36, reach: 32, magic: true, mana: 10, bolt: '#3fb56a' },
   'ruby-staff': { name: 'Ruby Staff', damage: 44, useTime: 0.34, reach: 34, magic: true, mana: 12, bolt: '#d8344c' },
   'diamond-staff': { name: 'Diamond Staff', damage: 57, useTime: 0.3, reach: 38, magic: true, mana: 14, bolt: '#bfe8f0' },
+  'furnace-lance': { name: 'Furnace Lance', damage: 64, useTime: 0.31, reach: 5.1 },
+  'cinder-scepter': { name: 'Cinder Scepter', damage: 66, useTime: 0.29, reach: 37, magic: true, mana: 12, bolt: '#ff995a' },
   'meteor-blaster': { name: 'Meteor Blaster', damage: 40, useTime: 0.14, reach: 34, magic: true, mana: 7, bolt: '#ffb05a' },
   'imp-staff': { name: 'Imp Staff', damage: 50, useTime: 0.26, reach: 30, magic: true, mana: 9, bolt: '#e2743a', drop: 'fireimp' },
 
@@ -563,7 +572,7 @@ const RECIPES = [
   // Work bench: the shaping station. Wood and stone into structure and the next stations.
   { out: { key: 'furnace', kind: 'block', count: 1 }, need: [['stone', 20], ['#wood', 4], ['torch', 3]], station: 'workbench' },
   { out: { key: 'brickwall', kind: 'wall', count: 4 }, need: [['stone', 1]], station: 'workbench' },
-  { out: { key: 'anvil', kind: 'block', count: 1 }, need: [['iron-bar', 5]], station: 'workbench' },
+  { out: { key: 'anvil', kind: 'block', count: 1 }, need: [['copper-bar', 5]], station: 'workbench' },
 
   // Wooden tools and armour. These take any wood, because gating a pickaxe on finding
   // one particular tree would be tedious rather than interesting.
@@ -581,7 +590,7 @@ const RECIPES = [
   { out: { key: 'silver-bar', kind: 'bar', count: 1 }, need: [['silver', 4]], station: 'furnace' },
   { out: { key: 'gold-bar', kind: 'bar', count: 1 }, need: [['gold', 4]], station: 'furnace' },
   { out: { key: 'cobalt-bar', kind: 'bar', count: 1 }, need: [['cobalt', 4]], station: 'furnace' },
-  { out: { key: 'emberite-bar', kind: 'bar', count: 1 }, need: [['emberite', 5]], station: 'furnace' },
+  { out: { key: 'emberite-bar', kind: 'bar', count: 1 }, need: [['emberite', 4], ['obsidian', 1]], station: 'furnace' },
   { out: { key: 'glass', kind: 'block', count: 2 }, need: [['sand', 2]], station: 'furnace' },
   { out: { key: 'meteor-bar', kind: 'bar', count: 1 }, need: [['meteorite', 4]], station: 'furnace' },
 
@@ -597,13 +606,13 @@ const RECIPES = [
   { out: { key: 'iron-pick', kind: 'tool', count: 1 }, need: [['iron-bar', 12], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'iron-axe', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'iron-hammer', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['#wood', 3]], station: 'anvil' },
-  { out: { key: 'silver-pick', kind: 'tool', count: 1 }, need: [['silver-bar', 12], ['#wood', 4]], station: 'anvil' },
-  { out: { key: 'gold-pick', kind: 'tool', count: 1 }, need: [['gold-bar', 12], ['#wood', 4]], station: 'anvil' },
-  { out: { key: 'cobalt-pick', kind: 'tool', count: 1 }, need: [['cobalt-bar', 15], ['#wood', 5]], station: 'anvil' },
-  { out: { key: 'emberite-pick', kind: 'tool', count: 1 }, need: [['emberite-bar', 18], ['#wood', 6]], station: 'anvil' },
+  { out: { key: 'silver-pick', kind: 'tool', count: 1 }, need: [['silver-bar', 8], ['#wood', 4]], station: 'anvil' },
+  { out: { key: 'gold-pick', kind: 'tool', count: 1 }, need: [['gold-bar', 9], ['#wood', 4]], station: 'anvil' },
+  { out: { key: 'cobalt-pick', kind: 'tool', count: 1 }, need: [['cobalt-bar', 11], ['#wood', 5]], station: 'anvil' },
+  { out: { key: 'emberite-pick', kind: 'tool', count: 1 }, need: [['emberite-bar', 13], ['#wood', 6]], station: 'anvil' },
   { out: { key: 'copper-sword', kind: 'tool', count: 1 }, need: [['copper-bar', 8], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'iron-sword', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['#wood', 3]], station: 'anvil' },
-  { out: { key: 'silver-sword', kind: 'tool', count: 1 }, need: [['silver-bar', 10], ['#wood', 4]], station: 'anvil' },
+  { out: { key: 'silver-sword', kind: 'tool', count: 1 }, need: [['silver-bar', 8], ['#wood', 4]], station: 'anvil' },
   { out: { key: 'gold-sword', kind: 'tool', count: 1 }, need: [['gold-bar', 10], ['#wood', 4]], station: 'anvil' },
   { out: { key: 'cobalt-sword', kind: 'tool', count: 1 }, need: [['cobalt-bar', 13], ['#wood', 5]], station: 'anvil' },
   { out: { key: 'emberite-sword', kind: 'tool', count: 1 }, need: [['emberite-bar', 16], ['#wood', 6]], station: 'anvil' }
@@ -643,6 +652,11 @@ RECIPES.push(
   { out: { key: 'miners-charm', kind: 'accessory', count: 1 }, need: [['gold-bar', 8], ['crystal', 6]], station: 'anvil' },
   { out: { key: 'swift-boots', kind: 'accessory', count: 1 }, need: [['leather', 8], ['iron-bar', 10]], station: 'anvil' },
   { out: { key: 'shellguard', kind: 'accessory', count: 1 }, need: [['shell', 12], ['chitin', 8], ['iron-bar', 6]], station: 'anvil' },
+  { out: { key: 'obsidian-charm', kind: 'accessory', count: 1 }, need: [['obsidian', 6], ['gold-bar', 2]], station: 'anvil' },
+  { out: { key: 'cinder-idol', kind: 'use', count: 1 }, need: [['cinder', 8], ['emberite-bar', 3]], station: 'anvil' },
+  { out: { key: 'warden-heart', kind: 'accessory', count: 1 }, need: [['furnace-core', 1], ['obsidian', 6]], station: 'anvil' },
+  { out: { key: 'furnace-lance', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['emberite-bar', 8]], station: 'anvil' },
+  { out: { key: 'cinder-scepter', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['ruby', 2], ['emberite-bar', 6]], station: 'anvil' },
   { out: { key: 'ember-ward', kind: 'accessory', count: 1 }, need: [['cinder', 15], ['obsidian', 10], ['emberite-bar', 4]], station: 'anvil' },
   { out: { key: 'lantern-charm', kind: 'accessory', count: 1 }, need: [['crystal', 8], ['glowmoss', 12], ['gold-bar', 4]], station: 'anvil' }
 );

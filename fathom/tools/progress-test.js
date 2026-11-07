@@ -43,13 +43,14 @@ const STARTING = ['tin-pick', 'tin-axe', 'tin-hammer', 'tin-sword'];
 const MADE = new Set(craft.RECIPES.map(r => r.out.key));
 const FROM_THE_WORLD = new Set([
   ...enemies.ENEMIES.flatMap(e => (e.drops || []).map(([k]) => k)),
+  ...enemies.ENEMIES.flatMap(e => (e.bossDrops || []).map(drop => Array.isArray(drop) ? drop[0] : drop)),
   ...loot.allLootKeys(),
   ...worldgen.POT_TABLE.map(e => e.key),
   // Fish are pulled out of the water rather than dug out of the ground, so the pickaxe
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k]));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && k !== 'furnace-core'));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -129,6 +130,9 @@ function climb() {
       arrived.set(key, round);
       grew = true;
     };
+    // The Warden is a combat gate. The ladder only assumes victory once its summon
+    // is reachable and the player can mine the ore used for its rewards.
+    if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;
       gain(tile.key);
@@ -211,6 +215,19 @@ ok(ladder.power === strongest,
     + ' against a best of ' + strongest + ': there is nothing to climb to');
 }
 
+for (const [ore, previous] of Object.entries({
+  iron: 'copper', silver: 'iron', gold: 'silver', cobalt: 'gold', emberite: 'cobalt'
+})) {
+  const earlier = previous === 'copper' ? 'tin' : { iron: 'copper', silver: 'iron', gold: 'silver', cobalt: 'gold' }[previous];
+  ok(mining.canMine(mining.TOOLS[previous + '-pick'].power, tiles.BY_KEY[ore]), previous + ' opens ' + ore);
+  ok(!mining.canMine(mining.TOOLS[earlier + '-pick'].power, tiles.BY_KEY[ore]), earlier + ' skips to ' + ore);
+}
+
+ok(ladder.arrived.get('cinder-idol') < ladder.arrived.get('furnace-core'), 'Warden rewards precede its summon');
+for (const key of ['furnace-lance', 'cinder-scepter', 'warden-heart']) {
+  ok(ladder.arrived.get('furnace-core') < ladder.arrived.get(key), key + ' is available before the Warden');
+}
+
 // --- 4. nothing is reachable before the thing that is supposed to gate it -----------------
 // A gem staff cannot be makeable before its gem, and a tier of armour cannot be makeable
 // before its bar. Stated as a rule over the recipes rather than case by case.
@@ -248,7 +265,7 @@ for (const r of craft.RECIPES) {
 // If everything arrived in one or two rounds there would be no progression at all; if it
 // took thirty, something is gated behind a chain nobody would ever follow.
 ok(ladder.rounds >= 5, 'the whole game is reachable in ' + ladder.rounds + ' rounds');
-ok(ladder.rounds <= 24, 'the ladder is ' + ladder.rounds + ' rounds deep');
+ok(ladder.rounds <= 26, 'the ladder is ' + ladder.rounds + ' rounds deep');
 
 // --- 6. the deepest things really are the last ones --------------------------------------------
 {

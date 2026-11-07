@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 45 enemies including two bosses, eight behaviours, spawn pools per biome, layer and event |
+| `js/enemy.js` | 46 enemies including three bosses, nine behaviours, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -151,3 +151,13 @@ the cost of one small canvas.
 | `js/buffs.js` | effects that expire: potions, and what a campfire does |
 | `js/audio.js` | every sound in the game, the ambience beds and the music |
 | `js/game.js` | loop, input, camera, mining, placing, drops, events, save |
+
+### Progression
+
+Start with tin tools and work through copper, iron, silver, gold, cobalt, and emberite.
+Silver opens gold, and gold opens cobalt and obsidian. An Obsidian Charm makes the first
+trips into Hell safer. Cobalt opens emberite, which smelts with obsidian.
+
+King Slime opens the meteor gear side path. The Hollow Eye can be summoned at night.
+Craft a Cinder Idol at an anvil and use it in Hell to challenge the Furnace Warden.
+Its Furnace Cores can become a long-reach lance, a magic scepter, or a defensive heart.
