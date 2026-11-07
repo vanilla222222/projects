@@ -175,7 +175,8 @@ function makeUI(root, deps) {
     }
     if (craft && craft.WEAPONS[item.key] && craft.WEAPONS[item.key].ranged) {
       const u = size / 16;
-      ctx.strokeStyle = '#8a6038';
+      const pickKey = item.key.replace(/-bow$/, '-pick');
+      ctx.strokeStyle = mining?.toolSpec(pickKey) ? mining.tierColour({ key: pickKey }) : '#8a6038';
       ctx.lineWidth = Math.max(1.5, u * 1.4);
       ctx.beginPath();
       ctx.arc(5 * u, 8 * u, 6 * u, -Math.PI / 2.2, Math.PI / 2.2);
@@ -214,7 +215,8 @@ function makeUI(root, deps) {
       const tier = Math.max(0, Object.keys(craft.WEAPONS)
         .filter(k => !craft.WEAPONS[k].ranged).indexOf(item.key));
       const blades = ['#8a6a42', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
-      ctx.fillStyle = blades[tier] || '#aab';
+      const pickKey = item.key === 'aether-sabre' ? 'aetherite-pick' : item.key.replace(/-sword$/, '-pick');
+      ctx.fillStyle = mining?.toolSpec(pickKey) ? mining.tierColour({ key: pickKey }) : blades[tier] || '#aab';
       ctx.beginPath();
       ctx.moveTo(12 * u, 2 * u);
       ctx.lineTo(14 * u, 4 * u);

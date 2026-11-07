@@ -1165,11 +1165,13 @@ function makeGame(canvas, deps) {
   }
 
   function openProgression() {
-    const picks = Object.entries(mining.TOOLS).filter(([, spec]) => spec.job === 'pick')
+    const picks = Object.entries(mining.TOOLS).filter(([key, spec]) => spec.job === 'pick' && key !== 'meteor-pick')
       .sort((a, b) => a[1].power - b[1].power);
-    const rank = picks.reduce((best, [key], index) => inventory.countOf(key) ? index : best, -1);
+    const power = Math.max(0, ...Object.entries(mining.TOOLS).filter(([key, spec]) =>
+      spec.job === 'pick' && inventory.countOf(key)).map(([, spec]) => spec.power));
+    const rank = picks.reduce((best, [, spec], index) => spec.power <= power ? index : best, -1);
     const rows = ['Mining · ' + (rank < 0 ? 'Recover a pickaxe from the Guide or make one at a Work Bench.'
-      : picks[rank][1].name + ' · ' + picks[rank][1].power + ' power')];
+      : power + ' base pickaxe power')];
     const recipeLine = key => {
       const recipe = craft.RECIPES.find(r => r.out.key === key);
       return recipe.need.map(([item, count]) =>
@@ -1181,6 +1183,7 @@ function makeGame(canvas, deps) {
       rows.push('Next pickaxe · ' + spec.name + ' · ' + recipeLine(key));
       const ore = key.replace('-pick', '');
       const band = worldgen.ORE_BANDS.find(entry => entry.key === ore);
+      if (key === 'aetherite-pick') rows.push('Mine Aetherite in the underside of sky islands, then smelt it at a Furnace.');
       if (key === 'rift-pick') rows.push('Defeat the Rift Archon for a Rift Core. The Rift Pickaxe mines Aetherite on sky islands.');
       if (band) rows.push('Find ' + craft.nameOf(ore, tiles) + ' · '
         + (ore === 'emberite' ? 'Search Hell and smelt it with obsidian.'

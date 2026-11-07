@@ -203,6 +203,10 @@ const ARMOUR_TIERS = [
   { key: 'emberite', name: 'Emberite', colour: '#d4663a', base: 17, bar: 'emberite-bar', cost: 34,
     bonus: { key: 'emberheart', name: 'Emberheart', text: 'Lava does not burn you', fireproof: true } },
 
+  { key: 'aetherite', name: 'Aetherite', colour: '#8de8d3', base: 22, bar: 'aetherite-bar', cost: 24,
+    bonus: { key: 'skyforged', name: 'Skyforged', text: 'Double jump, take 65% less fall damage, and emit light',
+      doubleJump: true, fallMul: 0.35, glow: 5 } },
+
   // Three sets that are not metal. Metal armour is a ladder - each tier is strictly
   // better than the last - and a ladder has no room for a choice. These trade defence
   // for a class: they are weaker than the metal of their depth and they are the only way
@@ -401,6 +405,9 @@ const WEAPONS = {
   // --- ranged ---------------------------------------------------------------------
   // A bow's `reach` is the arrow's range rather than an arm's length. Better bows throw
   // the same arrow harder and further, and better arrows are worth carrying for any bow.
+  'tin-bow': { name: 'Tin Bow', damage: 12, useTime: 0.40, reach: 28, ranged: true, ammo: 'arrow' },
+  'meteor-bow': { name: 'Meteor Bow', damage: 39, useTime: 0.25, reach: 42, ranged: true, ammo: 'arrow' },
+  'aetherite-bow': { name: 'Aetherite Bow', damage: 98, useTime: 0.18, reach: 58, ranged: true, ammo: 'arrow' },
   'copper-bow': { name: 'Copper Bow', damage: 14, useTime: 0.38, reach: 30, ranged: true, ammo: 'arrow' },
   'iron-bow': { name: 'Iron Bow', damage: 19, useTime: 0.35, reach: 34, ranged: true, ammo: 'arrow' },
   'bone-bow': { name: 'Bone Bow', damage: 24, useTime: 0.3, reach: 36, ranged: true, ammo: 'arrow' },
@@ -657,6 +664,27 @@ const RECIPES = [
   { out: { key: 'emberite-sword', kind: 'tool', count: 1 }, need: [['emberite-bar', 16], ['#wood', 6]], station: 'anvil' }
 ];
 
+// Matching axes and hammers follow the existing metal costs. Meteor is an optional
+// iron-power sidegrade, while Aetherite requires ore gathered with the Rift Pickaxe.
+for (const [metal, bars, wood, jobs] of [
+  ['silver', 8, 4, ['axe', 'hammer']],
+  ['gold', 9, 4, ['axe', 'hammer']],
+  ['cobalt', 11, 5, ['axe', 'hammer']],
+  ['emberite', 13, 6, ['axe', 'hammer']],
+  ['meteor', 9, 4, ['pick', 'axe', 'hammer']],
+  ['aetherite', 10, 6, ['pick', 'axe', 'hammer']]
+]) {
+  for (const job of jobs) {
+    const need = [[metal + '-bar', bars], ['#wood', wood]];
+    if (metal === 'meteor' && job === 'pick') need.push(['iron-bar', 2]);
+    RECIPES.push({ out: { key: metal + '-' + job, kind: 'tool', count: 1 }, need, station: 'anvil' });
+  }
+}
+for (const [metal, bars, wood] of [['tin', 7, 7], ['meteor', 10, 10], ['aetherite', 12, 12]]) {
+  RECIPES.push({ out: { key: metal + '-bow', kind: 'tool', count: 1 },
+    need: [[metal + '-bar', bars], ['#wood', wood]], station: 'anvil' });
+}
+
 // Armour, every tier and piece. Wooden mail is made from any lumber at a bench; metal
 // mail is made from bars at an anvil, because beating sheet takes an anvil.
 for (const tier of ARMOUR_TIERS) {
@@ -710,7 +738,7 @@ RECIPES.push(
   { out: { key: 'granite-aegis', kind: 'accessory', count: 1 }, need: [['granite-eye', 1], ['gold-bar', 5]], station: 'anvil' },
   { out: { key: 'rift-sigil', kind: 'use', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8]], station: 'anvil' },
   { out: { key: 'rift-pick', kind: 'tool', count: 1 }, need: [['rift-core', 1], ['emberite-pick', 1], ['emberite-bar', 8]], station: 'anvil' },
-  { out: { key: 'aetherite-bar', kind: 'bar', count: 1 }, need: [['aetherite', 4]], station: 'furnace' },
+  { out: { key: 'aetherite-bar', kind: 'bar', count: 1 }, need: [['aetherite', 2]], station: 'furnace' },
   { out: { key: 'aetherstep', kind: 'accessory', count: 1 }, need: [['aetherite-bar', 8], ['feather', 10]], station: 'anvil' },
   { out: { key: 'aether-sabre', kind: 'tool', count: 1 }, need: [['aetherite-bar', 12], ['void-crystal', 3]], station: 'anvil' },
   { out: { key: 'warden-heart', kind: 'accessory', count: 1 }, need: [['furnace-core', 1], ['obsidian', 6]], station: 'anvil' },
