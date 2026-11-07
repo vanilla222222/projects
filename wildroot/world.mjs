@@ -176,10 +176,10 @@ export class World {
   if(p!==this.player)return; // A doorway replaced the room; do not save source-room coordinates.
   if(p.climbing){
    if(p.climbTo!==null){const sign=Math.sign(p.climbTo-p.y);p.y+=sign*220*dt;if(Math.abs(p.climbTo-p.y)<8){p.y=p.climbTo;p.climbing=false;p.climbTo=null;p.grounded=true;}}
-   else{p.y-=input.vertical*220*dt;if(p.y<=p.ladder.top){p.y=p.ladder.top;p.climbing=false;p.grounded=true;}if(p.y>=p.ladder.bottom){p.y=p.ladder.bottom;p.climbing=false;p.grounded=true;}}
+   else{p.y-=(input.vertical||0)*220*dt;if(p.y<=p.ladder.top){p.y=p.ladder.top;p.climbing=false;p.grounded=true;}if(p.y>=p.ladder.bottom){p.y=p.ladder.bottom;p.climbing=false;p.grounded=true;}}
    if(input.horizontal){p.climbing=false;p.climbTo=null;p.grounded=false;}
   }else{
-   if(input.vertical){const ladder=this.map.ladders.find(l=>Math.abs(l.x-p.x)<30&&p.y>=l.top-8&&p.y<=l.bottom+8);if(ladder){p.x=ladder.x;p.ladder=ladder;p.climbing=true;p.climbTo=null;p.grounded=false;}}
+   if(input.vertical){const ladder=this.map.ladders.filter(l=>Math.abs(l.x-p.x)<30&&p.y>=l.top-8&&p.y<=l.bottom+8&&(input.vertical>0?p.y>l.top+1:p.y<l.bottom-1)).sort((a,b)=>Math.abs(a.x-p.x)-Math.abs(b.x-p.x)||(input.vertical>0?b.top-a.top:a.bottom-b.bottom))[0];if(ladder){p.x=ladder.x;p.ladder=ladder;p.climbing=true;p.climbTo=null;p.grounded=false;p.vy=0;}}
    if(input.jump&&p.grounded){p.vy=-535;p.grounded=false;}
    const before=p.y;p.vx=direction*E.movementSpeed(c);p.x=Math.max(20,Math.min(this.map.width-20,p.x+p.vx*dt));if(direction){p.facing=Math.sign(direction);p.walk+=dt*10;}
    if(!p.climbing){p.vy+=1250*dt;p.y+=p.vy*dt;p.grounded=false;for(const floor of [...this.map.platforms].sort((a,b)=>a.y-b.y)){if(p.vy>=0&&p.x>=floor.x&&p.x<=floor.x+floor.w&&before<=floor.y+2&&p.y>=floor.y){p.y=floor.y;p.vy=0;p.grounded=true;break;}}}
