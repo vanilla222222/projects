@@ -245,7 +245,7 @@ function makeGame(canvas, deps) {
       // A crate holds what it holds because of where it was caught, like a pot.
       const px = Math.floor(state.player.x);
       const py = Math.floor(state.player.y);
-      for (const got of fishModule.crateContents(rng.unit, seed, px, py)) {
+      for (const got of fishModule.crateContents(rng.unit, seed, px, py, use.open)) {
         dropItem(px, py, got.key, craft.kindOf(got.key), got.count);
       }
       sfx('chest');
@@ -325,31 +325,40 @@ function makeGame(canvas, deps) {
     const spec = craft.ITEMS[item.key];
     if (!spec || !spec.rod) return false;
     if (state.bobber) { reelIn(); return true; }
+    const rod = fishModule.RODS[item.key] || { power: 1 };
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height * 0.4;
     const away = Math.hypot(pointer.x - cx, pointer.y - cy);
     if (away > fishModule.CAST_RANGE) { say('Too far', 1.0); return true; }
     const tx = Math.floor(pointer.x);
     const ty = Math.floor(pointer.y);
-    const at = tiles.tile(world.get(tx, ty));
-    if (!at.liquid || at.hot) { say('Cast at water', 1.2); return true; }
+    const liquid = fishModule.liquidAt(tiles, world.get(tx, ty));
+    if (!liquid) { say('Cast at water', 1.2); return true; }
+    if (liquid === 'lava' && !rod.lava) {
+      say('The line burns away', 1.8);
+      return true;
+    }
 
-    const water = fishModule.waterAround(world, tiles, tx, ty);
-    if (water < fishModule.PUDDLE / 3) { say('There is hardly any water there', 1.6); return true; }
-    const rod = fishModule.RODS[item.key] || { power: 1 };
+    const survey = fishModule.surveyLiquid(world, tiles, tx, ty);
+    const amount = liquid === 'lava' ? survey.lava : survey.water;
+    if (amount < fishModule.PUDDLE / 3) {
+      say('There is hardly anything there', 1.6);
+      return true;
+    }
     state.bobber = {
       x: pointer.x,
       y: pointer.y,
       tx,
       ty,
+      liquid,
       rod: item.key,
       power: rod.power,
-      water,
-      wait: fishModule.biteDelay(Math.random(), rod.power, water),
+      amount,
+      wait: fishModule.biteDelay(Math.random(), rod.power, amount),
       biting: 0,
       bob: 0
     };
-    sfx('splash', { gain: 0.5, pitch: 1.3 });
+    sfx('splash', { gain: 0.5, pitch: liquid === 'lava' ? 0.7 : 1.3 });
     return true;
   }
 
@@ -366,29 +375,30 @@ function makeGame(canvas, deps) {
     const ctx = {
       biome: worldgen.biomeAt(seed, bobber.tx).key,
       layer: worldgen.layerAt(bobber.ty).key,
-      water: bobber.water
+      liquid: bobber.liquid,
+      amount: bobber.amount
     };
     const got = fishModule.rollCatch(ctx, Math.random(), bobber.power);
     if (!got) { say('Nothing is biting here', 1.4); return; }
     dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
     sfx('pickup', { pitch: 1.35 });
-    spawnParticles(bobber.x, bobber.y, '#bfe6ff', 8);
+    spawnParticles(bobber.x, bobber.y,
+      bobber.liquid === 'lava' ? '#ffb05a' : '#bfe6ff', 8);
     say(craft.nameOf(got.key, tiles), 1.6);
   }
 
   function stepFishing(dt) {
     const bobber = state.bobber;
     if (!bobber) return;
-    // The line breaks if you walk away from it, which is what stops a cast being a
-    // thing you set down and forget.
+    // The line breaks if you walk away from it, which is what stops a cast being
+    // something you set down and forget.
     const away = Math.hypot(bobber.x - state.player.x, bobber.y - state.player.y);
     if (away > fishModule.CAST_RANGE + 6) {
       state.bobber = null;
       say('The line broke', 1.2);
       return;
     }
-    const still = tiles.tile(world.get(bobber.tx, bobber.ty));
-    if (!still.liquid || still.hot) {
+    if (fishModule.liquidAt(tiles, world.get(bobber.tx, bobber.ty)) !== bobber.liquid) {
       state.bobber = null;
       say('The water is gone', 1.2);
       return;
@@ -398,14 +408,14 @@ function makeGame(canvas, deps) {
       bobber.biting -= dt;
       if (bobber.biting <= 0) {
         say('It got away', 1.1);
-        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.water);
+        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.amount);
       }
       return;
     }
     bobber.wait -= dt;
     if (bobber.wait <= 0) {
       bobber.biting = fishModule.BITE_WINDOW;
-      sfx('splash', { gain: 0.35, pitch: 1.6 });
+      sfx('splash', { gain: 0.35, pitch: bobber.liquid === 'lava' ? 0.9 : 1.6 });
     }
   }
 

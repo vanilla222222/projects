@@ -855,6 +855,7 @@ function makeRenderer(canvas, deps) {
     const px = (p.x + p.width / 2 - x0) * size - offsetX;
     const py = (p.y + p.height * 0.35 - y0) * size - offsetY;
     const biting = b.biting > 0;
+    const hot = b.liquid === 'lava';
     const bob = biting
       ? size * (0.42 + Math.sin(b.bob * 22) * 0.1)
       : Math.sin(b.bob * 2.1) * size * 0.08;
@@ -863,7 +864,7 @@ function makeRenderer(canvas, deps) {
     ctx.save();
     // The line: a shallow catenary rather than a straight stroke, because a taut
     // straight line reads as a crack in the screen.
-    ctx.strokeStyle = 'rgba(230,236,244,0.55)';
+    ctx.strokeStyle = hot ? 'rgba(255,200,150,0.6)' : 'rgba(230,236,244,0.55)';
     ctx.lineWidth = Math.max(1, zoom * 0.5);
     ctx.beginPath();
     ctx.moveTo(px, py);
@@ -872,7 +873,7 @@ function makeRenderer(canvas, deps) {
     if (biting) {
       // Rings, so the bite is visible from across the screen rather than only if you
       // happen to be looking at the float.
-      ctx.strokeStyle = 'rgba(214,240,255,0.5)';
+      ctx.strokeStyle = hot ? 'rgba(255,176,90,0.55)' : 'rgba(214,240,255,0.5)';
       ctx.lineWidth = Math.max(1, zoom * 0.7);
       for (let i = 0; i < 2; i += 1) {
         const t = ((b.bob * 1.6 + i * 0.5) % 1);
