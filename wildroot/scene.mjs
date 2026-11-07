@@ -3,7 +3,7 @@ import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=40';
 import {ATTACKS} from './combat-patterns.mjs?v=40';
 import {zoneUnlocked,routeRequirement} from './engine.mjs?v=40';
 import {drawMonsterArt} from './monster-art.mjs?v=40';
-import {npcMarker} from './conversations.mjs?v=40';
+import {npcMarker} from './conversations.mjs?v=44';
 import {drawRoomBackdrop,drawRoomSetpieces,drawRoomPlatform} from './scenery.mjs?v=40';
 // Original canvas scenery. No external artwork or game assets.
 import {areaById,zoneEnemy,ENEMIES,CLASSES,EQUIPMENT,COSMETICS} from './content.mjs?v=40';
