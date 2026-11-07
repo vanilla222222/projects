@@ -113,9 +113,78 @@ const VILLAGERS = [
     greeting: 'Establish a second town before you can travel. Both pylons need two occupied homes nearby.',
     stock: [{ key: 'town-pylon', count: 1, price: 420 }, { key: 'rope', count: 60, price: 95 },
       { key: 'storage-access', count: 1, price: 125 }, { key: 'shine-potion', count: 2, price: 170 }]
-  }
+  },
+  { key: 'forester', name: 'the Forester', colour: '#76905a', hair: '#553b2d',
+    wants: p => p.bars >= 5, wantsText: 'arrives after you smelt 5 bars',
+    greeting: 'A stand of trees can keep a whole town supplied.',
+    stock: [{ key: 'pinewood', count: 30, price: 60 }, { key: 'acaciawood', count: 30, price: 65 },
+      { key: 'oakbed', count: 1, price: 95 }] },
+  { key: 'cook', name: 'the Cook', colour: '#ca8054', hair: '#50312d',
+    wants: p => p.deepest >= 120, wantsText: 'arrives after reaching 120 tiles of depth',
+    greeting: 'Eat before heading back into the caves.',
+    stock: [{ key: 'cooked-fish', count: 5, price: 145 }, { key: 'healing-salve', count: 4, price: 180 },
+      { key: 'campfire', count: 1, price: 65 }] },
+  { key: 'fletcher', name: 'the Fletcher', colour: '#92884d', hair: '#382e25',
+    wants: p => p.bars >= 25, wantsText: 'arrives after you smelt 25 bars',
+    greeting: 'The right arrow matters more than a fancy bow.',
+    stock: [{ key: 'copper-bow', count: 1, price: 350 }, { key: 'iron-arrow', count: 70, price: 195 },
+      { key: 'archery-potion', count: 3, price: 160 }] },
+  { key: 'lapidary', name: 'the Lapidary', colour: '#aa70a4', hair: '#362746',
+    wants: p => p.deepest >= 380, wantsText: 'arrives after reaching 380 tiles of depth',
+    greeting: 'Bring specimens from different layers. The cut can wait.',
+    stock: [{ key: 'topaz', count: 3, price: 230 }, { key: 'sapphire', count: 3, price: 310 },
+      { key: 'clarity-potion', count: 4, price: 240 }] },
+  { key: 'diver', name: 'the Diver', colour: '#4b8cad', hair: '#243548',
+    wants: p => p.deepest >= 560, wantsText: 'arrives after reaching 560 tiles of depth',
+    greeting: 'Mark the pockets of air on your way in. You may need them on the way out.',
+    stock: [{ key: 'diving-gear', count: 1, price: 900 }, { key: 'gills-potion', count: 5, price: 310 },
+      { key: 'gold-rod', count: 1, price: 750 }] },
+  { key: 'firekeeper', name: 'the Firekeeper', colour: '#b75d49', hair: '#512c38',
+    wants: p => p.deepest >= 1250, wantsText: 'arrives after reaching 1,250 tiles of depth',
+    greeting: 'Carry obsidian into Hell. Carry an exit plan out of it.',
+    stock: [{ key: 'obsidian-charm', count: 1, price: 820 }, { key: 'ember-arrow', count: 50, price: 240 },
+      { key: 'seared-fish', count: 4, price: 240 }] }
 
 ];
+
+// Orders are completed once per world, with the sponsor available in town.
+const TOWN_ORDERS = [
+  ['first-light', 'guide', 'First Light', [['gel', 8]], [['torch', 30], ['coin', 55]]],
+  ['rope-line', 'guide', 'A Line Down', [['stone', 24]], [['rope', 45], ['coin', 65]]],
+  ['stockroom', 'merchant', 'Stock the Counter', [['copper-bar', 5]], [['healing-salve', 3], ['coin', 170]]],
+  ['cold-iron', 'smith', 'Cold Iron', [['iron-bar', 10]], [['iron-arrow', 55], ['coin', 245]]],
+  ['silver-order', 'smith', 'Bright Metal', [['silver-bar', 8]], [['spelunk-potion', 4], ['coin', 325]]],
+  ['medical', 'nurse', 'Emergency Supplies', [['healing-salve', 3]], [['regen-potion', 4], ['coin', 140]]],
+  ['cave-lights', 'delver', 'Lights Below', [['crystal', 8], ['glowmoss', 12]], [['shine-potion', 6], ['coin', 310]]],
+  ['frames', 'builder', 'Window Frames', [['glass', 15], ['oakwood', 24]], [['oakback', 60], ['coin', 190]]],
+  ['waystation', 'builder', 'Second Settlement', [['topaz', 3], ['copper-bar', 8]], [['town-pylon', 1], ['coin', 210]]],
+  ['extra-capacity', 'keeper', 'Extra Capacity', [['tin-bar', 8], ['amethyst', 2]], [['storage-unit', 1], ['coin', 130]]],
+  ['remote-stock', 'keeper', 'Remote Stockroom', [['glass', 12], ['iron-bar', 6]], [['storage-crafter', 1], ['coin', 180]]],
+  ['river-survey', 'angler', 'River Survey', [['bass', 3], ['trout', 2]], [['iron-rod', 1], ['coin', 125]]],
+  ['salt-catch', 'angler', 'Saltwater Haul', [['swordfish', 2], ['shrimp', 4]], [['gills-potion', 5], ['coin', 220]]],
+  ['brewing', 'alchemist', 'A Fresh Batch', [['bottle', 8], ['amethyst', 3]], [['clarity-potion', 5], ['coin', 155]]],
+  ['trail-lamps', 'wayfarer', 'Trail Markers', [['torch', 35], ['rope', 25]], [['storage-access', 1], ['coin', 180]]],
+  ['hardwood', 'forester', 'Hardwood Shipment', [['pinelog', 12], ['acacialog', 12]], [['trail-buckle', 1], ['coin', 195]]],
+  ['pantry', 'cook', 'Fill the Pantry', [['cooked-fish', 5]], [['healing-salve', 5], ['coin', 175]]],
+  ['flight', 'fletcher', 'Straight Flight', [['feather', 14], ['iron-bar', 4]], [['iron-arrow', 95], ['coin', 210]]],
+  ['gemcase', 'lapidary', 'Gem Case', [['topaz', 3], ['sapphire', 3], ['ruby', 2]], [['prism-brooch', 1], ['coin', 430]]],
+  ['sea-relics', 'diver', 'Sea Relics', [['shell', 15], ['finleather', 2]], [['tidal-locket', 1], ['coin', 370]]],
+  ['forge-feast', 'firekeeper', 'Forge Feast', [['seared-fish', 4], ['cinder', 10]], [['forge-gauntlet', 1], ['coin', 470]]],
+  ['warden-proof', 'firekeeper', 'Proof of the Warden', [['furnace-core', 1]], [['emberite-bar', 8], ['coin', 800]]]
+].map(([id, sponsor, name, needs, rewards]) => ({ id, sponsor, name, needs, rewards }));
+
+function completeTownOrder(inventory, order, kindOf) {
+  if (!order.needs.every(([key, count]) => inventory.countOf(key) >= count)) return 'missing';
+  const snapshot = inventory.serialize();
+  for (const [key, count] of order.needs) inventory.take(key, count);
+  for (const [key, count] of order.rewards) {
+    if (inventory.add({ key, kind: kindOf(key) }, count) > 0) {
+      inventory.restore(snapshot);
+      return 'full';
+    }
+  }
+  return 'complete';
+}
 
 const VILLAGER_BY_KEY = {};
 for (const v of VILLAGERS) VILLAGER_BY_KEY[v.key] = v;
@@ -318,7 +387,7 @@ function townStoragePort(storageItems, capacity, maxStack) {
   };
 }
 
-const EXPORTS_villager = { VILLAGERS, BY_KEY: VILLAGER_BY_KEY, eligible, makeVillager, makeVillage, townStorageCapacity, townStoragePort,
+const EXPORTS_villager = { VILLAGERS, TOWN_ORDERS, completeTownOrder, BY_KEY: VILLAGER_BY_KEY, eligible, makeVillager, makeVillage, townStorageCapacity, townStoragePort,
   WALK_SPEED, WANDER_RANGE, TALK_RANGE };
 
 if (typeof module !== 'undefined' && module.exports) {
