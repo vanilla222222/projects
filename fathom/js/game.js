@@ -207,7 +207,7 @@ function makeGame(canvas, deps) {
       for (const entry of target.spec.bossDrops) {
         const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
         const x = target.x + target.width / 2;
-        const buried = target.key === 'desertscourge' && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
+        const buried = (target.key === 'desertscourge' || target.key === 'reefleviathan') && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
         dropItem(buried ? state.player.x : x, buried ? state.player.y : target.y, key, craft.kindOf(key), count);
       }
       say(target.spec.name + ' is dead', 3.4);
@@ -1242,6 +1242,12 @@ function makeGame(canvas, deps) {
       ['winterroot', 'Winterroot Keeper', 'winterroot-bell', 'Optional. Summon in the deep Taiga.'],
       ['windmillwarden', 'Windmill Warden', 'windmill-token', 'Optional. Summon on the Plains surface.'],
       ['buriedstandard', 'Buried Standard', 'standard-pennant', 'Optional. Summon in the deep Plains.'],
+      ['sporecrown', 'Spore Crown', 'spore-idol', 'Optional. Summon in the Blight at the surface layer.'],
+      ['hollowroot', 'Hollowroot', 'hollowroot-sigil', 'Optional. Summon in the Blight at the deep layer.'],
+      ['bloodcrest', 'Bloodcrest', 'bloodcrest-lure', 'Optional. Summon in the Crimson at the surface layer.'],
+      ['veinwarden', 'Vein Warden', 'vein-seal', 'Optional. Summon in the Crimson at the deep layer.'],
+      ['reefleviathan', 'Reef Leviathan', 'reef-conch', 'Optional. Summon in the Ocean at the surface layer.'],
+      ['abyssaleye', 'Abyssal Eye', 'abyssal-signal', 'Optional. Summon in the Ocean at the deep layer.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1812,7 +1818,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=plains-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=three-biomes-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

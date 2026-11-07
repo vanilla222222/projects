@@ -195,6 +195,12 @@ BODIES.kingslime = function (ctx, g, c) {
       -0.12, -0.69], '#b5ae68');
   }
 
+  if (c.key === 'sporecrown') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#bdb0da';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
+  }
+
 };
 
 // The Hollow Eye. The same plan as a demon eye and four times the size, because a boss
@@ -227,6 +233,12 @@ BODIES.bigeye = function (ctx, g, c) {
     poly(ctx, g, [-0.3, -0.2, -0.1, -0.06, 0.1, -0.2, 0.3, -0.05, 0.3, -0.3, -0.3, -0.3],
       spriteShade(c.colour, -0.3));
   }
+  if (c.key === 'abyssaleye') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#94c8ec';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
+  }
+
 };
 
 // The walk cycle every two-legged plan shares: one swing value per limb, in box units.
@@ -355,6 +367,12 @@ BODIES.golem = function (ctx, g, c) {
     dot(ctx, g, 0, -0.66, 0.054, '#8c6a4e');
   }
 
+  if (c.key === 'veinwarden') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#de8d8e';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -423,6 +441,12 @@ BODIES.bird = function (ctx, g, c) {
     poly(ctx, g, [-0.47, wing, -0.26, wing + 0.06, -0.34, wing + 0.13,
       -0.06, wing + 0.18, -0.39, wing + 0.17, -0.31, wing + 0.10],
       c.windUp > 0 || c.charge > 0 ? '#fff6ba' : '#a98ac2');
+  }
+
+  if (c.key === 'bloodcrest') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#e29c83';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
   }
 
 };
@@ -580,6 +604,12 @@ BODIES.fish = function (ctx, g, c) {
     poly(ctx, g, [0.42 - i * 0.06, -0.47, 0.4 - i * 0.06, -0.42, 0.37 - i * 0.06, -0.47],
       '#f6f2e4');
   }
+  if (c.key === 'reefleviathan') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#a9e0db';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
+  }
+
 };
 
 BODIES.leech = function (ctx, g, c) {
@@ -622,6 +652,12 @@ BODIES.maw = function (ctx, g, c) {
       limb(ctx, g, x, -0.37, x + Math.sin(c.anim + i) * 0.17, -0.09, 0.10, '#694e35');
       dot(ctx, g, x, -0.38, 0.035, '#e9c177');
     }
+  }
+
+  if (c.key === 'hollowroot') {
+    const ink = c.windUp > 0 ? '#fff0cc' : '#bd8eae';
+    poly(ctx, g, [-0.35, -0.59, -0.22, -0.90, -0.11, -0.70, 0.03, -0.91,
+      0.13, -0.69, -0.02, -0.56], ink);
   }
 
 };
