@@ -31,6 +31,10 @@ function makeGame(canvas, deps) {
   let swarm = null;
   let minimap = null;
   let village = null;
+  let townDevices = [];
+  let storageItems = [];
+  const PYLON_RADIUS = 45;
+  const STORAGE_RADIUS = 24;
   let talking = null;
   let swingCooldown = 0;
   let swingTotal = 0.4;
@@ -89,7 +93,7 @@ function makeGame(canvas, deps) {
     ['1 \u2013 0', 'Hotbar'],
     ['E', 'Backpack'],
     ['G', 'Grappling hook'],
-    ['H', 'Is this room a house?'],
+    ['H', 'Town Hall and housing'],
     ['M', 'Map  ( [ ] zoom )'],
     ['N', 'Sound'],
     ['B', 'Music'],
@@ -315,6 +319,7 @@ function makeGame(canvas, deps) {
         if (d > r) continue;
         const x = site.x + dx;
         const y = site.y + dy;
+        if (deviceAt(x, y)) continue;
         // A bowl: hollow above the ground line, ore below it, and a ragged rim.
         if (d > r - 1.6 && Math.random() < 0.45) continue;
         if (y < site.y) world.set(x, y, tiles.AIR);
@@ -668,6 +673,16 @@ function makeGame(canvas, deps) {
       spawnParticles(aim.x, aim.y, spec.colour, 2);
       sfxAt(digSound(spec), aim.x, aim.y, { gain: 0.8 });
       if (current.damage < current.toughness) return;
+    }
+
+    if (!diggingWall && spec.townDevice) {
+      const device = deviceAt(aim.x, aim.y);
+      if (device && storageCapacity(device) < storageItems.length) {
+        state.player.mining = null;
+        say('Withdraw stored items before removing capacity', 1.8);
+        return;
+      }
+      if (device) townDevices.splice(townDevices.indexOf(device), 1);
     }
 
     if (diggingWall) {
@@ -1039,17 +1054,25 @@ function makeGame(canvas, deps) {
       return true;
     }
     talking = who;
-    ui.openShop(who, { coins: inventory.countOf('coin') });
+    openTownShop(who);
     ui.setOpen(true);
     say(who.spec.greeting, 4);
     return true;
+  }
+
+  let shopDiscount = 1;
+  function openTownShop(who) {
+    const homes = village.nearbyHomes(who.home.x, who.home.y, PYLON_RADIUS);
+    shopDiscount = homes >= 3 ? 0.85 : homes >= 2 ? 0.93 : 1;
+    ui.openShop(who, { coins: inventory.countOf('coin'), discount: shopDiscount });
   }
 
   function buyFrom(index) {
     if (!talking) return;
     const entry = talking.spec.stock[index];
     if (!entry) return;
-    if (inventory.countOf('coin') < entry.price) {
+    const price = Math.ceil(entry.price * shopDiscount);
+    if (inventory.countOf('coin') < price) {
       say('Not enough coin', 1.2);
       return;
     }
@@ -1059,9 +1082,9 @@ function makeGame(canvas, deps) {
       say('No room for that', 1.2);
       return;
     }
-    inventory.take('coin', entry.price);
+    inventory.take('coin', price);
     say('Bought ' + craft.nameOf(entry.key, tiles), 1.2);
-    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    openTownShop(talking);
     ui.sync(state);
   }
 
@@ -1078,25 +1101,171 @@ function makeGame(canvas, deps) {
     inventory.take('coin', talking.spec.healPrice);
     statsModule.heal(stats, stats.maxHealth);
     say('Patched up', 1.4);
-    ui.openShop(talking, { coins: inventory.countOf('coin') });
+    openTownShop(talking);
     ui.sync(state);
   }
 
-  // Ask whether the room the player is standing in is a house, and move somebody in if
-  // it is. The answer is a list of what is missing, which is the useful form.
   function checkHousing() {
     if (!village) return;
-    const result = village.settle(state.progress,
-      state.player.x + state.player.width / 2, state.player.y);
-    if (result.moved) {
-      say(result.moved.spec.name + ' has moved in', 3);
-      return;
+    input.left = input.right = input.jump = input.down = false;
+    const x = state.player.x + state.player.width / 2, y = state.player.y;
+    const { room, occupant } = village.survey(x, y);
+    const rows = village.list.length
+      ? village.list.map(v => v.spec.name + ' · ' + Math.floor(v.home.x) + ', ' + Math.floor(v.home.y))
+      : ['No residents yet.'];
+    if (occupant) rows.unshift('Room occupied by ' + occupant.spec.name + '.');
+    else if (room.valid) rows.unshift('This room is ready for a resident.');
+    else rows.unshift(...room.problems);
+    const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
+    const actions = [];
+    for (const spec of villagerModule.VILLAGERS) {
+      const housed = village.list.some(v => v.key === spec.key);
+      if (!housed && !available.has(spec.key)) {
+        rows.push(spec.name + ' ' + spec.wantsText + '.');
+      } else if (room.valid && !occupant) {
+        actions.push({ label: (housed ? 'Move ' : 'Invite ') + spec.name, run() {
+          if (!physics.aimTile(state.player, { x, y }).inReach) return;
+          const result = village.settle(state.progress, x, y, spec.key);
+          if (result.moved) say(spec.name + ' has moved in', 3);
+          checkHousing();
+        } });
+      }
     }
-    if (!result.room.valid) {
-      say('Not a home: ' + result.room.problems[0], 3.5);
-      return;
+    rows.push('Two occupied homes in range power a pylon. Shops discount prices in clusters of two or more.');
+    ui.showTown('Town Hall', rows, actions);
+  }
+
+  function deviceAt(x, y) {
+    const device = townDevices.find(entry => entry.x === x && entry.y === y);
+    return device && tiles.tile(world.get(x, y)).townDevice === device.type ? device : null;
+  }
+
+  function storageCapacity(excluding) {
+    return villagerModule.townStorageCapacity(townDevices, STORAGE_RADIUS, excluding);
+  }
+
+  function openStorage(device) {
+    function canUse() {
+      return deviceAt(device.x, device.y) === device && physics.aimTile(state.player, device).inReach;
     }
-    say('A fine room, but nobody new wants it yet', 3);
+    function view(query) {
+      const capacity = storageCapacity();
+      const status = capacity ? storageItems.length + ' / ' + capacity + ' stacks used'
+        : 'Place a storage unit within 24 tiles of a Storage Heart to add capacity.';
+      if (!canUse()) return { rows: ['Move closer to use this terminal.'], actions: [] };
+      const port = villagerModule.townStoragePort(storageItems, storageCapacity, inventoryModule.STACK_MAX);
+      const matches = key => craft.nameOf(key, tiles).toLowerCase().includes(query);
+      const actions = [];
+      const held = selectedItem();
+      if (held && capacity) actions.push({ label: 'Deposit held stack · ' + craft.nameOf(held.key, tiles), run() {
+        if (!canUse()) return;
+        const stack = selectedItem();
+        if (!stack) return;
+        const left = port.add(stack, stack.count);
+        stack.count = left;
+        if (!left) inventory.slots[inventory.section('hotbar').from + state.player.selected] = null;
+        if (left) say('Storage is full', 1.4);
+      } });
+      if (capacity) actions.push({ label: 'Deposit backpack', run() {
+        if (!canUse()) return;
+        const { from, to } = inventory.section('main');
+        for (let i = from; i < to; i += 1) {
+          const item = inventory.slots[i];
+          if (!item) continue;
+          item.count = port.add(item, item.count);
+          if (!item.count) inventory.slots[i] = null;
+        }
+      } });
+      const names = [...new Set(storageItems.map(item => item.key))].filter(matches)
+        .sort((a, b) => craft.nameOf(a, tiles).localeCompare(craft.nameOf(b, tiles)));
+      for (const key of names) actions.push({ label: 'Withdraw ' + craft.nameOf(key, tiles) + ' · ' + port.countOf(key), run() {
+        if (!canUse()) return;
+        const amount = Math.min(inventoryModule.STACK_MAX, port.countOf(key));
+        const left = inventory.add({ key, kind: craft.kindOf(key) }, amount);
+        port.take(key, amount - left);
+        if (left) say('Backpack is full', 1.4);
+      } });
+      if (device.type === 'crafter') {
+        const stations = craft.stationsNear(world, tiles, device.x, device.y);
+        for (const recipe of craft.available(port, stations).filter(r => matches(r.out.key))) {
+          actions.push({ label: 'Craft ' + craft.nameOf(recipe.out.key, tiles) + ' ×' + recipe.out.count, run() {
+            if (!canUse()) return;
+            const current = craft.stationsNear(world, tiles, device.x, device.y);
+            if (recipe.station && !current.has(recipe.station)) return;
+            const before = storageItems.map(stack => ({ ...stack }));
+            if (craft.craft(port, recipe)) {
+              if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
+            } else {
+              storageItems.splice(0, storageItems.length, ...before);
+              say('Not enough room or materials', 1.4);
+            }
+          } });
+        }
+      }
+      return { rows: [status, device.type === 'crafter'
+        ? 'Crafting uses stored ingredients and stations near this terminal.'
+        : 'Terminals share stock across this world.'], actions };
+    }
+    ui.showTown(device.type === 'crafter' ? 'Storage Crafting' : 'Magic Storage', [], [], view);
+  }
+
+  function safePylonLanding(device) {
+    const p = state.player;
+    for (const dx of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+      for (const dy of [1, 0, 2, -1, 3, -2]) {
+        const x = device.x + dx + 0.1;
+        const floor = device.y + dy;
+        const y = floor - p.height;
+        if (!tiles.isSolid(world.get(Math.floor(x), floor))) continue;
+        if (physics.overlapsSolid(world, tiles, x, y, p.width, p.height)) continue;
+        if (world.getLevel(Math.floor(x), floor - 1) || world.getLevel(Math.floor(x), Math.floor(y))) continue;
+        return { x, y };
+      }
+    }
+    return null;
+  }
+
+  function openPylon(source) {
+    const residents = village.nearbyHomes(source.x, source.y, PYLON_RADIUS);
+    const rows = [residents + ' occupied homes nearby. Each endpoint needs two.',
+      'Travel requires a clear landing and is blocked during boss fights.'];
+    const actions = residents < 2 ? [] : townDevices
+      .filter(d => d.type === 'pylon' && d !== source && Math.hypot(d.x - source.x, d.y - source.y) >= PYLON_RADIUS * 2)
+      .map(destination => {
+        const layer = worldgen.layerAt(destination.y);
+        const area = layer.key === 'surface' ? worldgen.biomeAt(seed, destination.x).name : layer.name;
+        const name = area + ' · ' + destination.x + ', ' + destination.y;
+        return { label: 'Travel to ' + name, run() {
+          if (swarm.bossAlive()) { say('Pylons go dark during boss fights', 2); return; }
+          if (!physics.aimTile(state.player, source).inReach || deviceAt(source.x, source.y) !== source) return;
+          if (deviceAt(destination.x, destination.y) !== destination ||
+            village.nearbyHomes(source.x, source.y, PYLON_RADIUS) < 2 ||
+            village.nearbyHomes(destination.x, destination.y, PYLON_RADIUS) < 2) {
+            say('Both pylons need two occupied homes', 2.5);
+            return;
+          }
+          const landing = safePylonLanding(destination);
+          if (!landing) { say('Clear a landing beside the destination pylon', 2.5); return; }
+          releaseHook();
+          closeChest();
+          Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
+          state.camera.x = landing.x;
+          state.camera.y = landing.y;
+          ui.closeTown();
+          say('Arrived at ' + name, 2.5);
+        } };
+      });
+    if (residents >= 2 && !actions.length) rows.push('Place another pylon at least 90 tiles away to link a second town.');
+    ui.showTown('Pylon Network', rows, actions);
+  }
+
+  function useTownDevice(aim) {
+    const device = deviceAt(aim.x, aim.y);
+    if (!device) return false;
+    input.left = input.right = input.jump = input.down = false;
+    if (device.type === 'pylon') openPylon(device);
+    else openStorage(device);
+    return true;
   }
 
   function useBed(aim) {
@@ -1177,6 +1346,7 @@ function makeGame(canvas, deps) {
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    if (aim0.inReach && useTownDevice(aim0)) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;
     if (aim0.inReach && useBed(aim0)) return;
@@ -1226,6 +1396,10 @@ function makeGame(canvas, deps) {
       || tiles.isSolid(world.get(aim.x, aim.y + 1));
     const againstWall = world.getWall(aim.x, aim.y) !== 0;
     if (!againstBlock && !(spec.emit > 0 && againstWall)) return;
+    if (spec.townDevice) {
+      if (!tiles.isSolid(world.get(aim.x, aim.y + 1))) { say('Place it on a floor', 1.4); return; }
+      townDevices.push({ x: aim.x, y: aim.y, type: spec.townDevice });
+    }
     world.set(aim.x, aim.y, spec.id);
     inventory.take(item.key, 1);
     sfxAt('place', aim.x, aim.y);
@@ -1332,7 +1506,7 @@ function makeGame(canvas, deps) {
     // not the player is looking at it.
     if (minimap) minimap.reveal(world, state.player.x, state.player.y);
 
-    if (village) village.step(dt);
+    if (village) village.step(dt, state.player);
     stepStars(dt);
     stepFishing(dt);
     if (buffs) {
@@ -1606,6 +1780,10 @@ function makeGame(canvas, deps) {
     };
     addEventListener('keydown', (ev) => {
       if (!running) return;
+      if (ui.townOpen) {
+        if (ev.code === 'Escape') ui.closeTown();
+        return;
+      }
       if (audio) audio.unlock();
       if (ev.code === 'KeyN') {
         const on = audio ? audio.setEnabled(!audio.enabled) : false;
@@ -1701,6 +1879,7 @@ function makeGame(canvas, deps) {
       stats: { health: stats.health, maxHealth: stats.maxHealth,
         mana: stats.mana, maxMana: stats.maxMana },
       colours: state.colours,
+      progress: state.progress,
       playedSeconds: carriedCharacterSeconds + elapsed
     });
     profiles.saveWorld(worldId, {
@@ -1711,6 +1890,8 @@ function makeGame(canvas, deps) {
       meteors: state.meteors,
       buffs: buffs ? buffs.serialize() : {},
       villagers: village ? village.serialize() : [],
+      townDevices,
+      storageItems,
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
     });
@@ -1743,6 +1924,8 @@ function makeGame(canvas, deps) {
       { tiles, worldgen });
     village = villagerModule.makeVillage(world, tiles, { housing });
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
+    townDevices = worldRecord.townDevices || [];
+    storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
       characterRecord.progress || {});
@@ -1759,6 +1942,7 @@ function makeGame(canvas, deps) {
     ui.onSelectHotbar = index => { state.player.selected = index - inventory.section('hotbar').from; ui.sync(state); };
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
+        if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
       } else {
         say('No room for that', 1.2);

@@ -301,6 +301,18 @@ defineMulti('pot', 'Clay Pot', 1, 1, () => ({
   toughness: 10, pot: true, drops: null
 }));
 
+// Append IDs so existing saves retain every previously registered tile.
+for (const [key, name, colour, townDevice] of [
+  ['town-pylon', 'Town Pylon', '#63d4ba', 'pylon'],
+  ['storage-heart', 'Storage Heart', '#c27aee', 'heart'],
+  ['storage-unit', 'Storage Unit', '#9a81bc', 'unit'],
+  ['storage-vault', 'Reinforced Storage Unit', '#e1a956', 'vault'],
+  ['storage-access', 'Storage Access', '#6dace0', 'access'],
+  ['storage-crafter', 'Storage Crafting Terminal', '#ee9770', 'crafter']
+]) {
+  pushTile({ key, name, colour, townDevice, solid: false, opacity: 3, emit: 5, toughness: 65 });
+}
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
