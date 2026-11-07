@@ -890,7 +890,7 @@ function biomeSiteTile(site, x, y) {
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
-  if (badlands && site.layer === 0 && dx === -9 && row === floor - 1) return idOf('cactus');
+  if (badlands && site.layer === 0 && dx === -9 && row === floor - 1) return idOf('lantern');
   if (badlands && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('furnace');
   if (badlands && site.layer === 2 && row === floor - 1 && dx >= -5 && dx <= -2) return idOf('ashvault-spikes');
   if (highland && site.layer === 0 && dx === -7 && row >= 3) return idOf('rope');
