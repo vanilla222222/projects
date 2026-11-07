@@ -293,7 +293,7 @@ function paintCrystal(ctx, spec, variant, ox, oy) {
 
 function paintSmall(ctx, spec, variant, ox, oy) {
   ctx.clearRect(ox, oy, TILE, TILE);
-  if (spec.key === 'ashvault-spikes') {
+  if (spec.spikeDamage) {
     ctx.fillStyle = '#33253b';
     ctx.fillRect(ox, oy + 13, 16, 3);
     for (let i = 0; i < 4; i += 1) {

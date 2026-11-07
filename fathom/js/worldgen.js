@@ -821,14 +821,16 @@ function lootKindOf(key) {
 const BIOME_SITE_SPACING = 144;
 const FOREST_SITES = ['Ranger Camp', 'Moss Shrine', 'Heartwood Vault'];
 const DESERT_SITES = ['Caravan Rest', 'Buried Cistern', 'Amber Tomb'];
+const TUNDRA_SITES = ['Snowbound Lodge', 'Rime Observatory', 'Glacier Crypt'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
   const biome = column.biome.key;
   const surface = column.height;
-  if ((biome !== 'forest' && biome !== 'desert') ||
+  const names = BIOME_SITE_NAMES[biome];
+  if (!names ||
     biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome) return null;
-  const names = biome === 'desert' ? DESERT_SITES : FOREST_SITES;
   const make = (layer, top, height) => ({ x, top, height, layer, biome,
     name: names[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
   return [make(0, surface - 7, 8),
@@ -853,23 +855,26 @@ function forestSiteAt(seed, x, y) {
 function biomeSiteTile(site, x, y) {
   const dx = x - site.x, row = y - site.top, floor = site.height - 1;
   const desert = site.biome === 'desert';
-  const material = desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const tundra = site.biome === 'tundra';
+  const material = tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
   if (site.layer === 0) {
     // A roof and posts over an open camp rather than a sealed underground room.
     if (row === (Math.abs(dx) > 8 ? 2 : Math.abs(dx) > 4 ? 1 : 0)) return idOf(material);
-    if (Math.abs(dx) === 11 && row >= 3) return idOf(desert ? 'sandstone' : 'oaklog');
+    if (Math.abs(dx) === 11 && row >= 3) return idOf(tundra ? 'pinelog' : desert ? 'sandstone' : 'oaklog');
   } else {
     if (row === 0) return idOf(material);
     if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
   }
   if (dx >= 7 && dx <= 8 && row >= floor - 2) {
-    const chest = site.mimic ? (desert ? 'desert-mimic' : 'forest-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
+    const chest = site.mimic ? site.biome + '-mimic' : site.layer === 2 ? 'goldchest' : 'woodchest';
     return cellOf(chest, dx - 7, row - floor + 2).id;
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (tundra && site.layer === 1 && dx === -2 && row >= floor - 3) return idOf('crystal');
+  if (tundra && site.layer === 2 && Math.abs(dx) > 8 && row === floor - 1) return idOf('glacier-spikes');
   if (desert && site.layer === 1 && row >= floor - 3 && Math.abs(dx) <= 5) return idOf('water');
   if (desert && site.layer === 2 && row === floor - 1 && dx === -6) return idOf('ashvault-spikes');
   if (site.layer === 1 && row === floor - 5 && Math.abs(dx) < 8) return idOf('oakplatform');
@@ -1597,7 +1602,8 @@ function decorate(write, seed, x, yFrom, yTo) {
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
   const site = biomeSiteAt(seed, x, y);
-  if (site) return wallIdOf(site.biome === 'desert' ? 'sandwall' : site.layer === 0 ? 'plankwall' : 'brickwall');
+  if (site) return wallIdOf(site.layer === 0 && site.biome !== 'desert' ? 'plankwall'
+    : site.biome === 'tundra' ? 'snowwall' : site.biome === 'desert' ? 'sandwall' : 'brickwall');
   const depth = y - column.height;
   if (depth < 0) {
     // A sky structure carries its own wall, so digging into an island leaves a room
@@ -1719,7 +1725,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
