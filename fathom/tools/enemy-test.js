@@ -34,7 +34,7 @@ for (const spec of ENEMIES) {
     ok(Array.isArray(spec.bossDrops) && spec.bossDrops.length > 0,
       spec.key + ' is a boss and drops nothing worth the fight');
     ok(spec.hp > 500, spec.key + ' is a boss with ' + spec.hp + ' health');
-  } else {
+  } else if (!spec.hiddenSpawn) {
     ok(spec.weight > 0, spec.key + ' can never be chosen');
   }
   ok(spec.w > 0 && spec.h > 0, spec.key + ' has no size');
@@ -89,7 +89,7 @@ for (const spec of ENEMIES) {
   const biome = (spec.biomes || ['plains'])[0];
   const ctx = { biome, layer, wet: !!spec.wet, day: spec.day === false ? false : true,
     event: spec.event || null };
-  if (spec.summonOnly) {
+  if (spec.summonOnly || spec.hiddenSpawn) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
     // in which the spawn table could produce it. Checked against every combination the
     // game can actually be in, not just against its own declared habitat.
@@ -342,6 +342,10 @@ ok(victim.dead, 'a killed enemy is not marked dead');
     isWallSafe() { return false; }
   };
   const flat = { biomeAt: () => ({ key: 'plains' }), layerAt: () => ({ key: 'surface' }) };
+
+  const mimicSwarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat });
+  ok(mimicSwarm.wakeMimic(20, FLOOR - 2)?.key === 'forestmimic', 'chest did not awaken a mimic');
+  ok(mimicSwarm.wakeMimic(20, FLOOR) === null, 'mimic spawned inside rock');
 
   const bosses = ENEMIES.filter(e => e.boss);
   ok(bosses.length >= 2, 'only ' + bosses.length + ' boss(es): nothing proves the shape generalises');

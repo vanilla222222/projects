@@ -851,6 +851,24 @@ function drawHeld(ctx, g, held, hx, hy, angle) {
   }
 }
 
+BODIES.mimic = function (ctx, g, c) {
+  const jaw = (Math.sin(c.anim * 1.3 + c.time * 5) + 1) * 0.09;
+  const dark = '#302737', trim = '#c7a56d';
+  rect(ctx, g, -0.43, -0.64, 0.86, 0.51, dark);
+  rect(ctx, g, -0.38, -0.40, 0.76, 0.23, c.colour);
+  poly(ctx, g, [-0.44, -0.56 - jaw, -0.33, -0.82 - jaw, 0.36, -0.77 - jaw, 0.45, -0.55 - jaw], c.colour);
+  rect(ctx, g, -0.11, -0.73 - jaw, 0.22, 0.18, trim);
+  for (let i = 0; i < 5; i += 1) {
+    const x = -0.32 + i * 0.16;
+    poly(ctx, g, [x, -0.53 - jaw, x + 0.10, -0.53 - jaw, x + 0.04, -0.40 - jaw], '#f4e1bb');
+  }
+  for (const side of [-1, 1]) {
+    const x = side * 0.29;
+    limb(ctx, g, x, -0.25, x + Math.sin(c.anim + side) * 0.13, 0, 0.13, dark);
+    dot(ctx, g, x * 0.65, -0.63 - jaw, 0.038, '#ffb468');
+  }
+};
+
 // --- the entry point ---------------------------------------------------------------------
 
 // Draw one creature. `box` is in pixels; `c` carries colour, the animation phase and
@@ -868,7 +886,7 @@ const CREATURE_INLAYS = {
   maw: [-0.18, -0.62, 'gem'], worm: [0.14, -0.48, 'plate'],
   bat: [0, -0.56, 'seam'], lizard: [-0.13, -0.46, 'plate'],
   golem: [0, -0.63, 'gem'], imp: [-0.04, -0.57, 'seam'],
-  demon: [-0.02, -0.61, 'gem'], cloud: [-0.14, -0.57, 'speck']
+  demon: [-0.02, -0.61, 'gem'], mimic: [0, -0.30, 'plate'], cloud: [-0.14, -0.57, 'speck']
 };
 const creaturePaints = new Map();
 

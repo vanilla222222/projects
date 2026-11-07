@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'mimic-tooth': { name: 'Mimic Tooth', kind: 'loot', colour: '#ecd9a9' },
+  'briar-heart': { name: 'Briar Heart', kind: 'loot', colour: '#b2a75a' },
+  'rootcrown-core': { name: 'Root Crown Core', kind: 'loot', colour: '#a6806f' },
+  'briar-idol': { name: 'Briar Idol', kind: 'use', colour: '#989454',
+    use: { summon: 'briarwarden', layer: 'surface', biome: 'forest' }, text: 'Summon in the surface Forest' },
+  'rootcrown-idol': { name: 'Root Crown Idol', kind: 'use', colour: '#a6806f',
+    use: { summon: 'rootcrown', layer: 'deep', biome: 'forest' }, text: 'Summon in the deep Forest' },
   'aetherite-bar': { name: 'Aetherite Bar', kind: 'bar', colour: '#8de8d3' },
   'rift-core': { name: 'Rift Core', kind: 'loot', colour: '#b493e9' },
   'mire-pearl': { name: 'Mire Pearl', kind: 'loot', colour: '#80bd8c' },
@@ -270,6 +277,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'briar-brooch': { name: 'Briar Brooch', colour: '#b2a75a', text: 'Defence +4 and health regenerates 25% faster', defense: 4, regen: 1.25 },
+  'rootcrown-ring': { name: 'Root Crown Ring', colour: '#a6806f', text: 'Melee damage +15% and defence +5', melee: 1.15, defense: 5 },
+  'mimic-clasp': { name: 'Mimic Clasp', colour: '#ecd9a9', text: 'Pick up items from farther away', pickup: 1.65 },
+
   'mire-talisman': { name: 'Mire Talisman', colour: '#80bd8c', text: 'Health regenerates 20% faster and breath lasts twice as long', regen: 1.2, breathMul: 2 },
   'granite-aegis': { name: 'Granite Aegis', colour: '#9fb1c5', text: 'Defence +7 and take 25% less fall damage', defense: 7, fallMul: 0.75 },
   'aetherstep': { name: 'Aetherstep', colour: '#8de8d3', text: 'Double jump, move 20% faster, and take half fall damage', doubleJump: true, speed: 1.2, fallMul: 0.5 },
@@ -732,6 +743,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'briar-idol', kind: 'use', count: 1 }, need: [['oaklog', 10], ['chitin', 4], ['copper-bar', 3]], station: 'anvil' },
+  { out: { key: 'rootcrown-idol', kind: 'use', count: 1 }, need: [['oaklog', 12], ['crystal', 5], ['gold-bar', 3]], station: 'anvil' },
+  { out: { key: 'briar-brooch', kind: 'accessory', count: 1 }, need: [['briar-heart', 1], ['copper-bar', 3]], station: 'anvil' },
+  { out: { key: 'rootcrown-ring', kind: 'accessory', count: 1 }, need: [['rootcrown-core', 1], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'mimic-clasp', kind: 'accessory', count: 1 }, need: [['mimic-tooth', 2], ['iron-bar', 3]], station: 'anvil' },
   { out: { key: 'mire-idol', kind: 'use', count: 1 }, need: [['gel', 16], ['chitin', 5], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'granite-idol', kind: 'use', count: 1 }, need: [['crystal', 6], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'mire-talisman', kind: 'accessory', count: 1 }, need: [['mire-pearl', 1], ['shell', 8]], station: 'anvil' },

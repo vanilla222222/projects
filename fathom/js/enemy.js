@@ -267,6 +267,46 @@ const ENEMIES = [
     damage: 86, weight: 0, w: 5.2, h: 4.2, colour: '#a581e4', boss: true, summonOnly: true, emit: 10,
     drops: [['stardust', 18], ['coin', 1850]], bossDrops: ['rift-core'] },
 
+  { key: 'briarhare', name: 'Briar Hare', kind: 'walker', body: 'lizard', hp: 26,
+    damage: 6, weight: 6, w: 0.85, h: 0.65, colour: '#9b7754', biomes: ['forest'], layers: ['surface'], night: false,
+    drops: [['leather', 1], ['coin', 3]] },
+  { key: 'canopyjay', name: 'Canopy Jay', kind: 'flyer', body: 'bird', hp: 27,
+    damage: 7, weight: 5, w: 0.95, h: 0.9, colour: '#5d91a9', biomes: ['forest'], layers: ['surface'], night: false,
+    drops: [['feather', 2], ['coin', 3]] },
+  { key: 'barkmite', name: 'Bark Mite', kind: 'crawler', body: 'beetle', hp: 35,
+    damage: 9, weight: 6, w: 0.8, h: 0.7, colour: '#786743', biomes: ['forest'], layers: ['surface'],
+    drops: [['chitin', 1], ['coin', 4]] },
+  { key: 'duskowl', name: 'Dusk Owl', kind: 'flyer', body: 'bird', hp: 43,
+    damage: 11, weight: 5, w: 1, h: 1, colour: '#7e7194', biomes: ['forest'], layers: ['surface'], day: false,
+    drops: [['feather', 2], ['coin', 5]] },
+  { key: 'rootcrawler', name: 'Root Crawler', kind: 'crawler', body: 'spider', hp: 63,
+    damage: 15, weight: 7, w: 1.15, h: 0.8, colour: '#92734c', biomes: ['forest'], layers: ['caves'],
+    drops: [['chitin', 2], ['coin', 6]] },
+  { key: 'mossling', name: 'Mossling', kind: 'slime', body: 'slime', hp: 54,
+    damage: 12, weight: 7, w: 1, h: 0.85, colour: '#7a9e59', biomes: ['forest'], layers: ['caves'],
+    drops: [['gel', 2], ['coin', 5]] },
+  { key: 'lanternmoth', name: 'Lantern Moth', kind: 'flyer', body: 'wasp', hp: 73,
+    damage: 16, weight: 6, w: 1.1, h: 1.0, colour: '#dfaa70', emit: 4, biomes: ['forest'], layers: ['caves'],
+    drops: [['glowmoss', 1], ['coin', 7]] },
+  { key: 'amberburrower', name: 'Amber Burrower', kind: 'worm', body: 'worm', hp: 130,
+    damage: 23, weight: 6, w: 1.05, h: 1.0, colour: '#b5804f', biomes: ['forest'], layers: ['deep'],
+    drops: [['wormtooth', 2], ['coin', 10]] },
+  { key: 'heartwoodhusk', name: 'Heartwood Husk', kind: 'walker', body: 'golem', hp: 165,
+    damage: 26, weight: 7, w: 1.3, h: 1.8, colour: '#745451', biomes: ['forest'], layers: ['deep'],
+    drops: [['oaklog', 3], ['coin', 12]] },
+  { key: 'sporewraith', name: 'Spore Wraith', kind: 'flyer', body: 'cloud', hp: 112,
+    damage: 21, weight: 6, w: 1.1, h: 1.2, colour: '#819f91', biomes: ['forest'], layers: ['deep'],
+    drops: [['glowmoss', 2], ['coin', 10]] },
+  { key: 'forestmimic', name: 'Heartwood Mimic', kind: 'walker', body: 'mimic', hp: 275,
+    damage: 32, weight: 0, w: 1.8, h: 1.5, colour: '#8e949e', hiddenSpawn: true,
+    drops: [['mimic-tooth', 2], ['coin', 120]] },
+  { key: 'briarwarden', name: 'The Briar Warden', kind: 'king', body: 'golem', hp: 1650,
+    damage: 34, weight: 0, w: 3.6, h: 3, colour: '#8c764c', boss: true, summonOnly: true, emit: 3,
+    drops: [['oaklog', 12], ['coin', 340]], bossDrops: ['briar-heart'] },
+  { key: 'rootcrown', name: 'The Root Crown', kind: 'guardian', body: 'spider', hp: 3500,
+    damage: 48, weight: 0, w: 4, h: 3, colour: '#a6806f', boss: true, summonOnly: true, emit: 5,
+    drops: [['chitin', 12], ['coin', 680]], bossDrops: ['rootcrown-core'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -277,7 +317,7 @@ for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 // --- spawn selection --------------------------------------------------------------------
 
 function matches(spec, ctx) {
-  if (spec.summonOnly) return false;
+  if (spec.summonOnly || spec.hiddenSpawn) return false;
   // An event enemy exists only during its event, and an event does not suppress the
   // ordinary roster: a blood moon is the usual night with worse things added to it.
   if (spec.event && ctx.event !== spec.event) return false;
@@ -480,6 +520,14 @@ function makeSwarm(world, tiles, deps) {
       }
     }
     return null;
+  }
+
+  function wakeMimic(x, y) {
+    const spec = ENEMY_BY_KEY.forestmimic;
+    const mimic = makeEnemy(spec, x, y + 2 - spec.h);
+    if (overlaps(mimic, mimic.x, mimic.y)) return null;
+    list.push(mimic);
+    return mimic;
   }
 
   function bossAlive() {
@@ -870,7 +918,7 @@ function makeSwarm(world, tiles, deps) {
     list.length = 0;
   }
 
-  return { list, step, trySpawn, summon, bossAlive, touching, at, damage, contextAt,
+  return { list, step, trySpawn, summon, wakeMimic, bossAlive, touching, at, damage, contextAt,
     poolFor, clear, candidatesIn,
     get count() { return list.length; } };
 }

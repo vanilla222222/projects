@@ -334,6 +334,11 @@ WALLS.push({ id: WALLS.length, key: 'void-wall', name: 'Void Wall', colour: '#19
 pushTile({ key: 'aetherite', name: 'Aetherite Ore', colour: '#8de8d3', solid: true,
   opacity: 56, emit: 5, hardness: 4, toughness: 520, require: 175, basePowerGate: true, ore: true, grain: 0.2 });
 
+defineMulti('forest-mimic', 'Iron Chest', 2, 2, () => ({
+  solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
+  toughness: 70, chest: 'forest-mimic', drops: null
+}));
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

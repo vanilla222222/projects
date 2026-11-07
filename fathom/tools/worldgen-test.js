@@ -172,7 +172,7 @@ for (let x = -300; x <= 300; x += 23) {
   for (let y = surface - 6; y < surface + 260; y += 1) {
     const w = gen.baseWallAt(SEED, x, y);
     if (y < surface) {
-      if (w !== 0) strayWall += 1;
+      if (w !== 0 && !gen.forestSiteAt(SEED, x, y)) strayWall += 1;
     } else if (w === 0) missingWall += 1;
     else walled += 1;
   }
@@ -538,6 +538,25 @@ for (const altitude of [gen.VOID_START, gen.VOID_START + 2000, gen.VOID_START + 
   }
   for (const id of [tiles.AIR, tiles.idOf('voidstone'), tiles.idOf('void-crystal')]) {
     check(found.has(id), 'Void sample at ' + altitude + ' is missing ' + tiles.tile(id).key);
+  }
+}
+
+// The guaranteed Forest near spawn contains one structure design per layer.
+for (const seed of [SEED, 4242, -98765]) {
+  const sites = new Map();
+  for (let x = 24; x < 110; x += 2) {
+    for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 3) {
+      const site = gen.forestSiteAt(seed, x, y);
+      if (site) sites.set(site.layer, site);
+    }
+  }
+  check(sites.size === 3, 'starter Forest is missing a structure depth');
+  for (const site of sites.values()) {
+    const x = site.x + 7, y = site.top + site.height - 3;
+    const tile = tiles.tile(gen.baseTileAt(seed, x, y));
+    check(!!tile.chest, site.name + ' does not contain a chest');
+    check(site.mimic ? tile.chest === 'forest-mimic' && !gen.baseContainerAt(seed, x, y)
+      : !!gen.baseContainerAt(seed, x, y), site.name + ' chest and loot disagree');
   }
 }
 
