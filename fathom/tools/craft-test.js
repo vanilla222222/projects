@@ -29,7 +29,7 @@ const enemyDrops = require('../js/enemy.js').ENEMIES
 const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 // Meteorite is raw but is in no band: it is not generated with the world at all. A
 // meteor falls where a meteor falls, and its crater is written into the edit diff.
-const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
+const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
   'shell', 'obsidian', 'fallenstar', 'meteorite', 'vault-relic', 'void-crystal', 'aetherite', 'peat', 'palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
@@ -43,7 +43,7 @@ const produced = new Set(craft.RECIPES.map(r => r.out.key));
 for (const r of craft.RECIPES) {
   ok(r.out.count > 0, 'recipe for ' + r.out.key + ' yields something');
   ok(r.need.length > 0, 'recipe for ' + r.out.key + ' costs something');
-  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'accessory', 'use'].includes(r.out.kind),
+  ok(['block', 'wall', 'tool', 'bar', 'armor', 'ammo', 'accessory', 'use', 'loot'].includes(r.out.kind),
     r.out.key + ' has a known kind');
   ok(craft.kindOf(r.out.key) === r.out.kind,
     r.out.key + ' kind agrees between recipe and registry');
@@ -104,7 +104,7 @@ for (const spec of tiles.TILES) {
 }
 // A bench is makeable with nothing but one species' lumber, by hand, so a fresh world is
 // never a dead end. There is no single "workbench" recipe any more: every wood has one.
-const benches = craft.RECIPES.filter(r => /bench$/.test(r.out.key));
+const benches = craft.RECIPES.filter(r => tiles.BY_KEY[r.out.key]?.station === 'workbench');
 ok(benches.length === tiles.WOODS.length, 'not every wood species has a work bench');
 for (const bench of benches) {
   ok(bench.station === null, bench.out.key + ' cannot be made by hand');
@@ -116,6 +116,22 @@ for (const w of tiles.WOODS) {
     const r = craft.RECIPES.find(r2 => r2.out.key === w.key + part);
     ok(!!r, w.name + ' has no recipe for its ' + part);
     if (r) ok(r.station === null, w.name + ' ' + part + ' needs a station');
+  }
+}
+
+// Workshop recipes must have one owner and a reachable station chain.
+{
+  const expected = { 'heavy-workbench': 21, sawmill: 121, 'alchemy-table': 40, cauldron: 60, loom: 72 };
+  const workshop = craft.RECIPES.filter(r => expected[r.station] || r.out.key === 'heavy-workbench');
+  ok(new Set(workshop.map(r => r.out.key)).size === workshop.length, 'duplicate workshop output');
+  for (const [station, count] of Object.entries(expected)) {
+    ok(workshop.filter(r => r.station === station).length === count, station + ' catalog is incomplete');
+  }
+  const stations = ['heavy-workbench', 'sawmill', 'alchemy-table', 'cauldron', 'loom'];
+  for (const key of stations) {
+    const tile = tiles.BY_KEY[key];
+    const build = workshop.find(r => r.out.key === key);
+    ok(tile.station === key && !!build, key + ' cannot be crafted and placed as a station');
   }
 }
 

@@ -93,6 +93,43 @@ function makeUI(root, deps) {
       ctx.strokeRect(size * 0.16, size * 0.16, size * 0.68, size * 0.68);
       return canvas;
     }
+    const workshop = craft?.ITEMS[item.key];
+    if (workshop?.dish || workshop?.textile || workshop?.potionTier) {
+      const unit = size / 16;
+      const shape = (colour, x, y, w, h) => {
+        ctx.fillStyle = colour;
+        ctx.fillRect(x * unit, y * unit, w * unit, h * unit);
+      };
+      const colour = workshop.colour;
+      if (workshop.textile === 'thread') {
+        shape('#a27953', 5, 2, 6, 12);
+        for (let y = 4; y < 12; y += 2) shape(colour, 4, y, 8, 1);
+      } else if (workshop.textile === 'fabric') {
+        shape('#30273c', 2, 4, 12, 10);
+        shape(colour, 3, 3, 10, 9);
+        shape('#eee0c782', 4, 5, 8, 1);
+        shape('#eee0c782', 4, 9, 8, 1);
+      } else if (workshop.dish === 'skewer') {
+        shape('#bd956b', 7, 2, 2, 13);
+        for (let y = 4; y <= 10; y += 3) shape(colour, 4, y, 8, 2);
+      } else if (workshop.dish) {
+        shape('#775047', 2, 7, 12, 3);
+        shape('#aa7562', 3, 10, 10, 2);
+        shape('#875855', 5, 12, 6, 1);
+        shape(colour, 3, 6, 10, 2);
+        if (workshop.dish !== 'broth') shape('#e8c79f', 6, 5, 4, 1);
+        if (workshop.dish === 'hotpot') shape('#dc805c', 4, 9, 8, 2);
+      } else {
+        const width = workshop.potionTier === 'grand' ? 10 : workshop.potionTier === 'refined' ? 8 : 6;
+        const x = (16 - width) / 2;
+        shape('#ba9b6d', 6, 2, 4, 2);
+        shape('#c7d7df', 6, 4, 4, 2);
+        shape('#8197aa', x - 1, 6, width + 2, 8);
+        shape(colour, x, 8, width, 5);
+        shape('#ffffff80', x + 1, 7, 1, 5);
+      }
+      return canvas;
+    }
     if (craft && (item.key === 'bucket' || item.key === 'water-bucket')) {
       const u = size / 16;
       const full = item.key === 'water-bucket';
@@ -623,6 +660,8 @@ function makeUI(root, deps) {
     const craftPanel = el('div', 'panel craft-panel', els.screen);
     el('h2', null, craftPanel).textContent = 'Crafting';
     els.craftStations = el('p', 'stations', craftPanel);
+    els.craftFilter = el('select', 'craft-filter', craftPanel);
+    els.craftFilter.setAttribute('aria-label', 'Filter recipes by crafting station');
     els.craftList = el('div', 'craft-list', craftPanel);
     els.craftEmpty = el('p', 'craft-empty', craftPanel);
 
@@ -750,13 +789,28 @@ function makeUI(root, deps) {
   function paintCrafting(state) {
     if (!craft || !els.craftList) return;
     const stations = (state && state.stations) || new Set();
-    const list = craft.available(inventory, stations);
-    const signature = Array.from(stations).sort().join(',') + '|'
-      + list.map(r => r.out.key + 'x' + r.out.count).join(',');
+    const stationList = Array.from(stations).sort();
+    const filterKey = stationList.join(',');
+    if (els.craftFilter.dataset.stations !== filterKey) {
+      const previous = els.craftFilter.value;
+      els.craftFilter.dataset.stations = filterKey;
+      els.craftFilter.textContent = '';
+      for (const [value, label] of [['all', 'All nearby stations'], ['hand', 'By hand'],
+        ...stationList.map(key => [key, tiles.BY_KEY[key]?.name || key])]) {
+        const option = el('option', null, els.craftFilter);
+        option.value = value;
+        option.textContent = label;
+      }
+      els.craftFilter.value = stationList.includes(previous) || previous === 'hand' ? previous : 'all';
+    }
+    const filter = els.craftFilter.value;
+    const matchesStation = recipe => filter === 'all' || (recipe.station || 'hand') === filter;
+    const list = craft.available(inventory, stations).filter(matchesStation);
+    const signature = filterKey + '|' + filter + '|' + list.map(r => r.out.key + 'x' + r.out.count).join(',');
     if (signature === craftSignature) return;
     craftSignature = signature;
 
-    const names = Array.from(stations).map(s2 => s2[0].toUpperCase() + s2.slice(1));
+    const names = Array.from(stations).map(key => tiles.BY_KEY[key]?.name || key);
     els.craftStations.textContent = names.length
       ? 'At: ' + names.join(', ')
       : 'No station in reach \u2014 by hand only';
@@ -781,7 +835,7 @@ function makeUI(root, deps) {
       });
       craftRows.push(row);
     }
-    const total = craft.atStation(stations).length;
+    const total = craft.atStation(stations).filter(matchesStation).length;
     els.craftEmpty.textContent = list.length
       ? ''
       : (total ? 'Nothing you can afford yet.' : 'Find or place a station.');

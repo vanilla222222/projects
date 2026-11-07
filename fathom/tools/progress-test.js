@@ -64,7 +64,7 @@ function minableTiles() {
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
-    'stone', 'sand', 'crystal', 'glowmoss', 'obsidian', 'shell'
+    'stone', 'sand', 'crystal', 'glowmoss', 'mushroom', 'obsidian', 'shell'
   ]);
   const out = [];
   for (const key of generated) {

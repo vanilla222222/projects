@@ -170,11 +170,21 @@ for (const key of keys) {
   const granted = new Set();
   for (const item of Object.values(craft.ITEMS)) {
     if (item.use && item.use.buff) granted.add(item.use.buff);
+    if (item.use?.meal) granted.add('meal-' + item.use.meal);
   }
   for (const spec of Object.values(buffs.HEARTHS)) granted.add(spec.buff);
   for (const key of keys) {
     ok(granted.has(key), 'nothing in the game can give the buff ' + key);
   }
+}
+
+{
+  const held = buffs.makeBuffs();
+  held.give('swiftness', 240 * 2.25);
+  held.give('meal-hearty');
+  held.give('meal-trail');
+  ok(!held.has('meal-hearty') && held.has('meal-trail'), 'meals should replace one another');
+  ok(held.remaining('swiftness') === 540, 'a meal should preserve potion duration');
 }
 
 console.log('\n' + keys.length + ' buffs: '
