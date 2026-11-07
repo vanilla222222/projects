@@ -122,6 +122,30 @@ for (const [key, what] of CONTROLS) {
   ok(panel.includes('gear.bonus'), 'the gear panel never mentions the set bonus');
 }
 
+// --- the README's module table ----------------------------------------------------------
+// The front door. It listed twenty-five modules while the game had twenty-seven, because
+// a table of files is exactly the thing nobody remembers to add a row to.
+{
+  const path = require('node:path');
+  const readme = fs.readFileSync(__dirname + '/../README.md', 'utf8');
+  const listed = new Set();
+  const re = /^\| `js\/([a-z]+\.js)` \| (.+?) \|$/gm;
+  let m = re.exec(readme);
+  while (m) {
+    listed.add(m[1]);
+    ok(m[2].trim().length > 10, 'js/' + m[1] + ' has a one-word description in the README');
+    m = re.exec(readme);
+  }
+  const onDisk = fs.readdirSync(path.join(__dirname, '..', 'js'))
+    .filter(f => f.endsWith('.js'));
+  for (const file of onDisk) {
+    ok(listed.has(file), 'js/' + file + ' is not in the README\'s module table');
+  }
+  for (const file of listed) {
+    ok(onDisk.includes(file), 'the README lists js/' + file + ', which does not exist');
+  }
+}
+
 console.log('\n' + CONTROLS.length + ' controls listed: '
   + CONTROLS.map(([k]) => k).join(', '));
 console.log(checks + ' checks, ' + failures + ' failures');
