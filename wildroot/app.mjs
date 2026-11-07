@@ -3,8 +3,8 @@ import {onboarding} from './onboarding.mjs?v=42';
 import {WORLD_TWO,ADVANCEMENTS,EXPANSION_AREAS,worldOf} from './expansion-content.mjs?v=40';
 import * as InventoryGuide from './inventory-guidance.mjs?v=40';
 import * as Roster from './roster.mjs?v=40';
-import * as Talk from './conversations.mjs?v=40';
-import {npcDialogue} from './dialogue-panels.mjs?v=40';
+import * as Talk from './conversations.mjs?v=44';
+import {npcDialogue} from './dialogue-panels.mjs?v=44';
 import * as Parity from './parity-panels.mjs?v=40';
 import * as EconomyUI from './economy-panels.mjs?v=40';
 import * as Prof from './profession-panels.mjs?v=40';
@@ -43,7 +43,7 @@ function handleIntent(event){
  if(event.type==='dungeon-result'){dungeonResult=event.result;save();openPanel('dungeon-result');}
  if(event.type==='arena')openPanel('trial');
  if(event.type==='trial-result'){trialResult=event.result;save();openPanel('trial-result');}
- if(event.type==='npc'){npc=event.entity;conversation=Talk.startConversation(npc.classId||npc.role,performance.now(),world.c.id);if(npc.classId&&!world.c.metMentors.includes(npc.classId))world.c.metMentors.push(npc.classId);openPanel('npc');$('npc-speech')?.focus();}
+ if(event.type==='npc'){npc=event.entity;conversation=Talk.conversationTopic(state,world.c,Talk.startConversation(npc.classId||npc.role,performance.now(),world.c.id),'work',performance.now());if(npc.classId&&!world.c.metMentors.includes(npc.classId))world.c.metMentors.push(npc.classId);openPanel('npc');$('npc-speech')?.focus();}
  if(event.type==='tasks'){state.tasksUnlocked=true;save();openPanel('tasks');}
  if(event.type==='station')openPanel('craft');
  if(['shop','stamps','statues','vault'].includes(event.type)){shopView={};openPanel(event.type);}
@@ -56,7 +56,7 @@ let rendered=new Map();
 function html(id,content){if(rendered.get(id)!==content){$(id).innerHTML=content;rendered.set(id,content);}}
 function costs(cost){return U.costs(state,cost);}
 function advanceTalk(){if(!conversation)return;conversation=Talk.advanceConversation(state,world.c,conversation,performance.now());renderPanel();$('npc-speech')?.focus();}
-function animateTalk(now){if(panelKind!=='npc'||!conversation||conversation.revealed)return;const text=Talk.conversationLines(state,world.c,conversation)[conversation.page],n=state.options.reducedMotion?text.length:Math.min(text.length,Math.floor((now-conversation.started)/18)),el=$('npc-speech-text');if(el)el.textContent=text.slice(0,n);if(n===text.length){const focused=document.activeElement?.id==='npc-speech';conversation.revealed=true;renderPanel();if(focused)$('npc-speech')?.focus();}}
+function animateTalk(now){}
 function closePanel(){if(loadError){toast('Your original save is preserved. Import a backup or explicitly start fresh.');return;}if(paused){location.reload();return;}if(panelKind==='offline'){E.acknowledgeOffline(state);offline=null;save();}if(panelKind==='minigame')world.c.minigame=null;$('panel').close();panelKind=null;panelHistory=[];npc=null;conversation=null;last=performance.now();}
 function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();}
 function travel(area,index=0){if(world.teleport(area,Number(index))){closePanel();buildTargets();save();refresh();return true;}toast(E.lockReason(state,area,Number(index))||(!E.discovered(state,area,Number(index))?'Walk there through the portals to discover this room.':'No map teleports left. Walk through portals or use a Bottled Town Return.'));return false;}
@@ -160,7 +160,7 @@ document.addEventListener('click',event=>{
  if(d.talkTopic&&conversation){conversation=Talk.conversationTopic(state,c,conversation,d.talkTopic,performance.now());renderPanel();$('npc-speech')?.focus();return;}
  if(d.talkAccept!==undefined&&conversation){if(Talk.acceptConversationQuest(state,c,conversation,npc)){state.trackedQuest=conversation.questId;toast('Quest obtained: '+STORY.find(q=>q.id===conversation.questId).name);conversation=Talk.conversationTopic(state,c,conversation,'work',performance.now());save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
  if(d.talkComplete!==undefined&&conversation){const id=conversation.questId;if(Talk.completeConversationQuest(state,c,conversation,npc)){audio.play('quest');conversation={...conversation,mode:'complete',page:0,revealed:false,started:performance.now()};save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
- if(d.talkTrain!==undefined&&conversation&&conversation.mode==='training'&&Talk.conversationReady(state,c,conversation)&&Talk.conversationAccess(c,npc)){if(E.progressClass(state,c,conversation.giver)){toast(c.class?'Calling chosen: '+CLASSES[c.class].name:'Training step complete.');conversation=Talk.conversationTopic(state,c,conversation,'training',performance.now());save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
+ if(d.talkTrain!==undefined&&conversation&&conversation.mode==='training'&&Talk.conversationAccess(c,npc)){if(E.progressClass(state,c,conversation.giver)){toast(c.class?'Calling chosen: '+CLASSES[c.class].name:'Training step complete.');conversation=Talk.conversationTopic(state,c,conversation,'training',performance.now());save();renderPanel();refresh();$('npc-speech')?.focus();}return;}
  if(d.attribute){E.investAttribute(c,d.attribute,Number(d.count)||1);E.syncAccount(state);save();renderPanel();refresh();return;}
  if(d.book){toast(E.learnBook(state,d.book)?'Talent book learned for your roster.':'Meet the source requirement and visit its facility if needed.');save();renderPanel();return;}
  if(d.special){E.trainSpecial(state,c,d.special);E.syncAccount(state);save();renderPanel();refresh();return;}
