@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale', 'sunmane-tuft', 'sun-carat', 'pinemaw-claw', 'winterroot-core', 'windmill-gear', 'standard-thread', 'spore-crown-fragment', 'hollowroot-knot', 'bloodcrest-plume', 'veinward-core', 'reef-fin', 'abyssal-pearl'].includes(k)));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye', 'briar-heart', 'rootcrown-core', 'storm-plume', 'scourge-scale', 'rimehorn-shard', 'aurora-thread', 'orchid-stinger', 'amberroot-heart', 'reed-crown', 'blackfen-silk', 'cragbreaker-horn', 'cairn-echo', 'behemoth-core', 'ochre-scale', 'sunmane-tuft', 'sun-carat', 'pinemaw-claw', 'winterroot-core', 'windmill-gear', 'standard-thread', 'spore-crown-fragment', 'hollowroot-knot', 'bloodcrest-plume', 'veinward-core', 'reef-fin', 'abyssal-pearl', 'breakwater-claw', 'saltmarrow-bone'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -164,6 +164,8 @@ function climb() {
     if (was.has('vein-seal')) gain('veinward-core');
     if (was.has('reef-conch')) gain('reef-fin');
     if (was.has('abyssal-signal')) gain('abyssal-pearl');
+    if (was.has('breakwater-shell')) gain('breakwater-claw');
+    if (was.has('saltmarrow-token')) gain('saltmarrow-bone');
     if (was.has('rift-sigil')) gain('rift-core');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;

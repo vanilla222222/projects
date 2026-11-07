@@ -165,6 +165,11 @@ const ITEMS = {
   'reef-conch': { name: 'Reef Conch', kind: 'use', colour: '#69a5ad', use: { summon: 'reefleviathan', layer: 'surface', biome: 'ocean' }, text: 'Summon in the Ocean' },
   'abyssal-pearl': { name: 'Abyssal Pearl', kind: 'loot', colour: '#6284ac' },
   'abyssal-signal': { name: 'Abyssal Signal', kind: 'use', colour: '#6284ac', use: { summon: 'abyssaleye', layer: 'deep', biome: 'ocean' }, text: 'Summon in the Ocean' },
+  'driftlock-fang': { name: 'Driftlock Fang', kind: 'loot', colour: '#a9b89e' },
+  'breakwater-claw': { name: 'Breakwater Claw', kind: 'loot', colour: '#c68d66' },
+  'breakwater-shell': { name: 'Breakwater Shell', kind: 'use', colour: '#c68d66', use: { summon: 'breakwatercrab', layer: 'surface', biome: 'beach' }, text: 'Summon in the Shore' },
+  'saltmarrow-bone': { name: 'Saltmarrow Bone', kind: 'loot', colour: '#a5b8ae' },
+  'saltmarrow-token': { name: 'Saltmarrow Token', kind: 'use', colour: '#a5b8ae', use: { summon: 'saltmarrow', layer: 'deep', biome: 'beach' }, text: 'Summon in the Shore' },
   'chalklock-fang': { name: 'Chalklock Fang', kind: 'loot', colour: '#c0b69e' },
   'windmill-gear': { name: 'Windmill Gear', kind: 'loot', colour: '#bba782' },
   'standard-thread': { name: 'Standard Thread', kind: 'loot', colour: '#a2b7cd' },
@@ -355,6 +360,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'beach-clasp': { name: 'Shore Clasp', colour: '#a9b89e', text: 'Move 8% faster and pick up items from farther away', speed: 1.08, pickup: 1.4 },
+  'breakwater-band': { name: 'Breakwater Band', colour: '#c68d66', text: 'Defence +5 and breath lasts twice as long', defense: 5, breathMul: 2 },
+  'saltmarrow-charm': { name: 'Saltmarrow Charm', colour: '#a5b8ae', text: 'Health regenerates 25% faster and take 20% less fall damage', regen: 1.25, fallMul: 0.8 },
   'blight-clasp': { name: 'Blight Clasp', colour: '#a68ab5', text: 'Move 8% faster and pick up items from farther away', speed: 1.08, pickup: 1.4 },
   'spore-band': { name: 'Spore Band', colour: '#9a7cb4', text: 'Magic damage +12% and emits light', magic: 1.12, glow: 4 },
   'hollowroot-wrap': { name: 'Hollowroot Wrap', colour: '#9e719f', text: 'Defence +7 and health regenerates 20% faster', defense: 7, regen: 1.2 },
@@ -876,6 +884,11 @@ RECIPES.push(
   { out: { key: 'reef-talisman', kind: 'accessory', count: 1 }, need: [['reef-fin', 1], ['iron-bar', 4]], station: 'anvil' },
   { out: { key: 'abyssal-signal', kind: 'use', count: 1 }, need: [['finleather', 6], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'abyssal-focus', kind: 'accessory', count: 1 }, need: [['abyssal-pearl', 1], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'beach-clasp', kind: 'accessory', count: 1 }, need: [['driftlock-fang', 2], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'breakwater-shell', kind: 'use', count: 1 }, need: [['shell', 4], ['iron-bar', 3]], station: 'anvil' },
+  { out: { key: 'breakwater-band', kind: 'accessory', count: 1 }, need: [['breakwater-claw', 1], ['iron-bar', 4]], station: 'anvil' },
+  { out: { key: 'saltmarrow-token', kind: 'use', count: 1 }, need: [['bone', 6], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'saltmarrow-charm', kind: 'accessory', count: 1 }, need: [['saltmarrow-bone', 1], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'windmill-token', kind: 'use', count: 1 }, need: [['oaklog', 10], ['tin-bar', 4], ['chitin', 3]], station: 'anvil' },
   { out: { key: 'standard-pennant', kind: 'use', count: 1 }, need: [['bone', 8], ['leather', 5], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'windmill-brace', kind: 'accessory', count: 1 }, need: [['windmill-gear', 1], ['iron-bar', 3]], station: 'anvil' },

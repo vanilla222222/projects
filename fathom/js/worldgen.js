@@ -832,15 +832,16 @@ const PLAINS_SITES = ['Windmill Crossing', 'Chalk Cellar', 'Buried Standard'];
 const BLIGHT_SITES = ['Shadebound Camp', 'Spore Chapel', 'Hollow Root Vault'];
 const CRIMSON_SITES = ['Crimwood Lookout', 'Vein Foundry', 'Sanguine Crypt'];
 const OCEAN_SITES = ['Reef Shelter', 'Drowned Station', 'Abyssal Vault'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES, blight: BLIGHT_SITES, crimson: CRIMSON_SITES, ocean: OCEAN_SITES };
+const BEACH_SITES = ['Driftwood Jetty', 'Saltwater Storehouse', 'Saltmarrow Catacomb'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES, blight: BLIGHT_SITES, crimson: CRIMSON_SITES, ocean: OCEAN_SITES, beach: BEACH_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
   const biome = column.biome.key;
   const surface = column.height;
   const names = BIOME_SITE_NAMES[biome];
-  if (!names ||
-    biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome) return null;
+  if (!names || (biome !== 'beach' &&
+    (biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome))) return null;
   const make = (layer, top, height) => ({ x, top, height, layer, biome,
     name: names[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
   const sites = [make(0, biome === 'ocean' ? Math.max(SEA_LEVEL + 2, Math.min(SEA_LEVEL + 36, surface - 7)) : surface - 7, 8),
@@ -862,7 +863,8 @@ function biomeSiteAt(seed, x, y) {
   if (alt < -100 || alt > 1165) return null;
   const sites = biomeSite(seed, Math.floor(x / BIOME_SITE_SPACING));
   if (!sites || Math.abs(x - sites[0].x) > 12) return null;
-  return sites.find(site => y >= site.top && (y < site.top + site.height
+  return sites.find(site => (site.layer !== 0 || site.biome !== 'beach' || biomeAt(seed, x).key !== 'ocean')
+    && y >= site.top && (y < site.top + site.height
     || (site.layer === 0 && site.biome !== 'ocean' && y <= columnOf(seed, x).height))) || null;
 }
 
@@ -872,7 +874,7 @@ function forestSiteAt(seed, x, y) {
 }
 
 const BIOME_SITE_MATERIALS = { blight: ['shadewood', 'blight', 'brick'],
-  crimson: ['crimwood', 'flesh', 'brick'], ocean: ['sandstone', 'brick', 'slate'] };
+  crimson: ['crimwood', 'flesh', 'brick'], ocean: ['sandstone', 'brick', 'slate'], beach: ['oakwood', 'sandstone', 'brick'] };
 
 function biomeSiteTile(site, x, y) {
   const dx = x - site.x, row = y - site.top, floor = site.height - 1;
@@ -903,6 +905,8 @@ function biomeSiteTile(site, x, y) {
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (site.biome === 'beach' && site.layer === 0 && row === floor - 2 && dx < -4) return idOf('oakplatform');
+  if (site.biome === 'beach' && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('workbench');
   if (site.biome === 'blight' && site.layer === 1 && dx === -4 && row === floor - 1) return idOf('crystal');
   if (site.biome === 'crimson' && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('furnace');
   if (site.biome === 'ocean' && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('workbench');
