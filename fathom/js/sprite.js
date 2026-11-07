@@ -340,6 +340,12 @@ BODIES.golem = function (ctx, g, c) {
     }
   }
 
+  if (c.key === 'winterroot') {
+    const ice = c.windUp > 0 ? '#efffff' : '#91cdd7';
+    poly(ctx, g, [-0.35, -0.64, -0.43, -0.97, -0.16, -0.79, -0.13, -0.63], ice);
+    poly(ctx, g, [0.12, -0.62, 0.19, -0.88, 0.39, -0.98, 0.33, -0.62], ice);
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -685,6 +691,11 @@ BODIES.lizard = function (ctx, g, c) {
   if (c.key === 'sunmane') {
     poly(ctx, g, [0.03, -0.68, 0.02, -0.91, 0.19, -0.83, 0.27, -0.99,
       0.39, -0.83, 0.46, -0.6, 0.35, -0.43], '#d6a357');
+  }
+
+  if (c.key === 'pinemaw') {
+    poly(ctx, g, [-0.31, -0.60, -0.22, -0.90, -0.08, -0.72, 0.02, -0.94,
+      0.13, -0.69, 0.31, -0.63], '#a9b69b');
   }
 
 };

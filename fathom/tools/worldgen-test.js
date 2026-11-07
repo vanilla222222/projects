@@ -663,6 +663,21 @@ for (const seed of [SEED, 4242, -98765]) {
     'Sunken Sun Court has no traps');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -6154, y);
+    if (site?.biome === 'taiga') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Taiga is missing a structure depth');
+  const works = sites.get('Resinworks');
+  check(gen.baseTileAt(SEED, works.x - 5, works.top + works.height - 2) === tiles.idOf('furnace'),
+    'Resinworks has no furnace');
+  const barrow = sites.get('Winterroot Barrow');
+  check(gen.baseTileAt(SEED, barrow.x - 5, barrow.top + barrow.height - 2) === tiles.idOf('glacier-spikes'),
+    'Winterroot Barrow has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;

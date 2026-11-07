@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'pitchlock-fang': { name: 'Pitchlock Fang', kind: 'loot', colour: '#b1aa84' },
+  'pinemaw-claw': { name: 'Pinemaw Claw', kind: 'loot', colour: '#b09a72' },
+  'winterroot-core': { name: 'Winterroot Core', kind: 'loot', colour: '#a4c8cc' },
+  'pine-totem': { name: 'Pine Totem', kind: 'use', colour: '#b09a72',
+    use: { summon: 'pinemaw', layer: 'surface', biome: 'taiga' }, text: 'Summon on the Taiga surface' },
+  'winterroot-bell': { name: 'Winterroot Bell', kind: 'use', colour: '#a4c8cc',
+    use: { summon: 'winterroot', layer: 'deep', biome: 'taiga' }, text: 'Summon in the deep Taiga' },
   'gilt-fang': { name: 'Gilt Fang', kind: 'loot', colour: '#c2a566' },
   'sunmane-tuft': { name: 'Sunmane Tuft', kind: 'loot', colour: '#cc9b61' },
   'sun-carat': { name: 'Sun Carat', kind: 'loot', colour: '#e3bd70' },
@@ -326,6 +333,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'pinemaw-grip': { name: 'Pinemaw Grip', colour: '#b09a72', text: 'Melee damage +12% and tools swing 8% faster', melee: 1.12, swing: 0.92 },
+  'winterroot-band': { name: 'Winterroot Band', colour: '#a4c8cc', text: 'Defence +7 and health regenerates 20% faster', defense: 7, regen: 1.2 },
+  'pitchlock-clasp': { name: 'Pitchlock Clasp', colour: '#b1aa84', text: 'Take 20% less fall damage and pick up items from farther away', fallMul: 0.8, pickup: 1.4 },
   'sunmane-sash': { name: 'Sunmane Sash', colour: '#cc9b61', text: 'Move 12% faster and melee damage +10%', speed: 1.12, melee: 1.1 },
   'sun-court-ring': { name: 'Sun Court Ring', colour: '#e3bd70', text: 'Defence +7 and mana regenerates 25% faster', defense: 7, manaRegen: 1.25 },
   'gilt-clasp': { name: 'Gilt Clasp', colour: '#c2a566', text: 'Pick up items from farther away and emit light', pickup: 1.55, glow: 3 },
@@ -817,6 +827,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'pine-totem', kind: 'use', count: 1 }, need: [['pinelog', 12], ['bone', 5], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'winterroot-bell', kind: 'use', count: 1 }, need: [['crystal', 6], ['pinelog', 10], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'pinemaw-grip', kind: 'accessory', count: 1 }, need: [['pinemaw-claw', 1], ['leather', 6]], station: 'anvil' },
+  { out: { key: 'winterroot-band', kind: 'accessory', count: 1 }, need: [['winterroot-core', 1], ['silver-bar', 5]], station: 'anvil' },
+  { out: { key: 'pitchlock-clasp', kind: 'accessory', count: 1 }, need: [['pitchlock-fang', 2], ['iron-bar', 4]], station: 'anvil' },
   { out: { key: 'sunmane-idol', kind: 'use', count: 1 }, need: [['acacialog', 12], ['leather', 5], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'sun-court-seal', kind: 'use', count: 1 }, need: [['topaz', 3], ['chitin', 8], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'sunmane-sash', kind: 'accessory', count: 1 }, need: [['sunmane-tuft', 1], ['leather', 6]], station: 'anvil' },
