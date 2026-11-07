@@ -707,6 +707,21 @@ for (const [biome, x] of [['blight', -10460], ['crimson', -9586], ['ocean', -136
   }
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -10571, y);
+    if (site?.biome === 'beach') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Shore is missing a structure depth');
+  const store = sites.get('Saltwater Storehouse');
+  check(gen.baseTileAt(SEED, store.x - 5, store.top + store.height - 2) === tiles.idOf('workbench'),
+    'Saltwater Storehouse has no bench');
+  const crypt = sites.get('Saltmarrow Catacomb');
+  check(gen.baseTileAt(SEED, crypt.x - 5, crypt.top + crypt.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Saltmarrow Catacomb has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;

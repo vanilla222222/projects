@@ -1248,6 +1248,8 @@ function makeGame(canvas, deps) {
       ['veinwarden', 'Vein Warden', 'vein-seal', 'Optional. Summon in the Crimson at the deep layer.'],
       ['reefleviathan', 'Reef Leviathan', 'reef-conch', 'Optional. Summon in the Ocean at the surface layer.'],
       ['abyssaleye', 'Abyssal Eye', 'abyssal-signal', 'Optional. Summon in the Ocean at the deep layer.'],
+      ['breakwatercrab', 'Breakwater Crab', 'breakwater-shell', 'Optional. Summon in the Shore at the surface layer.'],
+      ['saltmarrow', 'Saltmarrow', 'saltmarrow-token', 'Optional. Summon in the Shore at the deep layer.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1818,7 +1820,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=three-biomes-1');
+      const worker = new Worker('workers/chunk.js?v=shore-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

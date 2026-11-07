@@ -296,6 +296,12 @@ BODIES.skeleton = function (ctx, g, c) {
   dot(ctx, g, -0.035, -0.95, 0.028, c.glow || '#d85a3a');
   limb(ctx, g, 0.03, -0.46, 0.03 + k.frontLeg, -0.02 - k.lift, 0.13, bone);
   limb(ctx, g, 0.06, -0.78, 0.26 + k.frontArm * 0.5, -0.56, 0.11, bone);
+  if (c.key === 'saltmarrow') {
+    const ink = c.windUp > 0 ? '#fff3c9' : '#bfd9cf';
+    poly(ctx, g, [-0.34, -0.60, -0.22, -0.88, -0.12, -0.70, 0.04, -0.90,
+      0.16, -0.70, 0.01, -0.55], ink);
+  }
+
 };
 
 BODIES.imp = function (ctx, g, c) {
@@ -559,6 +565,12 @@ BODIES.crab = function (ctx, g, c) {
   limb(ctx, g, -0.06, -0.76, -0.08, -0.92, 0.05, dark);
   dot(ctx, g, 0.14, -0.96, 0.07, '#1b1410');
   dot(ctx, g, -0.08, -0.94, 0.065, '#1b1410');
+  if (c.key === 'breakwatercrab') {
+    const ink = c.windUp > 0 ? '#fff3c9' : '#efbf9a';
+    poly(ctx, g, [-0.34, -0.60, -0.22, -0.88, -0.12, -0.70, 0.04, -0.90,
+      0.16, -0.70, 0.01, -0.55], ink);
+  }
+
 };
 
 BODIES.jelly = function (ctx, g, c) {

@@ -634,6 +634,20 @@ const ENEMIES = [
   { key: 'reefleviathan', minion: 'reefneedle', name: 'Reef Leviathan', kind: 'scourge', body: 'fish', hp: 2650, damage: 43, weight: 0, w: 4.2, h: 3.2, colour: '#69a5ad', boss: true, summonOnly: true, emit: 4, drops: [['coin', 420]], bossDrops: ['reef-fin'] },
   { key: 'abyssaleye', minion: 'deepreefeye', name: 'Abyssal Eye', kind: 'sovereign', body: 'bigeye', hp: 4650, damage: 56, weight: 0, w: 4.4, h: 3.2, colour: '#6284ac', boss: true, summonOnly: true, emit: 5, drops: [['coin', 840]], bossDrops: ['abyssal-pearl'] },
 
+  { key: 'sandpiper', name: 'Sandpiper', kind: 'flyer', body: 'bird', hp: 35, damage: 9, weight: 6, w: 1.05, h: 1, colour: '#a9b89e', biomes: ['beach'], layers: ['surface'], wet: false, drops: [['feather', 1], ['coin', 4]] },
+  { key: 'driftcrab', name: 'Drift Crab', kind: 'walker', body: 'crab', hp: 39, damage: 11, weight: 6, w: 1.05, h: 1, colour: '#a18c87', biomes: ['beach'], layers: ['surface'], wet: false, drops: [['shell', 1], ['coin', 4]] },
+  { key: 'dunecrawler', name: 'Dune Crawler', kind: 'crawler', body: 'beetle', hp: 43, damage: 13, weight: 6, w: 1.05, h: 1, colour: '#7c8090', biomes: ['beach'], layers: ['surface'], wet: false, drops: [['chitin', 1], ['coin', 4]] },
+  { key: 'spraywisp', name: 'Spray Wisp', kind: 'flyer', body: 'cloud', hp: 47, damage: 15, weight: 6, w: 1.05, h: 1, colour: '#a9b89e', biomes: ['beach'], layers: ['surface'], wet: false, drops: [['glowmoss', 1], ['coin', 4]] },
+  { key: 'saltborer', name: 'Salt Borer', kind: 'worm', body: 'worm', hp: 90, damage: 17, weight: 6, w: 1.05, h: 1, colour: '#a18c87', biomes: ['beach'], layers: ['caves'], wet: false, drops: [['wormtooth', 1], ['coin', 8]] },
+  { key: 'brinejelly', name: 'Brine Jelly', kind: 'swimmer', body: 'jelly', hp: 95, damage: 19, weight: 6, w: 1.05, h: 1, colour: '#7c8090', biomes: ['beach'], layers: ['caves'], wet: true, drops: [['gel', 1], ['coin', 8]] },
+  { key: 'wrackbat', name: 'Wrack Bat', kind: 'flyer', body: 'bat', hp: 100, damage: 21, weight: 6, w: 1.05, h: 1, colour: '#a9b89e', biomes: ['beach'], layers: ['caves'], wet: false, drops: [['leather', 1], ['coin', 8]] },
+  { key: 'saltmarrowguard', name: 'Saltmarrow Guard', kind: 'walker', body: 'skeleton', hp: 161, damage: 23, weight: 6, w: 1.35, h: 1.8, colour: '#a18c87', biomes: ['beach'], layers: ['deep'], wet: false, drops: [['bone', 1], ['coin', 12]] },
+  { key: 'drifthusk', name: 'Drift Husk', kind: 'walker', body: 'golem', hp: 169, damage: 25, weight: 6, w: 1.35, h: 1.8, colour: '#7c8090', biomes: ['beach'], layers: ['deep'], wet: false, drops: [['crystal', 1], ['coin', 12]] },
+  { key: 'brineoracle', name: 'Brine Oracle', kind: 'flyer', body: 'eye', hp: 177, damage: 27, weight: 6, w: 1.35, h: 1, colour: '#a9b89e', biomes: ['beach'], layers: ['deep'], wet: false, drops: [['lens', 1], ['coin', 12]] },
+  { key: 'beachmimic', name: 'Driftlock Mimic', kind: 'walker', body: 'mimic', hp: 375, damage: 41, weight: 0, w: 1.8, h: 1.5, colour: '#a9b89e', hiddenSpawn: true, drops: [['driftlock-fang', 2], ['coin', 180]] },
+  { key: 'breakwatercrab', minion: 'driftcrab', name: 'Breakwater Crab', kind: 'king', body: 'crab', hp: 1950, damage: 37, weight: 0, w: 4.2, h: 3, colour: '#c68d66', boss: true, summonOnly: true, emit: 4, drops: [['coin', 420]], bossDrops: ['breakwater-claw'] },
+  { key: 'saltmarrow', minion: 'saltmarrowguard', name: 'Saltmarrow', kind: 'guardian', body: 'skeleton', hp: 3880, damage: 49, weight: 0, w: 4.4, h: 3.2, colour: '#a5b8ae', boss: true, summonOnly: true, emit: 5, drops: [['coin', 840]], bossDrops: ['saltmarrow-bone'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
