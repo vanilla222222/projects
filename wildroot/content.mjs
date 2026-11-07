@@ -1,6 +1,7 @@
-import {QUEST_REFORMS} from './quest-content.mjs?v=39';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=39';
-import {roomLayout} from './layouts.mjs?v=39';
+import {installExpansion} from './expansion-content.mjs?v=40';
+import {QUEST_REFORMS} from './quest-content.mjs?v=40';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=40';
+import {roomLayout} from './layouts.mjs?v=40';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -449,3 +450,9 @@ for(const[id,name,calling,stats,cost]of [
 ]){EQUIPMENT[id]={name,slot:'weapon',class:calling,stats};item(id,name,'rare','⚔');RECIPES.push({id:'gear-'+id,name,skill:'smithing',station:'anvil',equipment:id,cost,unlock:'verdant-steel'});}
 // The first supply lesson introduces food before the copper route.
 STORY.find(q=>q.id==='first-roots').reward.items.bread=6;
+
+installExpansion({AREAS,ITEMS,ENEMIES,RECIPES,EQUIPMENT,GEAR_SLOTS,GATHER_NODES,SKILLS,CAPACITY_BAGS,FOODS});
+for(const area of ['tide-town','tide-gate'])TOWN_SHOPS[area]={name:area==='tide-town'?'Tidehaven Supplies':'Farwatch Stores',stock:[['stew',12,30],['feast',25,20],['town-teleport',30,10]]};
+
+for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+' Card',effect:'attack',amount:.015,kind:'monster'};
+for(const id of Object.keys(ITEMS).filter(id=>id.startsWith('tide-')||id.startsWith('depths-')))if(!EQUIPMENT[id]&&!RECIPES.some(r=>r.cost[id])&&!OFFERINGS.includes(id))OFFERINGS.push(id);

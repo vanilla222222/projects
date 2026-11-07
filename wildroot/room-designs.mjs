@@ -1,3 +1,4 @@
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=40';
 // Every room owns a visual identity and a separate ascent. Coordinates extend
 // existing shelves so saved positions, service locations and old drops remain valid.
 export const ROOM_DESIGNS={
@@ -31,3 +32,5 @@ export const ROOM_DESIGNS={
  vault:{mood:'Forgotten maker mechanism',sky:['#242c42','#6d717b'],rock:'#63697e',trim:'#c8b276',motif:'clockvault',weather:'sparks',shelves:[[800,1000,70],[1300,900,-170],[850,1000,-410],[1400,850,-650]],exit:false},
  boss:{mood:'Heart of the broken crown',sky:['#291d3b','#785368'],rock:'#675362',trim:'#c09678',motif:'rootcrown',weather:'embers',shelves:[[850,1000,70],[1450,1000,-170],[2000,950,-410]],exit:false}
 };
+
+for(const [aIndex,a]of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++)ROOM_DESIGNS[a.id+'-'+i]={mood:a.zones[i],sky:[`hsl(${(aIndex*39+i*9+160)%360} 40% ${50-i*3}%)`,a.sky[1]],rock:['#718e91','#706f8d','#93785c','#67805a'][aIndex%4],trim:['#c4e2cb','#e5bb8e','#bdd1ed'][i%3],motif:a.motif+':'+a.id+'-'+i,weather:['mist','seeds','sparks','leaves'][i%4],shelves:[],exit:!a.town};

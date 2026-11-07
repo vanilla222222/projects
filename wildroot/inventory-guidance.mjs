@@ -1,5 +1,5 @@
-import * as E from './engine.mjs?v=39';
-import * as D from './content.mjs?v=39';
+import * as E from './engine.mjs?v=40';
+import * as D from './content.mjs?v=40';
 export function comparison(c,gear,slot=null){
  const def=D.EQUIPMENT[gear.base],target=slot||(def.slot==='ring'&&c.loadout.ring&&!c.loadout.ring2?'ring2':def.slot),old=c.loadout[target],next=E.equipmentStats(gear),before=E.equipmentStats(old);
  return{target,old,allowed:!def.class||def.class===c.class,rows:[...new Set([...Object.keys(next),...Object.keys(before)])].map(stat=>({stat,before:before[stat]||0,after:next[stat]||0,delta:(next[stat]||0)-(before[stat]||0)})).filter(r=>Math.abs(r.delta)>1e-8)};

@@ -1,3 +1,4 @@
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=40';
 // Hand-authored pixel textures: silhouettes, anatomy and surface patterns are species-specific.
 const SIZE=48;
 function art(colors,paint,description,motion='bob'){
@@ -41,3 +42,18 @@ export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;r
 export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.sin(time*2)*5:Math.sin(time*3)*1.5;g.save();g.translate(Math.round(x),Math.round(y+bob));const scale=boss?5:2.3;g.scale(scale,scale);g.fillStyle='#16243055';g.fillRect(-17,-1,34,3);g.translate(-24,-48);for(const p of a.runs){g.fillStyle=p.color;g.fillRect(p.x,p.y,p.w,1);}if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#d6a4ed':'#f1d68b';for(let i=0;i<3;i++)g.fillRect(17+i*6,9-i%2*3,4,4);}g.restore();return true;}
 const svgCache=new Map();
 export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);if(!id)return'';const key=id+':'+cls;if(svgCache.has(key))return svgCache.get(key);const a=MONSTER_ART[id],svg=`<svg class="${cls}" viewBox="0 0 48 48" aria-hidden="true" shape-rendering="crispEdges">${a.runs.map(p=>`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="1" fill="${p.color}"/>`).join('')}</svg>`;svgCache.set(key,svg);return svg;}
+
+// Tidewild silhouettes have area anatomy, then room-specific crests and palettes.
+for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i)=>{
+ const hue=(region*41+i*23+175)%360,b=`hsl(${hue} 35% 53%)`,l=`hsl(${hue} 55% 76%)`,s=`hsl(${hue} 25% 29%)`,f=`hsl(${(hue+65)%360} 65% 68%)`;
+ MONSTER_ART[a.id+'-'+i]=art({b,l,s,f},(r,line,oval)=>{
+  const shape=(region+i)%5;
+  if(shape===0){oval(24,31,15,10,'o');oval(24,30,13,8,'b');for(let n=0;n<3;n++){line(12,28+n*4,4,24+n*7,'s');line(35,28+n*4,44,24+n*7,'s');}r(9,17,6,11,'f');r(34,17,6,11,'f');r(19,25,3,4,'e');r(28,25,3,4,'e');}
+  if(shape===1){oval(11,22,9,13,'s');oval(37,22,9,13,'s');oval(11,20,7,10,'l');oval(37,20,7,10,'b');r(21,15,7,23,'b');r(21,14,8,6,'f');r(22,17,2,2,'e');r(27,17,2,2,'e');line(21,14,16,6,'s');line(28,14,33,6,'s');}
+  if(shape===2){r(13,23,22,17,'b');r(8,20,8,20,'s');r(34,20,8,20,'s');r(16,40,7,7,'s');r(28,40,7,7,'s');r(17,11,15,13,'l');r(19,16,4,3,'e');r(27,16,3,3,'e');r(22,29,5,7,'f');}
+  if(shape===3){oval(22,31,15,10,'b');r(30,18,11,15,'b');r(9,38,5,9,'s');r(28,38,5,9,'s');r(34,23,2,3,'e');r(38,30,7,4,'s');line(10,29,3,19,'f');line(32,19,28,7,'l');line(36,19,41,8,'l');}
+  if(shape===4){oval(24,27,12,13,'b');oval(24,24,8,9,'l');r(19,22,3,4,'e');r(28,22,3,4,'e');line(13,29,3,15,'s');line(34,29,44,15,'s');line(22,39,17,47,'f');line(27,39,33,47,'f');}
+  for(let bit=0;bit<7;bit++)r(4+bit*6,3,3,((region*8+i)>>bit)&1?8:3,'f');
+  for(let n=0;n<=i;n++){r(15+n*4,8+(n%2)*3,3,5,'f');r(14+n*4,33+(n%2)*4,2,2,'l');}
+ },a.names[i]+' — distinct Tidewild anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
+});

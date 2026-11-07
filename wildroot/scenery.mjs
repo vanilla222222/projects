@@ -28,7 +28,7 @@ export function drawRoomBackdrop(g,layout,v,t){
  }
 }
 export function drawRoomSetpieces(g,layout,v,t){
- const d=layout.design,m=d.motif,x=layout.width*.57,b=644,top=layout.minY+120,height=b-top;
+ const d=layout.design,m=d.motif.split(':')[0],x=layout.width*.57,b=644,top=layout.minY+120,height=b-top;
  g.save();g.globalAlpha=.7;
  if(['oak','roots','fungus','amber','orchids'].includes(m)){
   trunk(g,x,b,top, m==='roots'?250:m==='oak'?115:190,m==='amber'?'#70503e':'#4e5b3f');

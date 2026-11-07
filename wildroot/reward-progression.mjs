@@ -1,5 +1,5 @@
-import {STORY,EXPANSIONS,CAPACITY_BAGS,STAMPS,QUEST_UPGRADES,UPGRADE_SOURCES,TOWN_SHOPS} from './content.mjs?v=39';
-import * as I from './inventory.mjs?v=39';
+import {STORY,EXPANSIONS,CAPACITY_BAGS,STAMPS,QUEST_UPGRADES,UPGRADE_SOURCES,TOWN_SHOPS} from './content.mjs?v=40';
+import * as I from './inventory.mjs?v=40';
 
 export const REPEAT_UPGRADE_COINS=35;
 const permanent=id=>!!(EXPANSIONS[id]||CAPACITY_BAGS[id]||id.startsWith('stamp-')&&STAMPS[id.slice(6)]);

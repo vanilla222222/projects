@@ -1,4 +1,5 @@
-import {ROOM_DESIGNS} from './room-designs.mjs?v=39';
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=40';
+import {ROOM_DESIGNS} from './room-designs.mjs?v=40';
 // Authored room profiles. Upper platforms connect directly to the ground for reliable tap navigation.
 export const GROUND=644;
 const D={
@@ -30,6 +31,10 @@ vault:[2460,'The Forgotten Vault',[[300,480,485],[1010,580,330],[1830,370,440]],
 boss:[3240,'Heart of the Rootwarden',[[390,510,435],[1190,470,305],[1930,500,465],[2680,350,350]],[],{},[['elder',2390,650],['roots',1480,500],['ruins',2870,220]]]
 };
 for(let zone=0;zone<3;zone++){const upper=Array.from({length:10+zone*2},(_,i)=>[i%2?850:350,1000,GROUND-(i+1)*180]);D['tree-'+zone]=[2200,['Rootspire Ascent','Heartwood Stair','Crown Observatory'][zone],upper,[[700,upper[2][2]]],{},[['elder',1100,600],['vines',1650,400]],{'portal-left':[65,GROUND],'portal-right':[1760,upper.at(-1)[2]],...(zone===2?{telescope:[1450,upper.at(-1)[2]]}:{})}];}
+for(const [aIndex,a] of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++){
+ const width=2900+i*180+aIndex*60,upper=Array.from({length:4+i%3},(_,n)=>[650+(n%2)*500+i*45,1150,GROUND-(n+1)*200]);
+ D[a.id+'-'+i]=[width,a.zones[i],upper,a.resources[i].map((_,r)=>[520+r*350,GROUND]),{},[['pond',1600,400],['ruins',2300,250]],{shop:[1000,GROUND],advancement:[1500,GROUND],station:[2100,GROUND]}];
+}
 export const ROOM_KEYS=Object.keys(D);
 export function roomLayout(area,index,boss=false,secret=null){
  const key=boss?'boss':secret||`${area}-${index}`,d=D[key],design=ROOM_DESIGNS[key];if(!d||!design)throw Error('Unknown room '+key);
@@ -48,4 +53,4 @@ export function roomLayout(area,index,boss=false,secret=null){
  if(boss||secret)spawns=[{x:boss?2390:secret==='sunwell'?1490:1740,y:GROUND}];
  return{key,width,title,minY,height:GROUND-Math.min(top.y,GROUND)+306,platforms,ladders,resources:resources.map(([x,y])=>({x,y})),npcs,points,landmarks,spawns,sky:design.sky,design};
 }
-export function pointFor(layout,id){if(id==='portal-left')return{x:65,y:GROUND};if(layout.points[id])return{x:layout.points[id][0],y:layout.points[id][1]};if(id==='portal-right')return{x:layout.width-70,y:GROUND};if(id==='storage')return{x:160,y:GROUND};const p=layout.points[id]||layout.npcs[id.replace('npc-','')];return p?{x:p[0],y:p[1]}:{x:layout.width*.6,y:GROUND};}
+export function pointFor(layout,id){if(id.startsWith('portal-branch-')||id.startsWith('portal-return-')){const a=EXPANSION_AREAS.find(a=>id.endsWith(a.id)),parent=a?.entry||['town',3],siblings=EXPANSION_AREAS.filter(a=>(a.entry?.[0]||'town')===parent[0]&&(a.entry?.[1]??3)===parent[1]),i=siblings.findIndex(x=>x.id===a?.id);return{x:350+Math.max(0,i)*400+(id.startsWith('portal-return-')?180:0),y:GROUND};}if(id==='portal-left')return{x:65,y:GROUND};if(layout.points[id])return{x:layout.points[id][0],y:layout.points[id][1]};if(id==='portal-right')return{x:layout.width-70,y:GROUND};if(id==='storage')return{x:160,y:GROUND};const p=layout.points[id]||layout.npcs[id.replace('npc-','')];return p?{x:p[0],y:p[1]}:{x:layout.width*.6,y:GROUND};}
