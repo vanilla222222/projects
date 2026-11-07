@@ -136,6 +136,8 @@ const BEACH_BAND = 10;
 // eases out to nothing over HOME_FADE, so the coastline is pushed away from spawn rather
 // than deleted. Everything stays a pure function of x.
 const HOME_FLAT = 420;
+const START_FOREST_CHUNKS = 10;
+const START_FOREST_EDGE = CHUNK * START_FOREST_CHUNKS / 2;
 const HOME_FADE = 1100;
 
 function homeFactor(x) {
@@ -418,7 +420,9 @@ function buildColumn(seed, x) {
     const blight = blightAt(seed, x);
     if (blight) biome = BY_BIOME[blight];
   }
-  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land, cover,
+  const terrainBiome = biome;
+  if (x >= -START_FOREST_EDGE && x < START_FOREST_EDGE) biome = BY_BIOME.forest;
+  return { x, biome, terrainBiome, climate: CLIMATE_BIOMES[best], height: h, bias, land, cover,
     weights: choice.weights, choice };
 }
 
@@ -464,7 +468,7 @@ const CAVE_PROFILES = {
 };
 
 function caveProfile(column) {
-  const key = (column.biome.cave) || (column.climate && column.climate.cave) || 'normal';
+  const key = ((column.terrainBiome || column.biome).cave) || (column.climate && column.climate.cave) || 'normal';
   return CAVE_PROFILES[key] || CAVE_PROFILES.normal;
 }
 
@@ -1615,7 +1619,7 @@ const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
-    homeFactor, HOME_FLAT, HOME_FADE,
+    homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
