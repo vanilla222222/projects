@@ -331,6 +331,9 @@ defineMulti('ashvault-cache', 'Ashvault Reliquary', 2, 2, () => ({
 WALLS.push({ id: WALLS.length, key: 'ashvault-wall', name: 'Ashvault Wall', colour: '#302538', opacity: 7 });
 WALLS.push({ id: WALLS.length, key: 'void-wall', name: 'Void Wall', colour: '#19172c', opacity: 7 });
 
+pushTile({ key: 'aetherite', name: 'Aetherite Ore', colour: '#8de8d3', solid: true,
+  opacity: 56, emit: 5, hardness: 4, toughness: 520, require: 175, basePowerGate: true, ore: true, grain: 0.2 });
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

@@ -668,9 +668,10 @@ function makeGame(canvas, deps) {
     }
 
     const gear = state.gear || { power: 1, swing: 1 };
-    const power = mining.powerOf(tool) * gear.power;
+    const basePower = mining.powerOf(tool);
+    const power = basePower * gear.power;
     // Walls come away like soft ground: they are a backing, not a seam of rock.
-    const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec);
+    const perHit = diggingWall ? power * 2 : mining.damagePerHit(power, spec, basePower);
     if (perHit <= 0) {
       state.player.mining = null;
       say(spec.name + ' needs a ' + mining.requirementName(spec), 1.6);
@@ -1180,6 +1181,7 @@ function makeGame(canvas, deps) {
       rows.push('Next pickaxe · ' + spec.name + ' · ' + recipeLine(key));
       const ore = key.replace('-pick', '');
       const band = worldgen.ORE_BANDS.find(entry => entry.key === ore);
+      if (key === 'rift-pick') rows.push('Defeat the Rift Archon for a Rift Core. The Rift Pickaxe mines Aetherite on sky islands.');
       if (band) rows.push('Find ' + craft.nameOf(ore, tiles) + ' · '
         + (ore === 'emberite' ? 'Search Hell and smelt it with obsidian.'
           : 'Usually ' + band.from + '–' + band.to + ' tiles below the surface.'));
@@ -1191,7 +1193,10 @@ function makeGame(canvas, deps) {
       ['hollloweye', 'The Hollow Eye', 'bloodshotlens', 'Summon at night. Its lens improves ranged combat.'],
       ['furnacewarden', 'Furnace Warden', 'cinder-idol', 'Summon in Hell. Forge an Ashvault Key from a core.'],
       ['ashguardian', 'Ashvault Guardian', 'guardian-effigy', 'Bring the key to an Ashvault in the Trench.'],
-      ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.']
+      ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
+      ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
+      ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
+      ['riftarchon', 'Rift Archon', 'rift-sigil', 'Use a Void Heart to summon the final boss in the Void.']
     ]) {
       rows.push((defeatedBosses.has(boss) ? 'Defeated · ' : '') + title + ' · ' + hint);
       if (!defeatedBosses.has(boss)) rows.push(craft.nameOf(summon, tiles) + ' · ' + recipeLine(summon));
@@ -1758,7 +1763,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=surface-1');
+      const worker = new Worker('workers/chunk.js?v=rift-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

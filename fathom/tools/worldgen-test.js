@@ -267,6 +267,7 @@ for (const s of SURVEY_SEEDS) {
       // Below the ground, water means a flooded cave: this column must have a water
       // table, the tile must be above its floor, and it must be a cave in the first
       // place, never water sitting inside what should be solid rock.
+      if (gen.structureTileAt(s, x, y) === WATER) continue; // Constructed cistern.
       undergroundWater += 1;
       // The generator's own rule for what is submerged, not a restatement of it.
       check(gen.submergedVoid(s, x, y, column),
@@ -520,6 +521,8 @@ for (let slot = -200; slot < 200; slot += 1) {
     islands += 1;
     const alt = gen.altitudeOf(island.cy);
     check(alt <= -250 && alt >= -800, 'a sky island sits at altitude ' + alt);
+    check(gen.skyTileAt(SEED, island.cx, island.cy + Math.round(island.ry)) === tiles.idOf('aetherite'),
+      'sky island ' + slot + ' is missing its central Aetherite vein');
   }
   const body = gen.planetoidAt(SEED, slot);
   if (body) {
@@ -667,7 +670,7 @@ for (let slot = -400; slot < 400; slot += 1) {
   check(rect.y0 > gen.surfaceHeight(SEED, rect.body.ax) + 40,
     'a ' + rect.kind + ' generated too close to the surface');
 }
-for (const kind of ['cabin', 'ruin', 'grotto', 'mineshaft']) {
+for (const kind of ['cabin', 'ruin', 'grotto', 'mineshaft', 'cistern', 'reliquary']) {
   check((structureKinds[kind] || 0) > 10,
     'only ' + (structureKinds[kind] || 0) + ' of structure kind ' + kind + ' in 800 slots');
 }
