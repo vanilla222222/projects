@@ -43,6 +43,10 @@ origin lies within `STRUCTURE_MARGIN` columns of their edge, not just their own.
 
 ## What is checked
 
+`node tools/all.js` runs every suite and prints a summary table; `--quiet` prints only
+the summary and, for anything that failed, its failures. Twenty-one files is past the
+point where running them by hand is reasonable, and a suite nobody runs protects nothing.
+
 `node tools/worldgen-test.js` builds a region as one piece, then builds the same region by
 stitching independently generated chunks, and requires the two to be byte-identical. That is
 the seam oracle, and it runs over 55,296 tiles. It also asserts chunks are pure functions of
