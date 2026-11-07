@@ -1,6 +1,6 @@
 import * as D from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=45';
+import * as UI from './ui-panels.mjs?v=46';
 import {icon,itemArt,esc,tabs,section} from './ui-art.mjs?v=45';
 const button=(text,attrs='',disabled=false)=>`<button ${attrs} ${disabled?'disabled':''}>${text}</button>`;
 const note=text=>`<p class="ui-note">${text}</p>`;
