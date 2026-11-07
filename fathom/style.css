@@ -436,6 +436,16 @@ html, body {
   text-transform: uppercase;
   color: #9fb0c4;
 }
+.craft-filter {
+  margin: 0 0 8px;
+  padding: 5px 7px;
+  border: 1px solid #43546b;
+  border-radius: 5px;
+  background: #182330;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+}
 .craft-list {
   display: flex;
   flex-direction: column;

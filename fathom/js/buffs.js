@@ -40,6 +40,13 @@ const BUFFS = {
   featherfall: { name: 'Feather Fall', text: 'Falls hurt far less', seconds: 240,
     colour: '#d8d2c2', effect: { fallMul: 0.3 } },
 
+  'meal-hearty': { name: 'Hearty Meal', text: 'Defence +4 and 30% faster health regeneration',
+    seconds: 180, colour: '#e5a273', meal: true, effect: { defense: 4, regen: 1.3 } },
+  'meal-trail': { name: 'Trail Meal', text: 'Move 10% faster and gain 10% mining power',
+    seconds: 180, colour: '#acbf70', meal: true, effect: { speed: 1.1, power: 1.1 } },
+  'meal-focus': { name: 'Focus Meal', text: 'Magic costs 10% less mana',
+    seconds: 180, colour: '#a89de1', meal: true, effect: { manaCost: 0.9 } },
+
   // Standing buffs. Short by design: they are re-given every moment their source is in
   // reach, so the duration is only how long they outlive walking away from it.
   cosy: { name: 'Cosy', text: 'Health returns faster near a fire', seconds: 2.5,
@@ -65,6 +72,11 @@ function makeBuffs() {
     const spec = BUFFS[key];
     if (!spec) return false;
     const want = seconds === undefined ? spec.seconds : seconds;
+    if (spec.meal) {
+      for (const active of Object.keys(held)) {
+        if (active !== key && BUFFS[active]?.meal) delete held[active];
+      }
+    }
     held[key] = Math.max(held[key] || 0, want);
     return true;
   }
@@ -124,7 +136,7 @@ function makeBuffs() {
   function restore(saved) {
     clear();
     for (const [key, seconds] of Object.entries(saved || {})) {
-      if (BUFFS[key] && seconds > 0) held[key] = seconds;
+      if (BUFFS[key] && seconds > 0) give(key, seconds);
     }
   }
 

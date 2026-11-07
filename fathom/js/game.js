@@ -235,6 +235,10 @@ function makeGame(canvas, deps) {
       }
       say('Maximum mana is now ' + stats.maxMana, 2.2);
       sfx('upgrade');
+    } else if (use.meal) {
+      if (!buffs || !buffs.give('meal-' + use.meal)) return true;
+      statsModule.heal(stats, use.heal);
+      say(spec.name, 1.6);
     } else if (use.heal !== undefined) {
       if (stats.health >= stats.maxHealth) { say('You are unhurt', 1.2); return true; }
       statsModule.heal(stats, use.heal);
@@ -288,12 +292,10 @@ function makeGame(canvas, deps) {
     } else if (use.buff !== undefined) {
       if (!use.buff) { say('The bottle is empty', 1.4); return true; }
       if (!buffs) return true;
-      buffs.give(use.buff);
-      const spec = buffModule.BUFFS[use.buff];
-      say(spec ? spec.name : 'Potion', 1.6);
-      // Drinking a potion leaves the bottle, which is most of what makes bottles worth
-      // keeping rather than a one-off cost.
-      inventory.add({ key: 'bottle', kind: 'use' }, 1);
+      const buff = buffModule.BUFFS[use.buff];
+      if (!buff) return true;
+      buffs.give(use.buff, buff.seconds * (use.duration || 1));
+      say(spec.name, 1.6);
     } else if (use.open !== undefined) {
       // A crate holds what it holds because of where it was caught, like a pot.
       const px = Math.floor(state.player.x);
@@ -309,6 +311,10 @@ function makeGame(canvas, deps) {
       return false;
     }
     inventory.take(item.key, 1);
+    // Return the empty bottle after spending the potion so a freed slot can hold it.
+    if (use.buff && inventory.add({ key: 'bottle', kind: 'use' }, 1)) {
+      dropItem(state.player.x, state.player.y, 'bottle', 'use', 1);
+    }
     spawnParticles(state.player.x + 0.5, state.player.y + 0.5, spec.colour, 10);
     if (!use.summon) sfx('use');
     return true;
@@ -1277,6 +1283,8 @@ function makeGame(canvas, deps) {
       }
       if (hallow !== null) rows.push('Hallow surface near x ' + hallow + ' · Search the caves below for spell crystals.');
     }
+    rows.push('Workshop · Build a Heavy Workbench at a Work Bench to unlock advanced stations and statues.');
+    rows.push('Sawmill furniture · Loom textiles · Alchemy Table potions · Cauldron meals');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1883,7 +1891,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=ossuary-1');
+      const worker = new Worker('workers/chunk.js?v=workshop-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

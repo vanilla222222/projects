@@ -399,6 +399,75 @@ defineMulti('dungeon-cache', 'Gilded Ossuary Cache', 2, 2, () => ({
 }));
 WALLS.push({ id: WALLS.length, key: 'dungeon-wall', name: 'Ossuary Wall', colour: '#252d49', opacity: 7 });
 
+const WORKSHOP_PLANS = [];
+function workshopFixture(key, name, colour, fixture, need, station, extra = {}) {
+  pushTile({ key, name, colour, fixture, solid: false, opacity: 4,
+    toughness: 50, hardness: 0.25, emit: 0, ...extra });
+  WORKSHOP_PLANS.push({ out: { key, kind: 'block', count: 1 }, need, station });
+}
+
+for (const [key, name, colour, station, need, emit] of [
+  ['heavy-workbench', 'Heavy Workbench', '#a48c76', 'workbench', [['#wood', 14], ['iron-bar', 5]], 0],
+  ['sawmill', 'Sawmill', '#a47753', 'heavy-workbench', [['#wood', 12], ['iron-bar', 4]], 0],
+  ['alchemy-table', 'Alchemy Table', '#79ac9d', 'heavy-workbench', [['glass', 8], ['silver-bar', 3]], 4],
+  ['cauldron', 'Cauldron', '#9c7770', 'heavy-workbench', [['stone', 8], ['iron-bar', 6], ['torch', 2]], 6],
+  ['loom', 'Loom', '#be9170', 'sawmill', [['#wood', 10], ['rope', 4]], 0]
+]) workshopFixture(key, name, colour, key, need, station, { station: key, emit });
+
+const SAWMILL_FIXTURES = [
+  ['armchair', 'Armchair', 8, 'chair'], ['stool', 'Stool', 4, 'chair'],
+  ['banquet-table', 'Banquet Table', 13, 'table'], ['writing-desk', 'Writing Desk', 9, 'table'],
+  ['wardrobe', 'Wardrobe', 10], ['bookcase', 'Bookcase', 10],
+  ['dresser', 'Dresser', 8], ['barrel-decor', 'Decorative Barrel', 6],
+  ['crate-decor', 'Decorative Crate', 5], ['planter', 'Planter', 5],
+  ['trellis', 'Trellis', 6], ['clock', 'Clock', 8],
+  ['shield-plaque', 'Shield Plaque', 5], ['figurehead', 'Figurehead', 7],
+  ['birdhouse', 'Birdhouse', 5], ['display-stand', 'Display Stand', 6],
+  ['rail', 'Decorative Rail', 4], ['coat-rack', 'Coat Rack', 5],
+  ['lantern-post', 'Lantern Post', 7], ['candelabra', 'Candelabra', 7]
+];
+for (const wood of WOODS) {
+  for (const [shape, name, cost, furniture] of SAWMILL_FIXTURES) {
+    const emit = shape === 'lantern-post' || shape === 'candelabra' ? 9 : 0;
+    const need = [[wood.key + 'wood', cost]];
+    if (emit) need.push(['torch', 1]);
+    if (shape === 'clock') need.push(['iron-bar', 1]);
+    workshopFixture(wood.key + '-' + shape, wood.name + ' ' + name, wood.colour,
+      shape, need, 'sawmill', { furniture, emit });
+  }
+}
+
+const WORKSHOP_DYES = [
+  ['natural', 'Natural', '#dfca9b', null], ['scarlet', 'Scarlet', '#c95668', 'ruby'],
+  ['azure', 'Azure', '#5c91d4', 'sapphire'], ['verdant', 'Verdant', '#62ad7f', 'emerald'],
+  ['golden', 'Golden', '#e2b559', 'topaz'], ['violet', 'Violet', '#9a70c4', 'amethyst'],
+  ['pearl', 'Pearl', '#e1ddd0', 'shell'], ['charcoal', 'Charcoal', '#66647a', 'obsidian']
+];
+const LOOM_FIXTURES = [
+  ['rug', 'Rug', 3], ['curtain', 'Curtain', 3], ['banner', 'Banner', 2],
+  ['cushion', 'Cushion', 2], ['tapestry', 'Tapestry', 4],
+  ['canopy', 'Canopy', 4], ['screen', 'Folding Screen', 3]
+];
+for (const [key, name, colour] of WORKSHOP_DYES) {
+  for (const [shape, label, cost] of LOOM_FIXTURES) {
+    const need = [[key + '-fabric', cost]];
+    if (shape === 'screen' || shape === 'canopy') need.push(['#wood', 3]);
+    workshopFixture(key + '-' + shape, name + ' ' + label, colour, shape, need, 'loom');
+  }
+}
+
+for (const [material, label, colour, ingredient] of [
+  ['stone', 'Stone', '#9a9bac', 'stone'],
+  ['gilt', 'Gilt', '#d4aa58', 'gold-bar'],
+  ['obsidian', 'Obsidian', '#76658d', 'obsidian']
+]) {
+  for (const [motif, name] of [
+    ['owl', 'Owl'], ['serpent', 'Serpent'], ['knight', 'Knight'],
+    ['slime', 'Slime'], ['guardian', 'Guardian'], ['star', 'Star']
+  ]) workshopFixture(material + '-' + motif + '-statue', label + ' ' + name + ' Statue', colour,
+    motif + '-statue', material === 'stone' ? [['stone', 14]] : [[ingredient, material === 'gilt' ? 4 : 10], ['stone', 4]], 'heavy-workbench');
+}
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
@@ -448,7 +517,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

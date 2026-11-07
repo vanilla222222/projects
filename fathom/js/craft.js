@@ -12,7 +12,7 @@ const CRAFT_TOOLS = (typeof require === 'function') ? require('./mining.js').TOO
 const CRAFT_WALLS = (typeof require === 'function')
   ? require('./tiles.js').WALL_BY_KEY : WALL_BY_KEY;
 const CRAFT_TILES = (typeof require === 'function')
-  ? require('./tiles.js') : { BY_KEY, TILES, WOODS };
+  ? require('./tiles.js') : { BY_KEY, TILES, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES };
 // Resolved at call time rather than at load time. buffs.js is loaded after this file in
 // the browser, so naming `BUFFS` here would read a `const` before its declaration and
 // throw on load - which is the same trap the two lookups above are written around, and
@@ -737,14 +737,16 @@ function describe(key, tilesModule) {
   }
   if (item && item.use) {
     lines.push('Used where you stand');
-    if (item.use.buff) {
+    const buffKey = item.use.meal ? 'meal-' + item.use.meal : item.use.buff;
+    if (buffKey) {
       const table = (typeof require === 'function')
         ? require('./buffs.js').BUFFS
         : (typeof BUFFS === 'undefined' ? {} : BUFFS);
-      const buff = table[item.use.buff];
+      const buff = table[buffKey];
       if (buff) {
         lines.push(buff.text);
-        lines.push('Lasts ' + Math.round(buff.seconds / 60) + ' minutes');
+        const seconds = Math.round(buff.seconds * (item.use.duration || 1));
+        lines.push('Lasts ' + Math.floor(seconds / 60) + 'm ' + seconds % 60 + 's');
       }
     }
     if (item.text) lines.push(item.text);
@@ -1134,6 +1136,58 @@ for (const w of CRAFT_TILES.WOODS) {
 }
 
 
+RECIPES.push(...CRAFT_TILES.WORKSHOP_PLANS);
+function workshopItem(key, item, count, need, station) {
+  ITEMS[key] = item;
+  RECIPES.push({ out: { key, kind: item.kind, count }, need, station });
+}
+
+for (const [key, name, colour, dye] of CRAFT_TILES.WORKSHOP_DYES) {
+  const thread = key + '-thread';
+  workshopItem(thread, { name: name + ' Thread', colour, kind: 'loot', textile: 'thread' }, 4,
+    dye ? [['natural-thread', 4], [dye, 1]] : [['rope', 2]], 'loom');
+  workshopItem(key + '-fabric', { name: name + ' Fabric', colour, kind: 'loot', textile: 'fabric' }, 2,
+    [[thread, 3]], 'loom');
+}
+
+for (const [base, reagent] of [
+  ['swift', 'feather'], ['ironskin', 'iron-bar'], ['regen', 'glowmoss'],
+  ['gills', 'shell'], ['spelunk', 'crystal'], ['shine', 'blightshroom'],
+  ['archery', 'lens'], ['rage', 'chitin'], ['clarity', 'amethyst'], ['feather', 'feather']
+]) {
+  const original = base + '-potion';
+  const source = ITEMS[original];
+  RECIPES.find(recipe => recipe.out.key === original).station = 'alchemy-table';
+  for (const [tier, label, duration, extra] of [
+    ['field', 'Field', 0.65, []],
+    ['refined', 'Refined', 1.5, [['glowmoss', 1]]],
+    ['grand', 'Grand', 2.25, [['fallenstar', 1]]]
+  ]) {
+    const need = tier === 'field' ? [['bottle', 1], [reagent, 1]] : [[original, 1], ...extra];
+    workshopItem(tier + '-' + original, { ...source, name: label + ' ' + source.name,
+      use: { ...source.use, duration }, potionTier: tier }, 1, need, 'alchemy-table');
+  }
+}
+
+for (const [fish, quality] of [
+  ['bass', 0], ['trout', 1], ['icepike', 2], ['perch', 0], ['oasiscarp', 1],
+  ['swordfish', 3], ['cavefish', 2], ['glowfish', 3], ['shadowcarp', 4], ['obsidifish', 5],
+  ['piranha', 1], ['shrimp', 0], ['deepshrimp', 3], ['flarefin', 4], ['magmasnail', 5]
+]) {
+  for (const [dish, name, serving, garnish, baseHeal] of [
+    ['broth', 'Broth', 'hearty', null, 28], ['skewer', 'Skewer', 'trail', 'mushroom', 36],
+    ['chowder', 'Chowder', 'hearty', 'shell', 53], ['hotpot', 'Hotpot', 'focus', 'glowmoss', 42]
+  ]) {
+    const ingredient = ITEMS[fish];
+    const heal = baseHeal + quality * 12;
+    const need = [[fish, 1]];
+    if (garnish) need.push([garnish, 1]);
+    workshopItem(fish + '-' + dish, { name: ingredient.name + ' ' + name, kind: 'use',
+      colour: ingredient.colour, dish, use: { meal: serving, heal },
+      text: 'Restores ' + heal + ' health. Replaces your current meal buff.' }, 1, need, 'cauldron');
+  }
+}
+
 // Which stations are in reach. Scanning the box is cheap enough to do every frame, and
 // doing it that way means a station the player mines out stops counting immediately.
 function stationsNear(world, tiles, px, py) {
@@ -1172,13 +1226,12 @@ const TAGS = {
 // Everything a tag stands for. Tiles and items both, because `#wood` is a family of
 // tiles and `#fish` is a family of items, and a tag that could only ever mean tiles would
 // have quietly matched nothing at all.
+const CRAFT_TAG_MEMBERS = Object.fromEntries(Object.entries(TAGS).map(([tag, matches]) => [
+  tag, [...new Set([...CRAFT_TILES.TILES.map(spec => spec.key), ...Object.keys(ITEMS)].filter(matches))]
+]));
+
 function tagMembers(tag) {
-  const test = TAGS[tag];
-  if (!test) return [];
-  const out = [];
-  for (const spec of CRAFT_TILES.TILES) if (test(spec.key)) out.push(spec.key);
-  for (const key of Object.keys(ITEMS)) if (test(key) && out.indexOf(key) === -1) out.push(key);
-  return out;
+  return CRAFT_TAG_MEMBERS[tag] || [];
 }
 
 // How much of an ingredient the inventory holds, counting every member of a tag.
