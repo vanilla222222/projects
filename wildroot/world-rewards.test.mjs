@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
-import {COMPLETION_ITEMS,WORLD_GIVERS,SIDE_NPCS,STAR_BOOKS,PRODUCTION_REWARDS} from './world-rewards.mjs';
+import {COMPLETION_ITEMS,WORLD_GIVERS,SIDE_NPCS,STAR_BOOKS,PRODUCTION_REWARDS,EXTRA_STAMPS,EXTRA_STATUES} from './world-rewards.mjs';
 import {World,createMap} from './world.mjs?v=49';
 
 test('Boss victories open the next world independently of optional quest and gear completion',()=>{
@@ -114,4 +114,30 @@ test('World Two and Three metal tiers have weapons, armor and native tool upgrad
  for(const [id,world] of [['tide-net-2',2],['obsidian-net',2],['meteor-net',3],['void-net',3],['meteor-survey-kit',3],['void-survey-kit',3]]){
   assert.equal(E.recipePage(D.RECIPES.find(r=>r.equipment===id)),world);
  }
+});
+
+
+test('New stamps and statues have playable sources and grant their advertised bonuses',()=>{
+ const s=E.freshSave(),c=E.selected(s);
+ for(const [id,,,effect,amount,material,enemy,quest] of EXTRA_STAMPS){
+  const item='stamp-'+id;
+  assert.ok(D.ITEMS[material]);
+  assert.ok(enemy?D.ENEMIES[enemy].loot.some(drop=>drop.id===item):D.STORY.find(q=>q.id===quest).reward.items[item]);
+  Object.assign(c,{area:'town',zone:3,position:{x:650,y:644}});
+  E.give(c,item,1);
+  const before=E.stampBonuses(s)[effect]||0;
+  assert.ok(E.registerStamp(s,c,id));
+  assert.ok(Math.abs(E.stampBonuses(s)[effect]-before-amount)<1e-9);
+ }
+ for(const [id,,effect,amount,enemy,quest] of EXTRA_STATUES){
+  const item='statue-'+id;
+  assert.ok(D.ENEMIES[enemy].loot.some(drop=>drop.id===item));
+  if(quest)assert.equal(D.STORY.find(q=>q.id===quest).reward.items[item],5);
+  c.statuesUnlocked=true;c.position={x:1330,y:644};
+  E.give(c,item,5);
+  const before=E.personalBonuses(c)[effect]||0;
+  assert.equal(E.depositStatues(s,c,id),5);
+  assert.ok(Math.abs(E.personalBonuses(c)[effect]-before-amount)<1e-9);
+ }
+ assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
 });

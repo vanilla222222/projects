@@ -1,5 +1,5 @@
 import {installTideCampaign} from './tide-campaign.mjs?v=45';
-import {COMPLETION_ITEMS,SIDE_NPCS,SIDE_QUESTS,WORLD_GIVERS,STAR_BOOKS,PRODUCTION_REWARDS,WORLD_SKILL_STATUES,WORLD_EXTRA_STATUES,EXTRA_TOOL_LABELS} from './world-rewards.mjs';
+import {COMPLETION_ITEMS,SIDE_NPCS,SIDE_QUESTS,WORLD_GIVERS,STAR_BOOKS,PRODUCTION_REWARDS,WORLD_SKILL_STATUES,WORLD_EXTRA_STATUES,EXTRA_TOOL_LABELS,EXTRA_STAMPS,EXTRA_STATUES} from './world-rewards.mjs';
 import {ORBIT_QUESTS,EXPEDITION_TASKS} from './orbit-campaign.mjs';
 import {installOrbit,ORBIT_JOBS,ORBIT_ADVANCEMENTS} from './world-three-content.mjs';
 import {installExpansion,SKILL_TOOLS} from './expansion-content.mjs?v=45';
@@ -494,7 +494,7 @@ for(const [world,id] of Object.entries(COMPLETION_ITEMS)){
 for(const [id,d] of Object.entries(STAR_BOOKS)){
  const book='star-book-'+id;
  item(book,'Star Talent · '+d.name,'rare','✦');
- if(d.enemy)ENEMIES[d.enemy].loot.push({id:book,chance:.025});
+ if(d.enemy)ENEMIES[d.enemy].loot.push({id:book,chance:['boss','tempest','singularity'].includes(d.enemy)?1:.025});
  else STORY.find(q=>q.id===d.quest).reward.items[book]=1;
 }
 for(const [id,name,world,level,seconds,material,enemy,stat,value] of PRODUCTION_REWARDS){
@@ -581,3 +581,19 @@ for(const [world,id,name,slots,quest,cost] of [
  RECIPES.push({id,name,world,station:'anvil',skill:'smithing',output:id,count:1,cost});
  STORY.find(q=>q.id===quest).reward.items[id]=1;
 }
+
+for(const [id,name,group,effect,amount,material,enemy,quest] of EXTRA_STAMPS){
+ const key='stamp-'+id,source=enemy?ENEMIES[enemy].name:STORY.find(q=>q.id===quest).name+' quest';
+ STAMPS[id]={name,group,effect,amount,material,source};
+ item(key,name,'rare','▧');
+ if(enemy)ENEMIES[enemy].loot.push({id:key,chance:['boss','tempest','singularity'].includes(enemy)?1:.025});
+ else STORY.find(q=>q.id===quest).reward.items[key]=1;
+}
+for(const [id,name,effect,amount,enemy,quest] of EXTRA_STATUES){
+ const key='statue-'+id,reward=STORY.find(q=>q.id===quest);
+ STATUES[id]={name,effect,amount,source:ENEMIES[enemy].name+(reward?' · '+reward.name+' quest':'')};
+ item(key,name,'rare','♜');
+ ENEMIES[enemy].loot.push({id:key,chance:.035});
+ if(reward)reward.reward.items[key]=5;
+}
+OFFERINGS.push(...EXTRA_STAMPS.map(([id])=>'stamp-'+id),...EXTRA_STATUES.map(([id])=>'statue-'+id));

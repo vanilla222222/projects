@@ -31,7 +31,16 @@ export const STAR_BOOKS={
  'ancient-multitool':{name:'Ancient Multitool',effect:'gathering',amount:.008,world:2,enemy:'tide-marsh-2'},
  'tiptoe-quickness':{name:'Tiptoe Quickness',effect:'speed',amount:.006,world:2,quest:'field-lookout'},
  'overaccurate-crit':{name:'Overaccurate Crit',effect:'crit',amount:.003,world:3,enemy:'orbit-relay-3'},
- 'ubercharged-health':{name:'Ubercharged Health',effect:'health',amount:.007,world:3,quest:'field-technician'}
+ 'ubercharged-health':{name:'Ubercharged Health',effect:'health',amount:.007,world:3,quest:'field-technician'},
+ 'trail-rhythm':{name:'Trail Rhythm',effect:'haste',amount:.004,world:1,enemy:'forest-4'},
+ 'scrappers-instinct':{name:'Scrapper’s Instinct',effect:'coins',amount:.005,world:1,quest:'field-forester'},
+ 'rootward-practice':{name:'Rootward Practice',effect:'health',amount:.004,world:1,enemy:'boss'},
+ 'undertow-focus':{name:'Undertow Focus',effect:'accuracy',amount:.004,world:2,enemy:'tide-shore-4'},
+ 'field-notebook':{name:'Field Notebook',effect:'skillXP',amount:.006,world:2,quest:'field-excavator'},
+ 'tempest-resolve':{name:'Tempest Resolve',effect:'skill',amount:.006,world:2,enemy:'tempest'},
+ 'comet-recovery':{name:'Comet Recovery',effect:'killHeal',amount:.001,world:3,enemy:'orbit-comets-5'},
+ 'zero-g-discipline':{name:'Zero-G Discipline',effect:'combatAFK',amount:.004,world:3,quest:'field-icewarden'},
+ 'eventide-echo':{name:'Eventide Echo',effect:'attack',amount:.004,world:3,enemy:'singularity'}
 };
 export const PRODUCTION_REWARDS=[
  ['rivets','Iron Rivets',1,7,95,'iron','caves-2','defense',4],
@@ -58,3 +67,30 @@ export function worldSkillBonus(c,skill,equipment){
  return (c.accountBonuses?.worldXP||0)+(c.accountBonuses?.[key]||0)+
   Object.values(c.loadout||{}).reduce((sum,g)=>sum+(equipment[g.base]?.stats[key]||0),0);
 }
+
+// Reward sources span early routes, field quests, and each world's finale.
+export const EXTRA_STAMPS=[
+ ['trail', 'Trail Stamp','Misc','speed',.003,'birch','forest-3'],
+ ['steady-hand','Steady Hand Stamp','Combat','accuracy',.004,'iron',null,'field-prospector'],
+ ['kiln','Kiln Stamp','Skills','skill-smithing',.01,'charcoal','caves-2'],
+ ['rootwarden','Rootwarden Stamp','Combat','health',.005,'vine-fiber','boss'],
+ ['cast','Long Cast Stamp','Skills','skill-fishing',.01,'reed-fish',null,'field-fisher'],
+ ['lantern-net','Lantern Net Stamp','Skills','skill-bugcatching',.01,'glowbug','tide-marsh-3'],
+ ['relic','Relic Stamp','Skills','skill-digging',.01,'clay',null,'field-excavator'],
+ ['tempest','Tempest Stamp','Combat','skill',.004,'storm-eel','tempest'],
+ ['hydroponic','Hydroponic Stamp','Skills','skill-cultivation',.01,'moonfruit',null,'field-orchardist'],
+ ['pressure-seal','Pressure Seal Stamp','Skills','skill-weaving',.01,'nebula-cloth','orbit-silk-5'],
+ ['star-chart','Star Chart Stamp','Skills','skill-cartography',.01,'orbit-fossil',null,'field-technician'],
+ ['eventide','Eventide Stamp','Combat','attack',.003,'voidglass-ore','singularity']
+];
+export const EXTRA_STATUES=[
+ ['oakrunner','Oakrunner Statue','speed',.004,'forest-1',null],
+ ['cave-watch','Cave Watch Statue','accuracy',.005,'caves-1',null],
+ ['greenreach-harvest','Greenreach Harvest Statue','skill-logging',.012,'forest-4','field-forester'],
+ ['berrywarden','Berrywarden Statue','skill-foraging',.012,'tide-bramble-3','field-gardener'],
+ ['coast-runner','Coast Runner Statue','speed',.004,'tide-shore-3',null],
+ ['storm-hunter','Storm Hunter Statue','skill-hunting',.012,'tide-hunt-4',null],
+ ['starlamb','Starlamb Statue','skill-beastkeeping',.012,'orbit-wilds-4','field-tracker'],
+ ['brewkeeper','Brewkeeper Statue','skill-fermentation',.012,'orbit-comets-4','field-icewarden'],
+ ['orbit-warden','Orbit Warden Statue','health',.006,'orbit-rim-4',null]
+];
