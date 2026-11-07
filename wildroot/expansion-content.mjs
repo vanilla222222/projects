@@ -1,4 +1,6 @@
 // Region data is independent of saves and rendering. Mining stays in W1, fishing in W2.
+import {WORLD_THREE,ORBIT_RESOURCES,ORBIT_ADVANCEMENTS} from './world-three-content.mjs';
+export {WORLD_THREE};
 export const SKILL_TOOLS={mining:'pick',logging:'axe',fishing:'rod',bugcatching:'net',digging:'shovel',foraging:'gloves'};
 export const WORLD_TWO={id:2,name:'The Tidewilds',entry:'tide-town',areas:[
  {id:'tide-town',name:'Tidehaven',zones:['Landfall Quay','Artisan Boardwalk','Pathfinders’ Hall'],theme:'town',town:true,resources:[[],[],[]],sky:['#70b9d3','#f4d9a3'],motif:'stiltmarket',entry:null},
@@ -11,7 +13,7 @@ export const WORLD_TWO={id:2,name:'The Tidewilds',entry:'tide-town',areas:[
  {id:'tide-gate',name:'Farwatch',zones:['Expedition Camp','The Sealed Horizon'],theme:'town',town:true,resources:[[],[]],sky:['#555b88','#eab88e'],motif:'gate',entry:['tide-cliffs',3]}
 ]};
 export const MINING_EXPANSION={id:'depths',name:'The Lower Reaches',label:'Lower Reaches',world:1,zones:['Cobalt Fault','Obsidian Descent','The Black Crucible'],theme:'deep',icon:'◈',text:'Three deeper seams beyond the old mountain engine.',resources:[['cobalt'],['obsidian'],['cobalt','obsidian']],sky:['#172943','#666186'],motif:'crystal',entry:['deep',3],names:['Cobalt Armadillo','Obsidian Drake','Crucible Colossus']};
-export const EXPANSION_AREAS=[MINING_EXPANSION,...WORLD_TWO.areas.map(a=>({...a,world:2,label:a.name,icon:a.town?'⌂':'◇',text:a.town?'A sheltered stop with shared storage.':'Follow the Tidewilds route. Gather, train and open the next passage.'}))];
+export const EXPANSION_AREAS=[MINING_EXPANSION,...WORLD_TWO.areas.map(a=>({...a,world:2,label:a.name,icon:a.town?'⌂':'◇',text:a.town?'A sheltered stop with shared storage.':'Follow the Tidewilds route. Gather, train and open the next passage.'})),...WORLD_THREE.areas.map(a=>({...a,world:3,label:a.name,icon:a.town?"⌂":"✦",text:"Explore the Astral Reach."}))];
 export const NEW_RESOURCES={
  cobalt:{name:'Cobalt Ore',skill:'mining',level:7,tier:2,threshold:110},obsidian:{name:'Obsidian Ore',skill:'mining',level:10,tier:3,threshold:170},
  'saltwillow':{name:'Saltwillow Log',skill:'logging',level:6,tier:2,threshold:95},driftwood:{name:'Ancient Driftwood',skill:'logging',level:9,tier:3,threshold:150},
@@ -27,7 +29,8 @@ export const ADVANCEMENTS={
  enchanter:{id:'weaver',name:'Lantern Weaver',skill:'bugcatching',area:'tide-marsh',zone:0,needs:{glowbug:40,dust:20}},
  alchemist:{id:'tidecaller',name:'Tidecaller',skill:'fishing',area:'tide-shore',zone:0,needs:{'reed-fish':40,tonic:10}}
 };
-export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.id==='depths'?320+z*100:140+i*18+z*35)]));
+export const ALL_ADVANCEMENTS=[...Object.values(ADVANCEMENTS),...Object.values(ORBIT_ADVANCEMENTS)];
+export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.world===3?35+i*5+z*12:a.id==='depths'?320+z*100:140+i*18+z*35)]));
 export function expansionParent(area){return EXPANSION_AREAS.find(a=>a.id===area)?.entry;}
 export const worldOf=area=>EXPANSION_AREAS.find(a=>a.id===area)?.world||1;
 // Transferable gathering gains 1–3 resources per subsequent world. No W3 loot is spawned early.
@@ -38,8 +41,8 @@ export function installExpansion(D){
  Object.assign(GEAR_SLOTS,{rod:'Fishing Rod',net:'Bug Net',shovel:'Shovel',gloves:'Foraging Gloves'});
  const add=(id,name,rarity='common',icon='◇')=>ITEMS[id]={id,name,rarity,icon,description:'Tidewilds expedition supplies.'};
  AREAS.push(...EXPANSION_AREAS);
- for(const[id,d]of Object.entries(NEW_RESOURCES)){add(id,d.name);GATHER_NODES[id]={...d};}
- for(const[aIndex,a]of EXPANSION_AREAS.entries())if(!a.town){const drop=a.id+'-hide';add(drop,a.name+' Trophy');a.zones.forEach((_,i)=>{const id=a.id+'-'+i,tier=a.id==='depths'?i:5+aIndex+i;add(id+'-rare',a.names[i]+' Fragment','rare');add(id+'-legend',a.names[i]+' Relic','legendary');ENEMIES[id]={id,name:a.names[i],area:a.id,index:i,shape:['crab','bat','golem','boar'][i%4],hp:Math.round(950*(a.id==='depths'?1.22:1.12)**tier),attack:20+tier*(a.id==='depths'?3:2),xp:85+tier*14,coins:14+tier*3,accuracy:140+tier*9,loot:[{id:drop,chance:.85},{id:id+'-rare',chance:.04},{id:id+'-legend',chance:.0001}]};});}
+ for(const[id,d]of Object.entries({...NEW_RESOURCES,...ORBIT_RESOURCES})){add(id,d.name);GATHER_NODES[id]={...d};}
+ for(const[aIndex,a]of EXPANSION_AREAS.entries())if(!a.town){const drop=a.id+'-hide';add(drop,a.name+' Trophy');a.zones.forEach((_,i)=>{const id=a.id+'-'+i,tier=a.id==='depths'?i:5+aIndex+i;add(id+'-rare',a.names[i]+' Fragment','rare');add(id+'-legend',a.names[i]+' Relic','legendary');ENEMIES[id]={id,name:a.names[i],area:a.id,index:i,shape:['crab','bat','golem','boar'][i%4],hp:a.world===3?7000+(aIndex-8)*1050+i*550:Math.round(950*(a.id==='depths'?1.22:1.12)**tier),attack:a.world===3?73+(aIndex-8)*4+i*3:20+tier*(a.id==='depths'?3:2),xp:85+tier*14,coins:14+tier*3,accuracy:a.world===3?300+(aIndex-8)*10+i*7:140+tier*9,loot:[{id:drop,chance:.85},{id:id+'-rare',chance:.04},{id:id+'-legend',chance:.0001}]};});}
  for(const[id,name,cost]of [['cobalt-bar','Cobalt Alloy',{cobalt:6,'tempered-bar':2}],['obsidian-bar','Obsidian Composite',{obsidian:10,'cobalt-bar':3,'gold-bar':2}]]){add(id,name,'rare','▱');RECIPES.push({id,name,skill:'smithing',station:'foundry',output:id,count:1,cost,requiresCompletion:true});}
  for(const[skill,slot]of Object.entries(SKILL_TOOLS)){
   const newTool=['rod','net','shovel','gloves'].includes(slot);

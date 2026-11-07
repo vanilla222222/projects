@@ -1,4 +1,5 @@
 import {installTideCampaign} from './tide-campaign.mjs?v=45';
+import {installOrbit,ORBIT_JOBS,ORBIT_ADVANCEMENTS} from './world-three-content.mjs';
 import {installExpansion} from './expansion-content.mjs?v=45';
 import {QUEST_REFORMS} from './quest-content.mjs?v=45';
 import {BADGES,extraItemRoles} from './item-roles.mjs?v=45';
@@ -65,7 +66,7 @@ export const RECIPES = [
 // Every material has a real sink. Rare discoveries create permanent account growth.
 export const OFFERINGS=Object.keys(ITEMS).filter(id=>!['copper','iron','gold','oak','birch','jungle-wood','copper-bar','iron-bar','gold-bar','plank','dust','tonic'].includes(id));
 export function purposes(id){
- const uses=[];if(id.startsWith('anvil-expansion-'))uses.push('Consume once at the anvil to unlock account recipe page '+id.slice(-1));if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>!r.retired&&r.cost[id]).map(r=>r.name));
+ const uses=[];for(const d of Object.values(ORBIT_JOBS))if(d.cost[id])uses.push('Supply '+d.name+' batches');for(const d of Object.values(ORBIT_ADVANCEMENTS))if(d.needs[id])uses.push(d.name+' training');if(id.startsWith('anvil-expansion-'))uses.push('Consume once at the anvil to unlock account recipe page '+id.slice(-1));if(FOODS[id])uses.push('Equip as auto-healing food');if(ANVIL_PRODUCTS[id])uses.push('Craft equipment upgrade stones');if(id.startsWith('stone-'))uses.push('Upgrade compatible equipment at the anvil');uses.push(...RECIPES.filter(r=>!r.retired&&r.cost[id]).map(r=>r.name));
  for(const c of Object.values(CLASSES))if(c.needs[id])uses.push(`${c.name} initiation`);
  if(OFFERINGS.includes(id))uses.push('Material research at the Stamp Registry');
  if(EQUIPMENT[id])uses.push('Equip '+GEAR_SLOTS[EQUIPMENT[id].slot]);
@@ -458,6 +459,9 @@ for(const area of ['tide-town','tide-gate'])TOWN_SHOPS[area]={name:area==='tide-
 for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+' Card',effect:'attack',amount:.015,kind:'monster'};
 for(const id of Object.keys(ITEMS).filter(id=>id.startsWith('tide-')||id.startsWith('depths-')))if(!EQUIPMENT[id]&&!RECIPES.some(r=>r.cost[id])&&!OFFERINGS.includes(id))OFFERINGS.push(id);
 
+installOrbit({ITEMS,ENEMIES,SKILLS,SECRETS,FOODS,EQUIPMENT,RECIPES});
+for(const id of ['orbit-dock','orbit-loom','orbit-chart'])TOWN_SHOPS[id]={name:'Orbital Supply Counter',stock:[['feast',35,20],['town-teleport',25,10],['reset-fragment',35,5]]};
+for(const id of Object.keys(ITEMS))if(id.startsWith('orbit-')&&!OFFERINGS.includes(id))OFFERINGS.push(id);
 installTideCampaign({STORY,ITEMS,ENEMIES,RECIPES,EQUIPMENT,SECRETS});
 
 CARDS.tempest={name:'Tempest Sovereign Card',effect:'accuracy',amount:.03,kind:'monster'};

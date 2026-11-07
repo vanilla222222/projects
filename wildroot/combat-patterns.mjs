@@ -24,7 +24,7 @@ export const ENCOUNTER_STYLES={
 };
 export function encounterStyle(enemy){return ENCOUNTER_STYLES[enemy.id]||{pattern:ATTACKS[enemy.behavior]?enemy.behavior:'hop',pace:40,guard:enemy.behavior==='guard'};}
 export function nextAttack(e){
- if(e.enemy.id==='tempest')return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'volley';
+ if(['tempest','singularity'].includes(e.enemy.id))return(e.phaseLevel||1)===1?'slam':(e.phaseLevel||1)===2?'volley':(e.attackCount||0)%2?'charge':'volley';
  if(e.enemy.id==='boss')return(e.phaseLevel||1)===1?'rootwave':(e.attackCount||0)%2?'rootwave':'rootburst';
  return encounterStyle(e.enemy).pattern;
 }
