@@ -1017,7 +1017,9 @@ function makeGame(canvas, deps) {
   // Open the chest under the cursor, or shut the one that is open. A chest is a
   // multi-tile object, so any of its four cells opens the same box.
   function wakeChestMimic(origin, key) {
-    const mimic = swarm && swarm.wakeMimic(origin.x, origin.y, key);
+    const site = worldgen.biomeSiteAt(seed, origin.x, origin.y);
+    const species = site?.mimic ? site.biome + 'mimic' : key;
+    const mimic = swarm && swarm.wakeMimic(origin.x, origin.y, species);
     if (mimic) {
       breakMulti(origin);
       sfx('roar');
@@ -1232,6 +1234,8 @@ function makeGame(canvas, deps) {
       ['fenwidow', 'Blackfen Widow', 'blackfen-spool', 'Optional. Summon in the deep Mire.'],
       ['cragbreaker', 'Cragbreaker', 'crag-totem', 'Optional. Summon on the Highlands surface.'],
       ['cairnshade', 'Cairnshade', 'cairn-bell', 'Optional. Summon in the deep Highlands.'],
+      ['claybehemoth', 'Clay Behemoth', 'clay-effigy', 'Optional. Summon on the Badlands surface.'],
+      ['ochredrake', 'Ochre Drake', 'ochre-sigil', 'Optional. Summon in the deep Badlands.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1802,7 +1806,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=highlands-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=badlands-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

@@ -334,6 +334,12 @@ BODIES.golem = function (ctx, g, c) {
     poly(ctx, g, [0.18, -0.62, 0.28, -0.91, 0.46, -0.78, 0.4, -0.60], '#806b5e');
   }
 
+  if (c.key === 'claybehemoth') {
+    for (let i = 0; i < 3; i += 1) {
+      rect(ctx, g, -0.27 + i * 0.17, -0.66 + (i % 2) * 0.09, 0.13, 0.045, '#edac76');
+    }
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -640,6 +646,12 @@ BODIES.demon = function (ctx, g, c) {
   poly(ctx, g, [-0.08, -0.9, -0.2, -1.0, -0.1, -0.86], dark);
   dot(ctx, g, 0.09, -0.86, 0.07, c.glow || '#ffd05a');
   dot(ctx, g, -0.03, -0.86, 0.065, c.glow || '#ffd05a');
+  if (c.key === 'ochredrake') {
+    const gold = c.windUp > 0 ? '#fff0ac' : '#d9a45f';
+    poly(ctx, g, [-0.22, -0.70, -0.34, -1.03, -0.06, -0.85, 0.10, -1.02, 0.17, -0.73], gold);
+    limb(ctx, g, -0.24, -0.45, -0.56, -0.22 + Math.sin(c.anim) * 0.08, 0.11, '#886043');
+  }
+
 };
 
 BODIES.lizard = function (ctx, g, c) {

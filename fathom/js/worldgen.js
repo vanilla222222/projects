@@ -825,7 +825,8 @@ const TUNDRA_SITES = ['Snowbound Lodge', 'Rime Observatory', 'Glacier Crypt'];
 const JUNGLE_SITES = ['Canopy Outpost', 'Vinewell Shrine', 'Amberroot Temple'];
 const MARSH_SITES = ['Reedwalk Post', 'Drowned Pumpworks', 'Blackfen Ossuary'];
 const HIGHLAND_SITES = ['Crag Watch', 'Echo Quarry', 'Granite Sepulcher'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES };
+const BADLAND_SITES = ['Claybreak Camp', 'Redstone Kiln', 'Ochre Catacomb'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
@@ -871,7 +872,8 @@ function biomeSiteTile(site, x, y) {
   const jungle = site.biome === 'jungle';
   const marsh = site.biome === 'marsh';
   const highland = site.biome === 'highlands';
-  const material = highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const badlands = site.biome === 'badlands';
+  const material = badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
   if (site.layer === 0) {
@@ -883,11 +885,14 @@ function biomeSiteTile(site, x, y) {
     if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
   }
   if (dx >= 7 && dx <= 8 && row >= floor - 2) {
-    const chest = site.mimic ? site.biome + '-mimic' : site.layer === 2 ? 'goldchest' : 'woodchest';
+    const chest = site.mimic ? (badlands ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
     return cellOf(chest, dx - 7, row - floor + 2).id;
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (badlands && site.layer === 0 && dx === -9 && row === floor - 1) return idOf('cactus');
+  if (badlands && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('furnace');
+  if (badlands && site.layer === 2 && row === floor - 1 && dx >= -5 && dx <= -2) return idOf('ashvault-spikes');
   if (highland && site.layer === 0 && dx === -7 && row >= 3) return idOf('rope');
   if (highland && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('anvil');
   if (highland && site.layer === 2 && row === floor - 1 && dx >= -7 && dx <= -4) return idOf('ashvault-spikes');
@@ -1629,7 +1634,7 @@ function decorate(write, seed, x, yFrom, yTo) {
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
   const site = biomeSiteAt(seed, x, y);
   if (site) return wallIdOf(site.layer === 0 && site.biome !== 'desert' ? 'plankwall'
-    : (site.biome === 'jungle' || site.biome === 'marsh') && site.layer === 1 ? 'mudwall' : site.biome === 'tundra' ? 'snowwall' : site.biome === 'desert' ? 'sandwall' : 'brickwall');
+    : (site.biome === 'jungle' || site.biome === 'marsh') && site.layer === 1 ? 'mudwall' : site.biome === 'tundra' ? 'snowwall' : site.biome === 'desert' ? 'sandwall' : site.biome === 'badlands' ? 'redclaywall' : 'brickwall');
   const depth = y - column.height;
   if (depth < 0) {
     // A sky structure carries its own wall, so digging into an island leaves a room

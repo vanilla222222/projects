@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'ochre-fang': { name: 'Ochre Fang', kind: 'loot', colour: '#c99766' },
+  'behemoth-core': { name: 'Behemoth Core', kind: 'loot', colour: '#b6795b' },
+  'ochre-scale': { name: 'Ochre Scale', kind: 'loot', colour: '#c99766' },
+  'clay-effigy': { name: 'Clay Effigy', kind: 'use', colour: '#b6795b',
+    use: { summon: 'claybehemoth', layer: 'surface', biome: 'badlands' }, text: 'Summon on the Badlands surface' },
+  'ochre-sigil': { name: 'Ochre Sigil', kind: 'use', colour: '#c99766',
+    use: { summon: 'ochredrake', layer: 'deep', biome: 'badlands' }, text: 'Summon in the deep Badlands' },
   'cairn-fang': { name: 'Cairn Fang', kind: 'loot', colour: '#b6acd0' },
   'cragbreaker-horn': { name: 'Cragbreaker Horn', kind: 'loot', colour: '#a99c84' },
   'cairn-echo': { name: 'Cairn Echo', kind: 'loot', colour: '#b6acd0' },
@@ -312,6 +319,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'clayguard': { name: 'Clayguard', colour: '#b6795b', text: 'Defence +7 and mining power +8%', defense: 7, power: 1.08 },
+  'drake-scale': { name: 'Drake Scale', colour: '#c99766', text: 'Melee damage +14% and 25% less lava damage', melee: 1.14, lavaDamage: 0.75 },
+  'ochre-clasp': { name: 'Ochre Clasp', colour: '#c99766', text: 'Move 10% faster and defence +4', speed: 1.1, defense: 4 },
   'crag-belt': { name: 'Crag Belt', colour: '#a99c84', text: 'Defence +6 and take 30% less fall damage', defense: 6, fallMul: 0.7 },
   'cairn-chime': { name: 'Cairn Chime', colour: '#b6acd0', text: 'Magic damage +12% and mana regenerates 20% faster', magic: 1.12, manaRegen: 1.2 },
   'cairn-clasp': { name: 'Cairn Clasp', colour: '#b6acd0', text: 'Defence +4 and pick up items from farther away', defense: 4, pickup: 1.4 },
@@ -797,6 +807,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'clay-effigy', kind: 'use', count: 1 }, need: [['stone', 18], ['chitin', 5], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'ochre-sigil', kind: 'use', count: 1 }, need: [['bone', 8], ['topaz', 3], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'clayguard', kind: 'accessory', count: 1 }, need: [['behemoth-core', 1], ['iron-bar', 4]], station: 'anvil' },
+  { out: { key: 'drake-scale', kind: 'accessory', count: 1 }, need: [['ochre-scale', 1], ['gold-bar', 3]], station: 'anvil' },
+  { out: { key: 'ochre-clasp', kind: 'accessory', count: 1 }, need: [['ochre-fang', 2], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'crag-totem', kind: 'use', count: 1 }, need: [['stone', 20], ['bone', 5], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'cairn-bell', kind: 'use', count: 1 }, need: [['crystal', 7], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'crag-belt', kind: 'accessory', count: 1 }, need: [['cragbreaker-horn', 1], ['leather', 6]], station: 'anvil' },

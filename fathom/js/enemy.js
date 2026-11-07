@@ -100,7 +100,11 @@ const ARCHETYPES = {
   cairnshade: { gravity: 0, boss: true, flies: true, speed: 5.1, hoverAbove: 4.4, drift: 3,
     chargeEvery: 4.1, windUp: 1.1, chargeSpeed: 29, chargeFor: 0.85, spawnEvery: 5,
     minion: 'cairnhusk', minions: 2, enrageAt: 0.45, enrageSpeed: 1.26,
-    enrageCharge: 0.6, enrageWindUp: 0.72, followUp: 0.49 }
+    enrageCharge: 0.6, enrageWindUp: 0.72, followUp: 0.49 },
+  ochredrake: { gravity: 0, boss: true, flies: true, speed: 5.8, hoverAbove: 4, drift: 4.1,
+    chargeEvery: 3.8, windUp: 1.0, chargeSpeed: 28, chargeFor: 0.82, spawnEvery: 5.1,
+    minion: 'siltbat', minions: 3, enrageAt: 0.46, enrageSpeed: 1.27,
+    enrageCharge: 0.6, enrageWindUp: 0.64, followUp: 0.46 }
 
 };
 
@@ -470,6 +474,33 @@ const ENEMIES = [
     damage: 56, weight: 0, w: 4.3, h: 3.2, colour: '#a096c0', boss: true, summonOnly: true, emit: 6,
     drops: [['crystal', 8], ['coin', 850]], bossDrops: ['cairn-echo'] },
 
+  ...[
+    ['clayrunner', 'Clay Runner', 'surface', 'walker', 'lizard', 42, 11, '#bb7860', 'leather'],
+    ['russetkite', 'Russet Kite', 'surface', 'flyer', 'bird', 49, 13, '#b77953', 'feather'],
+    ['scrubmite', 'Scrub Mite', 'surface', 'crawler', 'beetle', 52, 13, '#94775a', 'chitin'],
+    ['ochrewisp', 'Ochre Wisp', 'surface', 'flyer', 'cloud', 55, 14, '#cda76f', 'glowmoss'],
+    ['kilnborer', 'Kiln Borer', 'caves', 'worm', 'worm', 94, 21, '#bb7252', 'wormtooth'],
+    ['claystalker', 'Clay Stalker', 'caves', 'crawler', 'spider', 98, 21, '#a66d60', 'chitin'],
+    ['siltbat', 'Silt Bat', 'caves', 'flyer', 'bat', 82, 18, '#897080', 'leather'],
+    ['ochrehusk', 'Ochre Husk', 'deep', 'walker', 'golem', 205, 33, '#a57555', 'crystal'],
+    ['catacombeye', 'Catacomb Eye', 'deep', 'flyer', 'eye', 157, 27, '#b78b92', 'lens'],
+    ['claybound', 'Claybound', 'deep', 'walker', 'skeleton', 190, 30, '#b9937b', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: ['golem', 'skeleton'].includes(body) ? 1.9 : 1,
+    biomes: ['badlands'], layers: [layer], emit: key === 'ochrewisp' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'badlandsmimic', name: 'Ochre Mimic', kind: 'walker', body: 'mimic', hp: 380,
+    damage: 41, weight: 0, w: 1.8, h: 1.5, colour: '#ad8062', hiddenSpawn: true,
+    drops: [['ochre-fang', 2], ['coin', 185]] },
+  { key: 'claybehemoth', name: 'Clay Behemoth', kind: 'king', body: 'golem', hp: 2450,
+    damage: 43, weight: 0, w: 4.2, h: 3, colour: '#b6795b', boss: true, summonOnly: true, emit: 3,
+    drops: [['redclay', 16], ['coin', 510]], bossDrops: ['behemoth-core'] },
+  { key: 'ochredrake', name: 'Ochre Drake', kind: 'ochredrake', body: 'demon', hp: 4450,
+    damage: 56, weight: 0, w: 4.4, h: 3.2, colour: '#c99766', boss: true, summonOnly: true, emit: 6,
+    drops: [['bone', 12], ['coin', 860]], bossDrops: ['ochre-scale'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -572,7 +603,8 @@ const GAIT = {
   hornetqueen: { perTile: 0.46, perSecond: 10 },
   strangler: { perTile: 0.4, perSecond: 7 },
   fenwidow: { perTile: 0.46, perSecond: 10 },
-  cairnshade: { perTile: 0.43, perSecond: 9 }
+  cairnshade: { perTile: 0.43, perSecond: 9 },
+  ochredrake: { perTile: 0.45, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------
