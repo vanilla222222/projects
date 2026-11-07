@@ -226,12 +226,44 @@ function continent(seed, x) {
 const CLIMATE_JOSTLE = 1.5;
 const JOSTLE_FIELD = 0.19;
 
+const CLIMATE_REGION_WIDTH = 360;
+
+// Each run of regions visits every climate once, in a different seeded order.
+const climateDeck = cacheStructure((seed, group) => {
+  const order = CLIMATE_BIOMES.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(unit(seed, group, i, 4621) * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+});
+
+function regionalBiome(seed, region) {
+  const size = CLIMATE_BIOMES.length;
+  const group = Math.floor(region / size);
+  const index = region - group * size;
+  const order = climateDeck(seed, group);
+  const previous = climateDeck(seed, group - 1);
+  const repeat = order[0] === previous[size - 1];
+  return CLIMATE_BIOMES[order[repeat && index < 2 ? 1 - index : index]];
+}
+
 // The climate weights with no jostle at all. Height bias is blended across these, so the
 // ground stays a smooth function of position even where identity flickers.
 function smoothWeights(seed, x) {
   const wx = climateX(seed, x);
-  const t = temperature(seed, wx);
-  const m = moisture(seed, wx);
+  let t = temperature(seed, wx);
+  let m = moisture(seed, wx);
+  const influence = 0.78 * (1 - homeFactor(x));
+  if (influence > 0) {
+    const at = wx / CLIMATE_REGION_WIDTH;
+    const region = Math.floor(at);
+    const blend = smooth(Math.max(0, Math.min(1, (at - region - 0.64) / 0.36)));
+    const from = regionalBiome(seed, region);
+    const to = blend ? regionalBiome(seed, region + 1) : from;
+    t += (from.temp + (to.temp - from.temp) * blend - t) * influence;
+    m += (from.moist + (to.moist - from.moist) * blend - m) * influence;
+  }
   const weights = new Array(CLIMATE_BIOMES.length);
   for (let i = 0; i < CLIMATE_BIOMES.length; i += 1) {
     const b = CLIMATE_BIOMES[i];
@@ -1618,7 +1650,7 @@ function generateChunk(seed, cx, cy) {
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
-    climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
+    climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
     skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,

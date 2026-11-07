@@ -358,6 +358,34 @@ let shortRunShare = 0;
 }
 
 
+for (const seed of [SEED, 4242, -98765]) {
+  for (let group = -3; group <= 3; group += 1) {
+    const regions = Array.from({ length: 10 }, (_, i) => gen.regionalBiome(seed, group * 10 + i).key);
+    check(new Set(regions).size === 10, 'a climate cycle repeats a biome before using all ten');
+    check(regions[9] !== gen.regionalBiome(seed, group * 10 + 10).key, 'adjacent climate cycles repeat a biome');
+  }
+}
+
+// Verify what the player actually sees after coastline and blight overlays.
+let inlandWindows = 0;
+for (const seed of [SEED, 4242, -98765]) {
+  for (let start = -12000; start < 12000; start += 2000) {
+    if (Math.abs(start) < 2000) continue;
+    const climates = new Set();
+    let land = 0;
+    for (let x = start; x < start + 2000; x += 10) {
+      const biome = gen.biomeAt(seed, x);
+      if (biome.overlay) continue;
+      climates.add(biome.key);
+      land += 1;
+    }
+    if (land < 120) continue;
+    inlandWindows += 1;
+    check(climates.size > 2, 'inland window repeats too few biomes at ' + start + ' in seed ' + seed);
+  }
+}
+check(inlandWindows >= 12, 'too few inland windows sampled');
+
 // 14. Each biome's underground has its own character. Materials alone are just a palette;
 // what makes a jungle cavern feel unlike a tundra tunnel is how much of the rock is open
 // and how tall the cavities are. Measured rather than asserted by eye.
