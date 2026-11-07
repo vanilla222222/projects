@@ -915,3 +915,46 @@ a pool is a way down rather than a death, and `tools/physics-test.js` now drops 
 body down the same shaft twice, once onto rock and once into water, and requires one to
 hurt and the other not to. It is exactly the kind of line that disappears in a refactor
 and is not noticed until someone dies at the bottom of a shaft they have used fifty times.
+
+## Buffs
+
+A buff is deliberately the same kind of thing as an accessory or a set bonus - a bag of
+modifier fields that craft.js folds into the player's effects - so nothing in the game has
+to learn a second way of changing a number. The only thing a buff adds is a clock.
+
+Writing it forced a cleanup that was overdue. The fields an accessory can carry were
+applied in one place, the fields a set bonus can carry in another, and the two lists had
+drifted: a set bonus carrying `arrowSpeed` or `slimeFriend` did nothing at all, and so did
+an accessory carrying `pickup`. Nobody would have found out until they wore the thing and
+it had no effect. There is one table now - `EFFECT_FIELDS`, saying whether each field adds,
+multiplies, takes the maximum or is a flag - and one `applyEffect` that accessories, set
+bonuses and buffs all go through.
+
+Two kinds of buff, and the difference is what makes the campfire simple:
+
+- A **drunk** buff is given once with a duration and counts down. Drinking the same potion
+  again takes the longer of what is left and what is being given, never the sum, which is
+  Terraria's rule and the reason a stack of forty potions is not an hour of invincibility.
+- A **standing** buff is re-given every moment its source is in reach and expires a second
+  or two after it is not. "Am I still near the fire" never has to be asked: it answers
+  itself by the buff running out. The hearth scan is a box of tiles a few times a second,
+  not every frame.
+
+Ten potions, each made from a bottle and something you had to go somewhere to get, and
+drinking one gives the bottle back. Campfires, torches and lanterns grant Cosy.
+
+Standing buffs are not saved - they belong to where you were, not to you, and would be
+re-given within a frame of loading if their source is still there.
+
+`tools/buff-test.js` requires that every field a buff sets is one the effects system is
+made of, and that every buff really changes something when folded through the same path a
+worn accessory takes. It also requires that something in the game can grant every buff -
+which immediately caught a Rested buff nothing could give. Dead code, removed rather than
+exempted.
+
+One bug worth recording: craft.js reads the buff table to describe a potion, and the first
+version named `BUFFS` at load time. buffs.js loads after craft.js in the browser, so that
+read a `const` before its declaration and threw on page load - the exact trap the two
+lookups at the top of craft.js are written around, with a comment explaining it. Node
+tests all passed, because in Node it is a `require`. The game was broken and only the
+browser check found it.

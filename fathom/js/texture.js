@@ -703,6 +703,36 @@ function paintLifeCrystal(ctx, spec, variant, ox, oy) {
   }
 }
 
+// A campfire: three logs and a flame, drawn bright because it is also a lamp.
+function paintCampfire(ctx, spec, variant, ox, oy) {
+  ctx.fillStyle = '#6d4f30';
+  ctx.fillRect(ox + 2, oy + 11, 12, 2);
+  ctx.fillStyle = '#5a3f26';
+  ctx.fillRect(ox + 1, oy + 13, 14, 2);
+  ctx.fillStyle = '#8a6038';
+  ctx.fillRect(ox + 3, oy + 12, 4, 1);
+  ctx.fillRect(ox + 9, oy + 12, 4, 1);
+  // The flame, leaning a little differently in each variant so a row of fires does not
+  // burn in lockstep.
+  const lean = (variant % 3) - 1;
+  ctx.fillStyle = '#e2743a';
+  ctx.beginPath();
+  ctx.moveTo(ox + 8 + lean, oy + 2);
+  ctx.lineTo(ox + 12, oy + 11);
+  ctx.lineTo(ox + 4, oy + 11);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#f2b45a';
+  ctx.beginPath();
+  ctx.moveTo(ox + 8 + lean, oy + 5);
+  ctx.lineTo(ox + 10.5, oy + 11);
+  ctx.lineTo(ox + 5.5, oy + 11);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#fff0c0';
+  ctx.fillRect(ox + 7 + lean, oy + 8, 2, 3);
+}
+
 // A rope: a twisted cord down the middle of the tile, drawn so that stacked tiles line
 // up into one continuous line rather than into a column of separate dashes.
 function paintRope(ctx, spec, variant, ox, oy) {
@@ -863,6 +893,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.crystal === 'life') paintLifeCrystal(ctx, spec, v, ox, oy);
       else if (spec.pot) paintPot(ctx, spec, v, ox, oy);
       else if (spec.climb) paintRope(ctx, spec, v, ox, oy);
+      else if (spec.key === 'campfire') paintCampfire(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'

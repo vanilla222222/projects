@@ -412,6 +412,12 @@ function makeUI(root, deps) {
       }
     }
 
+    // Active buffs. An effect with a clock on it has to show the clock, or the player
+    // cannot tell a potion about to run out from one that just started. They sit down
+    // the left rather than under the hearts, because the top right already has the
+    // hearts and the map in it and a third thing there is a collision.
+    els.buffs = el('div', 'buffs', root);
+
     els.bar = el('div', 'hotbar', root);
     els.hotbarSlots = [];
     const hotbar = inventory.section('hotbar');
@@ -476,6 +482,24 @@ function makeUI(root, deps) {
     }
     count.textContent = item && item.count > 1 ? String(item.count) : '';
     node.classList.toggle('filled', !!item);
+  }
+
+  function paintBuffs(state) {
+    if (!els.buffs) return;
+    const list = (state && state.buffs) || [];
+    const signature = list.map(b => b.key + Math.ceil(b.seconds)).join(',');
+    if (els.buffs.dataset.sig === signature) return;
+    els.buffs.dataset.sig = signature;
+    els.buffs.textContent = '';
+    for (const entry of list) {
+      const node = el('span', 'buff', els.buffs);
+      node.style.borderColor = entry.spec.colour;
+      el('span', 'buff-dot', node).style.background = entry.spec.colour;
+      const secs = Math.ceil(entry.seconds);
+      const clock = secs >= 60 ? Math.ceil(secs / 60) + 'm' : secs + 's';
+      el('span', null, node).textContent = entry.spec.name + ' ' + clock;
+      node.title = entry.spec.text;
+    }
   }
 
   function meter(node, filled, total, kind) {
@@ -628,6 +652,9 @@ function makeUI(root, deps) {
   }
 
   function sync(state) {
+    // Buffs are painted whether or not the backpack is open: they belong to the heads-up
+    // display, not to the inventory screen.
+    paintBuffs(state);
     for (let i = 0; i < els.hotbarSlots.length; i += 1) {
       paintSlot(els.hotbarSlots[i], inventory.section('hotbar').from + i);
     }

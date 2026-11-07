@@ -69,8 +69,10 @@ function minableTiles() {
     out.push({ key, require: spec.require || 0 });
   }
   // Wood comes off trees rather than out of the rock, and an axe takes any of them.
+  // Foliage is picked by hand and needs no pickaxe at all.
   for (const spec of tiles.TILES) {
     if (spec.trunkOf) out.push({ key: spec.key, require: 0 });
+    else if (spec.decor && spec.drops !== null) out.push({ key: spec.key, require: 0 });
   }
   return out;
 }

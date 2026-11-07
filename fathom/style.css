@@ -580,3 +580,29 @@ html, body {
   text-align: center;
 }
 .keys-row span { color: #93a0b6; }
+
+/* Active buffs, down the left under the readout. */
+.buffs {
+  position: absolute;
+  left: 14px;
+  top: 146px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 220px;
+  pointer-events: none;
+}
+.buff {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px 2px 5px;
+  border: 1px solid #3a4260;
+  border-radius: 10px;
+  background: rgba(14, 17, 26, 0.72);
+  font-size: 11px;
+  color: #cfd6e4;
+  white-space: nowrap;
+}
+.buff-dot { width: 7px; height: 7px; border-radius: 50%; }

@@ -11,7 +11,8 @@ function makeGame(canvas, deps) {
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
-    profile: profileModule, menu: menuModule, sprite, audio: audioModule } = deps;
+    profile: profileModule, menu: menuModule, sprite, audio: audioModule,
+    buffs: buffModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -55,6 +56,7 @@ function makeGame(canvas, deps) {
     particles: [],
     drops: [],
     paused: false,
+    buffs: [],
     weather: { rain: 0, wind: 0, snow: 0 },
     // Which night it is, and whether this one is a blood moon. One integer in the save
     // decides the whole event, because the moon is a pure function of the night's number.
@@ -96,6 +98,11 @@ function makeGame(canvas, deps) {
   // Sound. One object for the whole game; it does nothing at all until a key or a click
   // has been seen, because no browser will start an audio context before one.
   const audio = audioModule ? audioModule.makeAudio(window) : null;
+
+  // Effects that expire. The same kind of thing as a worn accessory - a bag of modifiers
+  // craft.js knows how to fold in - with a clock on it.
+  const buffs = buffModule ? buffModule.makeBuffs() : null;
+  let hearthCheck = 0;
 
   // Sound at a place: quieter the further it is from the player, so a slime dying across
   // the cavern is a detail rather than an event.
@@ -224,6 +231,15 @@ function makeGame(canvas, deps) {
       say(boss.spec.name + ' has awoken', 3.2);
       sfx('roar');
       spawnParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.spec.colour, 26);
+    } else if (use.buff !== undefined) {
+      if (!use.buff) { say('The bottle is empty', 1.4); return true; }
+      if (!buffs) return true;
+      buffs.give(use.buff);
+      const spec = buffModule.BUFFS[use.buff];
+      say(spec ? spec.name : 'Potion', 1.6);
+      // Drinking a potion leaves the bottle, which is most of what makes bottles worth
+      // keeping rather than a one-off cost.
+      inventory.add({ key: 'bottle', kind: 'use' }, 1);
     } else if (use.restore !== undefined) {
       if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
       stats.mana = Math.min(stats.maxMana, stats.mana + use.restore);
@@ -617,7 +633,8 @@ function makeGame(canvas, deps) {
   }
 
   function currentEffects() {
-    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'));
+    return craft.equipEffects(wornKeys('armor'), wornKeys('accessory'),
+      buffs ? buffs.effects() : null);
   }
 
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
@@ -1176,6 +1193,21 @@ function makeGame(canvas, deps) {
 
     if (village) village.step(dt);
     stepStars(dt);
+    if (buffs) {
+      buffs.step(dt);
+      // Standing buffs are re-given while their source is in reach and expire a second
+      // or two after it is not, so "am I still near the fire" never has to be asked.
+      // The scan is a few times a second rather than every frame: it is a box of tiles.
+      hearthCheck -= dt;
+      if (hearthCheck <= 0) {
+        hearthCheck = 0.4;
+        const warm = buffModule.hearthsNear(world, tiles,
+          state.player.x + state.player.width / 2,
+          state.player.y + state.player.height / 2);
+        for (const key of warm) buffs.give(key);
+      }
+      state.buffs = buffs.list();
+    }
     // What the player has done, which is what decides who is willing to move in.
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
     if (depth > state.progress.deepest) state.progress.deepest = depth;
@@ -1467,6 +1499,7 @@ function makeGame(canvas, deps) {
       spawn: state.spawn || null,
       nights: state.nights,
       meteors: state.meteors,
+      buffs: buffs ? buffs.serialize() : {},
       villagers: village ? village.serialize() : [],
       spawn: { x: state.player.x, y: state.player.y },
       playedSeconds: carriedWorldSeconds + elapsed
@@ -1538,6 +1571,7 @@ function makeGame(canvas, deps) {
     state.colours = characterRecord.colours || choice.character.colours;
     state.dayPhase = worldRecord.dayPhase === undefined ? 0.12 : worldRecord.dayPhase;
     state.nights = worldRecord.nights || 0;
+    if (buffs) buffs.restore(worldRecord.buffs);
     state.meteors = worldRecord.meteors || 0;
     state.bloodMoon = false;
     wasNight = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
@@ -1645,6 +1679,7 @@ function makeGame(canvas, deps) {
     get controls() { return CONTROLS; },
     // What has been killing this character, which is worth knowing when tuning.
     get deathsBy() { return deathsBy; },
+    get buffs() { return buffs; },
     // Test seams: what the keyboard and the mouse would set, so a long
     // automated session can play the game through the same path a person does.
     get input() { return input; },

@@ -28,7 +28,10 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 // meteor falls where a meteor falls, and its crater is written into the edit diff.
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
   'shell', 'obsidian', 'fallenstar', 'meteorite', ...enemyDrops, ...ORES,
-  ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key)]);
+  ...tiles.TILES.filter(t => t.trunkOf).map(t => t.key),
+  // Foliage: mushrooms, shells, coral and the rest. A decor tile that leaves something
+  // behind is picked rather than mined, and is a raw material like any other.
+  ...tiles.TILES.filter(t => t.decor && t.drops !== null).map(t => t.key)]);
 const produced = new Set(craft.RECIPES.map(r => r.out.key));
 
 for (const r of craft.RECIPES) {
@@ -299,8 +302,20 @@ for (const [station, items] of Object.entries(groups)) {
   const uses = Object.entries(craft.ITEMS).filter(([, v]) => v.use);
   ok(uses.length >= 3, 'only ' + uses.length + ' items are used rather than worn');
   for (const [key, item] of uses) {
-    const fields = ['mana', 'heal', 'restore', 'summon'].filter(f => item.use[f] !== undefined);
+    const fields = ['mana', 'heal', 'restore', 'summon', 'buff']
+      .filter(f => item.use[f] !== undefined);
     ok(fields.length === 1, key + ' does ' + fields.length + ' things rather than one');
+    if (fields[0] === 'buff') {
+      const buffs = require('../js/buffs.js').BUFFS;
+      // An empty bottle is the one `use` item that does nothing until it is filled.
+      if (item.use.buff === null) {
+        ok(key === 'bottle', key + ' is a use item that does nothing');
+      } else {
+        ok(!!buffs[item.use.buff],
+          key + ' gives the buff ' + item.use.buff + ', which does not exist');
+      }
+      continue;
+    }
     if (fields[0] === 'summon') {
       const enemies = require('../js/enemy.js');
       const called = enemies.BY_KEY[item.use.summon];
