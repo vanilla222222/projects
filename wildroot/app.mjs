@@ -1,3 +1,5 @@
+import {rememberMenuScroll} from './menu-scroll.mjs?v=47';
+import {installAtlasPanning} from './atlas-panning.mjs?v=47';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {persistReset} from './reset-save.mjs?v=45';
 import {onboarding} from './onboarding.mjs?v=45';
@@ -9,7 +11,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=45';
 import * as Parity from './parity-panels.mjs?v=45';
 import * as EconomyUI from './economy-panels.mjs?v=45';
 import * as Prof from './profession-panels.mjs?v=45';
-import * as UI from './ui-panels.mjs?v=46';
+import * as UI from './ui-panels.mjs?v=47';
 import {icon,portrait} from './ui-art.mjs?v=45';
 import * as AUI from './adventure-panels.mjs?v=45';
 import * as T from './town-panels.mjs?v=45';
@@ -20,6 +22,7 @@ import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=45';
 import {drawWorld,viewFor} from './scene.mjs?v=45';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
+installAtlasPanning($('panel-content'));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
 let state,raw=null,loadError=null,paused=false,panelKind=null,npc=null,toastTimer,loot=[],last=performance.now(),lastUi=0,lastSave=0,lastWall=Date.now(),offline=null,input={},assignmentId=null,assignmentView={};
@@ -62,7 +65,8 @@ function closePanel(){if(loadError){toast('Your original save is preserved. Impo
 function openPanel(kind,back=false){if(world.c.dungeon&&!['dungeon','dungeon-result','settings'].includes(kind)){toast('Finish or abandon the dungeon to use world menus.');kind='dungeon';}if(panelKind&&panelKind!==kind&&!back)panelHistory.push(panelKind);if(panelKind==='minigame'&&kind!=='minigame')world.c.minigame=null;panelKind=kind;input={};renderPanel();if(!$('panel').open)$('panel').showModal();}
 function travel(area,index=0){if(world.teleport(area,Number(index))){closePanel();buildTargets();save();refresh();return true;}toast(E.lockReason(state,area,Number(index))||(!E.discovered(state,area,Number(index))?'Walk there through the portals to discover this room.':'No map teleports left. Walk through portals or use a Bottled Town Return.'));return false;}
 function classCard(id,c){const def=CLASSES[id],q=E.classQuest(state,c,id),owned=state.unlockedClasses.includes(id);return`<article class="quest-card"><span class="emblem">${emblems[id]}</span><h3>${def.name}</h3><p>${SKILLS[def.skill]} specialist · ${def.trainer}</p><p class="step">${owned?'CLASS DISCOVERED':`INITIATION ${Math.min(3,q.stage+1)} / 3`}</p><p>${c.class?(c.class===id?'Your chosen class.':'Create another character to choose this path.'):!E.availableClass(state,id)?'Discover all five classes before choosing another of this class.':q.text}</p>${!c.class&&q.stage===2?costs(q.needs):''}<p>${def.motto}</p><button data-find-npc="${id}" ${c.class?'disabled':''}>Find ${def.trainer} ↗</button></article>`;}
-function renderPanel(){
+function renderPanel(preserveScroll=false){
+ const restoreScroll=preserveScroll?rememberMenuScroll($('panel-content')):null;
  const c=world.c,kind=panelKind;let title='',eyebrow='ADVENTURER’S JOURNAL',body='';
  if(kind==='welcome'){title='Welcome to the Greenreach';body=`<p class="intro">This is your world to explore. Walk across the map, climb ladders, and click enemies to fight them. Meet Willow beside the first oak tree, or Brann by the first copper seam. Other mentors work near their specialty stations.</p><div class="welcome-controls"><span>A / D · Move</span><span>W / S · Climb</span><span>Space · Jump</span><span>F · Attack</span><span>1 · Class skill</span><span>E · Interact</span></div><p class="intro">On mobile, tap the map to walk and tap enemies, trees, ore, NPCs, or portals to interact. Movement buttons and combat skills are below the world.</p><p class="intro">Your first goal: reach level 3, learn a profession, and complete a mentor’s initiation. Each first class adds another character slot. Other characters keep working while you explore.</p><button class="primary" data-close="">Enter the world</button><button data-panel="onboarding">Getting Started · guided lessons</button>`;}
  if(kind==='cards'){title='Cards';body=UI.cards(state,c,uiView);}
@@ -111,7 +115,7 @@ function renderPanel(){
  if(serviceId&&!E.serviceAccess(state,c,serviceId))body=Prof.locked(state,c,serviceId);
  if(uiView.firstVisit&&(kind==='craft'&&uiView.profession===uiView.firstVisit||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
  const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ${worldOf(c.area)} · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
- $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);if(kind==='map'){const atlas=document.querySelector('.atlas-scroll'),pin=document.querySelector('.atlas-node.selected');if(atlas&&pin){atlas.scrollLeft=Math.max(0,pin.offsetLeft-atlas.clientWidth/2);atlas.scrollTop=Math.max(0,pin.offsetTop-atlas.clientHeight/2);}}
+ $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'){const atlas=document.querySelector('.atlas-scroll'),pin=document.querySelector('.atlas-node.selected');if(atlas&&pin){atlas.scrollLeft=Math.max(0,pin.offsetLeft-atlas.clientWidth/2);atlas.scrollTop=Math.max(0,pin.offsetTop-atlas.clientHeight/2);}}
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
 function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:TIDE_NPCS[id]?.area,zone:TIDE_NPCS[id]?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
@@ -150,8 +154,8 @@ function refresh(){
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p class="loot-${l.rarity||'common'}">${esc(l.text)}</p>`).join(''));const bagStatus=InventoryGuide.lootStatus(c);$('bag-count').textContent='Bag '+bagStatus.used+'/'+bagStatus.capacity+(bagStatus.pending||bagStatus.floor?' · !':'');$('bag-count').title=bagStatus.pending+' pending items · '+bagStatus.floor+' items on the ground · '+bagStatus.locked+' locked slots';$('bag-count').setAttribute('aria-label','Open inventory. '+$('bag-count').title);
  $('knockout').hidden=world.player.respawn<=0;
- if(panelKind==='npc'&&conversation?.revealed&&performance.now()-lastPanelRefresh>1000){const focus=document.activeElement?.id;renderPanel();if(focus==='npc-speech')$('npc-speech')?.focus();lastPanelRefresh=performance.now();}
- buildTargets();if($('panel').open&&!panelInteraction&&!document.activeElement?.matches('#panel input,#panel select')&&performance.now()-lastPanelRefresh>1000&&!['new','welcome','offline','settings','load-error','paused','victory','assignment','chapter-complete','minigame','trial-result','npc'].includes(panelKind)){renderPanel();lastPanelRefresh=performance.now();}
+ if(panelKind==='npc'&&conversation?.revealed&&performance.now()-lastPanelRefresh>1000){const focus=document.activeElement?.id;renderPanel(true);if(focus==='npc-speech')$('npc-speech')?.focus();lastPanelRefresh=performance.now();}
+ buildTargets();if($('panel').open&&!panelInteraction&&!document.activeElement?.matches('#panel input,#panel select')&&performance.now()-lastPanelRefresh>1000&&!['new','welcome','offline','settings','load-error','paused','victory','assignment','chapter-complete','minigame','trial-result','npc','map'].includes(panelKind)){renderPanel(true);lastPanelRefresh=performance.now();}
 }
 document.addEventListener('click',event=>{
  const b=event.target.closest('button');if(!b||b.disabled)return;const d=b.dataset,c=world.c;
