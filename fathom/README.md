@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 94 enemies including fourteen bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 107 enemies including sixteen bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -231,3 +231,12 @@ wake as Rime Mimics.
 
 Use a Rime Horn on the Tundra surface to summon Rimehorn. Use an Aurora Lantern
 in the deep Tundra to summon the Aurora Wraith. Both fights are optional.
+
+
+### Jungle expansion
+
+Find Canopy Outposts on the surface, Vinewell Shrines in the caves, and trapped
+Amberroot Temples in the deep Jungle. Some temple chests are Vinebound Mimics.
+
+Use an Orchid Lure on the surface or an Amberroot Idol in the deep Jungle to
+summon the Orchid Queen or Amberroot Strangler. Both bosses are optional.

@@ -1226,6 +1226,8 @@ function makeGame(canvas, deps) {
       ['desertscourge', 'Desert Scourge', 'desert-medallion', 'Optional. Summon in the Underground Desert.'],
       ['rimehorn', 'Rimehorn', 'rime-horn', 'Optional. Summon on the Tundra surface.'],
       ['aurorawraith', 'Aurora Wraith', 'aurora-lantern', 'Optional. Summon in the deep Tundra.'],
+      ['orchidqueen', 'Orchid Queen', 'orchid-lure', 'Optional. Summon on the Jungle surface.'],
+      ['amberroot', 'Amberroot Strangler', 'amberroot-idol', 'Optional. Summon in the deep Jungle.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1796,7 +1798,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=tundra-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=jungle-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

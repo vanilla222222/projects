@@ -267,7 +267,7 @@ for (const s of SURVEY_SEEDS) {
       // Below the ground, water means a flooded cave: this column must have a water
       // table, the tile must be above its floor, and it must be a cave in the first
       // place, never water sitting inside what should be solid rock.
-      if (gen.structureTileAt(s, x, y) === WATER || gen.biomeSiteAt(s, x, y)?.name === 'Buried Cistern') continue;
+      if (gen.structureTileAt(s, x, y) === WATER || ['Buried Cistern', 'Vinewell Shrine'].includes(gen.biomeSiteAt(s, x, y)?.name)) continue;
       undergroundWater += 1;
       // The generator's own rule for what is submerged, not a restatement of it.
       check(gen.submergedVoid(s, x, y, column),
@@ -589,6 +589,20 @@ for (const seed of [SEED, 4242, -98765]) {
   const crypt = sites.get('Glacier Crypt');
   check(gen.baseTileAt(SEED, crypt.x - 10, crypt.top + crypt.height - 2) === tiles.idOf('glacier-spikes'),
     'Glacier Crypt has no spikes');
+}
+
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -11852, y);
+    if (site?.biome === 'jungle') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Jungle is missing a structure depth');
+  const shrine = sites.get('Vinewell Shrine');
+  check(gen.baseTileAt(SEED, shrine.x, shrine.top + shrine.height - 2) === WATER, 'Vinewell Shrine has no pool');
+  const temple = sites.get('Amberroot Temple');
+  check(gen.baseTileAt(SEED, temple.x - 8, temple.top + temple.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Amberroot Temple has no traps');
 }
 
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
