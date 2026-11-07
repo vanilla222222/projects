@@ -17,7 +17,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=50';
 import * as Parity from './parity-panels.mjs?v=50';
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as Prof from './profession-panels.mjs?v=50';
-import * as UI from './ui-panels.mjs?v=57';
+import * as UI from './ui-panels.mjs?v=58';
 import {icon,portrait} from './ui-art.mjs?v=50';
 import * as AUI from './adventure-panels.mjs?v=50';
 import * as T from './town-panels.mjs?v=50';
@@ -26,7 +26,7 @@ import {GameAudio} from './audio.mjs?v=45';
 import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=49';
-import {drawWorld,viewFor} from './scene.mjs?v=57';
+import {drawWorld,viewFor} from './scene.mjs?v=58';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
 const atlasZoom=installAtlasZoom($('panel-content'));
@@ -142,7 +142,19 @@ function renderPanel(preserveScroll=false){
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'&&$('panel').open)atlasZoom.refresh();
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
-function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id]||VOID_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id]||VOID_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
+function findNpc(id){
+ const npc=TIDE_NPCS[id]||ORBIT_NPCS[id]||SIDE_NPCS[id]||VOID_NPCS[id];
+ const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:npc?.area,zone:npc?.zone};
+ if(!def.town)return;
+ const zone=def.zone||0,c=world.c;
+ if(c.area===def.town&&c.zone===zone&&!c.secret&&!c.dungeon&&!c.trial&&c.activity!=='boss'){
+  closePanel();world.select(`npc-${id}`);return;
+ }
+ if(!E.discovered(state,def.town,zone)||!E.zoneUnlocked(state,def.town,zone,c)||!state.teleports.count){
+  uiView.mapRoom=def.town+':'+zone;openPanel('map');return;
+ }
+ if(travel(def.town,zone))world.select(`npc-${id}`);
+}
 function findStation(station){const [area,zone]={anvil:['town',1],foundry:['town',2],enchanting:['jungle-town',0],alchemy:['jungle-town',1]}[station];if(!E.zoneUnlocked(state,area,zone)){toast(E.lockReason(state,area,zone));return;}if(!travel(area,zone))return;world.select('station');}
 let targetKey='',lastPanelRefresh=0,panelInteraction=false;
 $('panel').addEventListener('pointerdown',()=>{panelInteraction=true;});
@@ -234,6 +246,7 @@ document.addEventListener('click',event=>{
  if(d.codexTab){openPanel(d.codexTab);return;}
  if(d.codexItem){uiView.item=d.codexItem;uiView.itemSearch='';openPanel('items');return;}
  if(d.openRecipe){uiView.profession=RECIPES.find(r=>r.id===d.openRecipe)?.station||'anvil';uiView.anvilTab='craft';uiView.recipePage=E.recipePage(RECIPES.find(r=>r.id===d.openRecipe));uiView.recipe=d.openRecipe;uiView.recipeFilter='all';uiView.recipeSearch='';openPanel('craft');return;}
+ if(d.walkPortal&&world.select(d.walkPortal)){closePanel();return;}
  if(d.revealRoom){uiView.mapRoom=d.revealRoom;openPanel('map');return;}
  if(d.recipeFavorite){E.favoriteRecipe(state,d.recipeFavorite);save();renderPanel();return;}
  if(d.shopItem){shopView.item=d.shopItem;renderPanel();return;}
