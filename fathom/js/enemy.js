@@ -92,7 +92,11 @@ const ARCHETYPES = {
   strangler: { gravity: 0, boss: true, flies: true, speed: 4.6, hoverAbove: 3.5, drift: 3,
     chargeEvery: 4.1, windUp: 1.2, chargeSpeed: 29, chargeFor: 0.9, spawnEvery: 5.2,
     minion: 'templeroot', minions: 2, enrageAt: 0.44, enrageSpeed: 1.35,
-    enrageCharge: 0.55, enrageWindUp: 0.72 }
+    enrageCharge: 0.55, enrageWindUp: 0.72 },
+  fenwidow: { gravity: 0, boss: true, flies: true, speed: 5.9, hoverAbove: 3.3, drift: 3.8,
+    chargeEvery: 3.6, windUp: 0.92, chargeSpeed: 28, chargeFor: 0.72, spawnEvery: 4.5,
+    minion: 'peatspider', minions: 3, enrageAt: 0.5, enrageSpeed: 1.25,
+    enrageCharge: 0.62, enrageWindUp: 0.62, followUp: 0.44 }
 
 };
 
@@ -408,6 +412,33 @@ const ENEMIES = [
     damage: 54, weight: 0, w: 4.5, h: 3.4, colour: '#b58e53', boss: true, summonOnly: true, emit: 6,
     drops: [['mahoganylog', 12], ['coin', 820]], bossDrops: ['amberroot-heart'] },
 
+  ...[
+    ['reedskipper', 'Reed Skipper', 'surface', 'slime', 'slime', 37, 10, '#8ca264', 'gel'],
+    ['bogheron', 'Bog Heron', 'surface', 'flyer', 'bird', 43, 12, '#a3abb1', 'feather'],
+    ['mudskulk', 'Mud Skulk', 'surface', 'walker', 'lizard', 57, 14, '#756f4c', 'leather'],
+    ['mosquito', 'Blood Mosquito', 'surface', 'flyer', 'wasp', 42, 13, '#935a65', 'stinger'],
+    ['peatspider', 'Peat Spider', 'caves', 'crawler', 'spider', 95, 20, '#796750', 'chitin'],
+    ['lanternleech', 'Lantern Leech', 'caves', 'swimmer', 'leech', 92, 19, '#7d9f89', 'gel'],
+    ['siltborer', 'Silt Borer', 'caves', 'worm', 'worm', 96, 21, '#8c7762', 'wormtooth'],
+    ['fenrevenant', 'Fen Revenant', 'deep', 'walker', 'humanoid', 178, 28, '#74887c', 'rottenflesh'],
+    ['blackfenmaw', 'Blackfen Maw', 'deep', 'flyer', 'maw', 172, 28, '#59696d', 'bone'],
+    ['mirelantern', 'Mire Lantern', 'deep', 'flyer', 'cloud', 154, 26, '#b0b878', 'glowmoss']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: body === 'humanoid' ? 1.9 : 1,
+    biomes: ['marsh'], layers: [layer], wet: kind === 'swimmer', emit: key.includes('lantern') ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'marshmimic', name: 'Siltbound Mimic', kind: 'walker', body: 'mimic', hp: 355,
+    damage: 39, weight: 0, w: 1.8, h: 1.5, colour: '#898264', hiddenSpawn: true,
+    drops: [['siltbound-fang', 2], ['coin', 170]] },
+  { key: 'reedking', name: 'The Reed King', kind: 'king', body: 'kingslime', hp: 2150,
+    damage: 39, weight: 0, w: 4, h: 3, colour: '#87975b', boss: true, summonOnly: true, emit: 3,
+    drops: [['gel', 20], ['coin', 460]], bossDrops: ['reed-crown'] },
+  { key: 'fenwidow', name: 'The Blackfen Widow', kind: 'fenwidow', body: 'spider', hp: 3950,
+    damage: 51, weight: 0, w: 4.4, h: 3.1, colour: '#71586d', boss: true, summonOnly: true, emit: 5,
+    drops: [['chitin', 12], ['coin', 770]], bossDrops: ['blackfen-silk'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -508,7 +539,8 @@ const GAIT = {
   scourge: { perTile: 0.45, perSecond: 7 },
   aurora: { perTile: 0.5, perSecond: 9 },
   hornetqueen: { perTile: 0.46, perSecond: 10 },
-  strangler: { perTile: 0.4, perSecond: 7 }
+  strangler: { perTile: 0.4, perSecond: 7 },
+  fenwidow: { perTile: 0.46, perSecond: 10 }
 };
 
 // --- the live population ------------------------------------------------------------------

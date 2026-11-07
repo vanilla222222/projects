@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'siltbound-fang': { name: 'Siltbound Fang', kind: 'loot', colour: '#a69a75' },
+  'reed-crown': { name: 'Reed Crown', kind: 'loot', colour: '#a2ad70' },
+  'blackfen-silk': { name: 'Blackfen Silk', kind: 'loot', colour: '#b38eaf' },
+  'reed-sigil': { name: 'Reed Sigil', kind: 'use', colour: '#a2ad70',
+    use: { summon: 'reedking', layer: 'surface', biome: 'marsh' }, text: 'Summon on the Mire surface' },
+  'blackfen-spool': { name: 'Blackfen Spool', kind: 'use', colour: '#b38eaf',
+    use: { summon: 'fenwidow', layer: 'deep', biome: 'marsh' }, text: 'Summon in the deep Mire' },
   'vinebound-fang': { name: 'Vinebound Fang', kind: 'loot', colour: '#a6b87e' },
   'orchid-stinger': { name: 'Orchid Stinger', kind: 'loot', colour: '#e3ac72' },
   'amberroot-heart': { name: 'Amberroot Heart', kind: 'loot', colour: '#bf925c' },
@@ -298,6 +305,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'reed-circlet': { name: 'Reed Circlet', colour: '#a2ad70', text: 'Health regenerates 25% faster and breath lasts twice as long', regen: 1.25, breathMul: 2 },
+  'blackfen-wrap': { name: 'Blackfen Wrap', colour: '#b38eaf', text: 'Magic costs 15% less mana and defence +5', manaCost: 0.85, defense: 5 },
+  'siltbound-clasp': { name: 'Siltbound Clasp', colour: '#a69a75', text: 'Move 10% faster and pick up items from farther away', speed: 1.1, pickup: 1.35 },
+
   'orchid-quiver': { name: 'Orchid Quiver', colour: '#e3ac72', text: 'Arrows deal 14% more damage and move 20% faster', ranged: 1.14, arrowSpeed: 1.2 },
   'amberroot-bulwark': { name: 'Amberroot Bulwark', colour: '#bf925c', text: 'Defence +8 and health regenerates 25% faster', defense: 8, regen: 1.25 },
   'vinebound-clasp': { name: 'Vinebound Clasp', colour: '#a6b87e', text: 'Move 10% faster and take 25% less fall damage', speed: 1.1, fallMul: 0.75 },
@@ -776,6 +787,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'reed-sigil', kind: 'use', count: 1 }, need: [['peat', 12], ['gel', 10], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'blackfen-spool', kind: 'use', count: 1 }, need: [['chitin', 8], ['amethyst', 3], ['silver-bar', 3]], station: 'anvil' },
+  { out: { key: 'reed-circlet', kind: 'accessory', count: 1 }, need: [['reed-crown', 1], ['shell', 6]], station: 'anvil' },
+  { out: { key: 'blackfen-wrap', kind: 'accessory', count: 1 }, need: [['blackfen-silk', 1], ['leather', 6]], station: 'anvil' },
+  { out: { key: 'siltbound-clasp', kind: 'accessory', count: 1 }, need: [['siltbound-fang', 2], ['silver-bar', 4]], station: 'anvil' },
   { out: { key: 'orchid-lure', kind: 'use', count: 1 }, need: [['stinger', 5], ['mahoganylog', 10], ['iron-bar', 2]], station: 'anvil' },
   { out: { key: 'amberroot-idol', kind: 'use', count: 1 }, need: [['mahoganylog', 14], ['emerald', 2], ['gold-bar', 3]], station: 'anvil' },
   { out: { key: 'orchid-quiver', kind: 'accessory', count: 1 }, need: [['orchid-stinger', 1], ['leather', 5]], station: 'anvil' },

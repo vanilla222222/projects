@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 107 enemies including sixteen bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 120 enemies including eighteen bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -240,3 +240,12 @@ Amberroot Temples in the deep Jungle. Some temple chests are Vinebound Mimics.
 
 Use an Orchid Lure on the surface or an Amberroot Idol in the deep Jungle to
 summon the Orchid Queen or Amberroot Strangler. Both bosses are optional.
+
+
+### Mire expansion
+
+Find Reedwalk Posts on the surface, Drowned Pumpworks underground, and the
+Blackfen Ossuary in the deep Mire. Some ossuary chests awaken as Siltbound Mimics.
+
+Use a Reed Sigil on the surface or a Blackfen Spool in the deep Mire to summon
+the Reed King or Blackfen Widow. Both are optional.

@@ -190,6 +190,11 @@ BODIES.kingslime = function (ctx, g, c) {
   rect(ctx, g, -0.2, top + 0.04, 0.4, 0.035, '#a8882c');
   dot(ctx, g, 0, top - 0.02, 0.07, '#d8344c');
   ctx.restore();
+  if (c.key === 'reedking') {
+    poly(ctx, g, [-0.38, -0.65, -0.48, -1.03, -0.30, -0.88, -0.18, -1.06,
+      -0.12, -0.69], '#b5ae68');
+  }
+
 };
 
 // The Hollow Eye. The same plan as a demon eye and four times the size, because a boss
@@ -469,6 +474,12 @@ BODIES.spider = function (ctx, g, c) {
     dot(ctx, g, 0.26 + (i % 2) * 0.08, -0.56 + i * 0.06, 0.05, c.glow || '#e8544e');
   }
   poly(ctx, g, [0.34, -0.42, 0.48, -0.36, 0.36, -0.3], dark);        // fangs
+  if (c.key === 'fenwidow') {
+    const glow = c.windUp > 0 ? '#ffdbbd' : '#d396ae';
+    poly(ctx, g, [-0.32, -0.56, -0.15, -0.65, -0.01, -0.56, -0.15, -0.48], glow);
+    poly(ctx, g, [-0.27, -0.48, -0.15, -0.54, -0.04, -0.48, -0.15, -0.40], glow);
+  }
+
 };
 
 BODIES.crab = function (ctx, g, c) {
