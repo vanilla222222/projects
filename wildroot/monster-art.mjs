@@ -42,11 +42,16 @@ MONSTER_ART.tempest=art({b:'#426c8d',l:'#a5d8d8',s:'#253d65',g:'#f5d68f'},(r,l,o
 export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;return MONSTER_ART[id]?id:null;}
 export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.round(Math.sin(time*2)*3):Math.round(Math.sin(time*3)),scale=boss?5:2.3;g.fillStyle='#24383c33';g.fillRect(Math.round(x-17*scale),Math.round(y-2),34*scale,4);drawSprite(g,a,x-24*scale,y-48*scale+bob,scale);if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#c2a7da':'#e3c47c';for(let i=0;i<3;i++)g.fillRect(Math.round(x+(i*6-7)*scale),Math.round(y-41*scale-i%2*3),4*scale,4*scale);}return true;}
 
+MONSTER_ART.singularity=art({b:'#655f98',l:'#ad98ec',s:'#342952',g:'#8ce7e7'},(r,line,oval)=>{
+ oval(24,24,13,15,'s');oval(24,24,10,12,'b');oval(24,24,7,8,'o');oval(24,24,3,4,'g');
+ for(const side of [-1,1]){const x=24+side*15;line(x,6,x+side*5,15,'l');r(x-3,14,7,17,'s');r(x-2,16,5,7,'l');line(x,30,x+side*6,41,'b');}
+ r(21,5,7,4,'g');line(19,41,11,47,'l');line(29,41,37,47,'l');
+},'A floating colossus with a black hole core and severed crystal arms','float');
 export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);return id?spriteSvg(MONSTER_ART[id],cls):'';}
 
 // Tidewild silhouettes have area anatomy, then room-specific crests and palettes.
 for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i)=>{
- const colours=({depths:['#6899bb','#81738f','#a99874'],'tide-shore':['#9ba991','#b78c71','#699da8'],'tide-marsh':['#879a69','#b49a62','#779f99'],'tide-dunes':['#c0a17a','#a88d78','#c7b98e'],'tide-bramble':['#8c9c72','#ab8a8d','#6e8a8a'],'tide-hunt':['#aa886f','#8e819c','#a9a185'],'tide-cliffs':['#7b98a8','#8b829e','#b0aa8d']})[a.id]||['#7b9b87','#b29877','#8d90a6'],b=colours[i%3],l=shade(b,34),s=shade(b,-38),f=colours[(i+1)%3];
+ const colours=({depths:['#6899bb','#81738f','#a99874'],'tide-shore':['#9ba991','#b78c71','#699da8'],'tide-marsh':['#879a69','#b49a62','#779f99'],'tide-dunes':['#c0a17a','#a88d78','#c7b98e'],'tide-bramble':['#8c9c72','#ab8a8d','#6e8a8a'],'tide-hunt':['#aa886f','#8e819c','#a9a185'],'tide-cliffs':['#7b98a8','#8b829e','#b0aa8d']})[a.id]||(a.world===3?['#8a75bd','#6ba3ba','#bb789b']:['#7b9b87','#b29877','#8d90a6']),b=colours[i%3],l=shade(b,34),s=shade(b,-38),f=colours[(i+1)%3];
  MONSTER_ART[a.id+'-'+i]=art({b,l,s,f},(r,line,oval,pixels)=>{
   const shape=({depths:[5,3,2],'tide-shore':[0,0,4,5,1],'tide-marsh':[1,1,1,6,2],'tide-dunes':[0,5,2,2],'tide-bramble':[3,3,4,3],'tide-hunt':[3,3,4,3,3],'tide-cliffs':[1,0,3,2]})[a.id]?.[i]??(region+i)%5;
   if(shape===0){oval(24,31,15,10,'o');oval(24,30,13,8,'b');for(let n=0;n<3;n++){line(12,28+n*4,4,24+n*7,'s');line(35,28+n*4,44,24+n*7,'s');}r(9,17,6,11,'f');r(34,17,6,11,'f');r(19,25,3,4,'e');r(28,25,3,4,'e');}
@@ -58,6 +63,7 @@ for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i
   if(shape===6){for(let n=0;n<5;n++){const x=7+n*7,y=31+Math.round(Math.sin(n*1.6)*7);oval(x,y,6,5,'s');oval(x,y-2,5,3,'b');}oval(38,23,7,7,'l');r(39,21,3,3,'e');line(12,29,16,18,'f',2);line(25,30,29,20,'f',2);}
   // Crests grow from the silhouette rather than floating as an identifier row.
   for(let bit=0;bit<7;bit++){const x=8+bit*5;let top=8;while(top<40&&!pixels[top*SIZE+x])top++;if(top<40){const h=1+(((region*8+i)>>bit)&1)*4;line(x,top,x,Math.max(2,top-h),'f',2);}}
+  if(a.world===3){const x=5+region-9;line(x,38,x+i+2,46,'f');r(x+i+1,45,3,2,'l');}
   for(let n=0;n<=i;n++)r(14+n*4,33+(n%2)*4,2,2,'l');
- },a.names[i]+' — distinct Tidewild anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
+ },a.names[i]+' — distinct anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
 });
