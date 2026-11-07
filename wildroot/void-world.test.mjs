@@ -108,3 +108,35 @@ test('The three back-world crossings have distinct and attainable rewards',()=>{
  assert.equal(c.bag['sealed-orrery-relic'],1);
  assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
 });
+
+test('An equipped character can fight all three Unmoored phases and move off marked breaks',()=>{
+ const {s,c}=setup();
+ s.surveys.push('void-end-5');c.journey.visited['void-end-5']=true;
+ Object.assign(c,{area:'void-crown',zone:5,level:112,class:'warrior',advancement:'beastwarden'});
+ c.attributes={might:90,finesse:0,focus:130};
+ Object.assign(c.talents,{precision:15,power:30,vitality:30});
+ c.tierTalents={force:24,technique:1};
+ for(const id of ['null-sword','null-mail','eventide-ring','nova-charm'])E.createEquipment(s,id,c);
+ E.give(c,'starbrew',60);
+ E.equipFood(c,0,E.bagSlots(c).findIndex(t=>t?.id==='starbrew'));
+ E.syncAccount(s);c.hp=E.maxHp(c);
+ const w=new World(s,{rng:()=>.42});
+ assert.ok(w.travel('void-crown',5,{secret:'unmoored'}));
+ const boss=w.map.monsters[0];
+ w.player.x=boss.x-100;w.target=boss;w.auto=true;
+ let phase=1,opened=false;
+ for(let frame=0;frame<20000&&!s.bossHunt.kills.unmoored&&!w.player.respawn;frame++){
+  const p=w.player,t=boss.telegraph;
+  const holes=w.map.sever?.until>w.time?w.map.sever.zones:[];
+  const warnings=t?.kind==='rootburst'?(t.zones||[t]):[];
+  const danger=[...holes,...warnings].find(z=>p.x>z.left-12&&p.x<z.right+12);
+  const horizontal=danger?(p.x<(danger.left+danger.right)/2?-1:1):0;
+  if(!danger&&Math.abs(p.x-boss.x)<260)w.useSkill(0,true);
+  w.step(.02,{horizontal,jump:t?.kind==='rootwave'&&t.remaining<.23&&p.grounded});
+  phase=Math.max(phase,boss.phaseLevel||1);
+  opened||=boss.counterWindow>0;
+ }
+ assert.equal(phase,3);
+ assert.ok(opened);
+ assert.equal(s.bossHunt.kills.unmoored,1);
+});
