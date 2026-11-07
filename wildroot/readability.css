@@ -1,4 +1,4 @@
-/* Readable dialogs: text wraps and grows; the dialog owns scrolling. */
+/* Readable dialogs: text wraps and grows; bounded content owns scrolling. */
 #panel { width:min(1120px,96vw); max-height:94dvh; }
 #panel-content { min-width:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
 #panel-content p,#panel-content small,#panel-content .small {font-family:system-ui,sans-serif;font-size:13px!important;line-height:1.5!important;overflow-wrap:anywhere;white-space:normal;}
@@ -131,3 +131,16 @@
 /* Keep the legend and atlas in one grid cell; only the atlas canvas scrolls. */
 .map-layout{min-width:0;max-width:100%}.atlas-pane{min-width:0;max-width:100%;overflow:hidden}.atlas-pane .atlas-scroll{display:block;width:100%;min-width:0;max-width:100%;height:min(580px,55dvh);max-height:580px;overflow:scroll;box-sizing:border-box;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;overscroll-behavior:auto}.atlas-pane .world-atlas{max-width:none;flex-shrink:0}.map-layout>.atlas-detail{min-width:0;max-width:100%;overflow-wrap:anywhere}
 @media(max-width:800px){.atlas-pane .atlas-scroll{height:min(360px,48dvh);max-height:360px}.map-layout{grid-template-columns:minmax(0,1fr)}}
+
+.atlas-scroll,.atlas-scroll .atlas-node{cursor:grab!important}.atlas-scroll{user-select:none;-webkit-user-select:none}.atlas-scroll.is-panning,.atlas-scroll.is-panning *{cursor:grabbing!important}
+
+/* One bounded scrolling body for every menu; chrome stays outside that body. */
+#panel[open]{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:min(860px,94dvh);max-height:94dvh;overflow:hidden;box-sizing:border-box}
+#panel>.panel-header,#panel>#panel-tabs,#panel>.panel-footer{position:static;min-width:0;max-width:100%;box-sizing:border-box}
+#panel>.panel-header{flex-shrink:0}#panel>.panel-header>div{min-width:0}#panel>.panel-header button{flex-shrink:0}
+#panel>#panel-content{min-height:0;min-width:0;max-width:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;scroll-padding:12px;box-sizing:border-box}
+#panel-content>.inventory-topline,#panel-content>.map-layout,#panel-content>.master-detail,#panel-content>.inventory-layout,#panel-content>.shop-layout,#panel-content>.options-layout,#panel-content>.talent-layout{min-width:0;max-width:100%}
+#panel-content :where(.master-detail,.inventory-layout,.shop-layout,.options-layout,.talent-layout,.player-cards,.grid,.two-column)>*{min-width:0}
+#panel-content :where(.recipe-icon-grid,.item-index-grid,.ledger-list){overscroll-behavior:auto;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+#panel-content select,#panel-content input{max-width:100%;box-sizing:border-box}
+@media(max-width:800px){#panel[open]{height:96dvh;max-height:96dvh}#panel>.panel-footer{flex-wrap:wrap;gap:4px 10px}#panel>.panel-footer span{min-width:0;overflow-wrap:anywhere}}

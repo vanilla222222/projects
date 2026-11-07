@@ -1,5 +1,5 @@
 import {TIDE_NPCS,TIDE_QUESTS} from './tide-campaign.mjs?v=45';
-import {travelAtlas} from './travel-atlas.mjs?v=46';
+import {travelAtlas} from './travel-atlas.mjs?v=47';
 import {worldOf,WORLD_TWO,ADVANCEMENTS} from './expansion-content.mjs?v=45';
 import * as InventoryGuide from './inventory-guidance.mjs?v=45';
 import {roomPreparation} from './route-preparation.mjs?v=45';
