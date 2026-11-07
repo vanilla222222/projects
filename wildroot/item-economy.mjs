@@ -11,7 +11,7 @@ export function initializeEconomy(s){s.economy??={salvage:0,projects:{},attuned:
 export function badgeOwned(s,id){return id==='world-one-completion'?s.worldCompletionCrafted:id==='rootbound-key'?s.storyFlags.bossPermit:id.startsWith('world-token-')?s.npcTokens.includes(id.slice(12)):false;}
 export function reserveCopy(s,c,id){
  if(BADGES[id])return Infinity;
- if(id==='tide-completion-token'||id==='astral-completion-token'||id==='singularity-core'&&!s.story['orbit-eventide']?.done)return 1;
+ if(id==='tide-completion-token'||id==='astral-completion-token'||id==='hollow-completion-token'||id==='singularity-core'&&!s.story['orbit-eventide']?.done)return 1;
  if(id==='tempest-heart'&&!s.story['tide-restored']?.done)return 1;
  if(id==='boss-heart'&&!s.story.heart?.done)return 1;
  if(D.EXPANSIONS[id])return(D.EXPANSIONS[id].target==='bag'?c.usedExpansions:s.usedChestExpansions).includes(id)?0:1;

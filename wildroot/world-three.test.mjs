@@ -11,7 +11,7 @@ import {pointFor,roomLayout} from './layouts.mjs?v=49';
 
 test('Astral Reach contains fifty rooms, three towns and a boss-gated entrance with no shortcut',()=>{
  const s=E.freshSave(),c=E.selected(s);
- assert.equal(atlasNodes(3).length+Object.values(ORBIT_SECRETS).filter(d=>d.area.startsWith('orbit-')).length,50);
+ assert.equal(atlasNodes(3).filter(n=>n.area.startsWith('orbit-')).length+Object.values(ORBIT_SECRETS).filter(d=>d.area.startsWith('orbit-')).length,50);
  assert.equal(WORLD_THREE.areas.filter(a=>a.town).length,3);
  assert.match(travelAtlas(s,c,3,'orbit-dock:0'),/Landing Ring/);
  assert.equal(E.zoneUnlocked(s,'orbit-dock',0),false);

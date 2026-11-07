@@ -1,4 +1,5 @@
-export const COMPLETION_ITEMS={1:'world-one-completion',2:'tide-completion-token',3:'astral-completion-token'};
+import {VOID_NPCS} from './void-content.mjs';
+export const COMPLETION_ITEMS={1:'world-one-completion',2:'tide-completion-token',3:'astral-completion-token',4:'hollow-completion-token'};
 export const SIDE_NPCS={
  forester:{name:'Scout Rowan',area:'forest',zone:1,world:1,material:'oak',count:12,work:'Mark a safe trail through the forest.'},
  prospector:{name:'Prospector Flintlock',area:'caves',zone:0,world:1,material:'copper',count:12,work:'Shore up the mine entrance before the next shift.'},
@@ -22,7 +23,8 @@ export const SIDE_QUESTS=Object.entries(SIDE_NPCS).map(([giver,d])=>({
 export const WORLD_GIVERS={
  1:['steward','warrior','mage','blacksmith','enchanter','alchemist'],
  2:['captain','naturalist','archivist'],
- 3:['habitat','quartermaster','navigator']
+ 3:['habitat','quartermaster','navigator'],
+ 4:Object.keys(VOID_NPCS)
 };
 for(const [id,d] of Object.entries(SIDE_NPCS))WORLD_GIVERS[d.world].push(id);
 export const STAR_BOOKS={
@@ -40,7 +42,10 @@ export const STAR_BOOKS={
  'tempest-resolve':{name:'Tempest Resolve',effect:'skill',amount:.006,world:2,enemy:'tempest'},
  'comet-recovery':{name:'Comet Recovery',effect:'killHeal',amount:.001,world:3,enemy:'orbit-comets-5'},
  'zero-g-discipline':{name:'Zero-G Discipline',effect:'combatAFK',amount:.004,world:3,quest:'field-icewarden'},
- 'eventide-echo':{name:'Eventide Echo',effect:'attack',amount:.004,world:3,enemy:'singularity'}
+ 'eventide-echo':{name:'Eventide Echo',effect:'attack',amount:.004,world:3,enemy:'singularity'},
+ 'anchor-discipline':{name:'Anchor Discipline',effect:'defense',amount:.3,world:4,enemy:'void-quarry-5'},
+ 'echo-practice':{name:'Echo Practice',effect:'skill',amount:.006,world:4,quest:'hollow-echo'},
+ 'still-point':{name:'Still Point',effect:'characterXP',amount:.006,world:4,enemy:'unmoored'}
 };
 export const PRODUCTION_REWARDS=[
  ['rivets','Iron Rivets',1,7,95,'iron','caves-2','defense',4],

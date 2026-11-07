@@ -1,3 +1,4 @@
+import {VOID_AREAS,VOID_NPCS,VOID_QUESTS,VOID_SKILLS,VOID_WORK} from './void-content.mjs';
 import {installTideCampaign} from './tide-campaign.mjs?v=45';
 import {COMPLETION_ITEMS,SIDE_NPCS,SIDE_QUESTS,WORLD_GIVERS,STAR_BOOKS,PRODUCTION_REWARDS,WORLD_SKILL_STATUES,WORLD_EXTRA_STATUES,EXTRA_TOOL_LABELS,EXTRA_STAMPS,EXTRA_STATUES} from './world-rewards.mjs';
 import {ORBIT_QUESTS,EXPEDITION_TASKS} from './orbit-campaign.mjs';
@@ -459,7 +460,7 @@ STORY.find(q=>q.id==='first-roots').reward.items.bread=6;
 
 const expansionRecipeStart=RECIPES.length;
 installExpansion({AREAS,ITEMS,ENEMIES,RECIPES,EQUIPMENT,GEAR_SLOTS,GATHER_NODES,SKILLS,CAPACITY_BAGS,FOODS});
-for(const r of RECIPES.slice(expansionRecipeStart)){r.world=r.id.startsWith('orbit-')?3:/^(cobalt-bar|obsidian-bar|depths-supply|gear-tide-(pick|axe)-3)$/.test(r.id)?1:2;}
+for(const r of RECIPES.slice(expansionRecipeStart)){r.world=r.id.startsWith('void-')?4:r.id.startsWith('orbit-')?3:/^(cobalt-bar|obsidian-bar|depths-supply|gear-tide-(pick|axe)-3)$/.test(r.id)?1:2;}
 for(const area of ['tide-town','tide-gate'])TOWN_SHOPS[area]={name:area==='tide-town'?'Tidehaven Supplies':'Farwatch Stores',stock:[['stew',12,30],['feast',25,20],['town-teleport',30,10]]};
 
 for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+' Card',effect:'attack',amount:.015,kind:'monster'};
@@ -480,6 +481,14 @@ installTideCampaign({STORY,ITEMS,ENEMIES,RECIPES,EQUIPMENT,SECRETS});
 CARDS.tempest={name:'Tempest Sovereign Card',effect:'accuracy',amount:.03,kind:'monster'};
 
 for(const r of RECIPES.slice(tideRecipeStart))r.world=2;
+Object.assign(SKILLS,VOID_SKILLS);
+STORY.push(...VOID_QUESTS);
+item('hollow-completion-token','Hollow Between Completion Token','rare','✦');
+for(const [giver,d] of Object.entries(VOID_NPCS))item('world-token-'+giver,d.name+'’s Token','legendary','✺');
+for(const [id,name] of [['rift-shard','Rift Shard'],['bound-echo','Bound Echo'],['void-lantern','Void Lantern'],['restored-relic','Restored Relic'],['unmoored-anchor','Unmoored Anchor']])item(id,name,'rare','◇');
+SECRETS.unmoored={name:'The Unmoored’s Anchorage',area:'void-crown',zone:5,enemy:'unmoored'};
+ENEMIES.unmoored={id:'unmoored',name:'The Unmoored',area:'void-crown',index:5,hp:68000,attack:186,accuracy:480,xp:12000,coins:3100,shape:'golem',loot:[{id:'unmoored-anchor',chance:1}]};
+CARDS.unmoored={name:'The Unmoored Card',effect:'health',amount:.025,kind:'monster'};
 STORY.push(...SIDE_QUESTS);
 for(const [giver,d] of Object.entries(SIDE_NPCS))item('world-token-'+giver,d.name+'’s Token','legendary','✺');
 for(const giver of [...WORLD_GIVERS[2],...WORLD_GIVERS[3]])if(!ITEMS['world-token-'+giver])item('world-token-'+giver,'Expedition Token · '+giver,'legendary','✺');
@@ -494,7 +503,7 @@ for(const [world,id] of Object.entries(COMPLETION_ITEMS)){
 for(const [id,d] of Object.entries(STAR_BOOKS)){
  const book='star-book-'+id;
  item(book,'Star Talent · '+d.name,'rare','✦');
- if(d.enemy)ENEMIES[d.enemy].loot.push({id:book,chance:['boss','tempest','singularity'].includes(d.enemy)?1:.025});
+ if(d.enemy)ENEMIES[d.enemy].loot.push({id:book,chance:['boss','tempest','singularity','unmoored'].includes(d.enemy)?1:.025});
  else STORY.find(q=>q.id===d.quest).reward.items[book]=1;
 }
 for(const [id,name,world,level,seconds,material,enemy,stat,value] of PRODUCTION_REWARDS){
@@ -597,3 +606,78 @@ for(const [id,name,effect,amount,enemy,quest] of EXTRA_STATUES){
  if(reward)reward.reward.items[key]=5;
 }
 OFFERINGS.push(...EXTRA_STAMPS.map(([id])=>'stamp-'+id),...EXTRA_STATUES.map(([id])=>'statue-'+id));
+
+areaById('depths').resources[1].push('null-ore');
+areaById('depths').resources[2].push('umbra-ore');
+areaById('tide-shore').resources[3].push('rift-carp');
+areaById('tide-shore').resources[4].push('shade-ray');
+const voidToolSlots={construction:'bridge-kit',riftkeeping:'rift-tuner',echobinding:'echo-coil',lightkeeping:'lantern-kit',restoration:'relic-tools'};
+Object.assign(SKILL_TOOLS,voidToolSlots);
+Object.assign(GEAR_SLOTS,{'bridge-kit':'Bridge Kit','rift-tuner':'Rift Tuner','echo-coil':'Echo Coil','lantern-kit':'Lantern Kit','relic-tools':'Relic Tools'});
+for(const [i,[metal,name,ore,prior]] of [
+ ['null','Nullsteel','null-ore','void-bar'],['umbra','Umbral','umbra-ore','null-bar']
+].entries()){
+ const bar=metal+'-bar';
+ item(bar,name+' Bar','rare','▱');
+ RECIPES.push({id:bar,name:ITEMS[bar].name,world:4,station:'foundry',skill:'smithing',output:bar,count:1,cost:{[ore]:8,[prior]:2,charcoal:3}});
+ for(const [suffix,slot,stats] of [
+  ['sword','weapon',{attack:125+i*28,accuracy:55+i*20}],
+  ['mail','body',{defense:57+i*16,health:380+i*110}],
+  ...Object.entries(SKILL_TOOLS).map(([skill,slot])=>[slot,slot,['pick','axe','rod','net','shovel','gloves'].includes(slot)?{[skill]:.72+i*.12}:{['skill-'+skill]:.24+i*.08}])
+ ]){
+  const id=metal+'-'+suffix,label=name+' '+(suffix==='sword'?'Sword':suffix==='mail'?'Mail':GEAR_SLOTS[slot]);
+  item(id,label,'rare','⚒');
+  const gather=['pick','axe','rod','net','shovel','gloves'].includes(slot);
+  EQUIPMENT[id]={name:label,slot,stats,...(gather?{gatherTier:['pick','axe'].includes(slot)?8+i:6+i,gatherEfficiency:220+i*45}:{})};
+  RECIPES.push({id:'gear-'+id,name:label,world:4,station:'anvil',skill:'smithing',equipment:id,cost:{[bar]:5+i*2,'rift-shard':2+i}});
+ }
+}
+item('anchor-rivets','Anchor Rivets','rare','▱');
+ANVIL_PRODUCTS['anchor-rivets']={name:'Anchor Rivets',world:4,level:20,seconds:220,xp:8};
+item('hollow-band','Hollow Band','rare','◉');
+item('pattern-hollow-band','Blueprint · Hollow Band','rare','▤');
+EQUIPMENT['hollow-band']={name:'Hollow Band',slot:'ring',stats:{attack:32,health:165,accuracy:50}};
+RECIPES.push({id:'gear-hollow-band',name:'Hollow Band',world:4,station:'anvil',skill:'smithing',equipment:'hollow-band',dropBlueprint:'pattern-hollow-band',cost:{'anchor-rivets':10,'restored-relic':2,'unmoored-anchor':1}});
+ENEMIES['void-drift-5'].loot.push({id:'pattern-hollow-band',chance:.05});
+for(const [i,[id,skill]] of [...Object.keys(VOID_SKILLS).map(id=>[id,true]),['attack',false],['health',false],['afk',false]].entries()){
+ const key='hollow-'+id,enemy=ENEMIES[['void-fragments-1','void-fragments-4','void-hollows-2','void-lantern-0','void-relics-3','void-rim-1','void-drift-4','void-end-4'][i]]||ENEMIES['void-quarry-4'];
+ STATUES[key]={name:(VOID_SKILLS[id]||id[0].toUpperCase()+id.slice(1))+' Statue',effect:skill?'skill-'+id:id,amount:skill?.012:.005,source:enemy.name};
+ item('statue-'+key,STATUES[key].name,'rare','♜');
+ enemy.loot.push({id:'statue-'+key,chance:.03});
+}
+for(const [id,name,effect,amount,material,source] of [
+ ['anchor','Anchor Stamp','skill-construction',.01,'anchor-rivets','hollow-bridge'],
+ ['rift','Rift Stamp','skill-riftkeeping',.01,'rift-shard','void-wound-3'],
+ ['echo','Echo Stamp','skill-echobinding',.01,'bound-echo','hollow-echo'],
+ ['unmoored','Unmoored Stamp','health',.006,'umbra-ore','unmoored']
+]){
+ const quest=STORY.find(q=>q.id===source),enemy=ENEMIES[source];
+ STAMPS[id]={name,group:id==='unmoored'?'Combat':'Skills',effect,amount,material,source:quest?.name||enemy.name};
+ item('stamp-'+id,name,'rare','▧');
+ if(quest)quest.reward.items['stamp-'+id]=1;
+ else enemy.loot.push({id:'stamp-'+id,chance:id==='unmoored'?1:.03});
+}
+CONSTELLATIONS.push(
+ {id:'void-span',name:'The Woven Span',area:'void-quarry',zone:5,x:1430,y:644,type:'bridges',goal:1,text:'Complete a Construction bridge.'},
+ {id:'void-lamp',name:'The Last Lantern',area:'void-wound',zone:3,x:1520,y:644,type:'lightkeeping',goal:3,text:'Reach Lightkeeping level 3.'},
+ {id:'void-anchor',name:'The Fixed Star',area:'void-end',zone:5,x:1450,y:644,type:'unmoored',goal:1,text:'Defeat the Unmoored.'}
+);
+STAR_SIGNS.anchor={name:'The Anchor',icon:'star',cost:2,requires:['void-span','void-lamp'],effect:'defense',amount:4,text:'+4 defense'};
+STAR_SIGNS.fixed={name:'The Fixed Star',icon:'star',cost:2,requires:['void-anchor'],effect:'accuracy',amount:.06,text:'+6% accuracy'};
+WORLD_TASKS.push(
+ {id:'hollow-bridge-task',world:4,name:'The First Span',type:'bridges',goal:1,reward:5},
+ {id:'hollow-route-task',world:4,name:'Reach Still Point',type:'visit',key:'void-end-5',goal:1,reward:6},
+ {id:'hollow-shard-task',world:4,name:'Sift the Void',type:'gather',key:'void-silt',goal:60,reward:5},
+ {id:'hollow-boss-task',world:4,name:'Moor the Unmoored',type:'enemy',key:'unmoored',goal:1,reward:10}
+);
+for(const id of Object.keys(ITEMS))if((id.startsWith('void-')||id.startsWith('statue-hollow-')||['pattern-hollow-band','restored-relic','anchor-rivets','rift-shard','unmoored-anchor','bound-echo'].includes(id))&&!OFFERINGS.includes(id))OFFERINGS.push(id);
+
+for(const area of VOID_AREAS.filter(a=>a.town))TOWN_SHOPS[area.id]={name:area.name+' Supply Counter',stock:[['starbrew',40,20],['town-teleport',30,10]]};
+for(const [id,name,heal,cost] of [
+ ['gloam-stew','Gloam Stew',510,{gloamfruit:6,'shade-ray':2}],
+ ['rift-salve','Rift Salve',540,{'rift-moth':5,'void-silt':3}],
+ ['anchor-supper','Anchor Supper',620,{'rift-carp':4,'riftwood':3,gloamfruit:6}]
+]){
+ item(id,name,'rare','♨');FOODS[id]={name,heal,cooldown:18};
+ RECIPES.push({id,name,world:4,station:'alchemy',skill:'alchemy',output:id,count:4,cost});
+}

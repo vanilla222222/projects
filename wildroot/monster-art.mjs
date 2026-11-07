@@ -76,6 +76,11 @@ for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i
   if(shape===6){for(let n=0;n<5;n++){const x=7+n*7,y=31+Math.round(Math.sin(n*1.6)*7);oval(x,y,6,5,'s');oval(x,y-2,5,3,'b');}oval(38,23,7,7,'l');r(39,21,3,3,'e');line(12,29,16,18,'f',2);line(25,30,29,20,'f',2);}
   // Crests grow from the silhouette rather than floating as an identifier row.
   for(let bit=0;bit<7;bit++){const x=8+bit*5;let top=8;while(top<40&&!pixels[top*SIZE+x])top++;if(top<40){const h=1+(((region*8+i)>>bit)&1)*4;line(x,top,x,Math.max(2,top-h),'f',2);}}
+  if(a.id.startsWith('void-')){
+   const x=17+i*2;
+   let top=8;while(top<35&&!pixels[top*SIZE+x])top++;
+   if(top<35){const tip=3+(region+i)%6;line(x,top,x-6,tip,'s');r(x-7,tip,3,4,'l');}
+  }
   if(a.world===3){const x=5+region-9;line(x,38,x+i+2,46,'f');r(x+i+1,45,3,2,'l');}
   for(let n=0;n<=i;n++)r(14+n*4,33+(n%2)*4,2,2,'l');
  },a.names[i]+' — distinct anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
@@ -184,3 +189,14 @@ for(const [family,details,entries] of expandedSpecies){
    'A '+family+' with '+details+'.',family==='ray'||family==='wisp'?'float':'crawl');
  }
 }
+
+MONSTER_ART.unmoored=art({b:'#755c97',l:'#c9abe5',s:'#3d2f59',f:'#e5a7ee'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*13;
+  line(x,22,24+d*20,8,'s');r(x-2,16,7,18,'b');r(x-1,19,4,8,'l');
+  line(x,35,24+d*18,44,'b');r(23+d*17,44,5,3,'f');
+ }
+ oval(24,25,11,16,'s');oval(24,24,9,12,'b');oval(24,25,5,9,'o');
+ r(23,17,3,17,'f');r(20,22,9,3,'l');
+ line(14,15,9,5,'l');line(34,15,39,5,'l');r(22,3,4,5,'f');
+},'Floating Void sovereign with severed chains, violet plates, and an exposed anchor core','float');
