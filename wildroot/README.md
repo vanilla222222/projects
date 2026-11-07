@@ -1,6 +1,6 @@
 # Wildroot — Greenreach and Tidewilds
 
-An original side-view browser idle RPG for Vanilla and friends, hosted in the existing Projects website. World One has a complete campaign. World Two is a playable map with gathering and Tier 2 progression; its story campaign and boss remain future work. Complete the World One story and craft the Greenreach Completion Token to open it. See [WORLD-TWO.md](WORLD-TWO.md) for routes, tools and class requirements.
+An original side-view browser idle RPG for Vanilla and friends, hosted in the existing Projects website. World One has a complete campaign. World Two has nine expedition quests, five gathering/combat skill tracks, Tier 2 progression and the Tempest Sovereign boss. Complete the World One story and craft the Greenreach Completion Token to open it. See [WORLD-TWO.md](WORLD-TWO.md) for routes, tools and class requirements.
 
 ## Controls and world
 
@@ -279,4 +279,7 @@ Equipment audit: the Sunwell Branch was strictly outclassed by the common verdan
 
 Runtime 39 also excludes active boss, guardian, trial and dungeon encounters from town-chest access, even when their retained world coordinates coincide with a town chest. No material transaction can use that coordinate overlap to resupply an active encounter.
 
-Runtime 40 finishes contextual Getting Started lessons and adds confirmed Reset Data in Save & Help. The Lower Reaches adds three World One mining rooms, Cobalt and Obsidian. The playable Tidewilds map has 32 rooms, rods/nets/shovels/gloves, five new skill tracks, alloy-dependent recipes, four capacity satchels, shared town chests, supply shops and five unique Tier 2 upgrades. See [WORLD-TWO.md](WORLD-TWO.md) for routes and the ten-unique-class duplicate rule. This is the World Two map/progression foundation; its full quest campaign and boss are not yet built.
+Runtime 40 finishes contextual Getting Started lessons and adds confirmed Reset Data in Save & Help. The Lower Reaches adds three World One mining rooms, Cobalt and Obsidian. The playable Tidewilds map has 32 rooms, rods/nets/shovels/gloves, five new skill tracks, alloy-dependent recipes, four capacity satchels, shared town chests, supply shops and five unique Tier 2 upgrades. See [WORLD-TWO.md](WORLD-TWO.md) for routes and the ten-unique-class duplicate rule. Runtime 45 adds the full nine-quest expedition campaign and Tempest Sovereign encounter; see WORLD-TWO.md for the current progression and validation limits.
+
+
+Runtime 43–45 follow-up: rebuilt the teleport atlas with illustrated regions, real portal connections, readable labels and distinct room states; fixed directional climbing at shared ladder landings and invalid coordinates after releasing climb input. NPCs now use an immediate quest/action hub with optional story and a separate class-training tab. Tidehaven has physically gated crafting services, three expedition NPCs and nine personal quests. Five storm-forged weapons, a three-phase active boss and a completion reward connect the existing skill routes into a complete campaign. World Three and the second Tier 2 class branches remain sealed.

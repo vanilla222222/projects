@@ -1,4 +1,4 @@
-import {EXPANSION_AREAS} from './expansion-content.mjs?v=40';
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=45';
 // Hand-authored pixel textures: silhouettes, anatomy and surface patterns are species-specific.
 const SIZE=48;
 function art(colors,paint,description,motion='bob'){
@@ -38,6 +38,7 @@ export const MONSTER_ART={
  'archive-golem':art({b:'#a79073',l:'#dfcca0',s:'#5c646f',g:'#8ad0cf'},(r,l,o)=>{r(14,15,22,25,'s');r(17,18,16,19,'b');r(13,10,24,6,'l');r(21,7,8,4,'g');r(19,23,4,3,'g');r(28,23,4,3,'g');r(7,26,7,16,'l');r(36,26,7,16,'l');r(15,41,8,6,'s');r(29,41,8,6,'s');r(21,30,9,7,'l');l(23,31,27,35,'g');},'Archive golem built from engraved parchment slabs and cyan runes','sway'),
  'ruin-heart':art({b:'#777c9e',l:'#b8c0d5',s:'#3f455e',g:'#cf86bd'},(r,l,o)=>{o(24,27,14,17,'s');o(24,27,11,14,'b');r(11,15,27,4,'l');r(7,22,7,16,'s');r(35,22,7,16,'s');r(20,7,3,10,'l');r(28,5,3,12,'l');o(24,29,7,9,'s');o(24,29,4,6,'g');r(22,26,3,3,'w');l(16,40,9,47,'l');l(32,40,39,47,'l');r(7,27,3,7,'g');r(38,27,3,7,'g');},'Hollow reliquary with suspended violet heart, crystal horns and stone claws','float')
 };
+MONSTER_ART.tempest=art({b:'#426c8d',l:'#a5d8d8',s:'#253d65',g:'#f5d68f'},(r,l,o)=>{o(24,25,19,15,'s');o(24,24,16,13,'b');for(let i=0;i<5;i++){l(9+i*7,20,12+i*6,7,'l');r(8+i*7,7,6,4,'g');}r(11,26,27,8,'l');r(14,25,6,4,'g');r(29,25,6,4,'g');for(const side of [-1,1]){l(24+side*15,30,24+side*21,40,'b');l(24+side*10,35,24+side*16,47,'l');r(24+side*21-3,35,6,8,'g');}o(24,30,5,7,'s');o(24,30,3,5,'g');},'Stormglass sovereign with a five-spired shell, lantern eyes, coral claws and a luminous tidal heart','sway');
 export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;return MONSTER_ART[id]?id:null;}
 export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.sin(time*2)*5:Math.sin(time*3)*1.5;g.save();g.translate(Math.round(x),Math.round(y+bob));const scale=boss?5:2.3;g.scale(scale,scale);g.fillStyle='#16243055';g.fillRect(-17,-1,34,3);g.translate(-24,-48);for(const p of a.runs){g.fillStyle=p.color;g.fillRect(p.x,p.y,p.w,1);}if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#d6a4ed':'#f1d68b';for(let i=0;i<3;i++)g.fillRect(17+i*6,9-i%2*3,4,4);}g.restore();return true;}
 const svgCache=new Map();

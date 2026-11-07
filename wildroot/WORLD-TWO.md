@@ -1,6 +1,6 @@
-# Tidewilds map and progression foundation · runtime 40
+# Tidewilds campaign · runtime 45
 
-World One has 29 normal rooms after the Lower Reaches mining expansion. World Two has 32 normal rooms across eight areas. World Two opens after completing the World One story **and** crafting the Greenreach Completion Token. It is a playable map and gathering/class foundation; its full story quest campaign, boss and second class branches remain future work.
+World One has 29 normal rooms after the Lower Reaches mining expansion. World Two has 32 normal rooms across eight areas. World Two opens after completing the World One story **and** crafting the Greenreach Completion Token. Its nine-quest campaign connects the five skills, expedition equipment, a Tier 2 calling and the Tempest Sovereign boss. Second class branches and World Three remain future work.
 
 | Area | Rooms | Connection | Gathering |
 | --- | ---: | --- | --- |
@@ -30,3 +30,23 @@ Logging, Bug Catching, Digging and Foraging gain 1–3 resources per subsequent 
 New equipment consumes progressively higher quantities and intermediate alloys. Gathering satchels increase only their own category and are single-use per character. New items keep at least three implemented roles through crafting/equipment, foundry reclamation and town projects (rare trophies also support material research).
 
 Getting Started derives ten lessons from real character actions, supports revisiting lessons, and never adds unaccepted quests. Reset Data lives in Save & Help, asks before replacing all Wildroot progress, touches only the Wildroot save key, and leaves the current game running if browser storage fails.
+
+## Expedition campaign
+
+Meet Captain Maris at Landfall Quay, Iona in Pathfinders’ Hall and Archivist Sol at Artisan Boardwalk. Each has three personal quests. Quests appear in the journal only after acceptance. The arrival reward supplies the materials for all four Reedbound gathering tools. Artisan Boardwalk has an anvil, and Pathfinders’ Hall has an alchemy station; both enforce physical access and share the normal recipe and inventory rules. Smelting and enchanting remain available in Greenreach.
+
+Fieldwork introduces fishing and bugs. Berrywild work leads to the highland hunt; Sol’s digging and alloy chain unlocks five class-specific storm-forged weapons before that hunt. Higher gathering levels and cobalt tools lead to the Skybreak lens. Captain Maris requires both regional chains, a personal Tier 2 calling and final supplies before opening the Farwatch storm seal.
+
+The Tempest Sovereign waits in the Eye of the Tempest, reached through The Sealed Horizon. Phase one marks heavy slams, phase two fires split volleys, and phase three alternates charges and volleys. Phase transitions clear old hazards and provide a short breather. Victory grants a guaranteed heart and scale, once per encounter. Return the heart to Maris for the Tidewilds Completion Token and Beacon Ring recipe. Repeated active clears can supply ring materials. There are no offline boss rewards or World Three access.
+
+## Travel and NPC interface
+
+The teleport atlas shows illustrated regions and the actual portal graph. Labels remain visible; locked routes, undiscovered rooms, discovered destinations, selection and current location have different appearances. Selecting a room spends no charge; its separate teleport button confirms travel. Find Me centres the current room. Shared ladder landings choose a ladder extending in the requested direction, and releasing climb input retains finite coordinates.
+
+NPC menus immediately show the current quest, objectives, progress and rewards. Accept and hand-in have separate explicit actions; story text is optional. Class training is a separate tab. Character identity, NPC proximity, quest dependencies, materials and one-time reward checks remain enforced.
+
+## Validation and pacing
+
+`node --test wildroot/*.test.mjs` runs the regression suite. `node wildroot/world2-sim.mjs` first completes Greenreach, then uses actual gathering, bank transfers, recipe queues, personal crafting, route kills, NPC claims, Tier 2 training and active combat to finish Tidewilds. It does not insert completed expedition quests or grant their required resources. Its reference Warrior run takes about 1,784 simulated minutes in World Two, excluding human reading and navigation. This is an optimized idle-system model, not a human playtime promise or a claim that the pacing is final. Tests separately exercise legal expedition builds for all five classes against the boss, save migration, phase changes, anti-replay rewards and no offline boss kills.
+
+Desktop and mobile live visual verification remains outstanding when the preview/browser service is unavailable. Automated rendering checks do not replace real phone playtesting.

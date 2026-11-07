@@ -1,39 +1,39 @@
-import {tierTwoDiscoveries} from './world-two.mjs?v=40';
-export {advanceClass,advancementStatus,advancementName} from './world-two.mjs?v=40';
-import {SKILL_TOOLS,ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=40';
-import * as Offline from './offline-progress.mjs?v=40';
-import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=40';
-import {recordQuestAction} from './quest-content.mjs?v=40';
-import * as J from './journey.mjs?v=40';
-export * from './journey.mjs?v=40';
-import * as Builds from './class-builds.mjs?v=40';
-export * from './class-builds.mjs?v=40';
-import * as Books from './special-talents.mjs?v=40';
-export * from './special-talents.mjs?v=40';
-import * as Hunts from './boss-hunts.mjs?v=40';
-export * from './boss-hunts.mjs?v=40';
-import * as Dungeon from './dungeon.mjs?v=40';
-export * from './dungeon.mjs?v=40';
-import {roomLayout} from './layouts.mjs?v=40';
-export * from './exploration.mjs?v=40';
-export * from './item-economy.mjs?v=40';
-import * as S from './services.mjs?v=40';
-export * from './services.mjs?v=40';
-export * from './workshop.mjs?v=40';
-export * from './alchemy.mjs?v=40';
-import * as C from './chronicle.mjs?v=40';
-export * from './chronicle.mjs?v=40';
-import * as A from './adventure.mjs?v=40';
-export * from './adventure.mjs?v=40';
-import * as L from './legacy.mjs?v=40';
-export * from './legacy.mjs?v=40';
-import * as I from './inventory.mjs?v=40';
-import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=40';
-import * as P from './progression.mjs?v=40';
-export * from './progression.mjs?v=40';
-export {initialize,validate} from './progression.mjs?v=40';
-export * from './inventory.mjs?v=40';
-export {canPay,pay} from './inventory.mjs?v=40';
+import {tierTwoDiscoveries} from './world-two.mjs?v=45';
+export {advanceClass,advancementStatus,advancementName} from './world-two.mjs?v=45';
+import {SKILL_TOOLS,ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=45';
+import * as Offline from './offline-progress.mjs?v=45';
+import {forecastAssignment,commonLootSeconds} from './assignment-forecast.mjs?v=45';
+import {recordQuestAction} from './quest-content.mjs?v=45';
+import * as J from './journey.mjs?v=45';
+export * from './journey.mjs?v=45';
+import * as Builds from './class-builds.mjs?v=45';
+export * from './class-builds.mjs?v=45';
+import * as Books from './special-talents.mjs?v=45';
+export * from './special-talents.mjs?v=45';
+import * as Hunts from './boss-hunts.mjs?v=45';
+export * from './boss-hunts.mjs?v=45';
+import * as Dungeon from './dungeon.mjs?v=45';
+export * from './dungeon.mjs?v=45';
+import {roomLayout} from './layouts.mjs?v=45';
+export * from './exploration.mjs?v=45';
+export * from './item-economy.mjs?v=45';
+import * as S from './services.mjs?v=45';
+export * from './services.mjs?v=45';
+export * from './workshop.mjs?v=45';
+export * from './alchemy.mjs?v=45';
+import * as C from './chronicle.mjs?v=45';
+export * from './chronicle.mjs?v=45';
+import * as A from './adventure.mjs?v=45';
+export * from './adventure.mjs?v=45';
+import * as L from './legacy.mjs?v=45';
+export * from './legacy.mjs?v=45';
+import * as I from './inventory.mjs?v=45';
+import {CLASSES,SKILLS,AREAS,ITEMS,ENEMIES,RECIPES,OFFERINGS,WORLD_LOOT,GLOBAL_LOOT,FOODS,POTIONS,EQUIPMENT,GATHER_NODES,EXPANSIONS,SECRETS,areaById,zoneEnemy} from './content.mjs?v=45';
+import * as P from './progression.mjs?v=45';
+export * from './progression.mjs?v=45';
+export {initialize,validate} from './progression.mjs?v=45';
+export * from './inventory.mjs?v=45';
+export {canPay,pay} from './inventory.mjs?v=45';
 export const SAVE_VERSION=1,OFFLINE_CAP=8*3600,MAX_CHARACTERS=11;
 export function makeCharacter(id,name){return P.initializeCharacter({id,name,class:null,level:1,xp:0,hp:40,skills:Object.fromEntries(Object.keys(SKILLS).map(k=>[k,0])),quests:{},talents:{power:0,vitality:0,industry:0},gear:{weapon:0,armor:0,pick:0,axe:0,rune:0,vitality:0},area:'forest',zone:0,activity:'rest',resource:null,progress:0,kills:0});}
 export function freshSave(now=Date.now()){return P.initialize({version:SAVE_VERSION,savedAt:now,active:1,nextId:2,characters:[makeCharacter(1,'Adventurer')],inventory:{},coins:0,unlockedClasses:[],kills:{},archive:{},bossDefeated:false,log:['Welcome to the Greenreach. Meet Hesta in Hearthstead to begin the World One story.']});}
@@ -91,7 +91,7 @@ export function availableClass(s,id){return CLASSES[id]&&(!s.unlockedClasses.inc
 export function classQuest(s,c,id){const def=CLASSES[id],stage=c.quests[id]||0;if(!def)return null;let text,ready;if(stage===0){text='Reach character level 3';ready=c.level>=3;}else if(stage===1){text=`Reach ${SKILLS[def.skill]} level 2`;ready=skillLevel(c,def.skill)>=2;}else{text='Deliver your initiation materials';ready=hasCost(s,def.needs,c);}const atTrainer=c.area===def.town&&c.zone===def.zone&&!c.secret;return{stage,text,ready:ready&&atTrainer&&!c.class&&availableClass(s,id),requirementsMet:ready,atTrainer,needs:stage===2?def.needs:{}};}
 export function progressClass(s,c,id){const q=classQuest(s,c,id);if(!q?.ready)return false;if(q.stage<2){c.quests[id]=q.stage+1;note(s,`${CLASSES[id].trainer}: ${c.name} completed initiation step ${q.stage+1}.`);return true;}spend(s,CLASSES[id].needs,c);c.class=id;c.quests[id]=3;if(!s.unlockedClasses.includes(id)){s.unlockedClasses.push(id);note(s,`A ${CLASSES[id].name} joins your roster. A character slot is unlocked.`);}else note(s,`${c.name} became a ${CLASSES[id].name}.`);return true;}
 export function createCharacter(s,name){if(s.characters.length>=slots(s))return false;const c=makeCharacter(s.nextId++,String(name||`Adventurer ${s.nextId-1}`).trim().slice(0,24)||'Adventurer');s.characters.push(c);P.syncAccount(s);s.active=c.id;note(s,`${c.name} arrived in the Greenreach.`);return true;}
-export function stationFor(c){if(c.area==='town')return c.zone===2?'foundry':c.zone===1?'anvil':null;if(c.area==='jungle-town')return c.zone===0?'enchanting':c.zone===1?'alchemy':null;return null;}
+export function stationFor(c){if(c.area==='tide-town')return c.zone===1?'anvil':c.zone===2?'alchemy':null;if(c.area==='town')return c.zone===2?'foundry':c.zone===1?'anvil':null;if(c.area==='jungle-town')return c.zone===0?'enchanting':c.zone===1?'alchemy':null;return null;}
 export function craftCost(c,r){const factor=r.repeat?1+Math.floor((c.gear[r.upgrade]||0)/3):1;return Object.fromEntries(Object.entries(r.cost).map(([k,n])=>[k,n*factor]));}
 export function craftFee(c,r){return r.equipment?5:r.upgrade?5*(r.tier||1+Math.floor(c.gear[r.upgrade]/3)):2;}
 export function canCraft(s,c,r){return !c.dungeon&&!(r.unique&&s.worldCompletionCrafted)&&!(EXPANSIONS[r.output]?.target==='chest'&&s.usedChestExpansions.includes(r.output))&&P.recipeOpen(s,r)&&S.serviceAccess(s,c,r.station,'upgrade')&&s.coins>=craftFee(c,r)&&hasCost(s,craftCost(c,r),c)&&(!r.equipment||!c.loadout[EQUIPMENT[r.equipment].slot]||I.bagUsed(c)<I.bagCapacity(c))&&(r.equipment||!r.upgrade||r.repeat||(c.gear[r.upgrade]||0)<r.tier);}

@@ -1,9 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import * as E from './engine.mjs?v=40';import * as D from './content.mjs?v=40';import * as UI from './ui-panels.mjs?v=40';
-import {WORLD_TWO,EXPANSION_AREAS,ADVANCEMENTS,NEW_RESOURCES,SKILL_TOOLS,RESOURCE_POLICY} from './expansion-content.mjs?v=40';
-import {World,createMap} from './world.mjs?v=40';import {pointFor,roomLayout} from './layouts.mjs?v=40';
-import {assignCharacter} from './roster.mjs?v=40';
-import {onboarding} from './onboarding.mjs?v=42';import {persistReset} from './reset-save.mjs?v=40';
+import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';import * as UI from './ui-panels.mjs?v=45';
+import {WORLD_TWO,EXPANSION_AREAS,ADVANCEMENTS,NEW_RESOURCES,SKILL_TOOLS,RESOURCE_POLICY} from './expansion-content.mjs?v=45';
+import {World,createMap} from './world.mjs?v=45';import {pointFor,roomLayout} from './layouts.mjs?v=45';
+import {assignCharacter} from './roster.mjs?v=45';
+import {onboarding} from './onboarding.mjs?v=45';import {persistReset} from './reset-save.mjs?v=45';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const unlock=s=>{s.storyFlags.complete=true;s.worldCompletionCrafted=true;s.workshop.pages=3;};
 const reload=s=>E.restoreSave(JSON.parse(JSON.stringify(s)));

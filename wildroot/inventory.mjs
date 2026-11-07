@@ -1,6 +1,6 @@
-import {recordQuestAction} from './quest-content.mjs?v=40';
-import {NEW_RESOURCES} from './expansion-content.mjs?v=40';
-import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=40';
+import {recordQuestAction} from './quest-content.mjs?v=45';
+import {NEW_RESOURCES} from './expansion-content.mjs?v=45';
+import {ITEMS,EXPANSIONS,CAPACITY_BAGS,POTIONS,FOODS} from './content.mjs?v=45';
 export const BAG_STACK=99,CHEST_STACK=999;
 export const CARRY_TYPES={fishing:'Fishing',bugcatching:'Bug Catching',digging:'Digging',foraging:'Foraging',materials:'Materials',mining:'Mining',logging:'Logging',food:'Food & potions'};
 export function initBag(c){c.bag??={};c.packGear??=[];c.usedExpansions??=[];c.usedCapacityBags??=[];c.overflow??={};c.bagGrid??=[];c.lockedSlots??=[];return c;}

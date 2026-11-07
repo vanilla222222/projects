@@ -1,13 +1,13 @@
-import {seedKill,seedStory} from './test-fixtures.mjs?v=40';
+import {seedKill,seedStory} from './test-fixtures.mjs?v=45';
 import test from 'node:test';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
-import * as E from './engine.mjs?v=40';import * as D from './content.mjs?v=40';
-import {roomLayout,ROOM_KEYS,GROUND} from './layouts.mjs?v=40';import {ROOM_DESIGNS} from './room-designs.mjs?v=40';
-import {World,createMap} from './world.mjs?v=40';import {drawWorld,viewFor} from './scene.mjs?v=40';
+import * as E from './engine.mjs?v=45';import * as D from './content.mjs?v=45';
+import {roomLayout,ROOM_KEYS,GROUND} from './layouts.mjs?v=45';import {ROOM_DESIGNS} from './room-designs.mjs?v=45';
+import {World,createMap} from './world.mjs?v=45';import {drawWorld,viewFor} from './scene.mjs?v=45';
 const rooms=()=>[...D.AREAS.flatMap(a=>a.zones.map((_,zone)=>({area:a.id,zone}))),...Object.entries(D.SECRETS).map(([secret,d])=>({area:d.area,zone:d.zone,secret})),{area:'jungle-town',zone:2,boss:true}];
 function setup(r){const s=E.freshSave();for(const a of D.AREAS)for(let i=0;i<a.zones.length;i++)seedKill(s,a.id+'-'+i,12);s.storyFlags.bossPermit=true;s.storyFlags.complete=true;s.worldCompletionCrafted=true;s.stars.unlocked=true;s.secretUnlocks=['sunwell'];const c=E.selected(s);Object.assign(c,{area:r.area,zone:r.zone,secret:r.secret||null,activity:r.boss?'boss':'rest'});return{s,c,w:new World(s,{rng:()=>.5})};}
 const tick=(w,seconds)=>{for(let i=0;i<seconds*50;i++)w.step(.02);};
 test('All rooms have their own art direction, colours and authored vertical silhouettes',()=>{
- const moods=new Set(),motifs=new Set(),colours=new Set();assert.equal(Object.keys(ROOM_DESIGNS).length,64);for(const r of rooms()){const m=createMap(r.area,r.zone,r.boss,r.secret),d=m.layout.design;moods.add(d.mood);motifs.add(d.motif);colours.add(d.sky.join());assert.ok(m.minY<0,m.layout.key);assert.ok(m.height>900,m.layout.key);assert.ok(m.platforms.some(p=>p.y<0),m.layout.key);}assert.equal(moods.size,64);assert.equal(motifs.size,64);assert.equal(colours.size,64);
+ const moods=new Set(),motifs=new Set(),colours=new Set();assert.equal(Object.keys(ROOM_DESIGNS).length,65);for(const r of rooms()){const m=createMap(r.area,r.zone,r.boss,r.secret),d=m.layout.design;moods.add(d.mood);motifs.add(d.motif);colours.add(d.sky.join());assert.ok(m.minY<0,m.layout.key);assert.ok(m.height>900,m.layout.key);assert.ok(m.platforms.some(p=>p.y<0),m.layout.key);}assert.equal(moods.size,65);assert.equal(motifs.size,65);assert.equal(colours.size,65);
 });
 test('Combat route exits require real climbs and remain connected to reciprocal arrivals',()=>{
  for(const r of rooms().filter(r=>ROOM_DESIGNS[r.secret||(r.boss?'boss':r.area+'-'+r.zone)].exit)){const{s,c,w}=setup(r),exit=w.map.portals.find(p=>p.id==='portal-right');assert.ok(exit.y<0,w.map.layout.key);w.select(exit.id);tick(w,55);assert.notEqual(c.area+'-'+c.zone,r.area+'-'+r.zone,w.map.layout.key);assert.equal(s.visited[c.area+'-'+c.zone],true);}
@@ -21,7 +21,7 @@ test('Vertical cameras follow the actual new ascents on desktop and phone aspect
 test('All rooms render finite, distinct scenery at ground and summit with balanced canvas state',()=>{
  const signatures=new Set();globalThis.devicePixelRatio=1;
  for(const r of rooms()){const{s,c,w}=setup(r),commands=[];let saves=0;const context=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get(o,k){if(k in o)return o[k];if(k==='save')return()=>{saves++;};if(k==='restore')return()=>{saves--;assert.ok(saves>=0);};return(...args)=>{for(const a of args)if(typeof a==='number')assert.ok(Number.isFinite(a),w.map.layout.key+'/'+String(k));if(k==='fillRect')commands.push([o.fillStyle,...args]);};},set(o,k,v){if(k==='fillStyle')assert.ok(typeof v==='string'||typeof v?.addColorStop==='function',w.map.layout.key);o[k]=v;return true;}}),canvas={clientWidth:1000,clientHeight:600,getContext:()=>context};drawWorld(canvas,w,5,true);assert.equal(saves,0);signatures.add(createHash('sha256').update(JSON.stringify(commands)).digest('hex'));w.player.y=Math.min(...w.map.platforms.map(p=>p.y));drawWorld(canvas,w,7,false);assert.equal(saves,0);assert.ok(commands.length<10000,w.map.layout.key+' excessive scenery');}
- assert.equal(signatures.size,64);delete globalThis.devicePixelRatio;
+ assert.equal(signatures.size,65);delete globalThis.devicePixelRatio;
 });
 test('Invalid survey keys cannot enter saves and late old coordinates keep a safe supported floor',()=>{
  const{s,c,w}=setup({area:'deep',zone:3});s.surveys=['deep-99'];assert.throws(()=>E.validate(s));s.surveys=[];c.position={x:2900,y:644};const loaded=new World(E.restoreSave(JSON.parse(JSON.stringify(s))));assert.equal(loaded.player.y,GROUND);assert.ok(loaded.map.platforms.some(p=>p.y===loaded.player.y&&loaded.player.x>=p.x&&loaded.player.x<=p.x+p.w));

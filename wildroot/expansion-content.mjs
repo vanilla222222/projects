@@ -27,7 +27,7 @@ export const ADVANCEMENTS={
  enchanter:{id:'weaver',name:'Lantern Weaver',skill:'bugcatching',area:'tide-marsh',zone:0,needs:{glowbug:40,dust:20}},
  alchemist:{id:'tidecaller',name:'Tidecaller',skill:'fishing',area:'tide-shore',zone:0,needs:{'reed-fish':40,tonic:10}}
 };
-export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.id==='depths'?320+z*100:340+i*45+z*90)]));
+export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.id==='depths'?320+z*100:140+i*18+z*35)]));
 export function expansionParent(area){return EXPANSION_AREAS.find(a=>a.id===area)?.entry;}
 export const worldOf=area=>EXPANSION_AREAS.find(a=>a.id===area)?.world||1;
 // Transferable gathering gains 1–3 resources per subsequent world. No W3 loot is spawned early.
@@ -39,7 +39,7 @@ export function installExpansion(D){
  const add=(id,name,rarity='common',icon='◇')=>ITEMS[id]={id,name,rarity,icon,description:'Tidewilds expedition supplies.'};
  AREAS.push(...EXPANSION_AREAS);
  for(const[id,d]of Object.entries(NEW_RESOURCES)){add(id,d.name);GATHER_NODES[id]={...d};}
- for(const[aIndex,a]of EXPANSION_AREAS.entries())if(!a.town){const drop=a.id+'-hide';add(drop,a.name+' Trophy');a.zones.forEach((_,i)=>{const id=a.id+'-'+i,tier=a.id==='depths'?i:5+aIndex+i;add(id+'-rare',a.names[i]+' Fragment','rare');add(id+'-legend',a.names[i]+' Relic','legendary');ENEMIES[id]={id,name:a.names[i],area:a.id,index:i,shape:['crab','bat','golem','boar'][i%4],hp:Math.round(950*1.22**tier),attack:20+tier*3,xp:85+tier*14,coins:14+tier*3,accuracy:160+tier*15,loot:[{id:drop,chance:.85},{id:id+'-rare',chance:.04},{id:id+'-legend',chance:.0001}]};});}
+ for(const[aIndex,a]of EXPANSION_AREAS.entries())if(!a.town){const drop=a.id+'-hide';add(drop,a.name+' Trophy');a.zones.forEach((_,i)=>{const id=a.id+'-'+i,tier=a.id==='depths'?i:5+aIndex+i;add(id+'-rare',a.names[i]+' Fragment','rare');add(id+'-legend',a.names[i]+' Relic','legendary');ENEMIES[id]={id,name:a.names[i],area:a.id,index:i,shape:['crab','bat','golem','boar'][i%4],hp:Math.round(950*(a.id==='depths'?1.22:1.12)**tier),attack:20+tier*(a.id==='depths'?3:2),xp:85+tier*14,coins:14+tier*3,accuracy:140+tier*9,loot:[{id:drop,chance:.85},{id:id+'-rare',chance:.04},{id:id+'-legend',chance:.0001}]};});}
  for(const[id,name,cost]of [['cobalt-bar','Cobalt Alloy',{cobalt:6,'tempered-bar':2}],['obsidian-bar','Obsidian Composite',{obsidian:10,'cobalt-bar':3,'gold-bar':2}]]){add(id,name,'rare','▱');RECIPES.push({id,name,skill:'smithing',station:'foundry',output:id,count:1,cost,requiresCompletion:true});}
  for(const[skill,slot]of Object.entries(SKILL_TOOLS)){
   const newTool=['rod','net','shovel','gloves'].includes(slot);

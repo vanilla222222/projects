@@ -1,7 +1,7 @@
-import * as D from './content.mjs?v=40';
-import * as I from './inventory.mjs?v=40';
-import {BADGES,PROJECTS,itemProject} from './item-roles.mjs?v=40';
-import {serviceAccess} from './services.mjs?v=40';
+import * as D from './content.mjs?v=45';
+import * as I from './inventory.mjs?v=45';
+import {BADGES,PROJECTS,itemProject} from './item-roles.mjs?v=45';
+import {serviceAccess} from './services.mjs?v=45';
 export {BADGES,PROJECTS,itemProject};
 export const SALVAGE_GOODS={charcoal:{cost:12,count:1},dust:{cost:20,count:1},'binding-resin':{cost:30,count:1},'copper-bar':{cost:40,count:1},'iron-bar':{cost:65,count:1,unlock:'ironworking'},'tempered-bar':{cost:120,count:1,unlock:'verdant-steel'}};
 export const salvageValue=id=>D.EQUIPMENT[id]?Math.max(8,Math.floor(Object.values(D.RECIPES.find(r=>r.equipment===id)?.cost||{}).reduce((a,n)=>a+n,0)*.5)):{common:1,rare:6,legendary:25,mythical:100}[D.ITEMS[id]?.rarity]||0;
@@ -9,6 +9,7 @@ export function initializeEconomy(s){s.economy??={salvage:0,projects:{},attuned:
 export function badgeOwned(s,id){return id==='world-one-completion'?s.worldCompletionCrafted:id==='rootbound-key'?s.storyFlags.bossPermit:id.startsWith('world-token-')?s.npcTokens.includes(id.slice(12)):false;}
 export function reserveCopy(s,c,id){
  if(BADGES[id])return Infinity;
+ if(id==='tempest-heart'&&!s.story['tide-restored']?.done)return 1;
  if(id==='boss-heart'&&!s.story.heart?.done)return 1;
  if(D.EXPANSIONS[id])return(D.EXPANSIONS[id].target==='bag'?c.usedExpansions:s.usedChestExpansions).includes(id)?0:1;
  if(D.CAPACITY_BAGS[id])return c.usedCapacityBags.includes(id)?0:1;

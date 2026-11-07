@@ -1,3 +1,4 @@
+import {TIDE_VOICES,TIDE_DIALOGUE} from './tide-campaign.mjs?v=45';
 // Original World One conversations. Quest IDs and material rewards stay compatible with old saves.
 export const QUEST_ACTIONS={
  'gather:copper':'Mine copper yourself','gather:iron':'Mine iron yourself','gather:gold':'Mine gold yourself','gather:birch':'Log birch yourself','gather:jungle-wood':'Log jungle wood yourself',
@@ -53,3 +54,6 @@ export const QUEST_DIALOGUE={
  'bottled-rain':{offer:['People keep returning from the forest with empty stomachs and heroic excuses.','Brew three Field Tonics, buy a town supply, and equip food in your own food slots. Then bring twelve tonics and ten Rainfrog Dew.','Medicine is useful. Learning to look after yourself is cheaper.'],reminder:'Brew three tonics yourself. Buy supplies, equip food, and keep the delivery of twelve tonics and ten dew ready.',ready:['Food packed, medicine brewed, and no heroic excuses. A promising diagnosis.','Hand over the tonics and dew. The outpost has patients waiting.'],complete:['Good. Now I can stop worrying about every walk you take.','Once the roots are quiet, we can put together a proper panacea.']},
  panacea:{offer:['A cure for every problem? No. Four useful bottles and the sense to choose between them? That we can manage.','Brew four advanced draughts yourself and bring one mining, logging, battle and warding draught.','Do not drink the samples on the way here. That is why I am saying this twice.'],reminder:'Four advanced brews made personally. Keep one of each of the four draughts for the hand-in.',ready:['All four, properly labelled. I am almost suspicious.','Give them here. I will record the mixtures for the next generation.'],complete:['Your roster has earned my token once all my tasks are complete.','There. World saved, medicine bottled. Now somebody can finally label my lunch.']}
 };
+
+Object.assign(NPC_VOICES,TIDE_VOICES);Object.assign(QUEST_DIALOGUE,TIDE_DIALOGUE);
+for(const id of ['reed-fish','glowbug','tideberry','clay','fossil'])QUEST_ACTIONS['gather:'+id]='Gather '+id.replaceAll('-',' ')+' yourself';
