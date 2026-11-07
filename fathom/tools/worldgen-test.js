@@ -619,6 +619,21 @@ for (const seed of [SEED, 4242, -98765]) {
     'Blackfen Ossuary has no traps');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -12859, y);
+    if (site?.biome === 'highlands') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Highlands are missing a structure depth');
+  const quarry = sites.get('Echo Quarry');
+  check(gen.baseTileAt(SEED, quarry.x - 5, quarry.top + quarry.height - 2) === tiles.idOf('anvil'),
+    'Echo Quarry has no anvil');
+  const sepulcher = sites.get('Granite Sepulcher');
+  check(gen.baseTileAt(SEED, sepulcher.x - 5, sepulcher.top + sepulcher.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Granite Sepulcher has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;

@@ -329,6 +329,11 @@ BODIES.golem = function (ctx, g, c) {
     poly(ctx, g, [0.16, -0.75, 0.37, -1.03, 0.39, -0.8, 0.28, -0.72], '#9bd2e6');
   }
 
+  if (c.key === 'cragbreaker') {
+    poly(ctx, g, [-0.42, -0.6, -0.49, -0.92, -0.29, -0.83, -0.18, -0.62], '#c1a98a');
+    poly(ctx, g, [0.18, -0.62, 0.28, -0.91, 0.46, -0.78, 0.4, -0.60], '#806b5e');
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -679,6 +684,15 @@ BODIES.cloud = function (ctx, g, c) {
       0.14, -0.47, -0.23, -0.67 + wave, -0.52, -0.55], c.windUp > 0 ? '#dbfff1' : '#8fe7d8');
     poly(ctx, g, [-0.42, -0.39, -0.10, -0.55 - wave, 0.20, -0.41, 0.46, -0.5,
       0.19, -0.28, -0.11, -0.42 - wave], '#d5a6e9');
+  }
+
+  if (c.key === 'cairnshade') {
+    for (let i = 0; i < 3; i += 1) {
+      const y = -0.71 + i * 0.12;
+      const x = -0.27 + Math.sin(c.anim + i) * 0.09;
+      poly(ctx, g, [x - 0.1, y, x + 0.13, y - 0.06, x + 0.21, y + 0.04, x, y + 0.08],
+        c.windUp > 0 ? '#f4e9cd' : '#c0afd3');
+    }
   }
 
 };

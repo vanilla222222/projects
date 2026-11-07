@@ -96,7 +96,11 @@ const ARCHETYPES = {
   fenwidow: { gravity: 0, boss: true, flies: true, speed: 5.9, hoverAbove: 3.3, drift: 3.8,
     chargeEvery: 3.6, windUp: 0.92, chargeSpeed: 28, chargeFor: 0.72, spawnEvery: 4.5,
     minion: 'peatspider', minions: 3, enrageAt: 0.5, enrageSpeed: 1.25,
-    enrageCharge: 0.62, enrageWindUp: 0.62, followUp: 0.44 }
+    enrageCharge: 0.62, enrageWindUp: 0.62, followUp: 0.44 },
+  cairnshade: { gravity: 0, boss: true, flies: true, speed: 5.1, hoverAbove: 4.4, drift: 3,
+    chargeEvery: 4.1, windUp: 1.1, chargeSpeed: 29, chargeFor: 0.85, spawnEvery: 5,
+    minion: 'cairnhusk', minions: 2, enrageAt: 0.45, enrageSpeed: 1.26,
+    enrageCharge: 0.6, enrageWindUp: 0.72, followUp: 0.49 }
 
 };
 
@@ -439,6 +443,33 @@ const ENEMIES = [
     damage: 51, weight: 0, w: 4.4, h: 3.1, colour: '#71586d', boss: true, summonOnly: true, emit: 5,
     drops: [['chitin', 12], ['coin', 770]], bossDrops: ['blackfen-silk'] },
 
+  ...[
+    ['cliffkite', 'Cliff Kite', 'surface', 'flyer', 'bird', 45, 12, '#9a8671', 'feather'],
+    ['craghare', 'Crag Hare', 'surface', 'walker', 'lizard', 39, 10, '#a99b89', 'leather'],
+    ['screeclaw', 'Scree Claw', 'surface', 'crawler', 'beetle', 54, 13, '#786c63', 'chitin'],
+    ['ridgewisp', 'Ridge Wisp', 'surface', 'flyer', 'cloud', 52, 14, '#a5a0c8', 'glowmoss'],
+    ['quarrymite', 'Quarry Mite', 'caves', 'crawler', 'spider', 88, 19, '#827466', 'chitin'],
+    ['shardborer', 'Shard Borer', 'caves', 'worm', 'worm', 94, 21, '#8a829a', 'wormtooth'],
+    ['echobat', 'Echo Bat', 'caves', 'flyer', 'bat', 80, 18, '#6f6586', 'leather'],
+    ['cairnhusk', 'Cairn Husk', 'deep', 'walker', 'golem', 201, 32, '#786d85', 'crystal'],
+    ['slateoracle', 'Slate Oracle', 'deep', 'flyer', 'eye', 155, 26, '#9286b0', 'lens'],
+    ['cairnsentry', 'Cairn Sentry', 'deep', 'walker', 'skeleton', 186, 30, '#aaa099', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: ['golem', 'skeleton'].includes(body) ? 1.9 : 1,
+    biomes: ['highlands'], layers: [layer], emit: key === 'ridgewisp' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'highlandsmimic', name: 'Cairn Mimic', kind: 'walker', body: 'mimic', hp: 375,
+    damage: 41, weight: 0, w: 1.8, h: 1.5, colour: '#958caa', hiddenSpawn: true,
+    drops: [['cairn-fang', 2], ['coin', 180]] },
+  { key: 'cragbreaker', name: 'Cragbreaker', kind: 'king', body: 'golem', hp: 2400,
+    damage: 43, weight: 0, w: 4.1, h: 3, colour: '#9d8b77', boss: true, summonOnly: true, emit: 3,
+    drops: [['granite', 15], ['coin', 500]], bossDrops: ['cragbreaker-horn'] },
+  { key: 'cairnshade', name: 'The Cairnshade', kind: 'cairnshade', body: 'cloud', hp: 4400,
+    damage: 56, weight: 0, w: 4.3, h: 3.2, colour: '#a096c0', boss: true, summonOnly: true, emit: 6,
+    drops: [['crystal', 8], ['coin', 850]], bossDrops: ['cairn-echo'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -540,7 +571,8 @@ const GAIT = {
   aurora: { perTile: 0.5, perSecond: 9 },
   hornetqueen: { perTile: 0.46, perSecond: 10 },
   strangler: { perTile: 0.4, perSecond: 7 },
-  fenwidow: { perTile: 0.46, perSecond: 10 }
+  fenwidow: { perTile: 0.46, perSecond: 10 },
+  cairnshade: { perTile: 0.43, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------

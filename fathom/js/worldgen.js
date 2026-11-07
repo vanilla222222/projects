@@ -824,7 +824,8 @@ const DESERT_SITES = ['Caravan Rest', 'Buried Cistern', 'Amber Tomb'];
 const TUNDRA_SITES = ['Snowbound Lodge', 'Rime Observatory', 'Glacier Crypt'];
 const JUNGLE_SITES = ['Canopy Outpost', 'Vinewell Shrine', 'Amberroot Temple'];
 const MARSH_SITES = ['Reedwalk Post', 'Drowned Pumpworks', 'Blackfen Ossuary'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES };
+const HIGHLAND_SITES = ['Crag Watch', 'Echo Quarry', 'Granite Sepulcher'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
@@ -835,9 +836,18 @@ const biomeSite = cacheStructure((seed, slot) => {
     biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome) return null;
   const make = (layer, top, height) => ({ x, top, height, layer, biome,
     name: names[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
-  return [make(0, surface - 7, 8),
+  const sites = [make(0, surface - 7, 8),
     make(1, SEA_LEVEL + 175 + Math.floor(unit(seed, slot, 0, 6317) * 330), 12),
     make(2, SEA_LEVEL + 810 + Math.floor(unit(seed, slot, 0, 6319) * 335), 16)];
+  // Keep older generated chests intact instead of cutting off one of their cells.
+  const structureSlot = Math.floor(x / STRUCTURE_SPACING);
+  for (let n = structureSlot - 1; n <= structureSlot + 1; n += 1) {
+    const chest = cachedStructureChest(seed, n);
+    if (!chest || chest.x + 1 < x - 12 || chest.x > x + 12) continue;
+    const overlap = sites.findIndex(site => chest.y + 1 >= site.top && chest.y < site.top + site.height);
+    if (overlap > 0) sites[overlap].top = chest.y + 3;
+  }
+  return sites;
 });
 
 function biomeSiteAt(seed, x, y) {
@@ -860,7 +870,8 @@ function biomeSiteTile(site, x, y) {
   const tundra = site.biome === 'tundra';
   const jungle = site.biome === 'jungle';
   const marsh = site.biome === 'marsh';
-  const material = marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const highland = site.biome === 'highlands';
+  const material = highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
   if (site.layer === 0) {
@@ -877,6 +888,9 @@ function biomeSiteTile(site, x, y) {
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (highland && site.layer === 0 && dx === -7 && row >= 3) return idOf('rope');
+  if (highland && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('anvil');
+  if (highland && site.layer === 2 && row === floor - 1 && dx >= -7 && dx <= -4) return idOf('ashvault-spikes');
   if (marsh && site.layer === 0 && row === floor - 2 && dx < -3) return idOf('oakplatform');
   if (marsh && site.layer === 1 && Math.abs(dx) <= 6 && row >= floor - 3) return idOf('water');
   if (marsh && site.layer === 1 && row === floor - 4 && Math.abs(dx) <= 6) return idOf('oakplatform');
@@ -1737,7 +1751,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,

@@ -363,6 +363,11 @@ defineMulti('marsh-mimic', 'Iron Chest', 2, 2, () => ({
   toughness: 70, chest: 'marsh-mimic', mimic: 'marshmimic', drops: null
 }));
 
+defineMulti('highlands-mimic', 'Iron Chest', 2, 2, () => ({
+  solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
+  toughness: 70, chest: 'highlands-mimic', mimic: 'highlandsmimic', drops: null
+}));
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
