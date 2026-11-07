@@ -1,9 +1,9 @@
-import * as D from './content.mjs?v=40';
-import * as E from './engine.mjs?v=40';
-import {roomLayout} from './layouts.mjs?v=40';
-import {roomPortals} from './world.mjs?v=43';
-import {worldOf} from './expansion-content.mjs?v=40';
-import {esc} from './ui-art.mjs?v=40';
+import * as D from './content.mjs?v=45';
+import * as E from './engine.mjs?v=45';
+import {roomLayout} from './layouts.mjs?v=45';
+import {roomPortals} from './world.mjs?v=45';
+import {worldOf} from './expansion-content.mjs?v=45';
+import {esc} from './ui-art.mjs?v=45';
 // Geographic routes match the real portal graph, including branch doors.
 const regions={
  town:{x:125,y:610,dx:165,dy:0,color:'#b38c59',icon:'⌂'},forest:{x:125,y:430,dx:165,dy:0,color:'#54896b',icon:'♧'},

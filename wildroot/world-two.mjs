@@ -1,7 +1,7 @@
-import {ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=40';
-import {pointFor,roomLayout} from './layouts.mjs?v=40';
-import {skillLevel} from './progression.mjs?v=40';
-import {canPay,pay} from './inventory.mjs?v=40';
+import {ADVANCEMENTS,worldOf} from './expansion-content.mjs?v=45';
+import {pointFor,roomLayout} from './layouts.mjs?v=45';
+import {skillLevel} from './progression.mjs?v=45';
+import {canPay,pay} from './inventory.mjs?v=45';
 export const tierTwoDiscoveries=s=>[...new Set(s.characters.map(c=>c.advancement).filter(Boolean))];
 export function advancementStatus(s,c){
  const d=ADVANCEMENTS[c.class];if(!d)return{open:false,reason:'Choose your first class through its mentor first.'};

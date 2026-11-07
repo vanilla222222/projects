@@ -1,5 +1,5 @@
-import {EXPANSION_AREAS} from './expansion-content.mjs?v=40';
-import {ROOM_DESIGNS} from './room-designs.mjs?v=40';
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=45';
+import {ROOM_DESIGNS} from './room-designs.mjs?v=45';
 // Authored room profiles. Upper platforms connect directly to the ground for reliable tap navigation.
 export const GROUND=644;
 const D={
@@ -35,6 +35,7 @@ for(const [aIndex,a] of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i
  const width=2900+i*180+aIndex*60,upper=Array.from({length:4+i%3},(_,n)=>[650+(n%2)*500+i*45,1150,GROUND-(n+1)*200]);
  D[a.id+'-'+i]=[width,a.zones[i],upper,a.resources[i].map((_,r)=>[520+r*350,GROUND]),{},[['pond',1600,400],['ruins',2300,250]],{shop:[1000,GROUND],advancement:[1500,GROUND],station:[2100,GROUND]}];
 }
+D.tempest=[2400,'Eye of the Tempest',[[380,500,440],[1320,600,360]],[],{},[['ruins',1650,350],['pond',1050,300]],{'portal-left':[65,GROUND]}];
 export const ROOM_KEYS=Object.keys(D);
 export function roomLayout(area,index,boss=false,secret=null){
  const key=boss?'boss':secret||`${area}-${index}`,d=D[key],design=ROOM_DESIGNS[key];if(!d||!design)throw Error('Unknown room '+key);

@@ -1,7 +1,7 @@
-import {recordQuestAction} from './quest-content.mjs?v=40';
-import {roomLayout,pointFor} from './layouts.mjs?v=40';
-import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=40';
-import * as I from './inventory.mjs?v=40';
+import {recordQuestAction} from './quest-content.mjs?v=45';
+import {roomLayout,pointFor} from './layouts.mjs?v=45';
+import {STAMPS,STATUES,TOWN_SHOPS,COSMETICS,ITEMS,EQUIPMENT,STORY,NPC_TOKEN_GIVERS} from './content.mjs?v=45';
+import * as I from './inventory.mjs?v=45';
 export const DAY=86400000;
 export function initializeTown(s){s.stampRewardClaims??=[];s.npcTokens??=[];s.worldCompletionCrafted??=false;s.stamps??={};s.gems??=0;s.gemClaims??=[];s.cosmetics??=[];s.teleports??={count:8,at:s.savedAt||Date.now()};s.shopStock??={};for(const c of s.characters){c.statues??={};c.statuesUnlocked??=false;c.cosmetic??=null;}s.visited['forest-0']=true;s.visited['town-0']=true;return s;}
 export function money(value){let n=Math.max(0,Math.floor(value));const out=[];for(const[unit,size]of [['p',1000000],['g',10000],['s',100],['c',1]]){const q=Math.floor(n/size);if(q){out.push(q+unit);n%=size;}}return out.join(' ')||'0c';}

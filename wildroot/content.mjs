@@ -1,7 +1,8 @@
-import {installExpansion} from './expansion-content.mjs?v=40';
-import {QUEST_REFORMS} from './quest-content.mjs?v=40';
-import {BADGES,extraItemRoles} from './item-roles.mjs?v=40';
-import {roomLayout} from './layouts.mjs?v=40';
+import {installTideCampaign} from './tide-campaign.mjs?v=45';
+import {installExpansion} from './expansion-content.mjs?v=45';
+import {QUEST_REFORMS} from './quest-content.mjs?v=45';
+import {BADGES,extraItemRoles} from './item-roles.mjs?v=45';
+import {roomLayout} from './layouts.mjs?v=45';
 // World 1 content is data-driven. Later worlds can add branches without changing saves.
 export const CLASSES = {
   warrior: {name:'Warrior', skill:'mining', color:'#bf7146', trainer:'Brann', town:'town', motto:'Stand firm. Break stone.', needs:{copper:20,'moss-slime':10}},
@@ -456,3 +457,7 @@ for(const area of ['tide-town','tide-gate'])TOWN_SHOPS[area]={name:area==='tide-
 
 for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+' Card',effect:'attack',amount:.015,kind:'monster'};
 for(const id of Object.keys(ITEMS).filter(id=>id.startsWith('tide-')||id.startsWith('depths-')))if(!EQUIPMENT[id]&&!RECIPES.some(r=>r.cost[id])&&!OFFERINGS.includes(id))OFFERINGS.push(id);
+
+installTideCampaign({STORY,ITEMS,ENEMIES,RECIPES,EQUIPMENT,SECRETS});
+
+CARDS.tempest={name:'Tempest Sovereign Card',effect:'accuracy',amount:.03,kind:'monster'};

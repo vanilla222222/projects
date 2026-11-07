@@ -1,23 +1,24 @@
-import {persistReset} from './reset-save.mjs?v=40';
-import {onboarding} from './onboarding.mjs?v=42';
-import {WORLD_TWO,ADVANCEMENTS,EXPANSION_AREAS,worldOf} from './expansion-content.mjs?v=40';
-import * as InventoryGuide from './inventory-guidance.mjs?v=40';
-import * as Roster from './roster.mjs?v=40';
-import * as Talk from './conversations.mjs?v=44';
-import {npcDialogue} from './dialogue-panels.mjs?v=44';
-import * as Parity from './parity-panels.mjs?v=40';
-import * as EconomyUI from './economy-panels.mjs?v=40';
-import * as Prof from './profession-panels.mjs?v=40';
-import * as UI from './ui-panels.mjs?v=43';
-import {icon,portrait} from './ui-art.mjs?v=40';
-import * as AUI from './adventure-panels.mjs?v=40';
-import * as T from './town-panels.mjs?v=40';
-import * as U from './panels.mjs?v=40';
-import {GameAudio} from './audio.mjs?v=40';
-import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=40';
-import * as E from './engine.mjs?v=40';
-import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=43';
-import {drawWorld,viewFor} from './scene.mjs?v=40';
+import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
+import {persistReset} from './reset-save.mjs?v=45';
+import {onboarding} from './onboarding.mjs?v=45';
+import {WORLD_TWO,ADVANCEMENTS,EXPANSION_AREAS,worldOf} from './expansion-content.mjs?v=45';
+import * as InventoryGuide from './inventory-guidance.mjs?v=45';
+import * as Roster from './roster.mjs?v=45';
+import * as Talk from './conversations.mjs?v=45';
+import {npcDialogue} from './dialogue-panels.mjs?v=45';
+import * as Parity from './parity-panels.mjs?v=45';
+import * as EconomyUI from './economy-panels.mjs?v=45';
+import * as Prof from './profession-panels.mjs?v=45';
+import * as UI from './ui-panels.mjs?v=45';
+import {icon,portrait} from './ui-art.mjs?v=45';
+import * as AUI from './adventure-panels.mjs?v=45';
+import * as T from './town-panels.mjs?v=45';
+import * as U from './panels.mjs?v=45';
+import {GameAudio} from './audio.mjs?v=45';
+import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
+import * as E from './engine.mjs?v=45';
+import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=45';
+import {drawWorld,viewFor} from './scene.mjs?v=45';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>Math.floor(n).toLocaleString(),emblems={warrior:'⚔',mage:'✧',blacksmith:'⚒',enchanter:'✦',alchemist:'⚗'};
@@ -110,10 +111,10 @@ function renderPanel(){
  if(serviceId&&!E.serviceAccess(state,c,serviceId))body=Prof.locked(state,c,serviceId);
  if(uiView.firstVisit&&(kind==='craft'&&uiView.profession===uiView.firstVisit||kind===uiView.firstVisit)&&E.serviceAccess(state,c,uiView.firstVisit))body=Prof.intro(state,uiView.firstVisit)+body;
  const codexKinds=['codex','quick','quests','cards','bestiary','items','stars','achievements','tasks'];html('panel-tabs',codexKinds.includes(kind)?UI.codexNav(['codex','quick'].includes(kind)?'quick':kind):'');$('panel').dataset.kind=kind;$('panel-back').hidden=!panelHistory.length;$('panel-footer-text').textContent=`WORLD ${worldOf(c.area)} · ${c.name} · ${E.money(state.coins)} · ${fmt(state.gems)} GEMS`;
- $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);
+ $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);if(kind==='map'){const atlas=document.querySelector('.atlas-scroll'),pin=document.querySelector('.atlas-node.selected');if(atlas&&pin){atlas.scrollLeft=Math.max(0,pin.offsetLeft-atlas.clientWidth/2);atlas.scrollTop=Math.max(0,pin.offsetTop-atlas.clientHeight/2);}}
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
-function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id];if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
+function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:TIDE_NPCS[id]?.area,zone:TIDE_NPCS[id]?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
 function findStation(station){const [area,zone]={anvil:['town',1],foundry:['town',2],enchanting:['jungle-town',0],alchemy:['jungle-town',1]}[station];if(!E.zoneUnlocked(state,area,zone)){toast(E.lockReason(state,area,zone));return;}if(!travel(area,zone))return;world.select('station');}
 let targetKey='',lastPanelRefresh=0,panelInteraction=false;
 $('panel').addEventListener('pointerdown',()=>{panelInteraction=true;});
@@ -133,7 +134,7 @@ function refresh(){
  html('roster',state.characters.map(ch=>`<button data-character="${ch.id}" class="${ch.id===c.id?'active':''}" aria-pressed="${ch.id===c.id}"><span class="portrait">${portrait(ch)}</span><span>${esc(ch.name)}<span class="sub">${ch.class?CLASSES[ch.class].name:'Beginner'} · Lv. ${ch.level}</span></span></button>`).join(''));
  $('new-character').disabled=!!c.dungeon||state.characters.length>=E.slots(state);$('new-character').title=`${state.characters.length} / ${E.slots(state)} slots. Discover a class to unlock another.`;
  document.querySelector('.brand small').textContent='WORLD '+worldOf(c.area);document.title='Wildroot · '+(worldOf(c.area)===2?'Tidewilds':'Greenreach');
- $('scene').parentElement.dataset.boss=String(world.map.boss);$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD ${worldOf(c.area)} · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
+ $('scene').parentElement.dataset.boss=String(world.map.boss||world.map.secret==='tempest');$('area-label').textContent=c.dungeon?`WORLD 1 · MOSSROOT RUINS · ${c.dungeon.room+1}/4`:`WORLD ${worldOf(c.area)} · ${a.label.toUpperCase()} · ${c.zone+1}/${a.zones.length}`;$('zone-name').textContent=world.map.title||world.map.layout.title|| (world.map.boss?'The Rootwarden':world.map.secret?SECRETS[world.map.secret].name:a.zones[c.zone]);
  $('mana-status').textContent='AFK INFO';$('mana-bar').style.width=(c.mp/E.maxMana(c)*100)+'%';$('mana-label').textContent=`${Math.floor(c.mp)} / ${E.maxMana(c)} MP`;$('food-count').textContent='FOOD '+c.foodSlots.reduce((n,t)=>n+(t?.count||0),0);$('quest-tracker').hidden=!!c.dungeon||!state.options.questHelper;document.body.classList.toggle('ui-compact',state.options.compact);$('trial-hud').hidden=!c.trial&&!c.dungeon;document.querySelector('[data-instance-menu]').textContent=c.dungeon?'RUN MENU':'LEAVE TRIAL';if(c.dungeon)$('trial-status').textContent=`ROOM ${c.dungeon.room+1}/4 · ${Math.ceil(c.dungeon.time)}s · ${c.dungeon.cash} RUN COINS`;if(c.trial)$('trial-status').textContent=`WAVE ${c.trial.wave+1}/8 · ${Math.ceil(c.trial.time)}s · ${c.trial.score} POINTS`;
  document.querySelectorAll('.game-menu [data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panelKind));
  $('bag-count').textContent=`Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}`;
@@ -145,7 +146,7 @@ function refresh(){
  const guide=onboarding(state,c);
  let tracker=c.class?`<strong>${CLASSES[c.class].name} · ${esc(c.name)}</strong><p>✦ ${E.talentPoints(c)} unspent talent points</p><p>${state.unlockedClasses.length} / 5 classes discovered</p>`:`<strong>Find your calling</strong><p class="${c.level>=3?'done':''}">${c.level>=3?'✓':'○'} Reach character level 3 (${c.level}/3)</p><p>○ Find Willow by the oak tree or Brann by copper ore</p><p>○ Complete your class initiation</p>`;
  const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
- if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(!guide.complete&&!quest?.accepted)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
+ if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(worldOf(c.area)===2&&!quest?.accepted&&!c.journey.story['tide-landfall']?.done)tracker='<strong>Tidewilds Expedition</strong><p>Meet Captain Maris at Landfall Quay to begin.</p><button data-find-npc="captain">FIND MARIS</button>';if(!guide.complete&&!quest?.accepted&&worldOf(c.area)===1)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p class="loot-${l.rarity||'common'}">${esc(l.text)}</p>`).join(''));const bagStatus=InventoryGuide.lootStatus(c);$('bag-count').textContent='Bag '+bagStatus.used+'/'+bagStatus.capacity+(bagStatus.pending||bagStatus.floor?' · !':'');$('bag-count').title=bagStatus.pending+' pending items · '+bagStatus.floor+' items on the ground · '+bagStatus.locked+' locked slots';$('bag-count').setAttribute('aria-label','Open inventory. '+$('bag-count').title);
  $('knockout').hidden=world.player.respawn<=0;
@@ -329,7 +330,7 @@ $('jump-button').addEventListener('click',()=>{input.jump=true;});
 $('scene').addEventListener('pointerdown',e=>{if($('panel').open)return;const rect=$('scene').getBoundingClientRect(),v=viewFor($('scene'),world.player),x=(e.clientX-rect.left)/rect.width*v.width+v.x,y=(e.clientY-rect.top)/rect.height*v.height;world.walkTo(x,y);$('scene').focus({preventScroll:true});});
 for(const b of document.querySelectorAll('[data-hold]')){b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);input[b.dataset.hold]=true;});for(const type of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(type,()=>{input[b.dataset.hold]=false;});}
 const keyMap={a:'left',ArrowLeft:'left',d:'right',ArrowRight:'right',w:'up',ArrowUp:'up',s:'down',ArrowDown:'down',f:'attack'};
-window.addEventListener('keydown',e=>{if(panelKind==='npc'&&e.target.id==='npc-speech'&&['Enter',' '].includes(e.key)){e.preventDefault();if(!e.repeat)advanceTalk();return;}if(e.target.matches('input,select,textarea'))return;if(!$('panel').open){const shortcut={i:'inventory',t:'skills',c:'codex',m:'map',p:'roster',Escape:'menu'}[e.key==='Escape'?e.key:e.key.toLowerCase()];if(shortcut&&!e.repeat){e.preventDefault();openPanel(shortcut);return;}if(e.key.toLowerCase()==='q'&&!e.repeat){document.body.classList.toggle('attacks-open');return;}}if($('panel').open)return;const mapped=keyMap[e.key]||keyMap[e.key.toLowerCase()];if(mapped){e.preventDefault();input[mapped]=true;}if(e.code==='Space'){e.preventDefault();if(!e.repeat)input.jump=true;}if(['1','2','3'].includes(e.key)&&!e.repeat)world.useSkill(Number(e.key)-1);if(e.key.toLowerCase()==='e'&&!e.repeat)world.interact();if(e.key.toLowerCase()==='m'&&!e.repeat)openPanel('map');if(e.key.toLowerCase()==='i'&&!e.repeat)openPanel('inventory');});
+window.addEventListener('keydown',e=>{if(e.target.matches('input,select,textarea'))return;if(!$('panel').open){const shortcut={i:'inventory',t:'skills',c:'codex',m:'map',p:'roster',Escape:'menu'}[e.key==='Escape'?e.key:e.key.toLowerCase()];if(shortcut&&!e.repeat){e.preventDefault();openPanel(shortcut);return;}if(e.key.toLowerCase()==='q'&&!e.repeat){document.body.classList.toggle('attacks-open');return;}}if($('panel').open)return;const mapped=keyMap[e.key]||keyMap[e.key.toLowerCase()];if(mapped){e.preventDefault();input[mapped]=true;}if(e.code==='Space'){e.preventDefault();if(!e.repeat)input.jump=true;}if(['1','2','3'].includes(e.key)&&!e.repeat)world.useSkill(Number(e.key)-1);if(e.key.toLowerCase()==='e'&&!e.repeat)world.interact();if(e.key.toLowerCase()==='m'&&!e.repeat)openPanel('map');if(e.key.toLowerCase()==='i'&&!e.repeat)openPanel('inventory');});
 window.addEventListener('keyup',e=>{const mapped=keyMap[e.key]||keyMap[e.key.toLowerCase()];if(mapped)input[mapped]=false;});window.addEventListener('blur',()=>{input={};});
 $('import-file').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>2000000)throw Error('File is too large.');const incoming=E.restoreSave(JSON.parse(await file.text()));if(!confirm('Replace this roster with the imported save? Export a backup first if you want to keep it.'))return;state=incoming;world.state=state;loadError=null;offline=(E.claimOffline(state),state.afkReport);world.enter();targetKey='';closePanel();save();refresh();toast('Save imported.');}catch(err){toast(`Could not import: ${err.message}`);}});
 window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){paused=true;input={};openPanel('paused');}});
