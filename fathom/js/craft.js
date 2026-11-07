@@ -595,6 +595,12 @@ const RECIPES = [
   { out: { key: 'meteor-bar', kind: 'bar', count: 1 }, need: [['meteorite', 4]], station: 'furnace' },
 
   // Anvil: bars into metal tools. Each pickaxe opens the rock that holds the next.
+  { out: { key: 'town-pylon', kind: 'block', count: 1 }, need: [['topaz', 2], ['copper-bar', 6], ['glass', 4]], station: 'anvil' },
+  { out: { key: 'storage-heart', kind: 'block', count: 1 }, need: [['amethyst', 2], ['copper-bar', 5]], station: 'anvil' },
+  { out: { key: 'storage-unit', kind: 'block', count: 1 }, need: [['#wood', 12], ['tin-bar', 4]], station: 'workbench' },
+  { out: { key: 'storage-vault', kind: 'block', count: 1 }, need: [['storage-unit', 1], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'storage-access', kind: 'block', count: 1 }, need: [['glass', 4], ['tin-bar', 4]], station: 'workbench' },
+  { out: { key: 'storage-crafter', kind: 'block', count: 1 }, need: [['storage-access', 1], ['iron-bar', 6]], station: 'anvil' },
   { out: { key: 'bucket', kind: 'tool', count: 1 }, need: [['iron-bar', 3]], station: 'anvil' },
   { out: { key: 'tin-pick', kind: 'tool', count: 1 }, need: [['tin-bar', 8], ['#wood', 3]], station: 'anvil' },
   { out: { key: 'tin-axe', kind: 'tool', count: 1 }, need: [['tin-bar', 7], ['#wood', 3]], station: 'anvil' },

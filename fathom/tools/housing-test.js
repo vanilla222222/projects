@@ -224,10 +224,10 @@ function withoutTile(rows, ch) {
   const second = village.settle(progress, 5, 3);
   ok(!second.moved, 'the guide moved in twice');
 
-  // Someone new becomes eligible, and can take the same room.
+  // A newly eligible resident needs a different room.
   const third = village.settle({ coins: 400, bars: 0, deaths: 0, deepest: 0 }, 5, 3);
-  ok(third.moved && third.moved.key === 'merchant',
-    'the merchant did not take the spare room');
+  ok(!third.moved && third.occupant === first.moved, 'an occupied room admitted another resident');
+  ok(village.nearbyHomes(5, 3, 45) === 1, 'the occupied room did not count toward its town');
 
   // And an occupant stands on the floor, not in the ceiling.
   for (const v of village.list) {
@@ -268,6 +268,40 @@ function withoutTile(rows, ch) {
     'reload brought back ' + reloaded.count + ' of ' + village.count + ' villagers');
   ok(reloaded.list.every(v => !!v.spec), 'a reloaded villager lost its identity');
   ok(reloaded.list.every(v => !!v.home), 'a reloaded villager lost its home');
+}
+
+// Separate towns can host residents, but legacy roommates count as one occupied house.
+{
+  const rows = GOOD.map(row => row + '##' + row);
+  const world = makeBox(rows);
+  const village = villager.makeVillage(world, tiles, { housing });
+  const progress = { coins: 400 };
+  const first = village.settle(progress, 5, 3);
+  const second = village.settle(progress, GOOD[0].length + 7, 3, 'merchant');
+  ok(first.moved && second.moved, 'separate homes cannot take separate residents');
+  ok(village.nearbyHomes(5, 3, 45) === 2, 'two houses do not power a pylon');
+  world.setWall(5, 3, 0);
+  ok(village.nearbyHomes(5, 3, 45) === 1, 'a damaged house still powers the pylon');
+}
+
+{
+  const heart = { type: 'heart', x: 0, y: 0 };
+  const unit = { type: 'unit', x: 4, y: 0 };
+  const vault = { type: 'vault', x: 40, y: 0 };
+  const relay = { type: 'heart', x: 40, y: 0 };
+  const capacity = villager.townStorageCapacity;
+  ok(capacity([heart, unit, vault], 24) === 40, 'an unlinked vault added capacity');
+  ok(capacity([heart, unit, vault, relay], 24) === 120, 'linked units did not add their capacity');
+  ok(capacity([heart, unit, vault, relay], 24, heart) === 80, 'heart removal did not disconnect its unit');
+  const items = [];
+  const port = villager.townStoragePort(items, () => 2, 10);
+  const stone = { key: 'stone', kind: 'block' };
+  ok(port.add(stone, 23) === 3 && port.countOf('stone') === 20, 'storage failed to cap a deposit');
+  port.take('stone', 14);
+  ok(items.length === 1 && items[0].count === 6, 'withdraw did not free stacks');
+  const recipe = { need: [['stone', 5]], out: { key: 'brick', kind: 'block', count: 2 } };
+  ok(craft.craft(port, recipe) && port.countOf('brick') === 2 && port.countOf('stone') === 1,
+    'crafting did not consume and produce stored items');
 }
 
 console.log('\n' + villager.VILLAGERS.length + ' villagers: '

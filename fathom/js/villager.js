@@ -56,8 +56,8 @@ const VILLAGERS = [
   },
   {
     key: 'nurse', name: 'the Nurse', colour: '#c4707c', hair: '#8a3f4c',
-    wants: (p) => p.deaths >= 1,
-    wantsText: 'arrives after you have died once',
+    wants: (p) => p.deaths >= 1 || p.deepest >= 160,
+    wantsText: 'arrives after your first death or 160 tiles of depth',
     greeting: 'Hold still. This will cost you, and it will cost less than dying again.',
     heals: true,
     healPrice: 60,
@@ -77,7 +77,44 @@ const VILLAGERS = [
       { key: 'amethyst', count: 4, price: 260 },
       { key: 'topaz', count: 4, price: 320 }
     ]
+  },
+  {
+    key: 'builder', name: 'the Builder', colour: '#aa8656', hair: '#70442b',
+    wants: p => p.bars >= 10, wantsText: 'arrives after you smelt 10 bars',
+    greeting: 'One resident per furnished room. Build two nearby homes to power a town pylon.',
+    stock: [{ key: 'oakwood', count: 40, price: 38 }, { key: 'oakback', count: 60, price: 45 },
+      { key: 'oakdoor', count: 1, price: 30 }, { key: 'oakchair', count: 1, price: 18 },
+      { key: 'oaktable', count: 1, price: 25 }, { key: 'town-pylon', count: 1, price: 500 }]
+  },
+  {
+    key: 'keeper', name: 'the Storage Keeper', colour: '#7870ac', hair: '#312747',
+    wants: p => p.bars >= 15, wantsText: 'arrives after you smelt 15 bars',
+    greeting: 'Place a heart, then add storage units nearby. Access terminals share that stock across this world.',
+    stock: [{ key: 'storage-heart', count: 1, price: 300 }, { key: 'storage-unit', count: 1, price: 180 },
+      { key: 'storage-access', count: 1, price: 150 }, { key: 'storage-crafter', count: 1, price: 350 }]
+  },
+  {
+    key: 'angler', name: 'the Angler', colour: '#59918c', hair: '#4d3730',
+    wants: p => p.deepest >= 100, wantsText: 'arrives once you explore 100 tiles below sea level',
+    greeting: 'Try pools in different biomes. A fresh catch makes better trail food than a bag of ore.',
+    stock: [{ key: 'wood-rod', count: 1, price: 85 }, { key: 'cooked-fish', count: 3, price: 100 },
+      { key: 'gills-potion', count: 2, price: 170 }]
+  },
+  {
+    key: 'alchemist', name: 'the Alchemist', colour: '#8568a1', hair: '#50324e',
+    wants: p => p.deepest >= 260, wantsText: 'arrives once you explore 260 tiles below sea level',
+    greeting: 'A potion takes seconds to drink. Walking back down a cavern takes rather longer.',
+    stock: [{ key: 'regen-potion', count: 2, price: 140 }, { key: 'ironskin-potion', count: 2, price: 180 },
+      { key: 'spelunk-potion', count: 2, price: 220 }, { key: 'clarity-potion', count: 2, price: 200 }]
+  },
+  {
+    key: 'wayfarer', name: 'the Wayfarer', colour: '#5886a5', hair: '#352c47',
+    wants: p => p.deepest >= 450, wantsText: 'arrives once you explore 450 tiles below sea level',
+    greeting: 'Establish a second town before you can travel. Both pylons need two occupied homes nearby.',
+    stock: [{ key: 'town-pylon', count: 1, price: 420 }, { key: 'rope', count: 60, price: 95 },
+      { key: 'storage-access', count: 1, price: 125 }, { key: 'shine-potion', count: 2, price: 170 }]
   }
+
 ];
 
 const VILLAGER_BY_KEY = {};
@@ -117,7 +154,7 @@ function eligible(progress) {
 function makeVillage(world, tiles, deps) {
   const { housing } = deps;
   const list = [];
-  const homes = new Map();        // villager key -> anchor
+
 
   function overlaps(body, x, y) {
     const x0 = Math.floor(x);
@@ -134,24 +171,44 @@ function makeVillage(world, tiles, deps) {
 
   // Try to settle anyone eligible who has nowhere to live, into the room the player is
   // standing in. Returns the villager that moved in, if any.
-  function settle(progress, x, y) {
+  function survey(x, y) {
     const room = housing.validateRoom(world, tiles, x, y);
-    if (!room.valid) return { moved: null, room };
-    const taken = new Set(list.map(v => v.key));
-    for (const spec of eligible(progress)) {
-      if (taken.has(spec.key)) continue;
-      const anchor = housing.roomAnchor(world, tiles, room.cells);
-      if (!anchor) break;
-      const villager = makeVillager(spec, { x: anchor.x + 0.1, y: anchor.y - 0.72 });
-      list.push(villager);
-      homes.set(spec.key, anchor);
-      return { moved: villager, room };
-    }
-    return { moved: null, room, full: true };
+    const occupant = room.valid && list.find(v => room.cells.some(cell =>
+      cell.x === Math.floor(v.home.x) && cell.y === Math.round(v.home.y + 0.72)));
+    return { room, occupant };
   }
 
-  function step(dt) {
+  function settle(progress, x, y, key) {
+    const { room, occupant } = survey(x, y);
+    if (!room.valid || occupant) return { moved: null, room, occupant };
+    const existing = key && list.find(v => v.key === key);
+    const spec = existing?.spec || eligible(progress).find(v => key ? v.key === key : !list.some(n => n.key === v.key));
+    const anchor = spec && housing.roomAnchor(world, tiles, room.cells);
+    if (!anchor) return { moved: null, room };
+    const placed = makeVillager(spec, { x: anchor.x + 0.1, y: anchor.y - 0.72 });
+    if (existing) Object.assign(existing, placed);
+    else list.push(placed);
+    return { moved: existing || placed, room };
+  }
+
+  function nearbyHomes(x, y, radius) {
+    const counted = new Set();
+    let count = 0;
     for (const v of list) {
+      const hx = Math.floor(v.home.x), hy = Math.round(v.home.y + 0.72);
+      const key = hx + ':' + hy;
+      if (counted.has(key) || Math.hypot(hx - x, hy - y) > radius) continue;
+      const room = housing.validateRoom(world, tiles, hx, hy);
+      if (!room.valid) continue;
+      for (const cell of room.cells) counted.add(cell.x + ':' + cell.y);
+      count += 1;
+    }
+    return count;
+  }
+
+  function step(dt, player) {
+    for (const v of list) {
+      if (player && (Math.abs(v.home.x - player.x) > 90 || Math.abs(v.home.y - player.y) > 70)) continue;
       // Gravity and a floor, so a villager whose house is mined out falls rather than
       // hanging in the air.
       v.vy = Math.min(40, v.vy + 46 * dt);
@@ -205,7 +262,6 @@ function makeVillage(world, tiles, deps) {
 
   function restore(saved) {
     list.length = 0;
-    homes.clear();
     for (const entry of saved || []) {
       const spec = VILLAGER_BY_KEY[entry.key];
       if (!spec) continue;
@@ -213,15 +269,56 @@ function makeVillage(world, tiles, deps) {
       v.x = entry.x;
       v.y = entry.y;
       list.push(v);
-      homes.set(spec.key, entry.home || entry);
     }
   }
 
-  return { list, settle, step, nearest, serialize, restore,
+  return { list, survey, settle, nearbyHomes, step, nearest, serialize, restore,
     get count() { return list.length; } };
 }
 
-const EXPORTS_villager = { VILLAGERS, BY_KEY: VILLAGER_BY_KEY, eligible, makeVillager, makeVillage,
+function townStorageCapacity(devices, radius, excluding) {
+  const hearts = devices.filter(d => d !== excluding && d.type === 'heart');
+  return devices.reduce((total, d) => {
+    if (d === excluding || (d.type !== 'unit' && d.type !== 'vault')) return total;
+    const connected = hearts.some(h => Math.hypot(h.x - d.x, h.y - d.y) <= radius);
+    return total + (connected ? (d.type === 'vault' ? 80 : 40) : 0);
+  }, 0);
+}
+
+function townStoragePort(storageItems, capacity, maxStack) {
+  return {
+    countOf(key) {
+      return storageItems.reduce((n, item) => n + (item.key === key ? item.count : 0), 0);
+    },
+    take(key, count) {
+      for (let i = storageItems.length - 1; i >= 0 && count > 0; i -= 1) {
+        const item = storageItems[i];
+        if (item.key !== key) continue;
+        const moved = Math.min(item.count, count);
+        item.count -= moved;
+        count -= moved;
+        if (!item.count) storageItems.splice(i, 1);
+      }
+    },
+    add(item, count) {
+      for (const stack of storageItems) {
+        if (stack.key !== item.key || !count) continue;
+        const moved = Math.min(maxStack - stack.count, count);
+        stack.count += moved;
+        count -= moved;
+      }
+      const limit = capacity();
+      while (count && storageItems.length < limit) {
+        const moved = Math.min(count, maxStack);
+        storageItems.push({ key: item.key, kind: item.kind, count: moved });
+        count -= moved;
+      }
+      return count;
+    }
+  };
+}
+
+const EXPORTS_villager = { VILLAGERS, BY_KEY: VILLAGER_BY_KEY, eligible, makeVillager, makeVillage, townStorageCapacity, townStoragePort,
   WALK_SPEED, WANDER_RANGE, TALK_RANGE };
 
 if (typeof module !== 'undefined' && module.exports) {

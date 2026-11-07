@@ -14,11 +14,13 @@ function makeUI(root, deps) {
   let chest = null;
   let onChestMove = null;
   let shop = null;
+  let paintedShop = null;
   let onBuy = null;
   let onHeal = null;
   let onSelectHotbar = null;
   const els = {};
   let open = false;
+  let townOpen = false;
 
   function el(tag, cls, parent) {
     const node = document.createElement(tag);
@@ -474,6 +476,48 @@ function makeUI(root, deps) {
     return node;
   }
 
+  function closeTown() {
+    if (!els.town) return;
+    townOpen = false;
+    els.town.hidden = true;
+    els.town.textContent = '';
+  }
+
+  function showTown(title, rows, actions, searchView) {
+    hideTip();
+    townOpen = true;
+    els.town.hidden = false;
+    els.town.textContent = '';
+    const header = el('div', 'town-header', els.town);
+    el('h2', null, header).textContent = title;
+    const close = el('button', 'action', header);
+    close.textContent = 'Close';
+    close.addEventListener('click', closeTown);
+    let search;
+    if (searchView) {
+      search = el('input', 'town-search', els.town);
+      search.placeholder = 'Search items and recipes';
+      search.setAttribute('aria-label', search.placeholder);
+    }
+    const body = el('div', 'town-body', els.town);
+    function paint() {
+      if (!townOpen || !body.isConnected) return;
+      body.textContent = '';
+      const view = searchView ? searchView(search.value.trim().toLowerCase()) : { rows, actions };
+      for (const row of view.rows) el('p', null, body).textContent = row;
+      for (const action of view.actions) {
+        const button = el('button', 'action town-action', body);
+        button.textContent = action.label;
+        button.addEventListener('click', () => {
+          action.run();
+          if (searchView) paint();
+        });
+      }
+    }
+    if (search) search.addEventListener('input', paint);
+    paint();
+  }
+
   function build() {
     els.stats = el('div', 'stats', root);
     els.hearts = el('div', 'meter hearts', els.stats);
@@ -492,6 +536,9 @@ function makeUI(root, deps) {
     }
 
     els.message = el('p', 'message', root);
+    els.town = el('section', 'panel town-panel', root);
+    els.town.hidden = true;
+    els.town.setAttribute('aria-label', 'Town services');
 
     els.screen = el('div', 'screen', root);
     const left = el('div', 'panel grid-panel', els.screen);
@@ -762,9 +809,12 @@ function makeUI(root, deps) {
   function paintShop() {
     if (!els.shopPanel) return;
     els.shopPanel.classList.toggle('visible', !!shop);
-    if (!shop) return;
+    if (!shop || shop === paintedShop) return;
+    paintedShop = shop;
     els.shopName.textContent = shop.who.spec.name.replace(/^the /, '');
-    els.shopPurse.textContent = shop.coins.toLocaleString() + ' coin';
+    const discount = Math.round((1 - shop.discount) * 100);
+    els.shopPurse.textContent = shop.coins.toLocaleString() + ' coin'
+      + (discount ? ' · ' + discount + '% town discount' : '');
     els.shopList.textContent = '';
     shop.who.spec.stock.forEach((entry, i) => {
       const row = el('button', 'craft-row', els.shopList);
@@ -773,9 +823,10 @@ function makeUI(root, deps) {
       el('span', 'craft-name', text).textContent = craft.nameOf(entry.key, tiles)
         + (entry.count > 1 ? ' \u00d7' + entry.count : '');
       const cost = el('span', 'craft-cost', text);
-      cost.textContent = entry.price.toLocaleString() + ' coin';
-      if (shop.coins < entry.price) row.classList.add('unaffordable');
-      row.addEventListener('mousedown', (ev) => {
+      const price = Math.ceil(entry.price * shop.discount);
+      cost.textContent = price.toLocaleString() + ' coin';
+      if (shop.coins < price) row.classList.add('unaffordable');
+      row.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         if (onBuy) onBuy(i);
@@ -787,14 +838,13 @@ function makeUI(root, deps) {
       el('span', 'craft-name', text).textContent = 'Heal me';
       el('span', 'craft-cost', text).textContent =
         shop.who.spec.healPrice.toLocaleString() + ' coin';
-      row.addEventListener('mousedown', (ev) => {
+      row.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         if (onHeal) onHeal();
       });
     }
-    els.shopNote.textContent = shop.who.spec.stock.length || shop.who.spec.heals
-      ? '' : 'Nothing for sale.';
+    els.shopNote.textContent = shop.who.spec.greeting;
   }
 
   function paintChest() {
@@ -866,11 +916,12 @@ function makeUI(root, deps) {
   }
 
   function toggle() {
+    if (townOpen) { closeTown(); return open; }
     setOpen(!open);
     return open;
   }
 
-  return { build, sync, toggle, setOpen, itemArt, get isOpen() { return open; },
+  return { build, sync, toggle, setOpen, itemArt, showTown, closeTown, get isOpen() { return open || townOpen; }, get townOpen() { return townOpen; },
     setField(key, text) { if (els[key] && els[key].textContent !== text) els[key].textContent = text; },
     setMessage(text) { if (els.message && els.message.textContent !== text) els.message.textContent = text; },
     set onCraft(fn) { onCraft = fn; },
@@ -878,7 +929,7 @@ function makeUI(root, deps) {
     set onBuy(fn) { onBuy = fn; },
     set onHeal(fn) { onHeal = fn; },
     set onSelectHotbar(fn) { onSelectHotbar = fn; },
-    openShop(who, purse) { shop = { who, coins: purse.coins }; },
+    openShop(who, purse) { shop = { who, coins: purse.coins, discount: purse.discount || 1 }; },
     closeShop() { shop = null; },
     openChest(box) { chest = box; craftSignature = null; },
     closeChest() { chest = null; },

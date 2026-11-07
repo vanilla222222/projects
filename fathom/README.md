@@ -161,3 +161,17 @@ trips into Hell safer. Cobalt opens emberite, which smelts with obsidian.
 King Slime opens the meteor gear side path. The Hollow Eye can be summoned at night.
 Craft a Cinder Idol at an anvil and use it in Hell to challenge the Furnace Warden.
 Its Furnace Cores can become a long-reach lance, a magic scepter, or a defensive heart.
+
+### Towns and storage
+
+Press H in a furnished room to inspect it and invite or relocate a resident. Two
+distinct occupied rooms within 45 tiles power a Town Pylon. Put another pylon at
+least 90 tiles away, power both, and right-click either one to travel. Shops offer
+discounts in populated districts.
+
+The Storage Keeper arrives after 15 smelted bars. Buy or craft a Storage Heart and
+place storage units within 24 tiles of a heart. Each standard unit adds 40 stacks.
+Reinforced units add 80. Right-click a heart or terminal to search, deposit, or
+withdraw from the shared stock for that world. A Storage Crafting Terminal uses
+stored ingredients and crafting stations near the terminal. Withdraw items before
+removing a heart or unit if doing so would leave too little capacity.

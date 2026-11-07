@@ -293,6 +293,30 @@ function paintCrystal(ctx, spec, variant, ox, oy) {
 
 function paintSmall(ctx, spec, variant, ox, oy) {
   ctx.clearRect(ox, oy, TILE, TILE);
+  if (spec.townDevice) {
+    ctx.fillStyle = '#29253f';
+    ctx.fillRect(ox + 2, oy + 12, 12, 4);
+    ctx.fillRect(ox + 3, oy + 5, 10, 8);
+    ctx.fillStyle = spec.colour;
+    if (spec.townDevice === 'pylon' || spec.townDevice === 'heart') {
+      ctx.beginPath();
+      ctx.moveTo(ox + 8, oy + 1);
+      ctx.lineTo(ox + 13, oy + 6);
+      ctx.lineTo(ox + 8, oy + 13);
+      ctx.lineTo(ox + 3, oy + 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#fff2d6';
+      ctx.fillRect(ox + 7, oy + 4, 2, 4);
+    } else {
+      ctx.fillRect(ox + 4, oy + 6, 8, 6);
+      ctx.fillStyle = '#41465f';
+      ctx.fillRect(ox + 5, oy + 7, 6, 3);
+      ctx.fillStyle = '#c8ffe3';
+      ctx.fillRect(ox + 6, oy + 8, 2, 1);
+    }
+    return;
+  }
   if (spec.key === 'torch') {
     ctx.fillStyle = '#5a3b22';
     ctx.fillRect(ox + 7, oy + 6, 2, 9);
