@@ -2,6 +2,7 @@ import {orbitJobStatus,workOrbitJob} from './world-three.mjs';
 import {installAtlasZoom} from './atlas-zoom.mjs?v=48';
 import {rememberMenuScroll} from './menu-scroll.mjs?v=47';
 import {installAtlasPanning} from './atlas-panning.mjs?v=47';
+import {ORBIT_NPCS} from './orbit-campaign.mjs';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {persistReset} from './reset-save.mjs?v=45';
 import {onboarding} from './onboarding.mjs?v=45';
@@ -13,7 +14,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=50';
 import * as Parity from './parity-panels.mjs?v=50';
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as Prof from './profession-panels.mjs?v=50';
-import * as UI from './ui-panels.mjs?v=53';
+import * as UI from './ui-panels.mjs?v=54';
 import {icon,portrait} from './ui-art.mjs?v=50';
 import * as AUI from './adventure-panels.mjs?v=50';
 import * as T from './town-panels.mjs?v=50';
@@ -22,7 +23,7 @@ import {GameAudio} from './audio.mjs?v=45';
 import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=49';
-import {drawWorld,viewFor} from './scene.mjs?v=53';
+import {drawWorld,viewFor} from './scene.mjs?v=54';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
 const atlasZoom=installAtlasZoom($('panel-content'));
@@ -84,7 +85,7 @@ function renderPanel(preserveScroll=false){
  if(kind==='npc'&&npc&&conversation){const voice=Talk.NPC_VOICES[conversation.giver];title=voice.name;eyebrow=voice.role.toUpperCase();body=npcDialogue(state,c,conversation,performance.now());}
  if(kind==='skills'){title='Class builds & professions';body=UI.talents(state,c,talentView)+Parity.buildExtras(state,c);}
  if(kind==='craft'){const station=['anvil','foundry','alchemy','enchanting'].includes(uiView.profession)?uiView.profession:E.stationFor(c)||'anvil';title=E.SERVICES[station]?.name||'Professions';body=station==='anvil'?Prof.anvil(state,c,uiView):station==='alchemy'?Prof.alchemy(state,c,uiView):station==='enchanting'?Prof.enchanting(state,c,uiView):E.serviceAccess(state,c,'foundry')?EconomyUI.foundry(state,c,uiView):Prof.locked(state,c,'foundry');}
- if(kind==='map'){title='World Map · Routes & teleports';eyebrow='GREENREACH & TIDEWILDS';body=UI.map(state,c,uiView);}
+ if(kind==='map'){title='World Map · Routes & teleports';eyebrow='GREENREACH · TIDEWILDS · ASTRAL REACH';body=UI.map(state,c,uiView);}
  if(kind==='stamps'){title='Legacy Square · Stamp Registry';body=UI.stamps(state,c,uiView);}
  if(kind==='statues'){title='Legacy Square · Statue Keeper';body=UI.statues(state,c,uiView);}
  if(kind==='shop'){title=worldOf(c.area)===3?'Orbital Supply Counter':worldOf(c.area)===2?'Expedition Supply Store':c.area==='town'?'Pip’s General Store':'Nori’s Supply Stall';body=UI.shop(state,c,shopView);}
@@ -124,7 +125,7 @@ function renderPanel(preserveScroll=false){
  $('panel-title').textContent=title;$('panel-eyebrow').textContent=eyebrow;html('panel-content',body);restoreScroll?.();if(kind==='map'&&$('panel').open)atlasZoom.refresh();
 }
 function itemCard(id,n,archive=false){const item=ITEMS[id],level=state.archive[id]||0,cost=item.rarity==='common'?10*(level+1):level+1;return`<article class="item-card rarity-${item.rarity}"><div><span class="icon">${item.icon}</span><strong class="quantity">${fmt(n)}</strong></div><h3>${esc(item.name)}</h3><p>${item.rarity.toUpperCase()}${archive?` · Archive level ${level}`:''}</p><p>${purposes(id).map(esc).join(' · ')}</p>${archive?`<button data-offer="${id}" ${n>=cost?'':'disabled'}>Offer ${cost} · +1.5% damage</button>`:''}</article>`;}
-function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:TIDE_NPCS[id]?.area,zone:TIDE_NPCS[id]?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
+function findNpc(id){const def=id==='steward'?{town:'town'}:CLASSES[id]||{town:(TIDE_NPCS[id]||ORBIT_NPCS[id])?.area,zone:(TIDE_NPCS[id]||ORBIT_NPCS[id])?.zone};if(!E.areaUnlocked(state,def.town)){toast(E.lockReason(state,def.town));return;}const zone=def.zone||0;if(!travel(def.town,zone))return;world.select(`npc-${id}`);}
 function findStation(station){const [area,zone]={anvil:['town',1],foundry:['town',2],enchanting:['jungle-town',0],alchemy:['jungle-town',1]}[station];if(!E.zoneUnlocked(state,area,zone)){toast(E.lockReason(state,area,zone));return;}if(!travel(area,zone))return;world.select('station');}
 let targetKey='',lastPanelRefresh=0,panelInteraction=false;
 $('panel').addEventListener('pointerdown',()=>{panelInteraction=true;});
@@ -156,7 +157,7 @@ function refresh(){
  const guide=onboarding(state,c);
  let tracker=c.class?`<strong>${CLASSES[c.class].name} · ${esc(c.name)}</strong><p>✦ ${E.talentPoints(c)} unspent talent points</p><p>${state.unlockedClasses.length} / 5 classes discovered</p>`:`<strong>Find your calling</strong><p class="${c.level>=3?'done':''}">${c.level>=3?'✓':'○'} Reach character level 3 (${c.level}/3)</p><p>○ Find Willow by the oak tree or Brann by copper ore</p><p>○ Complete your class initiation</p>`;
  const tracked=E.questStatus(state,state.trackedQuest),quest=tracked?.accepted&&!tracked.done?tracked:STORY.map(q=>E.questStatus(state,q.id)).find(q=>q.accepted&&!q.done);if(quest?.accepted)tracker=`<strong>${quest.q.name}</strong><p>${quest.accepted?'':'Talk to '+(quest.q.giver==='steward'?'Hesta':CLASSES[quest.q.giver].trainer)+' · '}${quest.tasks.filter(t=>!t.done).slice(0,2).map(t=>t.text+' ('+fmt(t.have)+'/'+t.need+')').join(' · ')||'Return to the quest giver'}</p><p>${state.unlockedClasses.length}/5 classes · Backpack ${E.bagUsed(c)}/${E.bagCapacity(c)}</p>`;
- if(worldOf(c.area)===3&&!quest?.accepted)tracker='<strong>Astral Reach Expedition</strong><p>Train at the town workstations, follow the route to Zenith Observatory, and defeat the Eventide Colossus.</p>';if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(worldOf(c.area)===2&&!quest?.accepted&&!c.journey.story['tide-landfall']?.done)tracker='<strong>Tidewilds Expedition</strong><p>Meet Captain Maris at Landfall Quay to begin.</p><button data-find-npc="captain">FIND MARIS</button>';if(!guide.complete&&!quest?.accepted&&worldOf(c.area)===1)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
+ if(worldOf(c.area)===3&&!quest?.accepted)tracker='<strong>Astral Reach Expedition</strong><p>Meet Keeper Sable at Sporeport to start the expedition.</p>';if(zoneEnemy(c.area,c.zone))tracker+=`<p class="${kills>=routeGoal?'done':''}">${kills>=routeGoal?'✓ Next route unlocked':`○ Open next route: ${kills}/${routeGoal} kills`}</p>`;if(!c.class&&!c.journey.story['first-roots']?.accepted)tracker='<strong>Meet Hesta</strong><p>Take the left portal to Village Green and talk to its steward.</p><p>Ask about work to begin your World One story.</p>';if(worldOf(c.area)===2&&!quest?.accepted&&!c.journey.story['tide-landfall']?.done)tracker='<strong>Tidewilds Expedition</strong><p>Meet Captain Maris at Landfall Quay to begin.</p><button data-find-npc="captain">FIND MARIS</button>';if(!guide.complete&&!quest?.accepted&&worldOf(c.area)===1)tracker=`<strong>Getting Started · ${guide.done}/${guide.steps.length}</strong><p>${guide.next.name}</p><button data-panel="onboarding">OPEN GUIDE</button>`;html('quest-tracker',`<button data-panel="quests" class="tracker-edit" aria-label="Open quest journal">!</button>`+tracker);
  $('world-hint').textContent=world.player.climbing?'Climbing · W / S or touch arrows':world.target?.kind==='node'?`Gathering ${ITEMS[world.target.resource].name} · Other characters keep working`:world.auto?'AUTO is on · Click a target or use movement controls to take over':'Tap ground to walk · Tap targets to interact · W / S for ladders';
  loot=loot.filter(l=>l.until>Date.now());html('loot-feed',loot.map(l=>`<p class="loot-${l.rarity||'common'}">${esc(l.text)}</p>`).join(''));const bagStatus=InventoryGuide.lootStatus(c);$('bag-count').textContent='Bag '+bagStatus.used+'/'+bagStatus.capacity+(bagStatus.pending||bagStatus.floor?' · !':'');$('bag-count').title=bagStatus.pending+' pending items · '+bagStatus.floor+' items on the ground · '+bagStatus.locked+' locked slots';$('bag-count').setAttribute('aria-label','Open inventory. '+$('bag-count').title);
  $('knockout').hidden=world.player.respawn<=0;

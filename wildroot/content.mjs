@@ -1,4 +1,5 @@
 import {installTideCampaign} from './tide-campaign.mjs?v=45';
+import {ORBIT_QUESTS,EXPEDITION_TASKS} from './orbit-campaign.mjs';
 import {installOrbit,ORBIT_JOBS,ORBIT_ADVANCEMENTS} from './world-three-content.mjs';
 import {installExpansion} from './expansion-content.mjs?v=45';
 import {QUEST_REFORMS} from './quest-content.mjs?v=45';
@@ -77,6 +78,8 @@ export function purposes(id){
  if(CAPACITY_BAGS[id])uses.push('Consume once per character: +'+CAPACITY_BAGS[id].bonus+' '+CAPACITY_BAGS[id].type+' per stack');
  if(POTIONS[id])uses.push('Drink: 20 minute profession or combat boost');
  if(id==='rootbound-key')uses.push('Permanent access to the Rootwarden');
+ if(id==='tide-completion-token')uses.push('Proof of Farwatch’s restoration and clearance to the Astral Reach');
+ if(id==='astral-completion-token')uses.push('Proof of the completed Astral Reach expedition');
  if(id==='world-one-completion')uses.push('Required to craft the Greenreach Trophy; proof of World One completion');
  if(id==='tonic')uses.push('Recover health');
  if(id.startsWith('stamp-'))uses.push('Register at Legacy Square; account-wide stamp upgrades');
@@ -460,6 +463,10 @@ for(const [id,e]of Object.entries(ENEMIES))if(!CARDS[id])CARDS[id]={name:e.name+
 for(const id of Object.keys(ITEMS).filter(id=>id.startsWith('tide-')||id.startsWith('depths-')))if(!EQUIPMENT[id]&&!RECIPES.some(r=>r.cost[id])&&!OFFERINGS.includes(id))OFFERINGS.push(id);
 
 installOrbit({ITEMS,ENEMIES,SKILLS,SECRETS,FOODS,EQUIPMENT,RECIPES});
+STORY.push(...ORBIT_QUESTS.map(q=>({...q,world:3})));
+WORLD_TASKS.push(...EXPEDITION_TASKS);
+item('astral-completion-token','Astral Reach Completion Token','rare','✦');
+
 for(const id of ['orbit-dock','orbit-loom','orbit-chart'])TOWN_SHOPS[id]={name:'Orbital Supply Counter',stock:[['feast',35,20],['town-teleport',25,10],['reset-fragment',35,5]]};
 for(const id of Object.keys(ITEMS))if(id.startsWith('orbit-')&&!OFFERINGS.includes(id))OFFERINGS.push(id);
 installTideCampaign({STORY,ITEMS,ENEMIES,RECIPES,EQUIPMENT,SECRETS});
