@@ -20,7 +20,10 @@ const STRUCTURE_MARGIN = 14;
 //    +50 to +750  caves
 //   +750 to +1250 deep caverns
 //  +1250 to +1750 hell
-//  +1750 and down hell caves, then the trench, which continues without end
+//  +1750 to +2170 hell caves
+//  +2170 to +2850 trench
+//  +2850 and down the Void
+const VOID_START = 2850;
 const LAYERS = [
   { key: 'space', name: 'Space', from: -Infinity, to: -750 },
   { key: 'sky', name: 'Sky', from: -750, to: -250 },
@@ -28,7 +31,9 @@ const LAYERS = [
   { key: 'caves', name: 'Caves', from: 50, to: 750 },
   { key: 'deep', name: 'Deep Caverns', from: 750, to: 1250 },
   { key: 'hell', name: 'Hell', from: 1250, to: 1750 },
-  { key: 'hellcaves', name: 'Hell Caves', from: 1750, to: Infinity }
+  { key: 'hellcaves', name: 'Hell Caves', from: 1750, to: 2170 },
+  { key: 'trench', name: 'The Trench', from: 2170, to: VOID_START },
+  { key: 'void', name: 'The Void', from: VOID_START, to: Infinity }
 ];
 
 // Kept as the depth past which the generator stops inventing new strata and the trench
@@ -476,9 +481,12 @@ function inGallery(seed, x, depth, bore) {
     if (b < 1) continue;
     const base = b * GALLERY_SPACING + (unit(seed, b, 0, 5201) - 0.5) * 38;
     const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
-    const radius = (2.8 + unit(seed, b, 0, 5207) * 3.8
-      + (fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5) - 0.5) * 3.0) * bore;
-    if (Math.abs(depth - (base + wander)) < radius) return true;
+    const shape = fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5);
+    // Swell narrow corridors into chambers without severing their centerlines.
+    const chamber = Math.max(0, shape - 0.61) ** 2 * 68;
+    const radius = (2.5 + unit(seed, b, 0, 5207) * 3.8
+      + (shape - 0.5) * 3 + chamber) * bore;
+    if (Math.abs(depth - (base + wander + (shape - 0.5) * 7)) < radius) return true;
   }
   return false;
 }
@@ -494,12 +502,13 @@ function inShaft(seed, x, depth, bore) {
     // on average, two of three sample windows contained none at all, and a cave with no
     // door is indistinguishable from no cave.
     const top = unit(seed, s, 0, 5313) < 0.72 ? -3 : 30 + unit(seed, s, 0, 5317) * 180;
-    const bottom = 320 + unit(seed, s, 0, 5319) * 560;
+    const bottom = 380 + unit(seed, s, 0, 5319) * 860;
     if (depth < top || depth > bottom) continue;
     const base = s * SHAFT_SPACING + (unit(seed, s, 0, 5303) - 0.5) * SHAFT_SPACING * 0.72;
     const wander = (fbm1(seed, depth * 0.0062 + s * 23, 5307, 3, 2, 0.5) - 0.5) * 76;
+    const shape = fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5);
     const radius = (2.1 + unit(seed, s, 0, 5311) * 2.8
-      + (fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5) - 0.5) * 1.8) * bore;
+      + (shape - 0.5) * 1.8 + Math.max(0, shape - 0.65) * 5) * bore;
     // The mouth flares, so an entrance reads as an entrance rather than as a drilled hole.
     // A funnel, not a flare. Widening the mouth made each entrance fifteen tiles across
     // and the surface measured 21.9% open holes - a sieve rather than a landscape - so
@@ -755,6 +764,11 @@ function lootKindOf(key) {
 
 // What is in the chest whose origin is here, before anybody has touched it.
 function baseContainerAt(seed, x, y) {
+  const vault = ashvaultAt(seed, x, y);
+  if (vault && x === vault.x + 17 && y === vault.y + 8) {
+    return [['vault-relic', 4], ['emberite-bar', 6], ['coin', 350]]
+      .map(([key, count]) => ({ key, count, kind: lootKindOf(key) }));
+  }
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
     const chest = cachedStructureChest(seed, s);
@@ -845,7 +859,7 @@ function structureWallAt(seed, x, y) {
 // hash is tested first and the geometry - which needs six isCarved calls for a two-by-two
 // object - only runs for the few thousandths of cells that pass it.
 
-const CRYSTAL_ODDS = 0.00042;       // per candidate origin, below the crystal's depth
+const CRYSTAL_ODDS = 0.00068;       // per candidate origin, below the crystal's depth
 const CRYSTAL_MIN_DEPTH = 120;
 const POT_ODDS = 0.0075;
 
@@ -975,6 +989,11 @@ function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
     if (above !== AIR) return above;
     return y >= SEA_LEVEL ? idOf('water') : AIR;
   }
+
+  const altitude = altitudeOf(y);
+  if (altitude >= VOID_START) return voidTileAt(seed, x, altitude);
+  const vault = ashvaultAt(seed, x, y);
+  if (vault) return ashvaultTile(vault, x, y);
 
   // Structures win over the rock they are set into, but not over hell or the sea, which
   // structureTileAt refuses for itself.
@@ -1118,7 +1137,7 @@ const HALL_RESUME = 2170;
 // Whether this altitude is inside a great hall rather than ordinary rock.
 function inHall(alt) {
   if (alt >= HALL_TOP && alt < 1750) return true;
-  return alt >= HALL_RESUME;
+  return alt >= HALL_RESUME && alt < VOID_START;
 }
 
 function hallTileAt(seed, x, y) {
@@ -1155,6 +1174,48 @@ function hallTileAt(seed, x, y) {
   const lake = floor - 34 - fbm1(seed, x * 0.007, 5119, 2, 2, 0.5) * 72;
   if (t > lake) return idOf('lava');
   return AIR;
+}
+
+const ASHVAULT_SPACING = 320;
+const ASHVAULT_DEPTH = 2520;
+
+function ashvaultAt(seed, x, y) {
+  const dy = altitudeOf(y) - ASHVAULT_DEPTH;
+  if (dy < -11 || dy > 10) return null;
+  const slot = Math.round(x / ASHVAULT_SPACING);
+  const center = slot * ASHVAULT_SPACING + Math.floor((unit(seed, slot, 0, 5901) - 0.5) * 120);
+  if (Math.abs(x - center) > 41) return null;
+  return { x: center, y: SEA_LEVEL + ASHVAULT_DEPTH, seed };
+}
+
+function ashvaultTile(vault, x, y) {
+  const dx = x - vault.x, dy = y - vault.y;
+  if (Math.abs(dx) > 32) {
+    if (dy === 10) return idOf('ashvault-brick');
+    return dy >= 5 ? AIR : hallTileAt(vault.seed, x, y);
+  }
+  if (dy === -11 || dy === 10) return idOf('ashvault-brick');
+  if (Math.abs(dx) === 32) return dy >= 6 ? idOf('ashvault-gate') : idOf('ashvault-brick');
+  if (dx === 12) return dy >= 6 ? idOf('ashvault-gate') : idOf('ashvault-brick');
+  if (dx >= 17 && dx <= 18 && dy >= 8) return cellOf('ashvault-cache', dx - 17, dy - 8).id;
+  if (dy === 9 && [6, 7, -7, -8, -19, -20].includes(dx)) return idOf('ashvault-spikes');
+  if (dy === 1 && (dx === -25 || dx === -12 || dx === 3 || dx === 23)) return idOf('torch');
+  return AIR;
+}
+
+function voidTileAt(seed, x, altitude) {
+  const depth = altitude - VOID_START;
+  const band = Math.floor(depth / 132);
+  const row = depth % 132;
+  const shelf = Math.round((fbm1(seed, x * 0.012 + band * 11, 5911, 2, 2, 0.5) - 0.5) * 24);
+  // Wide hollow strata linked by staggered shafts. A shaft meets both neighboring
+  // hollows, so traveling down never depends on a lucky noise intersection.
+  const slot = Math.round(x / 96);
+  const shaft = slot * 96 + Math.floor((unit(seed, slot, band, 5913) - 0.5) * 36);
+  const ridge = Math.round((unit(seed, Math.floor(x / 8), band, 5919) - 0.5) * 11);
+  if (Math.abs(x - shaft) < 5 || (row >= 19 + shelf + ridge && row < 88 + shelf + ridge)) return AIR;
+  if (unit(seed, Math.floor(x / 3), Math.floor(depth / 3), 5917) > 0.968) return idOf('void-crystal');
+  return idOf('voidstone');
 }
 
 // --- everything above the ground ---------------------------------------------------
@@ -1396,6 +1457,8 @@ function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
     if (skyTileAt(seed, x, y) === AIR) return 0;
     return altitudeOf(y) < -750 ? wallIdOf('skywall') : wallIdOf('dirtwall');
   }
+  if (altitudeOf(y) >= VOID_START) return wallIdOf('void-wall');
+  if (ashvaultAt(seed, x, y)) return wallIdOf('ashvault-wall');
   const built = structureWallAt(seed, x, y);
   if (built !== null) return built;
   const layer = stratum(seed, x, y, depth, column);
@@ -1452,6 +1515,7 @@ function altitudeOf(y) {
 // block id and the decor was winning. Stored levels override this, exactly as tile and
 // wall edits override their own base functions, so nothing has to be saved for an ocean.
 function baseLevelAt(seed, x, y) {
+  if (altitudeOf(y) >= VOID_START) return 0;
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
@@ -1507,7 +1571,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,

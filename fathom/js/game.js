@@ -237,11 +237,25 @@ function makeGame(canvas, deps) {
         return true;
       }
       if (use.layer && worldgen.layerAt(Math.floor(state.player.y)).key !== use.layer) {
-        say('The idol only awakens in Hell', 1.8);
+        say('Use this in ' + worldgen.LAYERS.find(layer => layer.key === use.layer).name, 1.8);
         return true;
       }
+      if (use.vault && !inventory.countOf('ashvault-key')) {
+        say('Bring an Ashvault Key forged from a Furnace Core', 2);
+        return true;
+      }
+      let arena;
+      if (use.vault) {
+        const x = Math.floor(state.player.x), y = Math.floor(state.player.y);
+        const vault = worldgen.ashvaultAt(seed, x, y);
+        if (!vault || x <= vault.x - 32 || x >= vault.x + 12 || y <= vault.y - 11 || y >= vault.y + 10) {
+          say('Use the effigy in the main hall of an Ashvault', 2);
+          return true;
+        }
+        arena = { left: vault.x - 31, right: vault.x + 12, top: vault.y - 10, bottom: vault.y + 10 };
+      }
       if (swarm.bossAlive()) { say('It is already here', 1.4); return true; }
-      const boss = swarm.summon(use.summon, state.player);
+      const boss = swarm.summon(use.summon, state.player, arena);
       if (!boss) { say('There is no room here', 1.6); return true; }
       say(boss.spec.name + ' has awoken', 3.2);
       sfx('roar');
@@ -633,6 +647,11 @@ function makeGame(canvas, deps) {
     const held = selectedItem();
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
+    if (spec.key === 'ashvault-gate' || (spec.chest === 'ashvault-cache' && !inventory.countOf('guardian-seal'))) {
+      state.player.mining = null;
+      say('This seal must be opened with a key', 1.4);
+      return;
+    }
     const wanted = mining.jobFor(diggingWall ? null : spec, diggingWall);
     if (!tool) {
       state.player.mining = null;
@@ -861,6 +880,7 @@ function makeGame(canvas, deps) {
               for (const [key, count] of target.spec.drops || []) {
                 dropItem(target.x, target.y, key, craft.kindOf(key), count);
               }
+              if (target.key === 'kingslime') dropMeteor();
               rareDrop(target);
             }
           }
@@ -922,7 +942,7 @@ function makeGame(canvas, deps) {
       sfxAt('enemydie', target.x, target.y, { pitch: target.boss ? 0.5 : 1 });
       // Killing the King brings something down out of the sky, which is how the next
       // tier of material arrives: it is not in the ground anywhere.
-      if (target.boss) dropMeteor();
+      if (target.key === 'kingslime') dropMeteor();
       rareDrop(target);
       // Roughly one kill in five leaves a heart behind, and a hurt player sees them
       // more often: the drop is there to keep a fight going, so it arrives when the
@@ -983,6 +1003,10 @@ function makeGame(canvas, deps) {
   function useChest(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.chest) return false;
+    if (spec.chest === 'ashvault-cache' && !inventory.countOf('guardian-seal')) {
+      say('The reliquary needs a Guardian Seal', 2);
+      return true;
+    }
     const origin = tiles.originOf(spec, aim.x, aim.y);
     if (!origin) return false;
     if (openChest && openChest.x === origin.x && openChest.y === origin.y) {
@@ -1378,9 +1402,25 @@ function makeGame(canvas, deps) {
     if (liquid) liquid.activateAround(origin.x, origin.y);
   }
 
+  function unlockAshvault(aim) {
+    if (tiles.tile(world.get(aim.x, aim.y)).key !== 'ashvault-gate') return false;
+    const vault = worldgen.ashvaultAt(seed, aim.x, aim.y);
+    const inner = vault && aim.x === vault.x + 12;
+    const key = inner ? 'guardian-seal' : 'ashvault-key';
+    if (!vault || !inventory.countOf(key)) {
+      say('This gate needs ' + craft.nameOf(key, tiles), 2);
+      return true;
+    }
+    for (let y = vault.y + 6; y <= vault.y + 9; y += 1) {
+      if (tiles.tile(world.get(aim.x, y)).key === 'ashvault-gate') world.set(aim.x, y, tiles.AIR);
+    }
+    say('Ashvault gate unlocked', 1.5);
+    return true;
+  }
+
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
-    if (aim0.inReach && useTownDevice(aim0)) return;
+    if (aim0.inReach && (unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;
     if (aim0.inReach && useBed(aim0)) return;
@@ -1629,9 +1669,13 @@ function makeGame(canvas, deps) {
       if (dealt > 0 && Math.random() < 0.08) say('Drowning!', 0.8);
     }
 
-    // Standing in lava burns. It is the only tile in the world that hurts by itself.
+    // Check hazards at the player's feet.
     const feet = tiles.tile(world.get(Math.floor(state.player.x + state.player.width / 2),
       Math.floor(state.player.y + state.player.height * 0.6)));
+    if (feet.key === 'ashvault-spikes') {
+      const hit = statsModule.damage(stats, 34);
+      if (hit > 0) { lastHurt = 'Ashvault spikes'; say('Watch the floor', 1.3); }
+    }
     if (feet.hot && !gear.fireproof) {
       const burnt = statsModule.damage(stats, 24 * (feet.key === 'lava' ? gear.lavaDamage : 1));
       lastHurt = feet.key === 'lava' ? 'the lava' : 'the heat';
@@ -1674,7 +1718,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js');
+      const worker = new Worker('workers/chunk.js?v=void-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -1790,8 +1834,9 @@ function makeGame(canvas, deps) {
     ui.setField('clock', String(Math.floor(hour)).padStart(2, '0') + ':'
       + String(Math.floor((hour % 1) * 60)).padStart(2, '0'));
     ui.setField('biome', worldgen.biomeAt(seed, Math.floor(state.player.x)).name);
+    const layer = worldgen.layerAt(Math.floor(state.player.y));
     const depth = Math.floor(state.player.y) - worldgen.surfaceHeight(seed, Math.floor(state.player.x));
-    ui.setField('depth', depth > 0 ? depth + 'm down' : 'surface');
+    ui.setField('depth', depth > 0 ? layer.name + ' · ' + depth + 'm' : layer.name);
     ui.setField('coords', Math.floor(state.player.x) + ', ' + Math.floor(state.player.y));
     ui.setField('seed', String(seed));
     ui.setMessage(state.time < state.messageUntil ? state.message : '');

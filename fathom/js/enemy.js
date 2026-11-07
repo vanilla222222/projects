@@ -60,7 +60,16 @@ const ARCHETYPES = {
   furnace: { gravity: 0, boss: true, flies: true, speed: 3.6, hoverAbove: 4, drift: 3.8,
     chargeEvery: 4.2, windUp: 1, chargeSpeed: 22, chargeFor: 1.0,
     spawnEvery: 5.8, minion: 'fireimp', minions: 2,
-    enrageAt: 0.42, enrageSpeed: 1.25, enrageCharge: 0.55, enrageWindUp: 0.62 }
+    enrageAt: 0.42, enrageSpeed: 1.25, enrageCharge: 0.55, enrageWindUp: 0.62 },
+  guardian: { gravity: 0, boss: true, flies: true, speed: 3.4, hoverAbove: 2.5, drift: 5,
+    chargeEvery: 4.8, windUp: 1.15, chargeSpeed: 26, chargeFor: 0.72,
+    spawnEvery: 6, minion: 'ashsentinel', minions: 2,
+    enrageAt: 0.52, enrageSpeed: 1.2, enrageCharge: 0.48, enrageWindUp: 0.75 },
+  sovereign: { gravity: 0, boss: true, flies: true, speed: 6, hoverAbove: 6, drift: 4,
+    chargeEvery: 3.1, windUp: 0.82, chargeSpeed: 24, chargeFor: 1.05,
+    spawnEvery: 4, minion: 'voidshade', minions: 3,
+    enrageAt: 0.38, enrageSpeed: 1.42, enrageCharge: 0.6, enrageWindUp: 0.45 }
+
 };
 
 // Every enemy drops coins, scaled to what it was: a slime is pocket change, an obsidian
@@ -225,6 +234,25 @@ const ENEMIES = [
     boss: true, summonOnly: true, emit: 8,
     drops: [['cinder', 15], ['coin', 650]], bossDrops: [['furnace-core', 3]] },
 
+  { key: 'ashsentinel', name: 'Ash Sentinel', kind: 'walker', body: 'golem', hp: 260,
+    damage: 41, weight: 8, w: 1.4, h: 2, colour: '#7a586b', layers: ['trench'],
+    drops: [['cinder', 3], ['coin', 16]] },
+  { key: 'trenchmaw', name: 'Trench Maw', kind: 'flyer', body: 'maw', hp: 210,
+    damage: 38, weight: 7, w: 1.6, h: 1.2, colour: '#9f5664', layers: ['trench'],
+    drops: [['cinder', 2], ['coin', 14]] },
+  { key: 'voidstalker', name: 'Void Stalker', kind: 'crawler', body: 'spider', hp: 360,
+    damage: 49, weight: 9, w: 1.6, h: 1.3, colour: '#6650a3', layers: ['void'],
+    drops: [['stardust', 2], ['coin', 22]] },
+  { key: 'voidshade', name: 'Void Shade', kind: 'flyer', body: 'cloud', hp: 295,
+    damage: 44, weight: 8, w: 1.5, h: 1.6, colour: '#8273c7', layers: ['void'], emit: 4,
+    drops: [['stardust', 3], ['coin', 19]] },
+  { key: 'ashguardian', name: 'Ashvault Guardian', kind: 'guardian', body: 'golem', hp: 4600,
+    damage: 55, weight: 0, w: 4.2, h: 3.8, colour: '#b07780', boss: true, summonOnly: true,
+    emit: 7, drops: [['cinder', 12], ['coin', 780]], bossDrops: [['guardian-seal', 5]] },
+  { key: 'voidsovereign', name: 'Void Sovereign', kind: 'sovereign', body: 'bigeye', hp: 7200,
+    damage: 72, weight: 0, w: 5, h: 4.2, colour: '#9378dc', boss: true, summonOnly: true,
+    emit: 9, drops: [['stardust', 12], ['coin', 1350]], bossDrops: ['void-heart'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -317,7 +345,9 @@ const GAIT = {
   king: { perTile: 0.5, perSecond: 3.1 },
   // Wings beat regardless of whether it is getting anywhere, like every other flyer.
   hover: { perTile: 0.3, perSecond: 8 },
-  furnace: { perTile: 0.45, perSecond: 6 }
+  furnace: { perTile: 0.45, perSecond: 6 },
+  guardian: { perTile: 0.35, perSecond: 6 },
+  sovereign: { perTile: 0.4, perSecond: 10 }
 };
 
 // --- the live population ------------------------------------------------------------------
@@ -408,7 +438,7 @@ function makeSwarm(world, tiles, deps) {
 
   // Put a boss into the world beside the player. Summoned rather than spawned: nothing
   // in the spawn table can ever choose one, so this is the only way one arrives.
-  function summon(key, player) {
+  function summon(key, player, arena) {
     const spec = ENEMY_BY_KEY[key];
     if (!spec || !spec.boss) return null;
     if (list.some(e => e.boss)) return null;        // one at a time
@@ -419,7 +449,9 @@ function makeSwarm(world, tiles, deps) {
         const probe = { width: spec.w, height: spec.h };
         if (arch && arch.flies) {
           // Something that flies wants open air above the player, not a floor.
-          const y = Math.floor(player.y) - 9;
+          const above = Math.floor(player.y) - 9;
+          const y = arena ? Math.max(arena.top, Math.min(above, arena.bottom - spec.h)) : above;
+          if (arena && (x < arena.left || x + spec.w > arena.right)) continue;
           if (overlaps(probe, x, y)) continue;
           const boss = makeEnemy(spec, x, y);
           list.push(boss);

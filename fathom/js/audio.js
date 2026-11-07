@@ -143,7 +143,9 @@ const AMBIENCE = {
   caves: { cutoff: 420, q: 0.8, gain: 0.06, drone: 96, droneGain: 0.03 },
   deep: { cutoff: 300, q: 1, gain: 0.07, drone: 72, droneGain: 0.04 },
   hell: { cutoff: 220, q: 1.2, gain: 0.1, drone: 48, droneGain: 0.06 },
-  hellcaves: { cutoff: 180, q: 1.4, gain: 0.11, drone: 41, droneGain: 0.07 }
+  hellcaves: { cutoff: 180, q: 1.4, gain: 0.11, drone: 41, droneGain: 0.07 },
+  trench: { cutoff: 155, q: 1.15, gain: 0.09, drone: 37, droneGain: 0.055 },
+  void: { cutoff: 120, q: 0.8, gain: 0.065, drone: 32, droneGain: 0.065 }
 };
 
 // --- music ---------------------------------------------------------------------------------
@@ -167,7 +169,9 @@ const MOODS = {
   caves: { root: 53, scale: 'dark', chord: [0, 3, 7], beat: 2.8 },
   deep: { root: 48, scale: 'dark', chord: [0, 3, 10], beat: 3.2 },
   hell: { root: 43, scale: 'dark', chord: [0, 1, 7], beat: 3.0 },
-  hellcaves: { root: 41, scale: 'dark', chord: [0, 1, 6], beat: 3.4 }
+  hellcaves: { root: 41, scale: 'dark', chord: [0, 1, 6], beat: 3.4 },
+  trench: { root: 38, scale: 'dark', chord: [0, 5, 10], beat: 3.6 },
+  void: { root: 33, scale: 'dark', chord: [0, 6, 12], beat: 4.1 }
 };
 
 function midiToHz(note) {

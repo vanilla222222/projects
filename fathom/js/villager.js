@@ -143,7 +143,12 @@ const VILLAGERS = [
     wants: p => p.deepest >= 1250, wantsText: 'arrives after reaching 1,250 tiles of depth',
     greeting: 'Carry obsidian into Hell. Carry an exit plan out of it.',
     stock: [{ key: 'obsidian-charm', count: 1, price: 820 }, { key: 'ember-arrow', count: 50, price: 240 },
-      { key: 'seared-fish', count: 4, price: 240 }] }
+      { key: 'seared-fish', count: 4, price: 240 }] },
+  { key: 'appraiser', name: 'the Relic Appraiser', colour: '#a08bb2', hair: '#362b47',
+    wants: p => p.deepest >= 2170, wantsText: 'arrives after reaching 2,170 tiles of depth',
+    greeting: "The Warden's core can open an Ashvault. Bring me the things you find inside.",
+    stock: [{ key: 'guardian-effigy', count: 1, price: 640 }, { key: 'spelunk-potion', count: 5, price: 330 },
+      { key: 'diamond', count: 2, price: 660 }] }
 
 ];
 
@@ -170,6 +175,9 @@ const TOWN_ORDERS = [
   ['gemcase', 'lapidary', 'Gem Case', [['topaz', 3], ['sapphire', 3], ['ruby', 2]], [['prism-brooch', 1], ['coin', 430]]],
   ['sea-relics', 'diver', 'Sea Relics', [['shell', 15], ['finleather', 2]], [['tidal-locket', 1], ['coin', 370]]],
   ['forge-feast', 'firekeeper', 'Forge Feast', [['seared-fish', 4], ['cinder', 10]], [['forge-gauntlet', 1], ['coin', 470]]],
+  ['vault-rubbing', 'appraiser', 'Vault Rubbing', [['ashvault-brick', 12]], [['coin', 500], ['spelunk-potion', 5]]],
+  ['relic-register', 'appraiser', 'Relic Register', [['vault-relic', 1]], [['coin', 900], ['diamond', 2]]],
+  ['void-specimen', 'appraiser', 'Void Specimen', [['void-crystal', 6]], [['coin', 1200], ['clarity-potion', 6]]],
   ['warden-proof', 'firekeeper', 'Proof of the Warden', [['furnace-core', 1]], [['emberite-bar', 8], ['coin', 800]]]
 ].map(([id, sponsor, name, needs, rewards]) => ({ id, sponsor, name, needs, rewards }));
 

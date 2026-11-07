@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 46 enemies including three bosses, nine behaviours, spawn pools per biome, layer and event |
+| `js/enemy.js` | 52 enemies including five bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -175,3 +175,15 @@ Reinforced units add 80. Right-click a heart or terminal to search, deposit, or
 withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
+
+### Ashvaults and the Void
+
+Cave galleries swell into chambers and shafts connect more of the deeper galleries.
+At altitude 2,170 below sea level, the Trench begins. Ashvaults recur across the Trench
+at 2,520 below sea level. Forge a reusable Ashvault Key from a Furnace Core, then use
+a Guardian Effigy in the main hall. The Guardian Seal opens the inner reliquary.
+Bring relics back to the Relic Appraiser or craft an Ashblade, Vault Bow, or Relic Staff.
+
+Below 2,850, the Void replaces the Trench with connected caverns and shafts. Mine Void
+Crystals with an Emberite Pickaxe and combine them with a Guardian Seal to summon
+the Void Sovereign. Its heart can be forged into the Sovereign Mantle.

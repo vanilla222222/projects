@@ -482,6 +482,35 @@ for (const s of LAYER_SAMPLES) {
   }
 }
 
+// Vault rooms, gates and loot are stable at absolute coordinates, including negative slots.
+for (const seed of LAYER_SAMPLES) {
+  const y = gen.SEA_LEVEL + gen.ASHVAULT_DEPTH;
+  for (const slot of [-2, -1, 0, 1, 2]) {
+    const vault = Array.from({ length: 120 }, (_, i) => slot * 320 - 60 + i)
+      .map(x => gen.ashvaultAt(seed, x, y)).find(Boolean);
+    check(!!vault, 'Ashvault slot ' + slot + ' is empty');
+    if (!vault) continue;
+    check(gen.baseTileAt(seed, vault.x - 32, y + 8) === tiles.idOf('ashvault-gate'), 'missing outer vault gate');
+    check(gen.baseTileAt(seed, vault.x + 12, y + 8) === tiles.idOf('ashvault-gate'), 'missing inner vault gate');
+    check(gen.baseTileAt(seed, vault.x - 7, y + 9) === tiles.idOf('ashvault-spikes'), 'missing vault trap');
+    check(gen.baseContainerAt(seed, vault.x + 17, y + 8).some(item => item.key === 'vault-relic'), 'vault has no relic');
+    const x = vault.x + 17, chestY = y + 8;
+    const cx = Math.floor(x / CHUNK), cy = Math.floor(chestY / CHUNK);
+    const chunk = gen.generateChunk(seed, cx, cy);
+    check(chunk.tiles[(chestY - cy * CHUNK) * CHUNK + x - cx * CHUNK] === tiles.cellOf('ashvault-cache', 0, 0).id,
+      'the Ashvault chest changed when generated as a chunk');
+  }
+}
+for (const altitude of [gen.VOID_START, gen.VOID_START + 2000, gen.VOID_START + 20000]) {
+  const found = new Set();
+  for (let x = -100; x < 100; x += 3) for (let y = 0; y < 132; y += 3) {
+    found.add(gen.baseTileAt(SEED, x, gen.SEA_LEVEL + altitude + y));
+  }
+  for (const id of [tiles.AIR, tiles.idOf('voidstone'), tiles.idOf('void-crystal')]) {
+    check(found.has(id), 'Void sample at ' + altitude + ' is missing ' + tiles.tile(id).key);
+  }
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;
@@ -693,7 +722,7 @@ console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleStrin
   + ' water cells all inside their basins, ' + undergroundWater.toLocaleString()
   + ' of them in flooded caves; all ' + DECOR.length + ' foliage types grow; all '
   + gen.LAYERS.length + ' vertical layers hold their own content and hell\'s hall stayed open and floored at '
-  + hallsChecked.toLocaleString() + ' depths down to 60,000');
+  + hallsChecked.toLocaleString() + ' hall samples');
 
 console.log('foliage stamped at the surface across 3 seeds:');
 for (const [key, n] of Object.entries(propCounts).sort((a, b) => b[1] - a[1])) {
