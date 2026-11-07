@@ -284,6 +284,25 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
   }
 }
 
+{
+  const ordered = craft.BOSS_CHAPTERS.flat();
+  const summoned = Object.values(craft.ITEMS).flatMap(item => item.use?.summon ? [item.use.summon] : []);
+  ok(new Set(ordered).size === ordered.length && summoned.length === ordered.length
+    && summoned.every(key => ordered.includes(key)), 'boss order must cover each summon once');
+  const defeated = new Set();
+  for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
+    ok(craft.bossPrerequisite(main, defeated) === null, main + ' cannot be reached in order');
+    for (const boss of optional) ok(craft.bossPrerequisite(boss, defeated) === main, boss + ' unlocks too early');
+    const next = craft.BOSS_CHAPTERS[index + 1]?.[0];
+    if (next) ok(craft.bossPrerequisite(next, defeated) === main, next + ' bypasses ' + main);
+    defeated.add(main);
+    for (const boss of optional) ok(craft.bossPrerequisite(boss, defeated) === null, boss + ' stays locked');
+  }
+  const legacy = craft.restoreBossProgress(['ashguardian']);
+  ok(legacy.has('kingslime') && legacy.has('furnacewarden') && !legacy.has('voidsovereign'),
+    'legacy boss progress was not carried forward correctly');
+}
+
 // --- 4. nothing is reachable before the thing that is supposed to gate it -----------------
 // A gem staff cannot be makeable before its gem, and a tier of armour cannot be makeable
 // before its bar. Stated as a rule over the recipes rather than case by case.
