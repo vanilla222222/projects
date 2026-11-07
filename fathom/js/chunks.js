@@ -59,6 +59,7 @@ function makeWorld(seed, generator) {
   const explored = new Map();
   const dirty = new Set();
   let renderRevision = 0;
+  let liquidRevision = 0;
 
   // A one-entry memo in front of the chunk map. Every read of the world goes through
   // here, and every one of them was building the string `cx + ':' + cy` and hashing it:
@@ -171,8 +172,7 @@ function makeWorld(seed, generator) {
   // Water can occupy any tile that is not solid, not only a water tile: a shell or a
   // frond on the sea bed is waterlogged rather than a hole in the ocean. The stored map
   // is an override over the generator's answer, the same shape as tile and wall edits.
-  function getLevel(x, y) {
-    const id = get(x, y);
+  function getLevel(x, y, id = get(x, y)) {
     if (generator.isSolidId(id)) return 0;
     const cx = Math.floor(x / generator.CHUNK);
     const cy = Math.floor(y / generator.CHUNK);
@@ -200,6 +200,7 @@ function makeWorld(seed, generator) {
     let slot = levels.get(key);
 
     const base = generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
+    liquidRevision += 1;
     if (amount === 0) {
       if (generator.isLiquidId(get(x, y))) set(x, y, 0);
       // Only store a zero when the generator would have said otherwise: draining a tile
@@ -387,6 +388,7 @@ function makeWorld(seed, generator) {
     getContainer, setContainer, clearContainer,
     markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },
+    get liquidRevision() { return liquidRevision; },
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }
 
