@@ -150,6 +150,13 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'dune-fang': { name: 'Dune Fang', kind: 'loot', colour: '#d9be89' },
+  'storm-plume': { name: 'Storm Plume', kind: 'loot', colour: '#e6bf69' },
+  'scourge-scale': { name: 'Scourge Scale', kind: 'loot', colour: '#cd9b63' },
+  'storm-feather': { name: 'Storm Feather', kind: 'use', colour: '#e6bf69',
+    use: { summon: 'thunderbird', layer: 'surface', biome: 'desert' }, text: 'Summon on the Desert surface' },
+  'desert-medallion': { name: 'Desert Medallion', kind: 'use', colour: '#cd9b63',
+    use: { summon: 'desertscourge', layer: 'caves', biome: 'desert' }, text: 'Summon in the Underground Desert' },
   'mimic-tooth': { name: 'Mimic Tooth', kind: 'loot', colour: '#ecd9a9' },
   'briar-heart': { name: 'Briar Heart', kind: 'loot', colour: '#b2a75a' },
   'rootcrown-core': { name: 'Root Crown Core', kind: 'loot', colour: '#a6806f' },
@@ -277,6 +284,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'storm-crest': { name: 'Storm Crest', colour: '#e6bf69', text: 'Arrows deal 12% more damage and move 25% faster', ranged: 1.12, arrowSpeed: 1.25 },
+  'scourge-guard': { name: 'Scourge Guard', colour: '#cd9b63', text: 'Defence +6 and mining power +8%', defense: 6, power: 1.08 },
+  'dune-clasp': { name: 'Dune Clasp', colour: '#d9be89', text: 'Move 10% faster and pick up items from farther away', speed: 1.10, pickup: 1.35 },
+
   'briar-brooch': { name: 'Briar Brooch', colour: '#b2a75a', text: 'Defence +4 and health regenerates 25% faster', defense: 4, regen: 1.25 },
   'rootcrown-ring': { name: 'Root Crown Ring', colour: '#a6806f', text: 'Melee damage +15% and defence +5', melee: 1.15, defense: 5 },
   'mimic-clasp': { name: 'Mimic Clasp', colour: '#ecd9a9', text: 'Pick up items from farther away', pickup: 1.65 },
@@ -743,6 +754,11 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'storm-feather', kind: 'use', count: 1 }, need: [['feather', 8], ['topaz', 2], ['copper-bar', 2]], station: 'anvil' },
+  { out: { key: 'desert-medallion', kind: 'use', count: 1 }, need: [['wormtooth', 5], ['chitin', 6], ['iron-bar', 3]], station: 'anvil' },
+  { out: { key: 'storm-crest', kind: 'accessory', count: 1 }, need: [['storm-plume', 1], ['copper-bar', 4]], station: 'anvil' },
+  { out: { key: 'scourge-guard', kind: 'accessory', count: 1 }, need: [['scourge-scale', 1], ['iron-bar', 6]], station: 'anvil' },
+  { out: { key: 'dune-clasp', kind: 'accessory', count: 1 }, need: [['dune-fang', 2], ['silver-bar', 3]], station: 'anvil' },
   { out: { key: 'briar-idol', kind: 'use', count: 1 }, need: [['oaklog', 10], ['chitin', 4], ['copper-bar', 3]], station: 'anvil' },
   { out: { key: 'rootcrown-idol', kind: 'use', count: 1 }, need: [['oaklog', 12], ['crystal', 5], ['gold-bar', 3]], station: 'anvil' },
   { out: { key: 'briar-brooch', kind: 'accessory', count: 1 }, need: [['briar-heart', 1], ['copper-bar', 3]], station: 'anvil' },

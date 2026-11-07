@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 68 enemies including ten bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 81 enemies including twelve bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -211,3 +211,13 @@ opened or struck.
 The Briar Warden and Root Crown are optional summons. Use a Briar Idol on the
 Forest surface or a Root Crown Idol in its deep caverns. Each drops a material for
 its own accessory. The Mimic Clasp uses teeth from a Heartwood Mimic.
+
+
+### Desert expansion
+
+Find the Caravan Rest on the surface, the Buried Cistern in the caves, and the
+Amber Tomb in the deep Desert. Some tomb chests awaken as Dune Mimics.
+
+Use a Storm Feather on the Desert surface to summon Thunderbird or a Desert
+Medallion in the Underground Desert to summon the burrowing Desert Scourge.
+Both are optional and reward materials for their own accessories.
