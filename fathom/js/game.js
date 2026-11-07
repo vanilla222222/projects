@@ -1428,13 +1428,75 @@ function makeGame(canvas, deps) {
     state.camera.x += (target.x + target.width / 2 - state.camera.x) * lerp;
     state.camera.y += (target.y + target.height / 2 - state.camera.y) * lerp;
 
+  }
+
+  let chunkWorker = null;
+  let chunkJob = null;
+  let lastChunkBounds = '';
+  let chunkBounds = null;
+  function startChunkWorker() {
+    if (chunkWorker) chunkWorker.terminate();
+    chunkWorker = null;
+    chunkJob = null;
+    lastChunkBounds = '';
+    if (typeof Worker !== 'function') return;
+    try {
+      const worker = new Worker('workers/chunk.js');
+      chunkWorker = worker;
+      worker.onmessage = ({ data }) => {
+        if (chunkWorker !== worker || !chunkJob) return;
+        const { cx, cy, world: targetWorld } = chunkJob;
+        chunkJob = null;
+        if (targetWorld !== world || cx < chunkBounds.left || cx > chunkBounds.right
+          || cy < chunkBounds.top || cy > chunkBounds.bottom) return;
+        world.acceptGeneratedChunk(cx, cy, data);
+      };
+      worker.onerror = () => {
+        if (chunkWorker !== worker) return;
+        worker.terminate();
+        chunkWorker = null;
+        chunkJob = null;
+      };
+    } catch {
+      // Chunk reads still generate synchronously if workers are unavailable.
+    }
+  }
+
+  function maintainChunks() {
     const size = texture.TILE * state.camera.zoom;
-    const cols = Math.ceil(canvas.width / size) + 2;
-    const rows = Math.ceil(canvas.height / size) + 2;
-    const cx = Math.floor(state.camera.x / worldgen.CHUNK);
-    const cy = Math.floor(state.camera.y / worldgen.CHUNK);
-    const span = Math.ceil(Math.max(cols, rows) / worldgen.CHUNK) + 2;
-    world.evictOutside(cx - span, cy - span, cx + span, cy + span);
+    const chunkSize = worldgen.CHUNK;
+    const cx = Math.floor(state.camera.x / chunkSize);
+    const cy = Math.floor(state.camera.y / chunkSize);
+    const span = Math.ceil(Math.max(canvas.width, canvas.height) / (size * chunkSize)) + 2;
+    const key = cx + ':' + cy + ':' + span;
+    if (key !== lastChunkBounds) {
+      chunkBounds = { left: cx - span, top: cy - span, right: cx + span, bottom: cy + span };
+      world.evictOutside(chunkBounds.left, chunkBounds.top, chunkBounds.right, chunkBounds.bottom);
+      lastChunkBounds = key;
+    }
+    if (!chunkWorker || chunkJob) return;
+    const halfWidth = canvas.width / (size * 2);
+    const halfHeight = canvas.height / (size * 2);
+    const left = Math.floor((state.camera.x - halfWidth - 3) / chunkSize) - 1;
+    const right = Math.floor((state.camera.x + halfWidth + 3) / chunkSize) + 1;
+    const top = Math.floor((state.camera.y - halfHeight - 3) / chunkSize) - 1;
+    const bottom = Math.floor((state.camera.y + halfHeight + 3) / chunkSize) + 1;
+    let next = null;
+    let closest = Infinity;
+    const aheadX = state.camera.x / chunkSize + Math.sign(state.player.vx || 0) * 0.8;
+    const aheadY = state.camera.y / chunkSize + Math.sign(state.player.vy || 0) * 0.8;
+    for (let y = top; y <= bottom; y += 1) {
+      for (let x = left; x <= right; x += 1) {
+        const distance = (x + 0.5 - aheadX) ** 2 + (y + 0.5 - aheadY) ** 2;
+        if (distance >= closest || world.hasChunk(x, y)) continue;
+        closest = distance;
+        next = { cx: x, cy: y };
+      }
+    }
+    if (next) {
+      chunkJob = { ...next, world };
+      chunkWorker.postMessage({ ...next, seed });
+    }
   }
 
   let accumulator = 0;
@@ -1444,9 +1506,10 @@ function makeGame(canvas, deps) {
     const dt = previous ? Math.min(0.25, (now - previous) / 1000) : 0;
     previous = now;
     if (!state.paused) {
-      accumulator += dt;
+      // Bound catch-up after a stall so one slow frame does not trigger another.
+      accumulator = Math.min(accumulator + dt, STEP * 10);
       let guard = 0;
-      while (accumulator >= STEP && guard < 240) {
+      while (accumulator >= STEP && guard < 10) {
         simulate(STEP);
         accumulator -= STEP;
         state.time += STEP;
@@ -1454,6 +1517,7 @@ function makeGame(canvas, deps) {
       }
     }
     lastView = renderer.draw(state);
+    maintainChunks();
     if (minimap && (minimap.isLarge || !window.matchMedia?.('(max-width: 900px)').matches)) minimap.draw(state, dt);
     drawAim();
     if (now - lastUISync >= (ui.isOpen ? 40 : 100)) {
@@ -1643,6 +1707,7 @@ function makeGame(canvas, deps) {
     seed = choice.world.seed;
 
     world = chunks.makeWorld(seed, worldgen);
+    startChunkWorker();
     if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
@@ -1799,6 +1864,7 @@ function makeGame(canvas, deps) {
       simulate(Math.min(STEP, left));
       left -= STEP;
     }
+    maintainChunks();
   }
 
   function useBedAt(x, y) {

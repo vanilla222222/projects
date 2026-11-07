@@ -283,7 +283,21 @@ function makeRenderer(canvas, deps) {
   const EDGE_TOP = 'rgba(255,255,255,0.16)';
   const EDGE_BOTTOM = 'rgba(0,0,0,0.28)';
   const EDGE_SIDE = 'rgba(0,0,0,0.16)';
-  const GRASS_FRINGE = '#5f9440';
+  const SURFACE_DETAIL = {
+    grass: ['#6c9e47', '#a8bd62'],
+    junglegrass: ['#438d5a', '#81bd63'],
+    peat: ['#777b45', '#a6ac65'],
+    snow: ['#9dc2cf', '#dff5f4'],
+    sand: ['#b98c54', '#e0b978'],
+    redclay: ['#a45e4d', '#d9956e'],
+    stone: ['#777784', '#a0a4b2'],
+    blightgrass: ['#845ca1', '#b986c9'],
+    fleshgrass: ['#a64d61', '#d68186']
+  };
+  const GRASS_PALETTES = {
+    forest: ['#49834d', '#83a855'],
+    savanna: ['#a08442', '#d8b965']
+  };
 
   function drawTiles(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
@@ -372,16 +386,29 @@ function makeRenderer(canvas, deps) {
           if (e.left) ctx.fillRect(sx, sy, lip, size);
           if (e.right) ctx.fillRect(sx + size - lip, sy, lip, size);
         }
-        if (e.top && spec.key === 'grass') {
-          ctx.fillStyle = GRASS_FRINGE;
-          ink = GRASS_FRINGE;
-          ctx.fillRect(sx, sy - lip, size, lip);
-          const bend = Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom * 1.6;
-          for (let i = 0; i < 3; i += 1) {
-            const gx = sx + (i * 5 + (texture.variantFor(wx, wy + i) * 3)) % (size - 2);
-            const h = lip * (2 + ((wx + i) % 3));
-            ctx.fillRect(gx + bend, sy - h, Math.max(1, Math.round(zoom)), h);
+        const detail = SURFACE_DETAIL[spec.key];
+        if (e.top && detail && sample.ids[at - sample.stride] === tiles.AIR
+          && wy === cachedSurface(state.world, wx)) {
+          const palette = spec.key === 'grass'
+            ? GRASS_PALETTES[worldgen.biomeAt(state.world.seed, wx).key] || detail
+            : detail;
+          const foliage = spec.key.endsWith('grass') || spec.key === 'peat';
+          const width = Math.max(1, Math.round(zoom));
+          const start = sx + Math.floor(size * (variant % 4 + 1) / 6);
+          ctx.fillStyle = palette[0];
+          if (foliage) {
+            const height = lip * (variant % 3 + 2);
+            const bend = wind ? Math.round(Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom) : 0;
+            ctx.fillRect(start, sy - height + lip, width, height);
+            ctx.fillStyle = palette[1];
+            ctx.fillRect(start + bend, sy - height, width, lip);
+            if (variant % 2 === 0) ctx.fillRect(start + 2 * width, sy - lip, width, lip);
+          } else if (variant % 2 === 0) {
+            ctx.fillRect(start, sy, width * 3, lip);
+            ctx.fillStyle = palette[1];
+            ctx.fillRect(start + width, sy - lip, width * 2, lip);
           }
+          ink = ctx.fillStyle;
         }
       }
     }
@@ -400,8 +427,8 @@ function makeRenderer(canvas, deps) {
 
   // What liquid, if any, stands in this cell: the tile if it is a liquid, or the water
   // logged into a shell or a frond standing on the sea bed.
-  function liquidKindAt(state, x, y) {
-    const spec = tiles.tile(state.world.get(x, y));
+  function liquidKindAt(state, x, y, id) {
+    const spec = tiles.tile(id);
     if (spec.liquid) {
       const level = state.world.getLevel ? state.world.getLevel(x, y) : 255;
       return level > 0 ? (spec.hot ? 'lava' : 'water') : null;
@@ -411,7 +438,7 @@ function makeRenderer(canvas, deps) {
     return wet > 0 ? 'water' : null;
   }
 
-  function drawLiquidDetail(state, view) {
+  function drawLiquidDetail(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const t = state.time || 0;
@@ -423,14 +450,18 @@ function makeRenderer(canvas, deps) {
     const runs = [];
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
+      const column = tx + 1;
+      const kindAt = (ty) => liquidKindAt(state, wx, y0 + ty,
+        sample.ids[(ty + 1) * sample.stride + column]);
       let ty = 0;
       while (ty < rows) {
-        const kind = liquidKindAt(state, wx, y0 + ty);
+        const kind = kindAt(ty);
         if (!kind) { ty += 1; continue; }
-        let end = ty;
-        while (end < rows && liquidKindAt(state, wx, y0 + end) === kind) end += 1;
+        let end = ty + 1;
+        while (end < rows && kindAt(end) === kind) end += 1;
         const level = state.world.getLevel ? state.world.getLevel(wx, y0 + ty) : 255;
-        const brimming = level >= 250 || liquidKindAt(state, wx, y0 + ty - 1) === kind;
+        const above = kindAt(ty - 1);
+        const brimming = level >= 250 || above === kind;
         const frac = brimming ? 1 : Math.max(0.08, level / 255);
         runs.push({
           tx,
@@ -438,8 +469,7 @@ function makeRenderer(canvas, deps) {
           kind,
           topY: ty * size - offsetY + size * (1 - frac),
           botY: end * size - offsetY,
-          open: !liquidKindAt(state, wx, y0 + ty - 1)
-            && !tiles.isSolid(state.world.get(wx, y0 + ty - 1))
+          open: !above && !tiles.isSolid(sample.ids[ty * sample.stride + column])
         });
         ty = end;
       }
@@ -1133,7 +1163,7 @@ function makeRenderer(canvas, deps) {
       terrainQuads = terrain.end();
       screen.drawImage(terrain.canvas, 0, 0);
     });
-    phase('water', () => drawLiquidDetail(state, view));
+    phase('water', () => drawLiquidDetail(state, view, sample));
     phase('drops', () => drawDrops(state, view));
     phase('enemies', () => drawEnemies(state, view));
     phase('villagers', () => drawVillagers(state, view));

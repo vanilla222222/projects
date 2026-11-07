@@ -76,22 +76,21 @@ function makeWorld(seed, generator) {
     memoChunk = null;
   }
 
-  function chunkAt(cx, cy) {
-    if (cx === memoCx && cy === memoCy) return memoChunk;
+  function acceptGeneratedChunk(cx, cy, chunk) {
     const key = chunkKey(cx, cy);
-    let chunk = loaded.get(key);
-    if (chunk) {
-      memoCx = cx;
-      memoCy = cy;
-      memoChunk = chunk;
-      return chunk;
-    }
-    chunk = generator.generateChunk(seed, cx, cy);
+    if (loaded.has(key)) return loaded.get(key);
     const diff = edits.get(key);
     if (diff) for (const [index, id] of diff) chunk.tiles[index] = id;
     const wallDiff = wallEdits.get(key);
     if (wallDiff) for (const [index, id] of wallDiff) chunk.walls[index] = id;
     loaded.set(key, chunk);
+    return chunk;
+  }
+
+  function chunkAt(cx, cy) {
+    if (cx === memoCx && cy === memoCy) return memoChunk;
+    const chunk = loaded.get(chunkKey(cx, cy))
+      || acceptGeneratedChunk(cx, cy, generator.generateChunk(seed, cx, cy));
     memoCx = cx;
     memoCy = cy;
     memoChunk = chunk;
@@ -386,7 +385,7 @@ function makeWorld(seed, generator) {
 
   return { seed, get, set, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
     getContainer, setContainer, clearContainer,
-    markExplored, isExplored, exploredCount, chunkAt, evictOutside, editCount, serialize, restore,
+    markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },
     get loadedCount() { return loaded.size; }, takeDirty() { const d = [...dirty]; dirty.clear(); return d; } };
 }

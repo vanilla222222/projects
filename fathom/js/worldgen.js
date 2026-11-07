@@ -682,7 +682,7 @@ function structureRect(seed, body) {
 // live inline in structureTileAt, so a test that asked structureAt where the rooms were
 // got told about rooms that never appear - the third time a rule has existed in two
 // places in this file and the two have disagreed.
-function structurePlaced(seed, slot) {
+function computeStructurePlaced(seed, slot) {
   const body = structureAt(seed, slot);
   if (!body) return null;
   const rect = structureRect(seed, body);
@@ -699,8 +699,8 @@ const STRUCTURE_STATIONS = ['workbench', 'furnace', 'anvil'];
 // Where a structure keeps its chest, if it has one, as an absolute origin. A cabin
 // almost always has one and a ruin often does; a grotto is a natural chamber and a
 // mineshaft was stripped before it was abandoned.
-function structureChest(seed, slot) {
-  const r = structurePlaced(seed, slot);
+function computeStructureChest(seed, slot) {
+  const r = cachedStructurePlaced(seed, slot);
   if (!r) return null;
   const odds = r.kind === 'cabin' ? 0.86 : r.kind === 'ruin' ? 0.5 : 0;
   if (odds === 0) return null;
@@ -714,11 +714,28 @@ function structureChest(seed, slot) {
   return { x, y, kind, band, slot };
 }
 
+// Cache empty slots as well as occupied ones. Each cell in a chunk checks the same
+// nearby slots, and the direct-mapped cache stays bounded as the player travels.
+function cacheStructure(compute) {
+  const entries = new Array(256);
+  return (seed, slot) => {
+    const index = slot & 255;
+    const entry = entries[index];
+    if (entry && entry.seed === seed && entry.slot === slot) return entry.value;
+    const value = compute(seed, slot);
+    entries[index] = { seed, slot, value };
+    return value;
+  };
+}
+
+const cachedStructurePlaced = cacheStructure(computeStructurePlaced);
+const cachedStructureChest = cacheStructure(computeStructureChest);
+
 // The chest tile at a position, if a structure put one there.
 function chestTileAt(seed, x, y) {
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
-    const chest = structureChest(seed, s);
+    const chest = cachedStructureChest(seed, s);
     if (!chest) continue;
     const dx = x - chest.x;
     const dy = y - chest.y;
@@ -740,7 +757,7 @@ function lootKindOf(key) {
 function baseContainerAt(seed, x, y) {
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
-    const chest = structureChest(seed, s);
+    const chest = cachedStructureChest(seed, s);
     if (!chest || chest.x !== x || chest.y !== y) continue;
     return rollChest(seed, x, y, chest.band, { unit, kindOf: lootKindOf });
   }
@@ -750,7 +767,7 @@ function baseContainerAt(seed, x, y) {
 function structureTileAt(seed, x, y) {
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
-    const r = structurePlaced(seed, s);
+    const r = cachedStructurePlaced(seed, s);
     if (!r) continue;
     const body = r.body;
     if (x < r.x0 || x >= r.x1 || y < r.y0 || y >= r.y1) continue;
@@ -810,7 +827,7 @@ function structureTileAt(seed, x, y) {
 function structureWallAt(seed, x, y) {
   const slot = Math.floor(x / STRUCTURE_SPACING);
   for (let s = slot - 1; s <= slot + 1; s += 1) {
-    const r = structurePlaced(seed, s);
+    const r = cachedStructurePlaced(seed, s);
     if (!r) continue;
     if (x < r.x0 || x >= r.x1 || y < r.y0 || y >= r.y1) continue;
     if (y < columnOf(seed, x).height + 8) continue;
@@ -949,8 +966,7 @@ function weatherAt(seed, at, biomeKey) {
   return { rain, wind, snow: cold ? 1 : 0 };
 }
 
-function baseTileAt(seed, x, y) {
-  const column = columnOf(seed, x);
+function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
   const surface = column.height;
   // Above the ground: air, unless this column's ground lies below sea level, in which
   // case everything between the two is water. That single rule is the whole ocean.
@@ -1372,8 +1388,7 @@ function decorate(write, seed, x, yFrom, yTo) {
 // The wall behind a tile, which is what remains visible when the block is mined out. It is
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
-function baseWallAt(seed, x, y) {
-  const column = columnOf(seed, x);
+function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
   const depth = y - column.height;
   if (depth < 0) {
     // A sky structure carries its own wall, so digging into an island leaves a room
@@ -1463,10 +1478,13 @@ function generateChunk(seed, cx, cy) {
   const walls = new Uint16Array(CHUNK * CHUNK);
   const x0 = cx * CHUNK;
   const y0 = cy * CHUNK;
-  for (let ty = 0; ty < CHUNK; ty += 1) {
-    for (let tx = 0; tx < CHUNK; tx += 1) {
-      tiles[ty * CHUNK + tx] = baseTileAt(seed, x0 + tx, y0 + ty);
-      walls[ty * CHUNK + tx] = baseWallAt(seed, x0 + tx, y0 + ty);
+  for (let tx = 0; tx < CHUNK; tx += 1) {
+    const x = x0 + tx;
+    const column = columnOf(seed, x);
+    for (let ty = 0; ty < CHUNK; ty += 1) {
+      const index = ty * CHUNK + tx;
+      tiles[index] = baseTileAt(seed, x, y0 + ty, column);
+      walls[index] = baseWallAt(seed, x, y0 + ty, column);
     }
   }
   const write = (wx, wy, id) => {
@@ -1498,10 +1516,10 @@ const EXPORTS_worldgen = {
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
-    STRUCTURE_SPACING, structureAt, structureRect, structurePlaced, structureTileAt, structureWallAt,
+    STRUCTURE_SPACING, structureAt, structureRect, structurePlaced: computeStructurePlaced, structureTileAt, structureWallAt,
     crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD,
     bloodMoonAt, BLOOD_MOON_ODDS, BLOOD_MOON_GRACE, meteorSite, METEOR_MIN, METEOR_MAX, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
-    structureChest, chestTileAt, baseContainerAt,
+    structureChest: computeStructureChest, chestTileAt, baseContainerAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
     biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
