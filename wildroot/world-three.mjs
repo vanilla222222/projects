@@ -1,4 +1,5 @@
 import {ORBIT_JOBS,ORBIT_ADVANCEMENTS,ORBIT_SECRETS} from './world-three-content.mjs';
+import {recordQuestAction} from './quest-content.mjs?v=45';
 import {canPay,pay,give} from './inventory.mjs?v=45';
 import {roomLayout,pointFor} from './layouts.mjs?v=49';
 
@@ -16,6 +17,7 @@ export function workOrbitJob(s,c,skill,now=Date.now()){
   delete c.orbitJobs[skill];
   give(c,d.output,yieldCount);
   c.skills[skill]+=48;
+  recordQuestAction(c,'orbit:'+skill);
   return 'Collected '+d.name+' output and earned 48 XP.';
  }
  if(!d?.canStart||!pay(s,d.cost,c))return '';
@@ -27,7 +29,7 @@ export function orbitSecretReason(c,id){
  const d=ORBIT_SECRETS[id];
  if(!d)return '';
  if(d.level&&1+Math.floor(Math.sqrt(c.skills.cartography/12))<d.level)return 'Reach Cartography level '+d.level+' to read this hidden route.';
- if(id==='singularity'&&((c.journey.kills['orbit-rim-5']||0)<180||c.skills.cartography<108))return 'Reach Cartography level 4 and defeat 180 Gravity Knights in Gravity Well.';
+ if(id==='singularity'&&((c.journey.kills['orbit-rim-5']||0)<45||c.skills.cartography<108))return 'Reach Cartography level 4 and defeat 45 Gravity Knights in Gravity Well.';
  return '';
 }
 export function validateOrbitJobs(c){

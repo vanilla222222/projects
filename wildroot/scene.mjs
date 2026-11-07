@@ -1,5 +1,6 @@
 import {drawRock,drawResourceArt} from './environment-art.mjs?v=50';
 import {drawCharacter} from './player-art.mjs?v=50';
+import {ORBIT_NPCS} from './orbit-campaign.mjs';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {drawItemTexture} from './item-textures.mjs?v=50';
 import {drawAttackEffects,bossHudLayout} from './combat-effects.mjs?v=45';
@@ -19,7 +20,51 @@ function enemy(g,x,y,e,t,boss=false){drawMonsterArt(g,e,x,y,t,boss);}
 import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=49';
 function label(g,text,x,y,color='#fff8db',size=14){g.font=`bold ${size}px Trebuchet MS, sans-serif`;g.textAlign='center';g.fillStyle='#172d38';g.fillText(text,x+1,y+2);g.fillStyle=color;g.fillText(text,x,y);}
 function platform(g,p,cave){const y=p.y;R(p.x,y,p.w,18,cave?'#687e82':'#6eab43',g);R(p.x,y+18,p.w,18,cave?'#50646f':'#7a643c',g);R(p.x,y+36,p.w,p.y===GROUND?90:26,cave?'#364757':'#514c35',g);for(let x=p.x;x<p.x+p.w;x+=32){R(x,y,24,5,cave?'#8da6a3':'#a9d467',g);R(x+8,y+25,8,6,cave?'#749091':'#ae925a',g);R(x+17,y+48,12,5,cave?'#465e6e':'#6d603f',g);}if(!cave)for(let x=p.x+8;x<p.x+p.w;x+=43){R(x,y-5,3,7,'#74ae45',g);R(x+4,y-10,3,12,'#a6cf61',g);}}
-function portal(g,e,t,locked=false,progress=''){g.save();g.translate(e.x,e.y);const color=locked?'#687786':'#5ed5ff';for(let i=3;i>=0;i--){g.strokeStyle=[color+'20',color+'40',color+'80',color][3-i];g.lineWidth=7+i*4;g.beginPath();g.ellipse(0,-62,27+i*2,52+i*3,0,0,Math.PI*2);g.stroke();}R(-43,-8,86,13,'#65788a',g);R(-32,-15,64,8,'#a1b0b1',g);g.fillStyle='#143c6377';g.beginPath();g.ellipse(0,-64,23,49,0,0,Math.PI*2);g.fill();for(let i=0;i<6;i++){const phase=t*1.1+i;R(Math.sin(phase)*17,-60+Math.cos(phase*1.5)*39,3,5,'#d0f9ff',g);}label(g,e.name==='The Rootwarden'?'BOSS GATE':e.name,e.direction<0?55:e.direction>0?-55:0,-135,'#d8f6ff',10);if(progress)label(g,progress,e.direction<0?55:e.direction>0?-55:0,-115,'#ffe3a8',11);g.restore();}
+function propPalette(area){
+ if(area.startsWith('orbit-'))return {frame:'#454b72',trim:'#afa0dc',shadow:'#292d4b',accent:'#83dfdf',fill:'#3d657b'};
+ if(area.startsWith('tide-'))return {frame:'#536f6c',trim:'#d1b58b',shadow:'#2a444b',accent:'#b3e1cc',fill:'#426f77'};
+ if(['caves','deep','depths'].includes(area))return {frame:'#596474',trim:'#b3a685',shadow:'#303646',accent:'#e8b878',fill:'#66596e'};
+ return {frame:'#765c46',trim:'#c5a374',shadow:'#413d38',accent:'#c0d592',fill:'#587061'};
+}
+function portal(g,e,t,locked,progress,area){
+ const {frame,trim,shadow,accent,fill}=propPalette(area),orbital=area.startsWith('orbit-');
+ const light=locked?'#7a8588':accent,ink='#25303a';
+ g.save();g.translate(e.x,e.y);
+ R(-36,-86,72,83,ink,g);R(-29,-100,58,15,ink,g);R(-19,-107,38,8,ink,g);
+ R(-31,-84,62,78,frame,g);R(-26,-96,52,13,frame,g);R(-17,-103,34,8,trim,g);
+ R(-23,-83,46,77,shadow,g);R(-15,-91,30,9,shadow,g);
+ if(!locked){
+  R(-20,-81,40,74,fill,g);
+  const band=Math.floor((t*25)%54);
+  R(-18,-76+band,36,3,accent+'88',g);
+  R(-8,-62+(band+22)%47,16,2,accent,g);
+ }else{
+  for(let y=-79;y<-18;y+=13)R(-19,y,38,4,frame,g);
+  R(-8,-49,16,13,ink,g);R(-5,-57,10,10,trim,g);R(-3,-54,6,6,shadow,g);
+ }
+ for(const x of [-32,27]){
+  R(x,-81,5,69,trim,g);R(x,-72,5,orbital?43:6,light,g);
+  R(x,-23,5,5,light,g);
+ }
+ R(-7,-102,14,7,light,g);R(-42,-8,84,8,ink,g);R(-37,-8,74,4,trim,g);
+ const caption=e.direction<0?55:e.direction>0?-55:0;
+ label(g,e.name==='The Rootwarden'?'BOSS GATE':e.name,caption,-130,'#e5f1dc',10);
+ if(progress)label(g,progress,caption,-113,'#ffe3a8',11);
+ g.restore();
+}
+function statueKeeper(g,x,y){
+ const stone='#6f827b',light='#aeb8a0',shadow='#394b4a',gold='#e1c17c';
+ R(x-44,y-13,88,13,shadow,g);R(x-37,y-23,74,12,light,g);
+ R(x-26,y-39,52,16,stone,g);R(x-18,y-78,36,39,shadow,g);
+ R(x-14,y-76,28,37,stone,g);R(x-11,y-105,23,29,shadow,g);
+ R(x-9,y-101,18,18,light,g);R(x-15,y-108,31,7,stone,g);
+ R(x-6,y-94,12,3,shadow,g);
+ R(x-22,y-74,12,25,light,g);R(x+10,y-74,12,25,stone,g);
+ R(x-15,y-61,30,12,shadow,g);R(x-10,y-62,20,8,gold,g);
+ R(x-6,y-62,3,5,'#f6dfa0',g);
+ for(const dx of [-22,14]){R(x+dx,y-14,8,5,'#718c68',g);R(x+dx+2,y-18,4,5,'#8aa47d',g);}
+ label(g,'STATUE KEEPER',x,y-128,'#e6e6bf',12);
+}
 function shop(g,{x,y,name},area){
  const orbit=area.startsWith('orbit-'),coastal=area.startsWith('tide-'),ink='#25303e';
  const [frame,trim,accent]=orbit?['#505781','#a99ae3','#8ce6e5']:coastal?['#537b7c','#ddba87','#f3e2ba']:['#82543e','#d5995f','#e8c66f'];
@@ -73,14 +118,14 @@ export function drawWorld(canvas,world,t,reduced=false){
  for(const p of map.platforms)if(p.y>=v.y-100&&p.y<=v.y+850)drawRoomPlatform(g,p,map.layout.design);
  for(const l of map.ladders){if(!visible(l.x,l.bottom,32,l.bottom-l.top+12))continue;R(l.x-17,l.top-7,10,l.bottom-l.top+14,'#24383c',g);R(l.x+8,l.top-7,10,l.bottom-l.top+14,'#24383c',g);R(l.x-15,l.top-5,5,l.bottom-l.top+10,'#92704e',g);R(l.x+10,l.top-5,5,l.bottom-l.top+10,'#92704e',g);R(l.x-15,l.top-5,2,l.bottom-l.top+10,'#c4a475',g);for(let y=l.top+5;y<l.bottom;y+=21){if(y<v.y-25||y>v.y+v.height+25)continue;R(l.x-16,y-1,33,8,'#24383c',g);R(l.x-14,y,29,4,'#d0b37e',g);}}
 
- for(const e of map.facilities||[]){if(!visible(e.x,e.y,170,260))continue;const x=e.x,y=e.y;if(e.kind==='survey'){R(x-28,y-35,56,35,'#8d6f4d',g);R(x-32,y-45,64,13,'#c4a66b',g);R(x-5,y-35,10,18,'#e2cc7c',g);R(x+40,y-110,5,110,'#9c8d6c',g);R(x+45,y-110,40,35,map.layout.design.trim,g);label(g,'SURVEY CACHE',x,y-135,'#e7e4b4',11);}else if(e.kind==='telescope'){R(x-9,y-75,18,75,'#725a3e',g);g.save();g.translate(x,y-90);g.rotate(-.4);R(-55,-15,110,31,'#b6955b',g);R(28,-21,35,43,'#657f86',g);R(45,-17,9,35,'#b2e9ef',g);g.restore();label(g,'CROWN TELESCOPE',x,y-155,'#ffe4a4',13);}else if(e.kind==='constellation'){g.strokeStyle='#b6e2ef';g.lineWidth=2;g.beginPath();for(let i=0;i<5;i++){const xx=x+Math.sin(i*2.3)*32,yy=y-70+Math.cos(i*2.3)*28;i?g.lineTo(xx,yy):g.moveTo(xx,yy);R(xx-3,yy-3,6,6,'#fff3b5',g);}g.stroke();label(g,e.name,x,y-125,'#c5e7ed',11);}else if(e.kind==='dungeon'){R(x-64,y-130,128,130,'#637c70',g);R(x-45,y-110,90,110,'#213e35',g);R(x-68,y-141,136,18,'#9bab82',g);R(x-13,y-90,26,32,'#a4dbb3',g);label(g,'MOSSROOT RUINS',x,y-166,'#bbebc8',12);}else if(e.kind==='bossboard'){R(x-47,y-126,94,100,'#755543',g);R(x-55,y-137,110,17,'#bc9a60',g);R(x-32,y-108,64,62,'#dbcc99',g);label(g,'HUNT BOARD',x,y-162,'#f8dca0',12);}else if(e.kind==='arena'){R(x-37,y-103,74,90,'#78543e',g);R(x-44,y-113,88,15,'#c69e60',g);label(g,'⚔',x,y-49,'#f2d385',35);label(g,'SOLO TRIALS',x,y-140,'#ffdf95',12);}else if(e.kind==='orbit-job'){R(x-55,y-62,110,62,'#424774',g);R(x-59,y-72,118,12,'#a78bdf',g);R(x-34,y-53,68,26,'#6ebaca',g);label(g,e.name.toUpperCase(),x,y-101,'#e1d4ff',12);}else if(e.kind==='advancement'){R(x-30,y-90,60,90,'#657f8b',g);R(x-38,y-100,76,14,'#d8bb7c',g);label(g,'Ⅱ',x,y-45,'#fff1b8',30);label(g,'TIER 2 PATHFINDER',x,y-130,'#ffe2a3',12);}else if(e.kind==='shop'){shop(g,e,map.area);}else if(e.kind==='vault'){R(x-40,y-85,80,85,'#5b6874',g);R(x-35,y-79,70,73,'#a69a73',g);R(x-27,y-70,54,54,'#384958',g);R(x-5,y-50,10,23,'#e6c875',g);label(g,'UPGRADE VAULT',x,y-115,'#ffe1a1',12);}else if(e.kind==='tasks'){R(x-44,y-115,88,90,'#846444',g);R(x-49,y-124,98,12,'#c5a26c',g);R(x-35,y-22,9,24,'#634b36',g);R(x+25,y-22,9,24,'#634b36',g);for(let i=0;i<3;i++){R(x-29+i*21,y-101,17,45,'#e4d9ad',g);R(x-26+i*21,y-90,10,3,'#8e805d',g);}label(g,'WORLD TASKS',x,y-145,'#ffe1a1',12);}else if(e.kind==='worldgate'){for(const dx of [-52,38]){R(x+dx,y-180,18,180,'#728291',g);R(x+dx-4,y-190,26,16,'#b5b7a2',g);}R(x-40,y-190,80,17,'#92a4a2',g);R(x-36,y-173,72,166,'#26394b',g);label(g,'Ⅱ',x,y-105,'#697d8b',42);label(g,'WORLD 2 · TIDEWILDS',x,y-211,'#d2c5b1',12);}else if(e.kind==='stamps'){R(x-42,y-52,84,52,'#785e4b',g);R(x-47,y-62,94,14,'#cba46b',g);R(x-28,y-111,56,49,'#e3d3a0',g);R(x-16,y-100,32,26,'#9c6464',g);label(g,'STAMP REGISTRY',x,y-133,'#ffe1a1',12);}else{R(x-44,y-18,88,18,'#718391',g);R(x-33,y-36,66,20,'#9aa7a7',g);R(x-21,y-88,42,53,'#8b9d9f',g);R(x-18,y-122,36,33,'#bac1b2',g);R(x-37,y-83,74,17,'#9caead',g);label(g,'STATUE KEEPER',x,y-143,'#d5e3d2',12);}}
- for(const e of map.portals){const d=e.destination,r=routeRequirement(d.area,d.zone),locked=!d.boss&&!zoneUnlocked(world.state,d.area,d.zone,c),n=r?(r.shared?world.state.kills:c.journey.kills)[r.id]||0:0;portal(g,e,time,locked,locked&&r?Math.min(n,r.goal)+' / '+r.goal+' kills'+(r.shared?' · roster':''):'');}
+ for(const e of map.facilities||[]){if(!visible(e.x,e.y,170,260))continue;const x=e.x,y=e.y,{frame,trim,shadow,accent,fill}=propPalette(map.area);if(e.kind==='survey'){R(x-28,y-35,56,35,frame,g);R(x-32,y-45,64,13,trim,g);R(x-5,y-35,10,18,accent,g);R(x+40,y-110,5,110,frame,g);R(x+45,y-110,40,35,map.layout.design.trim,g);label(g,'SURVEY CACHE',x,y-135,'#e7e4b4',11);}else if(e.kind==='telescope'){R(x-9,y-75,18,75,'#725a3e',g);g.save();g.translate(x,y-90);g.rotate(-.4);R(-55,-15,110,31,'#b6955b',g);R(28,-21,35,43,'#657f86',g);R(45,-17,9,35,'#b2e9ef',g);g.restore();label(g,'CROWN TELESCOPE',x,y-155,'#ffe4a4',13);}else if(e.kind==='constellation'){g.strokeStyle='#b6e2ef';g.lineWidth=2;g.beginPath();for(let i=0;i<5;i++){const xx=x+Math.sin(i*2.3)*32,yy=y-70+Math.cos(i*2.3)*28;i?g.lineTo(xx,yy):g.moveTo(xx,yy);R(xx-3,yy-3,6,6,'#fff3b5',g);}g.stroke();label(g,e.name,x,y-125,'#c5e7ed',11);}else if(e.kind==='dungeon'){R(x-64,y-130,128,130,'#637c70',g);R(x-45,y-110,90,110,'#213e35',g);R(x-68,y-141,136,18,'#9bab82',g);R(x-13,y-90,26,32,'#a4dbb3',g);for(const dx of [-52,46])for(let i=0;i<3;i++)R(x+dx,y-25-i*24,6,3,trim,g);R(x-43,y-5,86,5,frame,g);label(g,'MOSSROOT RUINS',x,y-166,'#bbebc8',12);}else if(e.kind==='bossboard'){R(x-47,y-126,94,100,'#755543',g);R(x-55,y-137,110,17,'#bc9a60',g);R(x-32,y-108,64,62,'#dbcc99',g);for(const dx of [-23,18])R(x+dx,y-101,4,4,shadow,g);R(x-19,y-82,38,3,frame,g);R(x-11,y-72,22,2,frame,g);label(g,'HUNT BOARD',x,y-162,'#f8dca0',12);}else if(e.kind==='arena'){R(x-37,y-103,74,90,'#78543e',g);R(x-44,y-113,88,15,'#c69e60',g);label(g,'⚔',x,y-49,'#f2d385',35);label(g,'SOLO TRIALS',x,y-140,'#ffdf95',12);}else if(e.kind==='orbit-job'){R(x-55,y-62,110,62,shadow,g);R(x-59,y-72,118,12,trim,g);R(x-34,y-53,68,26,accent,g);label(g,e.name.toUpperCase(),x,y-101,'#e1d4ff',12);}else if(e.kind==='advancement'){R(x-30,y-90,60,90,frame,g);R(x-38,y-100,76,14,trim,g);label(g,'Ⅱ',x,y-45,'#fff1b8',30);label(g,'TIER 2 PATHFINDER',x,y-130,'#ffe2a3',12);}else if(e.kind==='shop'){shop(g,e,map.area);}else if(e.kind==='vault'){R(x-40,y-85,80,85,'#5b6874',g);R(x-35,y-79,70,73,'#a69a73',g);R(x-27,y-70,54,54,'#384958',g);R(x-5,y-50,10,23,'#e6c875',g);for(const dx of [-29,25]){R(x+dx,y-75,4,4,'#c9af76',g);R(x+dx,y-19,4,4,'#c9af76',g);}R(x-22,y-12,44,4,'#303940',g);label(g,'UPGRADE VAULT',x,y-115,'#ffe1a1',12);}else if(e.kind==='tasks'){R(x-44,y-115,88,90,frame,g);R(x-49,y-124,98,12,trim,g);R(x-35,y-22,9,24,shadow,g);R(x+25,y-22,9,24,shadow,g);for(let i=0;i<3;i++){R(x-29+i*21,y-101,17,45,accent,g);R(x-26+i*21,y-90,10,3,fill,g);}label(g,'WORLD TASKS',x,y-145,'#ffe1a1',12);}else if(e.kind==='worldgate'){for(const dx of [-52,38]){R(x+dx,y-180,18,180,'#728291',g);R(x+dx-4,y-190,26,16,'#b5b7a2',g);}R(x-40,y-190,80,17,'#92a4a2',g);R(x-36,y-173,72,166,'#26394b',g);label(g,'Ⅱ',x,y-105,'#697d8b',42);for(const dx of [-48,42]){R(x+dx,y-164,5,80,trim,g);R(x+dx-3,y-86,11,5,accent,g);}R(x-57,y-8,114,8,frame,g);label(g,'WORLD 2 · TIDEWILDS',x,y-211,'#d2c5b1',12);}else if(e.kind==='stamps'){R(x-42,y-52,84,52,'#785e4b',g);R(x-47,y-62,94,14,'#cba46b',g);R(x-28,y-111,56,49,'#e3d3a0',g);R(x-16,y-100,32,26,'#9c6464',g);R(x-24,y-65,48,4,shadow,g);R(x+17,y-95,3,12,'#a89b7a',g);R(x-29,y-47,58,3,trim,g);label(g,'STAMP REGISTRY',x,y-133,'#ffe1a1',12);}else if(e.kind==='statues'){statueKeeper(g,x,y);}}
+ for(const e of map.portals){const d=e.destination,r=routeRequirement(d.area,d.zone),locked=!d.boss&&!zoneUnlocked(world.state,d.area,d.zone,c),n=r?(r.shared?world.state.kills:c.journey.kills)[r.id]||0:0;portal(g,e,time,locked,locked&&r?Math.min(n,r.goal)+' / '+r.goal+' kills'+(r.shared?' · roster':''):'',map.area);}
  for(const node of map.resources){if(!visible(node.x,node.y,200,350))continue;const height=drawResourceArt(g,node.resource,node.x,node.y,time);if(world.target===node){label(g,ITEMS[node.resource].name,node.x,node.y-height-18,'#f2e6bf',12);R(node.x-38,node.y-height-8,76,7,'#24383c',g);R(node.x-36,node.y-height-6,72*Math.min(1,c.progress/3),3,'#b8d995',g);}}
 
  for(const e of map.stations)if(visible(e.x,e.y,140,180))station(g,e,map.area);
- for(const chest of map.storage||[]){const x=chest.x,y=chest.y;R(x-30,y-34,60,31,'#9b754c',g);R(x-32,y-48,64,17,'#bd965d',g);R(x-30,y-32,60,5,'#513c30',g);R(x-25,y-47,7,44,'#6c8893',g);R(x+18,y-47,7,44,'#6c8893',g);R(x-5,y-32,10,13,'#f0d37e',g);label(g,'STORAGE',x,y-63,'#f5dda4',12);}
- for(const entry of map.discoveries||[]){const x=entry.x,y=entry.y;rock(g,x,y,1.3,'#b29bda');label(g,'✦',x,y-65,'#dbc9ff',27);label(g,'Strange markings',x,y+20,'#d2c7ed',11);}
- for(const npc of map.npcs){if(!visible(npc.x,npc.y,90,200))continue;const fake={class:npc.classId,color:TIDE_NPCS[npc.role]?.color,activity:'rest'};adventurer(g,npc.x,npc.y,fake,time);const marker=npcMarker(world.state,c,npc.classId||npc.role);if(marker.symbol)label(g,marker.symbol,npc.x,npc.y-151,marker.color,31);label(g,npc.name,npc.x,npc.y-123,'#ffe5a8');label(g,(CLASSES[npc.classId]?.name?CLASSES[npc.classId].name+' mentor':(npc.role==='steward'?'Village steward':'Expedition crew')),npc.x,npc.y+22,'#f6f3cc',11);}
+ for(const chest of map.storage||[]){const x=chest.x,y=chest.y,{frame,trim,shadow,accent}=propPalette(map.area);R(x-30,y-34,60,31,frame,g);R(x-32,y-48,64,17,trim,g);R(x-30,y-32,60,5,shadow,g);R(x-25,y-47,7,44,shadow,g);R(x+18,y-47,7,44,shadow,g);R(x-5,y-32,10,13,accent,g);label(g,'STORAGE',x,y-63,'#f5dda4',12);}
+ for(const entry of map.discoveries||[]){const x=entry.x,y=entry.y,{frame,accent,trim}=propPalette(map.area);rock(g,x,y,1.3,frame);R(x-10,y-34,20,3,trim,g);R(x-3,y-41,6,17,accent,g);label(g,'Strange markings',x,y+20,'#d2c7ed',11);}
+ for(const npc of map.npcs){if(!visible(npc.x,npc.y,90,200))continue;const fake={class:npc.classId,color:(TIDE_NPCS[npc.role]||ORBIT_NPCS[npc.role])?.color,activity:'rest'};adventurer(g,npc.x,npc.y,fake,time);const marker=npcMarker(world.state,c,npc.classId||npc.role);if(marker.symbol)label(g,marker.symbol,npc.x,npc.y-151,marker.color,31);label(g,npc.name,npc.x,npc.y-123,'#ffe5a8');label(g,(CLASSES[npc.classId]?.name?CLASSES[npc.classId].name+' mentor':(npc.role==='steward'?'Village steward':'Expedition crew')),npc.x,npc.y+22,'#f6f3cc',11);}
  for(const e of map.monsters){if(e.dead>0||e.x<v.x-300||e.x>v.x+v.width+300||e.y<v.y-200||e.y>v.y+950)continue;
  if(e.telegraph){const tell=e.telegraph,d=ATTACKS[tell.kind]||ATTACKS.hop,progress=1-tell.remaining/tell.total;
   g.globalAlpha=world.state.options?.reducedMotion ? .45 : .25+.2*Math.sin(time*10)**2;

@@ -1,5 +1,6 @@
 import {ORBIT_JOBS,ORBIT_SECRETS} from './world-three-content.mjs';
 import {orbitSecretReason} from './world-three.mjs';
+import {ORBIT_NPCS} from './orbit-campaign.mjs';
 import {TIDE_NPCS} from './tide-campaign.mjs?v=45';
 import {EXPANSION_AREAS,ALL_ADVANCEMENTS} from './expansion-content.mjs?v=45';
 import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=45';
@@ -37,11 +38,12 @@ export function createMap(area,index,boss=false,secret=null,trial=false){
  const npcs=[];
  for(const[id,d]of Object.entries(CLASSES))if(!boss&&!secret&&area===d.town&&index===d.zone)npcs.push({id:'npc-'+id,kind:'npc',classId:id,name:d.trainer,...pointFor(layout,'npc-'+id)});
  if(area==='town'&&index===0)npcs.push({id:'npc-steward',kind:'npc',classId:null,role:'steward',name:'Hesta',...pointFor(layout,'npc-steward')});
- if(!boss&&!secret)for(const [role,d]of Object.entries(TIDE_NPCS))if(d.area===area&&d.zone===index)npcs.push({id:'npc-'+role,kind:'npc',role,classId:null,name:d.name,x:d.x,y:d.y});
+ if(!boss&&!secret)for(const [role,d]of Object.entries({...TIDE_NPCS,...ORBIT_NPCS}))if(d.area===area&&d.zone===index)npcs.push({id:'npc-'+role,kind:'npc',role,classId:null,name:d.name,x:d.x,y:d.y});
  const station=area==='orbit-loom'&&index===0?'anvil':area==='tide-town'?(index===1?'anvil':index===2?'alchemy':null):area==='town'?(index===1?'anvil':index===2?'foundry':null):area==='jungle-town'?(index===0?'enchanting':index===1?'alchemy':null):null;
  const stations=station?[{id:'station',kind:'station',station,...pointFor(layout,'station'),name:station[0].toUpperCase()+station.slice(1)}]:[];
  const facilities=town?(area==='town'&&index===3?[{id:'stamps',kind:'stamps',name:'Stamp Registry',x:350,y:GROUND},{id:'statues',kind:'statues',name:'Statue Keeper',x:650,y:GROUND},{id:'vault',kind:'vault',name:'Upgrade Vault',x:1670,y:GROUND},{id:'tasks',kind:'tasks',name:'World Task Board',x:1990,y:GROUND},{id:'world-gate',kind:'worldgate',name:'World 2 · Tidewilds',x:1030,y:GROUND}]:index===0?[{id:'shop',kind:'shop',name:area==='town'?'Pip’s General Store':area.startsWith('orbit-')?'Orbital Supply Counter':area.startsWith('tide-')?'Expedition Supplies':'Nori’s Supply Stall',x:area==='town'?680:565,y:GROUND}]:[]):[];
  if(town&&area==='town'&&index===3)facilities.push({id:'dungeon',kind:'dungeon',name:'Mossroot Ruins'});if(town&&area==='jungle-town'&&index===2)facilities.push({id:'bossboard',kind:'bossboard',name:'Rootwarden Hunt Board'});
+ if(town&&index===0&&['tide-town','orbit-dock','orbit-loom','orbit-chart'].includes(area))facilities.push({id:'tasks',kind:'tasks',name:'Expedition Task Board'});
  for(const e of facilities)Object.assign(e,pointFor(layout,e.id));
  if(area===TELESCOPE.area&&index===TELESCOPE.zone&&!boss&&!secret)facilities.push({id:'telescope',kind:'telescope',name:'Crown Telescope',...pointFor(layout,'telescope')});if(town&&area==='town'&&index===3)facilities.push({id:'arena',kind:'arena',name:'Solo Trial Board',...pointFor(layout,'arena')});for(const d of CONSTELLATIONS)if(d.area===area&&d.zone===index&&(d.secret||null)===(secret||null)&&!boss)facilities.push({id:'constellation-'+d.id,kind:'constellation',constellation:d.id,name:d.name,x:d.x,y:d.y});
  if(!boss)facilities.push({id:'survey',kind:'survey',name:'High-route Survey Cache',...surveyPoint(layout)});

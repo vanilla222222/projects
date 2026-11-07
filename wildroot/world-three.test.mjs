@@ -69,8 +69,9 @@ test('Cartography checks personal skill and the Colossus checks combat progressi
   assert.ok(E.claimSurvey(s,c));
   assert.equal(E.claimSurvey(s,c),false);
  }
- assert.match(E.encounterReason(s,c,'singularity'),/180 Gravity Knights/);
+ assert.match(E.encounterReason(s,c,'singularity'),/45 Gravity Knights/);
  c.journey.kills['orbit-rim-5']=180;
+ s.secretUnlocks.push('singularity');
  assert.equal(E.encounterReason(s,c,'singularity'),'');
 });
 
@@ -121,6 +122,7 @@ test('The Eventide Colossus runs an active fight and awards the Singularity Core
  s.story['tide-restored']={done:true,accepted:true};
  c.journey.visited['orbit-dock-0']=true;
  c.journey.kills['orbit-rim-5']=180;
+ s.secretUnlocks.push('singularity');
  Object.assign(c,{area:'orbit-chart',zone:3,level:95,class:'warrior',advancement:'beastwarden'});
  c.skills.cartography=108;
  c.attributes={might:60,finesse:0,focus:125};

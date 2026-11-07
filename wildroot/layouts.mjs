@@ -33,7 +33,7 @@ boss:[3240,'Heart of the Rootwarden',[[390,510,435],[1190,470,305],[1930,500,465
 for(let zone=0;zone<3;zone++){const upper=Array.from({length:10+zone*2},(_,i)=>[i%2?850:350,1000,GROUND-(i+1)*180]);D['tree-'+zone]=[2200,['Rootspire Ascent','Heartwood Stair','Crown Observatory'][zone],upper,[[700,upper[2][2]]],{},[['elder',1100,600],['vines',1650,400]],{'portal-left':[65,GROUND],'portal-right':[1760,upper.at(-1)[2]],...(zone===2?{telescope:[1450,upper.at(-1)[2]]}:{})}];}
 for(const [aIndex,a] of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++){
  const width=2900+i*180+aIndex*60,upper=Array.from({length:4+i%3},(_,n)=>[650+(n%2)*500+i*45,1150,GROUND-(n+1)*200]);
- D[a.id+'-'+i]=[width,a.zones[i],upper,a.resources[i].map((_,r)=>[520+r*350,GROUND]),{},[['pond',1600,400],['ruins',2300,250]],{shop:[1000,GROUND],'orbit-job':[1200,GROUND],advancement:[1500,GROUND],station:[2100,GROUND]}];
+ D[a.id+'-'+i]=[width,a.zones[i],upper,a.resources[i].map((_,r)=>[520+r*350,GROUND]),{},[['pond',1600,400],['ruins',2300,250]],{shop:[1000,GROUND],'orbit-job':[1200,GROUND],tasks:[2550,GROUND],advancement:[1500,GROUND],station:[2100,GROUND]}];
 }
 D.tempest=[2400,'Eye of the Tempest',[[380,500,440],[1320,600,360]],[],{},[['ruins',1650,350],['pond',1050,300]],{'portal-left':[65,GROUND]}];
 for(const [i,[id,title]] of [['chart-green','The Buried Meridian'],['chart-tide','The Drowned Ephemeris'],['chart-orbit','The Lost Constellation'],['singularity','The Singularity Chamber']].entries())D[id]=[2500+i*120,title,[[650,850,390],[790,920,130],[1030,780+i*25,-160-i*45]],[],{},[['ruins',850,350],['pond',1800,310]],{}];

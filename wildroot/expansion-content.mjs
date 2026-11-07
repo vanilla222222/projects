@@ -30,7 +30,7 @@ export const ADVANCEMENTS={
  alchemist:{id:'tidecaller',name:'Tidecaller',skill:'fishing',area:'tide-shore',zone:0,needs:{'reed-fish':40,tonic:10}}
 };
 export const ALL_ADVANCEMENTS=[...Object.values(ADVANCEMENTS),...Object.values(ORBIT_ADVANCEMENTS)];
-export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.world===3?35+i*5+z*12:a.id==='depths'?320+z*100:140+i*18+z*35)]));
+export const EXPANSION_GOALS=Object.fromEntries(EXPANSION_AREAS.filter(a=>!a.town).map((a,i)=>[a.id,a.zones.map((_,z)=>a.world===3?24+(i-9)*3+z*5:a.id==='depths'?320+z*100:140+i*18+z*35)]));
 export function expansionParent(area){return EXPANSION_AREAS.find(a=>a.id===area)?.entry;}
 export const worldOf=area=>EXPANSION_AREAS.find(a=>a.id===area)?.world||1;
 // Transferable gathering gains 1–3 resources per subsequent world. No W3 loot is spawned early.
