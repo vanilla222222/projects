@@ -152,6 +152,10 @@ section[data-tab="smelt"] { --c: var(--accent); flex-wrap: nowrap; }
 .toast[hidden] { display: none; }
 .slot.silicon { border-color: #f3dbe8; }
 .slot.silicon .bar div { background: #f3dbe8; }
+.slot.steel { border-color: #90a9b5; }
+.slot.steel .bar div { background: #90a9b5; }
+.slot.electrum { border-color: #ddd496; }
+.slot.electrum .bar div { background: #ddd496; }
 section[data-tab="forest"] { --c: #4f8a5b; flex-wrap: nowrap; }
 @media (max-width: 800px) { section[data-tab="forest"] { flex-wrap: wrap; } }
 .tree { position: relative; display: flex; flex-direction: column; gap: 4px; }
@@ -175,3 +179,96 @@ section[data-tab="mill"] { --c: #b08850; flex-wrap: nowrap; }
 #saws .slot.on .bar div { background: var(--sc); }
 .wcat { background: var(--panel2); border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; padding: 3px 12px; font-weight: 700; }
 .wcat[hidden] { display: none; }
+
+/* Progression and Workshop */
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tabs { min-width: 0; overflow-x: auto; padding-bottom: 3px; scrollbar-width: thin; }
+.tabs button { flex-shrink: 0; white-space: nowrap; }
+.next-goal { flex: 1 0 100%; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 10px; }
+.next-goal > div:first-child { display: flex; flex-direction: column; gap: 4px; }
+.next-goal small { font-size: 10px; color: var(--dim); letter-spacing: .6px; }
+.next-goal b { font-size: 15px; color: var(--accent); }
+.next-goal span { font-size: 12px; color: var(--dim); }
+.goal-meter { min-width: 160px; display: grid; gap: 6px; text-align: right; }
+.goal-meter progress { width: 100%; height: 8px; accent-color: var(--accent); }
+.mine-tools { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+.mine-tools .hint { margin: 0; }
+#dragMine { flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; padding: 9px; background: var(--panel2); font-size: 11px; }
+#dragMine[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.grid.drag-mine { touch-action: none; user-select: none; -webkit-user-select: none; }
+.touch-hint { font-size: 11px; }
+.workshop-intro { flex: 1 0 100%; width: 100%; }
+.research-summary { color: var(--accent); font-size: 12px; line-height: 1.8; margin-bottom: 0; }
+.research-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; width: 100%; --c: var(--accent); }
+.research-card { min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.research-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.research-heading h3 { font-size: 15px; margin: 0; }
+.research-level { white-space: nowrap; font-size: 12px; color: var(--accent); }
+.research-card p { font-size: 12px; color: var(--dim); min-height: 34px; }
+.research-cost { color: var(--dim); font-size: 12px; line-height: 1.8; margin: 12px 0; overflow-wrap: anywhere; }
+.research-card .upg { min-height: 44px; }
+
+@media (max-width: 700px) {
+  .top { gap: 10px; padding: 12px 10px; }
+  .top h1 { font-size: 16px; flex: 1; }
+  .top .menu { order: 0; }
+  .tabs { order: 1; flex: 1 0 100%; max-width: 100%; }
+  .tabs button { min-height: 44px; padding: 9px 14px; }
+  .buyamt { order: 2; overflow-x: auto; max-width: 100%; }
+  .buyamt button, .menu button, .recipepick button, .tree .burn { min-height: 44px; }
+  .wallet { flex-wrap: nowrap; overflow-x: auto; padding: 8px 10px; scrollbar-width: thin; }
+  .wallet .coin, .wallet .wcat { flex-shrink: 0; }
+  .wcat { min-height: 38px; }
+  main { padding: 10px; }
+  .tab { gap: 12px; }
+  .next-goal { padding: 12px; align-items: stretch; flex-direction: column; gap: 10px; }
+  .goal-meter { min-width: 0; text-align: left; }
+  .mine { padding: 10px; }
+  .minehead { flex-wrap: wrap; gap: 6px; font-size: 12px; }
+  .mine-tools { flex-wrap: wrap; }
+  #dragMine { min-height: 44px; }
+  .upgrades { min-width: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+  .upg { min-height: 44px; flex-wrap: wrap; padding: 9px; }
+  .upg > span { min-width: 0; }
+  .upg small { margin-left: auto; }
+  .masterybox { padding: 12px; min-width: 0; }
+  .mast { grid-template-columns: 16px 1fr auto; gap: 8px; min-height: 56px; }
+  .mast small { grid-column: 2 / -1; }
+  .rbstats { gap: 4px; }
+  .rbstats div { padding: 7px 6px; min-width: 0; overflow-wrap: anywhere; }
+  .alloc { grid-template-columns: 16px 1fr 44px 36px 44px; grid-template-areas: "d n n n n" ". w w w w" ". . m c p"; padding: 9px; }
+  .aname small { display: block; }
+  .step { height: 44px; }
+  .allochead { flex-wrap: wrap; gap: 8px; }
+  .slot { min-height: 64px; }
+  #oreStats { overflow-x: auto; }
+  .stable { min-width: 340px; }
+  .toast { width: calc(100% - 24px); max-width: 420px; text-align: center; bottom: max(12px, env(safe-area-inset-bottom)); }
+  .modal { overflow-y: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+.blueprint-intro, .blueprint-panel { flex: 1 0 100%; width: 100%; --c: var(--accent); }
+.blueprint-panel { border-top: 3px solid #9cc9b1; }
+.blueprint-panel[hidden] { display: none; }
+.bp-feature { display: grid; gap: 8px; margin-top: 12px; }
+.bp-choice { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--dim); }
+.bp-choice select { max-width: 65%; min-height: 44px; border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--panel2); color: var(--text); font: inherit; }
+.bp-choice select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bp-task { font-size: 12px; color: var(--dim); margin: 12px 0 8px; overflow-wrap: anywhere; }
+.bp-progress { width: 100%; height: 10px; accent-color: #9cc9b1; }
+.bp-actions { display: flex; gap: 8px; }
+.bp-actions .upg { min-height: 44px; }
+.bp-rates { overflow-x: auto; }
+.bp-level { font-size: 12px; color: var(--accent); white-space: nowrap; }
+.bp-requirement { display: block; color: var(--dim); min-height: 34px; }
+.tile.geode:not(.dug)::after { content: attr(data-geode); position: absolute; right: 0; bottom: 0; font-size: clamp(10px,2vw,15px); pointer-events: none; }
+@media (max-width: 700px) {
+  .bp-choice { align-items: stretch; flex-direction: column; gap: 5px; }
+  .bp-choice select { width: 100%; max-width: 100%; }
+  .bp-actions { flex-wrap: wrap; }
+  .blueprint-panel .research-heading h2 { font-size: 16px; }
+}
+
+

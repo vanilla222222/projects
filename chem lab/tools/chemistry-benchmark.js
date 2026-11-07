@@ -8,12 +8,11 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const root = path.join(__dirname, '..');
 const fixtures = JSON.parse(fs.readFileSync(path.join(__dirname, 'chemistry-fixtures.json'), 'utf8'));
-const context = vm.createContext({ console, setTimeout, clearTimeout });
-const scripts = ['elements', 'graph', 'valence', 'stereo', 'naming-core', 'naming-chain', 'naming-ring', 'naming-scaffolds', 'naming-general', 'common-names-extra', 'naming-elements', 'properties', 'layout', 'smiles', 'molfile', 'reactions', 'molecular-identity', 'reagent-library', 'reaction-io', 'reaction-stereo', 'reaction-evidence', 'reaction-registry', 'reaction-rules', 'reaction-rules-extra', 'reaction-rules-extra2', 'reaction-aromatic', 'reaction-rules-extra3', 'reaction-rules-extra4', 'reaction-catalog'];
-scripts.forEach((name) => {
-  const filename = path.join(root, 'js', name + '.js');
-  if (fs.existsSync(filename)) vm.runInContext(fs.readFileSync(filename, 'utf8'), context, { filename: name + '.js' });
-});
+const context = vm.createContext({ console, performance, setTimeout, clearTimeout });
+// Exercise the same engine modules and load order as the current application.
+const scripts = [...fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g)]
+  .map(match=>match[1]).filter(file=>file!=='js/app.js');
+scripts.forEach(file=>vm.runInContext(fs.readFileSync(path.join(root,file.split('?')[0]),'utf8'),context,{filename:file}));
 const run = (code) => vm.runInContext(code, context);
 const plain = (value) => JSON.parse(JSON.stringify(value));
 run(`
@@ -64,6 +63,10 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     const outcome = predictReaction(compounds, Object.assign({}, defaultReactionConditions(), item.conditions));
     const selected = [outcome.best, ...outcome.alternatives].filter(Boolean).find(o => o.id === item.rule);
     return { found: !!selected, unchanged: before === JSON.stringify(compounds),
+      survivalStatus:selected&&selected.productSurvival?selected.productSurvival.status:null,
+      regioStatus:selected&&selected.regioselectivity?selected.regioselectivity.status:null,
+      positional:selected?[...new Set([...selected.products,...selected.minor].map(p=>benchmarkKey(p.isomericSmiles||p.smiles)))].sort():[],
+      loadingCeiling:selected&&selected.stoichiometry?selected.stoichiometry.conversion:null,
       actual: selected ? selected.products.map(p => benchmarkKey(p.isomericSmiles || p.smiles)).sort() : [],
       expected: item.products.map(benchmarkKey).sort() };
   })()`));
@@ -71,6 +74,10 @@ for (const item of fixtures.reactions.concat(fixtures.negativeReactions)) {
     check('reaction-positive', () => assert.equal(result.found, true, item.label));
     check('reaction-products', () => assert.deepEqual(result.actual, result.expected, item.label));
   } else check('reaction-negative', () => assert.equal(result.found, false, item.label));
+  if(item.productSurvivalStatus)check('product-survival',()=>assert.equal(result.survivalStatus,item.productSurvivalStatus,item.label));
+  if(item.regioStatus)check('regio-status',()=>assert.equal(result.regioStatus,item.regioStatus,item.label));
+  if(item.positionalProducts){const expected=[...new Set(item.positionalProducts.map(s=>plain(run('benchmarkKey('+JSON.stringify(s)+')'))))].sort();check('positional-products',()=>assert.deepEqual(result.positional,expected,item.label));}
+  if(item.loadingCeiling!==undefined)check('loading-ceiling',()=>assert.equal(result.loadingCeiling,item.loadingCeiling,item.label));
   check('immutability', () => assert.equal(result.unchanged, true, item.label));
 }
 for (const smiles of fixtures.roundTrips) {

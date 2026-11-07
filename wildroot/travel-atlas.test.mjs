@@ -1,0 +1,14 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {atlasNodes,travelAtlas} from './travel-atlas.mjs?v=50';import * as E from './engine.mjs?v=45';import {roomPortals} from './world.mjs?v=49';
+test('Both atlases keep every room and label separated and inside the map',()=>{for(const world of [1,2,3,4]){const nodes=atlasNodes(world);for(const n of nodes){assert.ok(n.x>=72&&n.x<=1168,n.name);assert.ok(n.y>=65&&n.y<[0,1040,1160,1490,1750][world],n.name);for(const other of nodes)if(other!==n)assert.ok(Math.abs(n.x-other.x)>=155||Math.abs(n.y-other.y)>=125,n.name+' overlaps '+other.name);}}});
+test('Atlas renders each reciprocal route once and never spends teleport charges on selection',()=>{const s=E.freshSave(),c=E.selected(s),count=s.teleports.count;for(const world of [1,2]){const nodes=atlasNodes(world),edges=new Set();for(const n of nodes)for(const p of roomPortals(n.area,n.zone)){if(!p.destination.boss&&nodes.some(to=>to.area===p.destination.area&&to.zone===p.destination.zone))edges.add([n.area+':'+n.zone,p.destination.area+':'+p.destination.zone].sort().join('/'));}const html=travelAtlas(s,c,world,nodes[0].area+':0');assert.equal((html.match(/class="atlas-route /g)||[]).length,edges.size);assert.equal((html.match(/class="atlas-node /g)||[]).length,nodes.length);assert.match(html,/route-locked/);assert.doesNotMatch(html,/NaN|undefined|data-travel/);}assert.equal(s.teleports.count,count);});
+
+test('Legend and scrollable atlas share a grid cell, keeping the room panel beside them',async()=>{
+ const UI=await import('./ui-panels.mjs?v=50'),s=E.freshSave(),c=E.selected(s);
+ for(const mapRoom of ['forest:0','tide-town:0']){
+  const html=UI.map(s,c,{mapRoom}),root={children:[]},stack=[root];
+  for(const match of html.matchAll(/<\/?([a-z][\w:-]*)\b[^>]*>/gi)){const tag=match[1].toLowerCase(),raw=match[0];if(raw.startsWith('</')){while(stack.length>1){const node=stack.pop();if(node.tag===tag)break;}continue;}const node={tag,classes:(raw.match(/class="([^"]*)"/)?.[1]||'').split(/\s+/),children:[]};stack.at(-1).children.push(node);if(!raw.endsWith('/>')&&!['input','img','br','hr','meta','link'].includes(tag))stack.push(node);}
+  const find=(node,cls)=>node.classes?.includes(cls)?node:node.children.map(ch=>find(ch,cls)).find(Boolean),layout=find(root,'map-layout');
+  assert.equal(layout.children.length,2,'Desktop grid must have one atlas pane and one room detail pane');assert.ok(layout.children[0].classes.includes('atlas-pane'));assert.ok(layout.children[1].classes.includes('atlas-detail'));const pane=layout.children[0],scroll=find(pane,'atlas-scroll');assert.ok(find(pane,'atlas-legend'));assert.ok(find(scroll,'world-atlas'));assert.equal(find(scroll,'world-atlas').children.filter(n=>n.tag==='button').length,atlasNodes(mapRoom.startsWith('tide-')?2:1).length);
+ }
+});

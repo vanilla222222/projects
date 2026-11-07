@@ -1,0 +1,142 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as E from './engine.mjs?v=45';
+import * as D from './content.mjs?v=45';
+import {VOID_AREAS,RETRO_AREAS,VOID_WORK,VOID_PROJECTS,VOID_CLASSES} from './void-content.mjs';
+import {atlasNodes,travelAtlas} from './travel-atlas.mjs?v=50';
+import {pointFor,roomLayout} from './layouts.mjs?v=49';
+import {World} from './world.mjs?v=49';
+import {makeTell} from './combat-patterns.mjs?v=45';
+
+function setup(){
+ const s=E.freshSave(),c=E.selected(s);
+ s.kills.singularity=1;
+ const visit=(area,zone,id)=>Object.assign(c,{area,zone,position:pointFor(roomLayout(area,zone),id),secret:null});
+ return {s,c,visit};
+}
+test('Hollow Between is the largest atlas, opens after the previous boss, and has back-world branches',()=>{
+ const s=E.freshSave(),c=E.selected(s);
+ assert.equal(atlasNodes(4).length,72);
+ assert.equal(VOID_AREAS.filter(a=>a.town).length,3);
+ assert.deepEqual(RETRO_AREAS.map(a=>a.world),[1,2,3]);
+ assert.equal(E.zoneUnlocked(s,'void-landing',0),false);
+ s.kills.singularity=1;
+ assert.ok(E.zoneUnlocked(s,'void-landing',0));
+ assert.match(travelAtlas(s,c,4,'void-landing:0'),/The Last Dock/);
+ for(const id of ['null-ore','umbra-ore'])assert.ok(D.areaById('depths').resources.flat().includes(id));
+ for(const id of ['rift-carp','shade-ray'])assert.ok(D.areaById('tide-shore').resources.flat().includes(id));
+});
+test('Bridges require a local survey and materials and persist for every character',()=>{
+ const {s,c,visit}=setup();
+ for(const a of [...VOID_AREAS,...RETRO_AREAS].filter(a=>VOID_PROJECTS[a.id])){
+  const [area,zone]=a.entry,d=VOID_PROJECTS[a.id];
+  visit(area,zone,'bridge-'+a.id);
+  for(const [id,count] of Object.entries(d.cost))E.give(c,id,count);
+  assert.equal(E.buildVoidBridge(s,c,a.id),false);
+  c.position=E.surveyPoint(roomLayout(area,zone));
+  assert.ok(E.claimSurvey(s,c));
+  visit(area,zone,'bridge-'+a.id);
+  assert.ok(E.buildVoidBridge(s,c,a.id),a.id);
+  assert.equal(E.buildVoidBridge(s,c,a.id),false);
+ }
+ assert.ok(c.skills.construction>=400);
+ assert.equal(E.restoreSave(JSON.parse(JSON.stringify(s))).voidProjects.length,6);
+});
+test('Void workstations train all four skills, open a rift, illuminate terrain and bind an echo',()=>{
+ const {s,c,visit}=setup();
+ for(const [skill,d] of Object.entries(VOID_WORK)){
+  visit(d.area,d.zone,'void-work');
+  for(const [id,count] of Object.entries(d.cost))E.give(c,id,count);
+  assert.ok(E.workVoid(s,c,skill,1000));
+  assert.equal(c.skills[skill],48);
+ }
+ visit('void-landing',3,'void-work');
+ assert.equal(E.voidRiftDestination(s,c,2000),null);
+ c.journey.visited['void-lantern-0']=true;
+ assert.equal(E.voidRiftDestination(s,c,2000),'void-lantern');
+ assert.equal(E.voidRiftDestination(s,c,302000),null);
+ visit('void-rim',1,'void-light');
+ assert.ok(E.lightVoidRoute(s,c));assert.ok(s.voidLights.includes('void-wound'));
+ visit('void-lantern',2,'void-work');
+ const weapon=E.createEquipment(s,'void-sword',c);
+ const before=E.equipmentStats(weapon).attack;
+ assert.ok(E.bindVoidEcho(s,c));
+ assert.equal(E.bindVoidEcho(s,c),false);
+ assert.equal(E.equipmentStats(weapon).attack,before+9);
+ assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
+});
+test('Either Tier 2 branch qualifies for Tier 3 and the Unmoored requires a surveyed route',()=>{
+ const {s,c,visit}=setup();
+ visit('void-crown',1,'void-training');
+ Object.assign(c,{class:'warrior',level:55});
+ assert.equal(E.chooseVoidClass(s,c),false);
+ c.advancement='beastwarden';
+ assert.ok(E.chooseVoidClass(s,c));assert.equal(c.voidClass,VOID_CLASSES.warrior.id);
+ assert.match(E.encounterReason(s,c,'unmoored'),/Still Point/);
+ c.journey.visited['void-end-5']=true;s.surveys.push('void-end-5');
+ visit('void-crown',5,'portal-left');
+ const w=new World(s,{rng:()=>0});
+ assert.ok(w.travel(c.area,c.zone,{secret:'unmoored',entrance:'portal-left'}));
+ const enemy=w.map.monsters[0];
+ enemy.phaseLevel=2;enemy.telegraph=makeTell(enemy,w.player,w.map.width);
+ w.resolveAttack(enemy);
+ assert.ok(w.map.sever.right>w.map.sever.left);
+ w.hit(enemy,1000000);w.collectAll();
+ assert.equal(s.bossHunt.kills.unmoored,1);
+ assert.equal(c.bag['unmoored-anchor'],1);
+ assert.equal(w.map.sever,null);
+ assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
+});
+
+
+test('The three back-world crossings have distinct and attainable rewards',()=>{
+ const {s,c,visit}=setup();
+ const recipe=D.RECIPES.find(r=>r.equipment==='ravine-axe');
+ assert.ok(D.ENEMIES['void-watch-1'].loot.some(d=>d.id===recipe.dropBlueprint));
+ assert.equal(E.recipeOpen(s,recipe),false);
+ E.give(c,recipe.dropBlueprint,1);assert.ok(E.useWorldReward(s,c,recipe.dropBlueprint));
+ assert.ok(E.recipeOpen(s,recipe));
+ assert.ok(D.areaById('void-reef').resources[1].includes('wrecklight-koi'));
+ assert.ok(D.FOODS['wrecklight-chowder'].heal>D.FOODS['anchor-supper'].heal);
+ const star=D.CONSTELLATIONS.find(d=>d.id==='sealed-orrery');
+ s.stars.unlocked=true;
+ visit(star.area,star.zone,'portal-left');c.position={x:star.x,y:star.y};
+ assert.equal(E.observeConstellation(s,c,star.id),'seen');
+ c.journey.kills['void-vault-1']=1;
+ assert.equal(E.observeConstellation(s,c,star.id),'complete');
+ assert.equal(E.observeConstellation(s,c,star.id),'seen');
+ assert.equal(c.bag['sealed-orrery-relic'],1);
+ assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
+});
+
+test('An equipped character can fight all three Unmoored phases and move off marked breaks',()=>{
+ const {s,c}=setup();
+ s.surveys.push('void-end-5');c.journey.visited['void-end-5']=true;
+ Object.assign(c,{area:'void-crown',zone:5,level:112,class:'warrior',advancement:'beastwarden'});
+ c.attributes={might:90,finesse:0,focus:130};
+ Object.assign(c.talents,{precision:15,power:30,vitality:30});
+ c.tierTalents={force:24,technique:1};
+ for(const id of ['null-sword','null-mail','eventide-ring','nova-charm'])E.createEquipment(s,id,c);
+ E.give(c,'starbrew',60);
+ E.equipFood(c,0,E.bagSlots(c).findIndex(t=>t?.id==='starbrew'));
+ E.syncAccount(s);c.hp=E.maxHp(c);
+ const w=new World(s,{rng:()=>.42});
+ assert.ok(w.travel('void-crown',5,{secret:'unmoored'}));
+ const boss=w.map.monsters[0];
+ w.player.x=boss.x-100;w.target=boss;w.auto=true;
+ let phase=1,opened=false;
+ for(let frame=0;frame<20000&&!s.bossHunt.kills.unmoored&&!w.player.respawn;frame++){
+  const p=w.player,t=boss.telegraph;
+  const holes=w.map.sever?.until>w.time?w.map.sever.zones:[];
+  const warnings=t?.kind==='rootburst'?(t.zones||[t]):[];
+  const danger=[...holes,...warnings].find(z=>p.x>z.left-12&&p.x<z.right+12);
+  const horizontal=danger?(p.x<(danger.left+danger.right)/2?-1:1):0;
+  if(!danger&&Math.abs(p.x-boss.x)<260)w.useSkill(0,true);
+  w.step(.02,{horizontal,jump:t?.kind==='rootwave'&&t.remaining<.23&&p.grounded});
+  phase=Math.max(phase,boss.phaseLevel||1);
+  opened||=boss.counterWindow>0;
+ }
+ assert.equal(phase,3);
+ assert.ok(opened);
+ assert.equal(s.bossHunt.kills.unmoored,1);
+});

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101916">
+  <meta name="description" content="A falling-block game that grows with your score. Start with dominoes. See how far you evolve.">
+  <title>Polyfall · Vanilla's Projects</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <header><a class="back" href="../index.html">← Projects</a><span class="edition">VANILLA / EXPERIMENT 011</span><span class="live"><i></i> ENDLESS MODE</span></header>
+    <main>
+      <section class="intro"><div><p class="eyebrow">SMALL BEGINNINGS. BIGGER POSSIBILITIES.</p><h1>Polyfall<span>✳</span></h1><p class="lede">The better you play, the bigger the pieces.</p></div><p class="intro-note">Start with two cells.<br>Grow into something more.</p></section>
+      <div class="game-layout">
+        <aside class="left-rail">
+          <div class="score-card"><p class="label">YOUR SCORE</p><strong id="score">0</strong><div class="best-row"><span>Personal best</span><span id="best">0</span></div></div>
+          <section class="evolution"><div class="section-top"><p class="label">CURRENT ORDER</p><span class="pill">n = <b id="order">2</b></span></div><h2 id="order-name">Dominoes</h2><div class="mini-shape" aria-hidden="true"><canvas id="order-preview" width="192" height="78"></canvas></div><div class="progress-label"><span>Next evolution</span><strong id="threshold">2,048 pts</strong></div><div class="progress-track"><div id="progress"></div></div><p id="remaining">2,048 points to 3 cells</p></section>
+          <div class="stats"><div><span class="label">LINES</span><strong id="lines">0</strong></div><div><span class="label">PIECES</span><strong id="pieces">0</strong></div></div>
+          <div class="formula"><span class="label">THE GROWTH RULE</span><code>n = max(2, ⌊log₂(score)⌋ − 8)</code><p>Each score doubling adds a cell, starting at 2,048. New sizes enter after the current piece lands.</p></div>
+        </aside>
+        <section class="board-section" aria-label="Game board">
+          <div class="board-top"><span><i></i> <span id="status">READY WHEN YOU ARE</span></span><button id="pause" type="button" aria-label="Pause game" disabled>Ⅱ <span>Pause</span></button></div>
+          <div class="board-wrap"><canvas id="board" width="360" height="720" aria-label="12 column, 24 row falling-block board"></canvas><div id="overlay" class="overlay"><div class="overlay-mark" aria-hidden="true">▰</div><p class="eyebrow" id="overlay-kicker">A LITTLE DIFFERENT EVERY TIME</p><h2 id="overlay-title">Find your fit.</h2><p id="overlay-copy">Random shapes. Familiar rhythm.<br>How far can you grow?</p><button id="start" class="primary" type="button">Let's play <span>↗</span></button><span class="overlay-hint" id="overlay-hint">or press Enter</span></div></div>
+          <div class="board-bottom"><span>12 × 24</span><span id="feedback" role="status" aria-live="polite">Make room for what's next.</span><span>∞</span></div>
+          <div class="touch-controls" aria-label="Touch controls"><button data-action="left" aria-label="Move left">←</button><button data-action="ccw" aria-label="Rotate counterclockwise">↶</button><button data-action="cw" aria-label="Rotate clockwise">↻</button><button data-action="right" aria-label="Move right">→</button><button data-action="down" aria-label="Soft drop">↓</button><button data-action="drop" class="drop">Drop ↡</button></div>
+        </section>
+        <aside class="right-rail"><section class="up-next"><div class="section-top"><p class="label">COMING UP</p><span class="muted">03</span></div><div class="preview first"><span>01 / NEXT</span><canvas id="next-0" width="192" height="112"></canvas></div><div class="preview"><span>02</span><canvas id="next-1" width="192" height="88"></canvas></div><div class="preview"><span>03</span><canvas id="next-2" width="192" height="88"></canvas></div><p class="queue-note">The queue refreshes when you evolve.</p></section><section class="controls"><p class="label">FIND YOUR RHYTHM</p><dl><div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Move</dd></div><div><dt><kbd>↑</kbd> / <kbd>X</kbd></dt><dd>Rotate ↻</dd></div><div><dt><kbd>Z</kbd></dt><dd>Rotate ↶</dd></div><div><dt><kbd>↓</kbd></dt><dd>Soft drop</dd></div><div><dt><kbd>Space</kbd></dt><dd>Hard drop</dd></div><div><dt><kbd>P</kbd> / <kbd>Esc</kbd></dt><dd>Pause</dd></div></dl><button id="restart" type="button">↺ New game</button></section><p class="tip"><span>↳ A SMALL TIP</span>The outlined shape shows where your piece will land. Fill a whole row to clear it.</p></aside>
+      </div>
+      <footer><span>Made by <b>vanilla</b></span><span>Connected cells. Endless combinations.</span><span>POLYOMINO / FALLING BLOCKS</span></footer>
+    </main>
+  </div>
+  <script type="module" src="game.mjs"></script>
+</body>
+</html>

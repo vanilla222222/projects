@@ -143,15 +143,16 @@ if(retro8WilliamsonTransform)retro8WilliamsonTransform.match=function(t){
 // Product verification accepts the two equivalent nitro depictions used by the
 // nitration and nitro-reduction rules. Exact identity remains the fast path and
 // strict stock/stereochemical matching is deliberately unchanged.
-function retroProductIdentity(input) {
+function retroProductGraph(input) {
  const g=moleculeIdentityGraph(input);
  g.atoms.filter(a=>a.element==='N').forEach(n=>{
   const neighbors=rxNeighbors(g,n.id),os=neighbors.filter(x=>x.atom.element==='O'&&rxNeighbors(g,x.atom.id).length===1);
   if(neighbors.length!==3||os.length!==2||!neighbors.some(x=>x.atom.element==='C'))return;
   n.charge=0;os.forEach(x=>{x.atom.charge=0;g.getBond(n.id,x.atom.id).order=2;});
  });
- return moleculeIdentity(g).connectivityKey;
+ return g;
 }
+function retroProductIdentity(input) { return moleculeIdentity(retroProductGraph(input)).connectivityKey; }
 const retro8FindProductExact=retroFindProduct;
 retroFindProduct=function(list,smiles){
  const direct=retro8FindProductExact(list,smiles);if(direct)return direct;
@@ -223,3 +224,12 @@ RETRO_TRANSFORMS.push(
  }}
 );
 
+
+// Remove all eligible acetate branches together; forward verification enforces
+// the same polyol/medium bounds and preserves the scaffold atom identities.
+RETRO_TRANSFORMS.push({id:'exhaustive-o-acetylation',name:'Multiple acetate esters from one exhaustive operation',rule:'anhydride-alcoholysis',group:'Ester formation',match(t){
+ const acetates=t.info.carbonyls.filter(c=>c.kind==='ester'&&rxCarbonNeighbors(t.graph,c.c).some(n=>rxHydrogens(t.graph,n.atom.id)===3&&rxCarbonNeighbors(t.graph,n.atom.id).length===1));
+ if(acetates.length<2||acetates.length>4||acetates.some(c=>[c.c,c.o,...rxCarbonNeighbors(t.graph,c.c).map(n=>n.atom.id)].some(id=>t.graph.getAtom(id).isotope)))return [];
+ const piece=retroSinglePiece(t,g=>acetates.forEach(c=>rxRemoveBranch(g,c.c,c.hetero)));
+ return piece?[retroSpec([{smiles:piece.smiles,role:'reactant'}],[{smiles:'CC(=O)OC(C)=O',role:'reagent',label:'Acetic anhydride',equiv:1.5*acetates.length}],{solvents:['dcm'],additives:['pyr'],temperature:25})]:[];
+}});

@@ -29,7 +29,9 @@
     "cope": "https://www.chem.ucla.edu/~harding/IGOC/C/cope_elimination.html",
     "gabriel": "https://openstax.org/books/organic-chemistry/pages/24-6-synthesis-of-amines",
     "gabrielHydrazine": "https://doi.org/10.1002/anie.196809191",
-    "imineHydrolysis": "https://openstax.org/books/organic-chemistry/pages/19-8-nucleophilic-addition-of-amines-imine-and-enamine-formation"
+    "imineHydrolysis": "https://openstax.org/books/organic-chemistry/pages/19-8-nucleophilic-addition-of-amines-imine-and-enamine-formation",
+    "sn2Inversion": "https://openstax.org/books/organic-chemistry/pages/11-2-the-sn2-reaction",
+    "mitsunobuInversion": "https://doi.org/10.1021/jo001590m"
   },
   "tolerances": {
     "exactMassDa": 2e-05
@@ -414,6 +416,82 @@
         "CC(C)(C)[Si](C)(C)OCCC=O",
         "CC(CCO[Si](C)(C)C(C)(C)C)O",
         "OCCC(O)C"
+      ]
+    },
+    {
+      "id": "passerini-one-step-three-component-assembly",
+      "scope": "Encoded graph, loading and route-continuity check only. The unspecified alpha centre is a stereochemical mixture; no experimental yield, rate or enantiopurity is validated.",
+      "start": "CC=O",
+      "target": "CC(OC(C)=O)C(=O)NC(C)(C)C",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CC(OC(C)=O)C(=O)NC(C)(C)C"
+      ]
+    },
+    {
+      "id": "lindlar-one-step-specified-z-endpoint",
+      "scope": "Finite encoded E/Z endpoint and forward route-continuity regression, not experimental selectivity or yield validation.",
+      "start": "CC#CC",
+      "target": "C/C=C\\C",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "C/C=C\\C"
+      ]
+    },
+    {
+      "id": "weinreb-amide-from-complex-acid",
+      "scope": "Finite N-acyl connectivity and route continuity regression; no prediction of experimental yield or stereochemical purity.",
+      "start": "CONC",
+      "target": "CON(C)C(=O)c1ccc(OC)cc1",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "COc1ccc(C(=O)O)cc1"
+        ]
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CON(C)C(=O)c1ccc(OC)cc1"
+      ]
+    },
+    {
+      "id": "ethylene-glycol-one-step-diacetylation",
+      "scope": "One encoded exhaustive acetylation with balanced coproduct counts; no conversion/yield guarantee.",
+      "start": "OCCO",
+      "target": "CC(=O)OCCOC(C)=O",
+      "options": {
+        "maxDepth": 1,
+        "maxRoutes": 1,
+        "budgetMs": 5000,
+        "stockPolicy": "custom",
+        "availableMaterials": [
+          "CC(=O)OC(C)=O"
+        ]
+      },
+      "expectedKinds": [
+        null
+      ],
+      "expectedProducts": [
+        "CC(=O)OCCOC(C)=O"
       ]
     }
   ],
@@ -1271,6 +1349,171 @@
         "Nc1ccc(N)cc1"
       ],
       "source": "gabriel"
+    },
+    {
+      "label": "SN2 inverted center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](Br)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@@H](C#N)CC"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "SN2 inverted mirror",
+      "compounds": [
+        {
+          "smiles": "C[C@@H](Br)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@H](C#N)CC"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "SN2 preserves remote center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](Br)C[C@H](F)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "[C-]#N",
+          "role": "reagent"
+        }
+      ],
+      "rule": "sn2",
+      "products": [
+        "C[C@@H](C#N)C[C@H](F)C"
+      ],
+      "source": "sn2Inversion",
+      "conditions": {
+        "solvents": [
+          "dmf"
+        ],
+        "temperature": 0
+      }
+    },
+    {
+      "label": "Mitsunobu inverted center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](O)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@@H](Oc1ccccc1)CC"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Mitsunobu inverted mirror",
+      "compounds": [
+        {
+          "smiles": "C[C@@H](O)CC",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@H](Oc1ccccc1)CC"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
+    },
+    {
+      "label": "Mitsunobu preserves remote center",
+      "compounds": [
+        {
+          "smiles": "C[C@H](O)C[C@H](F)C",
+          "role": "reactant"
+        },
+        {
+          "smiles": "Oc1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "P(c1ccccc1)(c1ccccc1)c1ccccc1",
+          "role": "reagent"
+        },
+        {
+          "smiles": "CCOC(=O)N=NC(=O)OCC",
+          "role": "reagent"
+        }
+      ],
+      "rule": "mitsunobu",
+      "products": [
+        "C[C@@H](Oc1ccccc1)C[C@H](F)C"
+      ],
+      "source": "mitsunobuInversion",
+      "conditions": {
+        "solvents": [
+          "thf"
+        ]
+      }
     }
   ]
 }

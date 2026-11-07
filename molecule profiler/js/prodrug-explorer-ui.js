@@ -51,8 +51,23 @@
  const priorityExport=button('Download research review JSON',()=>{if(priorityReport)download('prodrug-research-review.json',JSON.stringify({...priorityReport,view:{criterion:sortKey.value,direction:sortDirection.value,routeFilter:routeFilter.value}},null,2)+'\n','application/json');});priorityExport.id='prodrug-priority-export';
  const priorityStatus=make('p');priorityStatus.id='prodrug-priority-status';priorityStatus.setAttribute('role','status');
  const priorityRows=make('div');priorityRows.id='prodrug-priority-results';priorityRows.className='prodrug-table-scroll';
- priority.append(review,sortLabel,directionLabel,routeFilterLabel,priorityExport,priorityStatus,priorityRows);compare.after(priority);
- let record=null,scan=null,shortlist=[],route=null,routeError='',priorityReport=null,priorityEpoch=0;
+ priority.append(review,sortLabel,directionLabel,routeFilterLabel,priorityExport,priorityStatus,priorityRows);
+ const bbb=make('section');bbb.id='prodrug-bbb-review';bbb.className='pk-research-extension';
+ bbb.append(make('h4','BBB-oriented design review'),make('p','Generate alcohol/phenol esters and a redox-carrier hypothesis for research review. The local passive screen, property changes and activation requirements stay separate: none proves BBB transport, brain exposure or biological prodrug conversion.'));
+ const bbbBuild=button('Build BBB-oriented designs',()=>{
+  if(!record||!inputMode())return;
+  try{
+   const generated=root.ProdrugCandidates.generateBBB(record.mol,{limit:12});generated.rows.forEach(addCandidate);
+   bbbReport=root.ProdrugExplorer.bbbReview(record.mol,generated.rows);bbbReport.generation={status:generated.status,reasons:generated.reasons.slice(),skipped:JSON.parse(JSON.stringify(generated.skipped))};
+   bbbStatus.textContent=generated.rows.length?generated.rows.length+' BBB-oriented structural design(s) reviewed and added to the shortlist, up to its 12-candidate limit. No combined BBB score or probability is assigned.':generated.reasons.join(' ');
+   renderBBB();renderComparison();
+  }catch(e){bbbReport=null;bbbStatus.textContent='BBB-oriented generation unavailable: '+e.message;renderBBB();}
+ });bbbBuild.id='prodrug-bbb-build';
+ const bbbExport=button('Download BBB design review JSON',()=>{if(bbbReport)download('bbb-oriented-design-review.json',JSON.stringify(bbbReport,null,2)+'\n','application/json');});bbbExport.id='prodrug-bbb-export';
+ const bbbStatus=make('p','Build designs to compare passive-screen labels, property deltas and unvalidated activation requirements.');bbbStatus.id='prodrug-bbb-status';bbbStatus.setAttribute('role','status');
+ const bbbRows=make('div');bbbRows.id='prodrug-bbb-results';bbbRows.className='prodrug-table-scroll';
+ bbb.append(bbbBuild,bbbExport,bbbStatus,bbbRows);compare.after(bbb);bbb.after(priority);
+ let record=null,scan=null,shortlist=[],route=null,routeError='',priorityReport=null,priorityEpoch=0,bbbReport=null;
 
  const snapshot=()=>root.PharmacologyUI.getSnapshot(),inputMode=()=>$('prodrug-reference-select').value==='__input__';
  function addCandidate(row){
@@ -84,6 +99,30 @@
   for(const row of report.rows){const tr=make('tr'),name=make('td');name.append(make('strong',row.name),make('small',row.evidenceLevel));const details=make('details');details.append(make('summary','SMILES'),make('code',row.smiles));name.append(details);tr.append(name);
    for(const key of ['mw','logp','tpsa','hbd','hba','rotatableBonds','charge']){const value=row.values?.[key],delta=row.delta?.[key],digits=['mw','logp','tpsa'].includes(key)?2:0;tr.append(make('td',Number.isFinite(value)?value.toFixed(digits)+(row.role==='candidate'&&Number.isFinite(delta)?' ('+(delta>0?'+':'')+delta.toFixed(digits)+')':''):'Unavailable'));}body.append(tr);
   }table.append(body);compareTable.append(table);
+ }
+ function renderBBB(){
+  bbbRows.replaceChildren();bbbExport.disabled=!bbbReport?.rows.length;const s=snapshot();if(s)s.prodrugBBBReview=bbbReport?{inputSmiles:record.smiles,...bbbReport}:null;
+  if(!bbbReport)return;
+  bbbRows.append(make('p',bbbReport.scope));
+  for(const caution of bbbReport.parentCautions||[]){const box=make('div');box.className='prodrug-theoretical-banner';box.append(make('strong',caution.topic+': '),make('span',caution.text));if(caution.source&&/^https:\/\//.test(caution.source.url)){const a=make('a',' Research source ↗');a.href=caution.source.url;a.target='_blank';a.rel='noopener noreferrer';box.append(a);}bbbRows.append(box);}
+  if(!bbbReport.rows.length)return;
+  const table=make('table'),head=make('tr');table.append(make('caption',bbbReport.rows.length+' unvalidated BBB-oriented design(s) · independent review criteria, no combined score'));
+  ['Design and strategy','Passive BBB screen','Property changes from parent','Rationale, requirements and limitations'].forEach(t=>head.append(make('th',t)));const thead=make('thead');thead.append(head);table.append(thead);const body=make('tbody');
+  for(const row of bbbReport.rows){
+   const tr=make('tr'),identity=make('td');identity.append(make('strong',row.name),make('p',row.bbbDesign.strategy));
+   const structure=make('details');structure.append(make('summary','Design SMILES'),make('code',row.smiles));identity.append(structure);
+   for(const source of row.sources||[]){if(!/^https:\/\//.test(source.url))continue;const a=make('a',source.title);a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';identity.append(a,make('br'));}
+   const passive=make('td');passive.append(make('strong',row.passiveScreen.label));
+   if(row.passiveScreen.available)passive.append(make('p','WLOGP '+row.passiveScreen.wlogp.toFixed(2)+' · TPSA '+row.passiveScreen.tpsa.toFixed(2)+' Å²'));
+   else passive.append(make('p',row.passiveScreen.reason||'Not assessed.'));
+   passive.append(make('small',row.passiveScreen.scope||'Passive-screen model unavailable.'));
+   const properties=make('td');for(const [key,label,unit] of [['mw','Δ MW',' g/mol'],['logp','Δ estimated WLOGP',''],['tpsa','Δ TPSA',' Å²']]){const value=row.delta?.[key];properties.append(make('p',label+': '+(Number.isFinite(value)?(value>0?'+':'')+value.toFixed(2)+unit:'Unavailable')));}
+   const rationale=make('td');rationale.append(make('p',row.bbbDesign.rationale));
+   if(row.bbbDesign.requirements?.length){rationale.append(make('strong','Activation requirements'));const requirements=make('ul');row.bbbDesign.requirements.forEach(t=>requirements.append(make('li',t)));rationale.append(requirements);}
+   const notes=make('details');notes.append(make('summary','Cautions and design limitations'));const list=make('ul');row.cautions.concat(row.designLimitations||[],[row.bbbDesign.scope]).filter(Boolean).forEach(t=>list.append(make('li',t)));notes.append(list);rationale.append(notes);
+   tr.append(identity,passive,properties,rationale);body.append(tr);
+  }table.append(body);bbbRows.append(table);
+  const limitations=make('details');limitations.append(make('summary','Review scope and unmodelled biology'));const list=make('ul');bbbReport.limitations.forEach(t=>list.append(make('li',t)));limitations.append(list);bbbRows.append(limitations);
  }
  function invalidatePriority(){
   priorityEpoch++;priorityReport=null;priorityRows.replaceChildren();priorityExport.disabled=true;
@@ -175,7 +214,7 @@
  $('prodrug-design-build').addEventListener('click',()=>{resetRoute();attachPreviewActions();});
  const original=root.PharmacologyUI.render;
  root.PharmacologyUI.render=function(next,ranks){
-  record=null;scan=null;shortlist=[];route=null;routeError='';compareStatus.textContent='';filter.value='all';sortKey.value='evidence';sortDirection.value='asc';routeFilter.value='all';original(next,ranks);record=next;scan=root.ProdrugExplorer.scan(next.mol);renderScan();renderComparison();renderRoute();
+  record=null;scan=null;shortlist=[];route=null;routeError='';bbbReport=null;compareStatus.textContent='';bbbStatus.textContent='Build designs to compare passive-screen labels, property deltas and unvalidated activation requirements.';filter.value='all';sortKey.value='evidence';sortDirection.value='asc';routeFilter.value='all';original(next,ranks);record=next;scan=root.ProdrugExplorer.scan(next.mol);renderScan();renderComparison();renderBBB();renderRoute();
  };
- section.hidden=true;renderRoute();invalidatePriority();
+ section.hidden=true;renderRoute();renderBBB();invalidatePriority();
 })(globalThis);

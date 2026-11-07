@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
-const root=path.join(__dirname,'..');for(const name of ['smiles','mol','smarts','stereo','transform','descriptors','pharmacology','prodrug-candidates','cleavable-groups','prodrug-explorer'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'));
+const root=path.join(__dirname,'..');for(const name of ['smiles','mol','smarts','stereo','transform','descriptors','rules','pharmacology','prodrug-candidates','cleavable-groups','candidate-info','prodrug-explorer'])vm.runInThisContext(fs.readFileSync(path.join(root,'js',name+'.js'),'utf8'));
 const parse=s=>buildMolecule(parseSmiles(s));let checks=0;const ok=(v,m)=>{assert.ok(v,m);checks++;};
 const scan=ProdrugExplorer.scan(parse('NCCO'));
 ok(scan.atoms.length===4&&scan.compatibleAtoms===2,'Every atom represented and compatible handles counted');
@@ -43,4 +43,14 @@ ok(split.frontier.length===2&&split.frontier[0].id!==split.frontier[1].id,'Dupli
 let limited=ProdrugExplorer.start('COC(=O)CC(OC(=O)C)C(OC(=O)C)COC(=O)C');
 for(let i=0;i<4;i++){const o=ProdrugExplorer.options(limited).find(o=>o.kind==='ester');ok(!!o,'Four-step fixture has next ester');limited=ProdrugExplorer.advance(limited,o);}
 ok(ProdrugExplorer.options(limited).length===0,'Four-step limit enforced');
+const cholesterol=parse('CC(C)CCC[C@@H](C)[C@H]1CC[C@H]2[C@@H]3CC=C4C[C@H](CC[C@]4(C)[C@H]3CC[C@]12C)O');
+const bbbRows=ProdrugCandidates.generateBBB(cholesterol).rows,bbb=ProdrugExplorer.bbbReview(cholesterol,bbbRows);
+ok(bbb.status==='reviewed'&&bbb.rows.length===8&&bbb.parent.role==='parent','Cholesterol BBB review retains parent and all eight designs');
+ok(bbb.rows.every(r=>r.passiveScreen.available&&/passive screen/.test(r.passiveScreen.label)&&r.passiveScreen.model.includes('BOILED-Egg')&&r.bbbDesign.requirements.length>=2),'Every candidate receives the existing passive screen and activation requirements');
+ok(bbb.rows.every(r=>r.brainDeliveryEstablished===false&&r.biologicalConversionEstablished===false)&&bbb.noCombinedScore&&!bbb.rows.some(r=>'score'in r||'probability'in r),'Review never creates a BBB score, probability or delivery claim');
+ok(bbb.rows.filter(r=>r.delta.logp>0).every(r=>r.cautions.some(t=>t.includes('already has estimated WLOGP'))),'High-lipophilicity parent receives an explicit lipophilicity caution');
+ok(bbb.parentCautions.length===1&&bbb.parentCautions[0].text.includes('synthesized locally')&&bbb.parentCautions[0].source.url.includes('PMC8044814'),'Cholesterol review retains local-synthesis and restricted-transport context with its source');
+ok(ProdrugExplorer.bbbReview(parse('CCO'),ProdrugCandidates.generateBBB(parse('CCO')).rows).parentCautions.length===0,'Cholesterol physiology is not assigned to other parent structures');
+ok(bbb.rows[0].bbbDesign.strategy.includes('Redox')&&bbb.limitations.some(t=>t.includes('oxidation')),'Redox lock-in steps remain explicit and unmodelled');
+ok(ProdrugExplorer.bbbReview(cholesterol,[{...bbbRows[0],parentRecoveryVerified:false}]).rows.length===0,'Unverified structures cannot enter BBB review');
 if(process.argv.includes('--json'))console.log(JSON.stringify(routes));else console.log('Molecule-site explorer: '+checks+' focused checks passed.');

@@ -3,6 +3,11 @@
  const text=v=>v==null?'':String(v);
  const species=v=>/^(human|homo sapiens)$/i.test(text(v))?'Homo sapiens':text(v)||'Not reported';
  const metric=e=>{if(e.metric)return e.metric;const found=[...new Set((e.endpoint||'').match(/\b(?:EC50|IC50|Ki|Kd)\b/g)||[])];return found.length===1?found[0]:'';};
+ function primaryReferences(source){
+  const candidates=[...(Array.isArray(source.originalReferences)?source.originalReferences:[]),source.originalReference],out=new Set();
+  for(const candidate of candidates){if(typeof candidate!=='string')continue;try{const url=new URL(candidate.trim());if(url.protocol==='https:'&&url.hostname&&!url.username&&!url.password)out.add(url.href);}catch(_){}}
+  return [...out];
+ }
  function createModel({entries,catalog,curated,data,reviewData={decisions:[]}}){
   const byName=new Map(entries.map(e=>[e.name,e])),cache=new WeakMap();
   function observations(entry){
@@ -13,15 +18,31 @@
     for(const [i,e]of r.evidence.entries()){
      // Multi-compound records retain participant-specific values, never their partner's.
      const values=Array.isArray(e.values)?e.values.filter(v=>v.compound===ci):[null];
-     for(const v of values)out.push({id:r.id+':'+i+':'+ci,recordId:r.id,compoundIndex:ci,kind:e.kind,target:e.receptorId||e.target||'',targetLabel:e.target||e.receptorId||'',species:e.kind==='measured_property'?null:species(e.species),hostSpecies:e.kind==='measured_property'?null:e.hostSpecies||'Not reported',action:e.action||'',assay:e.kind==='measured_property'?e.assay||null:e.assay||'Not reported',metric:e.kind==='measured_property'?e.metric||e.target||'Measured property':metric(e),value:v?v.value:e.value,relation:v?v.relation:e.relation,unit:v?v.unit:e.unit,sd:e.sd,lower:e.lower,upper:e.upper,uncertainty:e.uncertainty,uncertaintyKind:e.uncertaintyKind,originalReference:e.originalReference||'',efficacy:e.efficacy,conditions:e.conditions,testedForm:e.kind==='measured_property'?e.testedForm||null:e.testedForm||'Not reported',endpoint:e.endpoint||'',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256||'',sourceLocation:e.sourceLocation||'',context:e.context||r.note||'',role:r.compounds[ci].role,negativeControl:(r.relationships||[]).some(l=>l.kind==='negative_control'&&l.to===ci),raw:e});
+     for(const v of values)out.push({id:r.id+':'+i+':'+ci,recordId:r.id,compoundIndex:ci,kind:e.kind,target:e.receptorId||e.target||'',targetLabel:e.target||e.receptorId||'',species:e.kind==='measured_property'?null:species(e.species),hostSpecies:e.kind==='measured_property'?null:e.hostSpecies||'Not reported',action:e.action||'',assay:e.kind==='measured_property'?e.assay||null:e.assay||'Not reported',metric:e.kind==='measured_property'?e.metric||e.target||'Measured property':metric(e),value:v?v.value:e.value,relation:v?v.relation:e.relation,unit:v?v.unit:e.unit,sd:e.sd,lower:e.lower,upper:e.upper,uncertainty:e.uncertainty,uncertaintyKind:e.uncertaintyKind,originalReference:e.originalReference||'',originalReferences:primaryReferences(e),originalReferenceLabel:e.experimentalReference||e.originalReferenceLabel||'',referenceStatus:e.referenceStatus||'',efficacy:e.efficacy,conditions:e.conditions,testedForm:e.kind==='measured_property'?e.testedForm||null:e.testedForm||'Not reported',endpoint:e.endpoint||'',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256||'',sourceLocation:e.sourceLocation||'',context:e.context||r.note||'',role:r.compounds[ci].role,negativeControl:(r.relationships||[]).some(l=>l.kind==='negative_control'&&l.to===ci),raw:e});
     }
    }
-   for(const [i,e]of catalog.receptorEvidence(entry).entries())out.push({id:'import:'+i,kind:e.bindingEvidence?'imported_binding':'imported_classification',target:e.receptorId,targetLabel:e.sourceTarget||e.receptorId,species:species(e.species),hostSpecies:'Not reported',action:e.sourceAction||'',assay:e.assay||'Not reported',metric:e.bindingEvidence?e.affinityUnits||'':'',value:e.bindingEvidence&&e.affinityMedian!==''&&Number.isFinite(Number(e.affinityMedian))?Number(e.affinityMedian):undefined,unit:e.bindingEvidence?'source scale':'',relation:'=',testedForm:'Not reported',endpoint:[e.affinityUnits,e.affinityMedian,e.comment].filter(Boolean).join(' · '),sourceUrl:e.sourceUrl,context:'Imported source row; target action and affinity fields retain their original scope.',raw:e});
+   for(const [i,e]of catalog.receptorEvidence(entry).entries()){
+    if(e.provider==='ChEMBL curated action classification'){
+     if(e.classificationTransferStatus!=='exact_source_graph'||e.librarySmiles!==entry.smiles||!['agonist','antagonist'].includes(e.actions?.[0]))continue;
+     out.push({id:'import:chembl-classification:'+e.activityId+':'+e.receptorId,kind:'imported_classification',provider:e.provider,target:e.receptorId,targetLabel:e.receptorId,species:species(e.species),hostSpecies:'Not reported',action:e.actions[0],actions:e.actions,sourceAction:e.sourceAction,assay:e.assay||'Not reported',testedForm:'Not reported',endpoint:'Explicit source action classification; no functional measurement assigned',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256,sourceFile:e.sourceFile,sourceLocation:e.sourceLocation,sourceRelease:e.sourceRelease,activityId:e.activityId,assayId:e.assayId,documentId:e.documentId,documentJournal:e.documentJournal,documentYear:e.documentYear,assayFormatId:e.assayFormatId,assayFormat:e.assayFormat,assayTypeDescription:e.assayTypeDescription,assayConfidenceDescription:e.assayConfidenceDescription,assayRelationshipType:e.assayRelationshipType,assayRelationshipDescription:e.assayRelationshipDescription,assaySubcellularFraction:e.assaySubcellularFraction,assayTestType:e.assayTestType,sourceActivityProperties:e.sourceActivityProperties||[],chemblMoleculeId:e.chemblMoleculeId,chemblTargetId:e.chemblTargetId,documentUrl:e.documentUrl,moleculeUrl:e.moleculeUrl,targetUrl:e.targetUrl,activityUrl:e.activityUrl,context:e.context,raw:e});
+     continue;
+    }
+    if(e.provider==='ChEMBL'){
+     // Source graph equivalence is checked by the builder. The stored-graph
+     // witness also prevents stale generated rows attaching to an edited entry.
+     if(e.numericalTransferStatus!=='exact_source_graph'||e.librarySmiles!==entry.smiles)continue;
+     const typed=['Ki','Kd'].includes(e.metric)&&e.relation==='='&&e.unit==='nM'&&Number.isFinite(e.value)&&e.value>0;
+     if(!typed)continue;
+     out.push({id:'import:chembl:'+e.activityId+':'+e.receptorId,kind:'imported_binding',provider:e.provider,target:e.receptorId,targetLabel:e.sourceTarget||e.receptorId,species:species(e.species),hostSpecies:'Not reported',action:'',assay:e.assay||'Not reported',metric:typed?e.metric:'',value:typed?e.value:undefined,unit:typed?e.unit:'',relation:typed?e.relation:'',testedForm:'Not reported',endpoint:e.endpoint||'',sourceUrl:e.sourceUrl,sourceSha256:e.sourceSha256||'',sourceFile:e.sourceFile||'',sourceLocation:e.sourceLocation||'',sourceRelease:e.sourceRelease||'',activityId:e.activityId,assayId:e.assayId,documentId:e.documentId,documentJournal:e.documentJournal,documentYear:e.documentYear,assayFormatId:e.assayFormatId,assayFormat:e.assayFormat,assayTypeDescription:e.assayTypeDescription,assayConfidenceDescription:e.assayConfidenceDescription,assayRelationshipType:e.assayRelationshipType,assayRelationshipDescription:e.assayRelationshipDescription,assaySubcellularFraction:e.assaySubcellularFraction,assayTestType:e.assayTestType,sourceActivityProperties:e.sourceActivityProperties||[],chemblMoleculeId:e.chemblMoleculeId,chemblTargetId:e.chemblTargetId,documentUrl:e.documentUrl,moleculeUrl:e.moleculeUrl,assayUrl:e.assayUrl,targetUrl:e.targetUrl,activityUrl:e.activityUrl,originalMetric:e.originalMetric,originalValue:e.originalValue,originalUnit:e.originalUnit,originalRelation:e.originalRelation,assayOrganism:e.assayOrganism,assayType:e.assayType,assayConfidence:e.assayConfidence,assayDescription:e.assayDescription,assayTissue:e.assayTissue,assayCellType:e.assayCellType,context:'ChEMBL-curated binding observation, not independent remeasurement. Binding does not establish functional action, selectivity, safety or clinical efficacy.',raw:e});
+     continue;
+    }
+    out.push({id:'import:'+i,sourceEndpoint:e.sourceEndpoint,originalEndpoint:e.originalEndpoint,publicationIds:e.publicationIds||[],publicationUrls:e.publicationUrls||[],externalUrls:e.externalUrls||[],patentIds:e.patentIds||[],sourceRecord:e.sourceRecord,provider:e.provider,actions:e.actions||[],sourceAction:e.sourceAction,sourceLigandType:e.sourceLigandType,sourceSha256:e.sourceSha256||'',sourceFile:e.sourceFile||'',sourceLocation:e.sourceLocation||'',kind:e.bindingEvidence?'imported_binding':'imported_classification',target:e.receptorId,targetLabel:e.sourceTarget||e.receptorId,species:species(e.species),hostSpecies:'Not reported',action:e.sourceAction||'',assay:e.assay||'Not reported',metric:e.bindingEvidence?e.affinityUnits||'':'',value:e.bindingEvidence&&e.affinityMedian!==''&&Number.isFinite(Number(e.affinityMedian))?Number(e.affinityMedian):undefined,unit:e.bindingEvidence?'source scale':'',relation:'=',testedForm:'Not reported',endpoint:[e.affinityUnits,e.affinityMedian,e.comment].filter(Boolean).join(' · '),sourceUrl:e.sourceUrl,context:'Imported source row; target action and affinity fields retain their original scope.',raw:e});
+   }
    cache.set(entry,out);return out;
   }
   function dossier(name){const entry=byName.get(name);if(!entry)return null;
    const meta=data.entries[name],guarded=meta?.librarySmiles===entry.smiles;
-   return {entry,label:catalog.displayName(entry),aliases:catalog.aliasesFor(entry),identity:catalog.nameRecord(entry),identityCorrection:entry.identityCorrection,records:curated.forEntry(entry,data),observations:observations(entry),tags:catalog.tagsFor(entry),identityWarnings:guarded?meta.identityConflicts||[]:[]};
+   return {entry,label:catalog.displayName(entry),aliases:catalog.aliasesFor(entry),identity:catalog.nameRecord(entry),identityCorrection:entry.identityCorrection,records:curated.forEntry(entry,data),observations:observations(entry),tags:catalog.tagsFor(entry),identityWarnings:guarded?meta.identityConflicts||[]:[],bindingIdentityWarnings:catalog.receptorEvidence(entry).filter(e=>e.provider==='ChEMBL'&&(e.numericalTransferStatus==='excluded_graph_mismatch'||e.librarySmiles&&e.librarySmiles!==entry.smiles)).map(e=>({activityId:e.activityId,target:e.receptorId,sourceUrl:e.sourceUrl}))};
   }
   function comparison(names){
    const compounds=[...new Set(names)].map(name=>dossier(name)).filter(Boolean),groups=new Map();
@@ -62,15 +83,14 @@
    return {total:matching.length,familyTotal:members(family).length,page:current,pages,targetPage:tp,targetPages,targets,columns,rows:matching.slice((current-1)*perPage,current*perPage).map(e=>({name:e.name,label:catalog.displayName(e),cells:columns.map(t=>cell(e.name,t,selectedSpecies))}))};
   }
   let reviewCache=null;
-  const normalizeAction=a=>text(a).toLowerCase().replace(/ /g,'_').replace(/^full_agonist$/,'agonist');
-  function reviewItems(){if(reviewCache)return reviewCache;const result=[],decisions=new Map(reviewData.decisions.map(d=>[d.id,d]));
+  function reviewItems(){if(reviewCache)return reviewCache;const actionApi=root.ReferenceActions||(typeof module!=='undefined'&&module.exports?require('./reference-actions'):null);const result=[],decisions=new Map(reviewData.decisions.map(d=>[d.id,d]));
    for(const entry of entries){const meta=data.entries[entry.name];
     if(meta?.librarySmiles===entry.smiles)for(const conflict of meta.identityConflicts||[]){
      const r=data.records.find(r=>r.id===conflict.curatedReferenceId),id='identity:'+entry.name,decision=decisions.get(id);
      result.push({id,kind:'identity',name:entry.name,label:catalog.displayName(entry),target:'Identity',status:decision?.status||'unresolved',reason:r?.note||'The legacy graph disagrees with the reviewed source identity. Source pharmacology is not transferred.',history:decision?.history||[],evidence:[],sourceUrl:conflict.sourceUrl,relatedNames:r?.compounds.flatMap(c=>c.libraryNames)||[]});
     }
-    const groups=new Map();for(const o of observations(entry)){const a=normalizeAction(o.action);if(!['agonist','partial_agonist','antagonist','inverse_agonist'].includes(a)||!isTarget(o))continue;const key=JSON.stringify([o.target,o.species]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);}
-    for(const evidence of groups.values()){const actions=[...new Set(evidence.map(o=>normalizeAction(o.action)))];if(actions.length<2)continue;
+    const groups=new Map();for(const o of observations(entry)){if(!actionApi?.canonicalActions(o).length||!isTarget(o))continue;const key=JSON.stringify([o.target,o.species]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);}
+    for(const evidence of groups.values()){const actions=actionApi.reviewActions(evidence);if(actions.length<2)continue;
      const first=evidence[0],id='action:'+entry.name+':'+first.target+':'+first.species,decision=decisions.get(id);
      result.push({id,kind:'action',name:entry.name,label:catalog.displayName(entry),target:first.target,species:first.species,actions,status:decision?.status||'unresolved',reason:'Different action classifications occur for this stored graph and target species. This is a review candidate: pathway, assay conditions and efficacy definitions may explain the difference. It is not an automatic finding that either source is wrong.',history:decision?.history||[],evidence,relatedNames:[]});
     }
@@ -105,5 +125,5 @@
   }
   return {entries,byName,observations,dossier,comparison,families,members,cell,matrix,isTarget,reviews,reviewItems,curationQueue};
  }
- const api={createModel,species,metric};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
+ const api={createModel,species,metric,primaryReferences};root.ReferenceResearch=api;if(typeof module!=='undefined')module.exports=api;
 })(globalThis);

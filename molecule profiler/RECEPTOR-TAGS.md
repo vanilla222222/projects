@@ -32,3 +32,13 @@ Human target records only are imported. An action depends on the source's assay,
 Run `python tools/build-receptor-tags.py` with RDKit installed to regenerate from the pinned subset. To refresh raw inputs, download the three CSV files named in the snapshot, prefix their local filenames with `iuphar-`, and pass `--source-dir DIRECTORY`; mixed release headers are rejected. Source refreshes require review of release, identities and classifications.
 
 Run `node tools/receptor-tags-test.js` and `python tools/receptor-tags-source-test.py`. `validation/library-receptor-tags.json` records input/output hashes and per-receptor action coverage. The existing graph-tag and molecular-name datasets are unchanged.
+
+The subsequent class/action enrichment retains explicit ChEMBL action labels
+as separate source classifications, preserves binding-only observations, and
+adds literal IUPHAR source ligand-class tags. Structural motifs remain separate
+from receptor actions. See `CLASS-ACTION-TAGS-003.md` for scope and validation.
+
+The subsequent endpoint enrichment preserves literal source-scale and original
+concentration fields, relations and publication links. Claim labels use audited
+canonical actions while retaining raw source wording. No scale conversion,
+uncertainty interval or functional measurement is inferred. See `EVIDENCE-004.md`.

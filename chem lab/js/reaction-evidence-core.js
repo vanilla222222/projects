@@ -3,6 +3,36 @@
 // References support reaction classes; no entry establishes experimental
 // validation, conversion, selectivity or safety for an arbitrary query.
 const CORE_REACTION_EVIDENCE_SOURCES = {
+  "grignardCompatibility": [
+    "John McMurry: Grignard carbonyl addition and incompatible functional groups",
+    "https://openstax.org/books/organic-chemistry/pages/17-5-alcohols-from-carbonyl-compounds-grignard-reaction",
+    "teaching"
+  ],
+  "grignardAcidicHydrogens": [
+    "Susan Findlay, University of Lethbridge: Grignard reagents and acidic hydrogens",
+    "https://scholar.ulethbridge.ca/sites/default/files/susanfindlay/files/chem2500new_lecture07_pi_bonds_as_electrophiles.pdf?m=1582677275",
+    "teaching"
+  ],
+  "productHX": [
+    "McMurry, OpenStax: alkyne HX addition and reaction of vinyl products with excess HX",
+    "https://openstax.org/books/organic-chemistry/pages/9-3-reactions-of-alkynes-addition-of-hx-and-x2",
+    "teaching"
+  ],
+  "coldPermanganate": [
+    "Hunt and Spinney: hydroxylation of alkenes with cold alkaline permanganate",
+    "https://chem.ucalgary.ca/courses/351/Carey5th/Ch15/ch15-3-3.html",
+    "teaching"
+  ],
+  "benzylicOxidation": [
+    "John McMurry: oxidation of aromatic side chains",
+    "https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds",
+    "teaching"
+  ],
+  "borohydrideAcyl": [
+    "Chaikin and Brown: Reduction of Aldehydes, Ketones and Acid Chlorides by Sodium Borohydride (1949)",
+    "https://doi.org/10.1021/ja01169a033",
+    "primary"
+  ],
   "alkene": [
     "John McMurry, Organic Chemistry: alkene reaction summary",
     "https://openstax.org/books/organic-chemistry/pages/8-summary-of-reactions",
@@ -186,7 +216,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "A recognized borane reagent adds to the selected alkene, placing OH on the locally less-substituted carbon after oxidative work-up.",
     "Peroxide/base work-up is assumed if not supplied and is reported as a warning.",
-    "This rule edits one selected alkene and does not implement general alkyne hydroboration or borane competition with every reducible group.",
+    "Distinct equal-substitution alkene orientations are represented without a ratio; equivalent products are deduplicated. Multiple alkene sites remain unresolved. General alkyne hydroboration and borane competition with every reducible group are not implemented.",
     [
       "alkene"
     ]
@@ -214,13 +244,14 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "reduction",
     "Reduction",
-    "NaBH4 targets recognized aldehyde/ketone groups; LiAlH4 additionally handles the explicitly encoded acid derivative, nitrile and epoxide branches.",
+    "NaBH4 edits recognized aldehyde/ketone groups; acyl chloride competition is flagged rather than modeled as selective carbonyl reduction. LiAlH4 additionally handles the explicitly encoded acid derivative, nitrile and epoxide branches.",
     "Alcohol/amine products assume the stated or conventional protonating work-up.",
     "Hydride identity is simplified; individual substrate selectivity and every potentially reducible functional group are not covered.",
     [
       "carbonyl",
       "derivatives",
-      "nitrile"
+      "nitrile",
+      "borohydrideAcyl"
     ]
   ],
   [
@@ -307,7 +338,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "sulfonylation",
     "Acyl substitution",
-    "A recognized sulfonyl chloride reacts with one selected alcohol or amine site to form a sulfonate ester or sulfonamide.",
+    "A recognized sulfonyl chloride with two S=O bonds, one S–C bond and one S–Cl bond reacts with one selected alcohol or neutral N–H amine site to form a sulfonate ester or sulfonamide.",
     "The matched neutral nucleophile and sulfonyl chloride are available in the assigned roles.",
     "The alcohol source documents tosylation; the amine branch is supported by the amine text. Site competition and protecting-group compatibility remain local heuristics.",
     [
@@ -331,7 +362,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "Water plus recognized strong acid hydrates the selected alkene; a matched alkyne additionally requires the mercury tag and gives the encoded carbonyl.",
     "Alkyne hydration includes enol-to-carbonyl tautomerization.",
-    "Regiochemistry is locally ranked; exhaustive carbocation rearrangements and mixtures from unsymmetrical internal alkynes are not enumerated.",
+    "Alkene regiochemistry is a class heuristic; distinct equal-substitution orientations and multiple sites are unresolved. Exhaustive carbocation rearrangements and mixtures from unsymmetrical internal alkynes are not enumerated.",
     [
       "alkene",
       "hydration"
@@ -361,33 +392,39 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "grignard-extra",
     "Carbonyl C–C formation",
-    "A recognized Grignard adds to CO2 or a nitrile when the guard finds no protic solvent, acid, O-H/N-H donor or competing aldehyde/ketone/ester substrate.",
+    "A recognized Grignard adds to CO2 or a nitrile when the guard finds no protic donor, competing aldehyde/ketone/ester substrate or recognized carbonyl/nitrile solvent.",
     "The acid or ketone product represents hydrolytic work-up of the organomagnesium adduct.",
-    "The guard is finite and does not guarantee compatibility with every acidic hydrogen or electrophilic group.",
+    "Complete recorded input structures are screened for neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors. Auxiliary carbonyl/nitrile groups block clean endpoints. Other acidic hydrogens, competition ratios and general compatibility are not modeled.",
     [
       "carboxylation",
-      "nitrile"
+      "nitrile",
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [
     "grignard",
     "Carbonyl C–C formation",
     "Recognized organomagnesium carbon donors add to the supported aldehyde, ketone or acid-derivative carbonyl patterns to give alcohol products.",
-    "Dry conditions and protonating work-up are part of the represented sequence; O-H/N-H donors and acids trigger the encoded quench branch.",
-    "Other acidic functions, steric effects and reagent-dependent 1,2/1,4 selectivity are incompletely represented.",
+    "Dry conditions and protonating work-up are part of the represented sequence. Protic donors trigger quench; recognized carbonyl/nitrile solvents instead return unresolved solvent-competition hints.",
+    "Complete-input checks cover neutral O–H/N–H/S–H, nonmetalated terminal-alkyne H/D and auxiliary carbonyl/nitrile motifs. Unencoded acidic functions, steric effects and reagent-dependent 1,2/1,4 selectivity remain incomplete.",
     [
       "carbonyl",
-      "derivatives"
+      "derivatives",
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [
     "grignard-formation",
     "Organometallic chemistry",
-    "A selected supported organic halide plus magnesium forms the encoded R-Mg-X fragment; water/protic conditions, acids and O-H/N-H donors block the transformation.",
+    "A selected supported organic halide plus magnesium forms the encoded R-Mg-X fragment. Protic donors, recognized carbonyl/nitrile solvents and carbonyl/nitrile functions on any recorded input block isolated-formation assignment. Neutral O–H/N–H/S–H and nonmetalated terminal-alkyne H/D donors are screened regardless of role.",
     "Ether or THF is the intended solvent; other solvent choices generate a warning.",
     "Metal activation, induction, coupling side products and all incompatible functional groups are not simulated.",
     [
-      "grignard"
+      "grignard",
+      "grignardCompatibility",
+      "grignardAcidicHydrogens"
     ]
   ],
   [
@@ -427,7 +464,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Nitric acid plus the encoded sulfuric-acid condition nitrates a ranked aromatic hydrogen using local directing and activation rules.",
     "The aromaticity and substituent classifiers determine candidate sites.",
-    "Strongly deficient unactivated rings are excluded; directing ratios, aniline protonation and polysubstitution remain simplified.",
+    "Strongly deficient unactivated rings are excluded; directing ratios, aniline protonation and polysubstitution remain simplified. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic"
     ]
@@ -437,7 +474,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Recognized SO3 installs a sulfonic acid group at a ranked aromatic site; aqueous strong acid enables the encoded reverse desulfonation branch.",
     "The chosen branch represents the forward or reverse net substitution.",
-    "Temperature warnings do not calculate reversibility or equilibrium; directing effects and multiple sulfonation are not exhaustive.",
+    "Temperature warnings do not calculate reversibility or equilibrium; directing effects and multiple sulfonation are not exhaustive. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic"
     ]
@@ -447,7 +484,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Aromatic substitution",
     "Supported arenes undergo recognized Lewis-acid halogenation or Friedel-Crafts alkylation/acylation branches at locally ranked positions.",
     "The encoded arene, electrophile and catalyst patterns determine whether a branch is offered.",
-    "Deactivation, rearrangement and ortho/para distributions are simplified; a match does not establish compatibility for heteroarenes.",
+    "Deactivation, rearrangement and ortho/para distributions are simplified; a match does not establish compatibility for heteroarenes. Existing positional branches and ratios are explicitly heuristic, not established selective isolation or a measured distribution.",
     [
       "aromatic",
       "friedel"
@@ -539,14 +576,16 @@ const CORE_REACTION_EVIDENCE_ROWS = [
   [
     "oxidation",
     "Oxidation",
-    "PCC or permanganate oxidizes recognized primary/secondary alcohols; separate permanganate branches handle encoded alkene and aldehyde patterns.",
-    "Oxidant tags and local temperature thresholds select the represented net oxidation.",
-    "The source supports reaction classes; reagent concentration, overoxidation, site competition and measured product distributions are not supplied by the model.",
+    "PCC or permanganate oxidizes recognized primary/secondary alcohols. Separate permanganate alkene and alkyl-benzylic branches require recorded water medium and a supported cold-alkaline or heated neutral/acidic regime.",
+    "Cold <=10 C and heated >=60 C are conservative implementation scope bounds, not measured kinetic transitions. The cold branch assumes dilute oxidant; neutral acids represent the work-up endpoint.",
+    "Other/mixed media, intermediate temperatures and hot alkaline salt endpoints are unresolved. Oxidant concentration, loading and kinetics are not quantitatively modeled; hot benzylic competition is flagged.",
     [
       "oxidation",
       "pcc",
       "cleavage",
-      "epoxide"
+      "epoxide",
+      "coldPermanganate",
+      "benzylicOxidation"
     ]
   ],
   [
@@ -585,10 +624,11 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Addition",
     "Recognized HX adds to the selected alkene/alkyne using local Markovnikov ranking; the HBr peroxide/light branch gives the encoded radical alternative.",
     "The radical alternative is limited to the HBr-specific reagent pattern.",
-    "Carbocation rearrangement, partial alkyne addition and real product ratios are simplified.",
+    "Distinct equal-substitution alkene orientations are unranked alternatives; symmetric products are not duplicated and multiple alkene sites remain unresolved. Carbocation rearrangement, partial alkyne addition and real product ratios are simplified. The product audit flags an unsaturated endpoint under recorded excess HX without predicting its subsequent product distribution.",
     [
       "alkene",
-      "alkyne"
+      "alkyne",
+      "productHX"
     ]
   ],
   [
@@ -690,7 +730,7 @@ const CORE_REACTION_EVIDENCE_ROWS = [
     "Substitution and elimination",
     "Recognized strong base activates an alcohol, or encoded weaker base activates a phenol, for ether formation with a selected alkyl halide.",
     "The local donor/base combination stands in for alkoxide or phenoxide preparation.",
-    "Tertiary halides are excluded and secondary substrates warn of elimination; solvent and site ranking are simplified.",
+    "Tertiary halides are excluded and secondary substrates warn of elimination. Multiple recognized sites and simultaneously enabled Mitsunobu activation are flagged without assigning pathway dominance; solvent and site ranking remain simplified.",
     [
       "ether",
       "halide"
