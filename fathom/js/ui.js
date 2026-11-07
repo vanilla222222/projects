@@ -62,6 +62,10 @@ function makeUI(root, deps) {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     if (!item) return canvas;
+    if (mining && mining.isTool(item)) {
+      paintToolIcon(ctx, mining.toolSpec(item.key).job, mining.tierColour(item), size);
+      return canvas;
+    }
     // Fit the whole object into the slot so furniture reads as a silhouette.
     const multi = tiles.MULTI && tiles.MULTI[item.key];
     if (multi) {
@@ -224,10 +228,6 @@ function makeUI(root, deps) {
       ctx.fillRect(2 * u, 9 * u, 5 * u, 1.6 * u);
       return canvas;
     }
-    if (mining && mining.isTool(item)) {
-      paintToolIcon(ctx, mining.toolSpec(item.key).job, mining.tierColour(item), size);
-      return canvas;
-    }
     // Accessories. Twenty-five of them, and every one was the same grey square: a
     // pendant on a chain, tinted, is enough to tell them apart at a glance.
     const acc = craft && craft.ACCESSORIES[item.key];
@@ -380,18 +380,23 @@ function makeUI(root, deps) {
       ctx.fillStyle = fill;
       ctx.fill();
     }
-    facet([3, 15, 1.5, 13.5, 10, 5, 12, 6.5], '#986239', true);
-    facet([3, 14, 2.4, 13.3, 10, 5.4, 10.8, 6], '#d8a568');
     if (job === 'axe') {
-      facet([7, 5, 9, 2, 13, 1, 15, 4, 14, 8, 12, 10, 11, 7], colour, true);
-      facet([13, 1, 15, 4, 14, 8, 12, 10, 12, 8, 13.7, 4], '#fff1cb99');
+      // Upright hatchet with a broad, dropped cutting edge.
+      facet([5, 15, 3, 15, 4, 3, 6, 3], '#b07648', true);
+      facet([4, 3, 8, 3, 13, 1, 15, 5, 14, 10, 9, 8, 7, 6, 4, 6], colour, true);
+      facet([13, 1, 15, 5, 14, 10, 12, 9, 13, 5, 11.5, 2], '#fff1cbbd');
     } else if (job === 'hammer') {
-      facet([5, 3, 8, 1, 15, 6, 15, 8, 12, 11, 5, 5], colour, true);
-      facet([5, 3, 8, 1, 15, 6, 12, 7], '#fff1cb88');
-      facet([12, 7, 15, 6, 15, 8, 12, 11], '#211d365c');
+      // A straight haft and a heavy rectangular double face.
+      facet([7, 6, 9, 6, 9, 15, 7, 15], '#a5694a', true);
+      facet([2, 3, 4, 1, 12, 1, 14, 3, 14, 7, 12, 9, 4, 9, 2, 7], colour, true);
+      facet([2, 3, 4, 1, 12, 1, 14, 3, 12, 4, 4, 4], '#fff1cba8');
+      facet([4, 4, 5, 4, 5, 9, 4, 9], '#211d3688');
+      facet([11, 4, 12, 4, 12, 9, 11, 9], '#211d3688');
     } else {
-      facet([4, 4, 6, 2, 10, 2, 14, 5, 15, 9, 14, 11, 12, 7, 9, 5, 6, 4], colour, true);
-      facet([4, 4, 6, 2, 10, 2, 14, 5, 15, 9, 13, 6, 9, 3.5], '#fff1cb99');
+      // Long diagonal shaft and two tapered, hooked ends.
+      facet([2, 15, 1, 13, 10, 4, 12, 6], '#aa7547', true);
+      facet([3, 2, 6, 1, 10, 2, 14, 6, 15, 10, 14, 13, 12, 8, 9, 5, 6, 3], colour, true);
+      facet([3, 2, 6, 1, 10, 2, 14, 6, 15, 10, 12, 6, 9, 3.5, 6, 2.5], '#fff1cbb5');
     }
   }
 

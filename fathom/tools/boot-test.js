@@ -41,7 +41,7 @@ const sources = [];
 {
   const re = /<script src="([^"]+)"><\/script>/g;
   let m = re.exec(html);
-  while (m) { sources.push(m[1]); m = re.exec(html); }
+  while (m) { sources.push(m[1].split('?')[0]); m = re.exec(html); }
 }
 ok(sources.length >= 10, 'index.html lists only ' + sources.length + ' scripts');
 for (const src of sources) {
