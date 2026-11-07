@@ -6,10 +6,13 @@
 
 function makeRenderer(canvas, deps) {
   const { tiles, texture, autotile, light, worldgen, noise, sprite } = deps;
-  const ctx = canvas.getContext('2d');
+  const screen = canvas.getContext('2d');
+  let ctx = screen;
   const lightCanvas = document.createElement('canvas');
   const lightCtx = lightCanvas.getContext('2d');
   const atlas = texture.bakeAtlas(document, tiles);
+  const terrain = deps.webgl ? deps.webgl.makeTerrainGL(document, atlas) : null;
+  let backend = 'canvas2d', terrainQuads = 0;
   const TILE = texture.TILE;
   const field = light.makeLightField(tiles);
   const stars = [];
@@ -220,18 +223,43 @@ function makeRenderer(canvas, deps) {
   // The wall layer, drawn behind the blocks. This is real per-tile data rather than a painted
   // backdrop, so a tunnel shows the wall its stratum generated and a player-placed wall shows
   // where it was put.
-  function drawWalls(state, view) {
+  let terrainView = null;
+  let heights = new Map();
+  let heightWorld = null;
+  function sampleTerrain(world, view) {
+    const { x0, y0, cols, rows } = view, stride = cols + 2;
+    const revision = world.renderRevision;
+    if (terrainView && revision !== undefined && terrainView.world === world &&
+        terrainView.revision === revision && terrainView.x0 === x0 && terrainView.y0 === y0 &&
+        terrainView.cols === cols && terrainView.rows === rows) return terrainView;
+    const cells = stride * (rows + 2);
+    const ids = terrainView?.ids.length === cells ? terrainView.ids : new Uint16Array(cells);
+    const walls = terrainView?.walls.length === cells ? terrainView.walls : new Uint16Array(cells);
+    for (let y = -1; y <= rows; y += 1) for (let x = -1; x <= cols; x += 1) {
+      const index = (y + 1) * stride + x + 1;
+      const id = world.get(x0 + x, y0 + y);
+      ids[index] = id;
+      walls[index] = x >= 0 && x < cols && y >= 0 && y < rows && !tiles.isSolid(id)
+        ? world.getWall(x0 + x, y0 + y) : 0;
+    }
+    terrainView = { world, revision, x0, y0, cols, rows, stride, ids, walls };
+    return terrainView;
+  }
+  function cachedSurface(world, x) {
+    if (world !== heightWorld || heights.size > 4096) { heights = new Map(); heightWorld = world; }
+    if (!heights.has(x)) heights.set(x, worldgen.surfaceHeight(world.seed, x));
+    return heights.get(x);
+  }
+
+  function drawWalls(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     for (let ty = 0; ty < rows; ty += 1) {
       for (let tx = 0; tx < cols; tx += 1) {
-        const wx = x0 + tx;
-        const wy = y0 + ty;
-        const id = state.world.getWall(wx, wy);
+        const id = sample.walls[(ty + 1) * sample.stride + tx + 1];
         if (id === 0) continue;
         // A solid block covers its whole cell, so the wall behind it is painted and then
         // painted over. Underground that is almost every cell on the screen.
-        if (tiles.isSolid(state.world.get(wx, wy))) continue;
         const spec = tiles.wall(id);
         ctx.fillStyle = spec.colour;
         ctx.fillRect(tx * size - offsetX, ty * size - offsetY, size + 1, size + 1);
@@ -240,9 +268,10 @@ function makeRenderer(canvas, deps) {
     // A soft dark edge where wall meets open sky stops the boundary reading as a hard line.
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
-      const surface = worldgen.surfaceHeight(state.world.seed, wx);
+      const surface = cachedSurface(state.world, wx);
       const sy = (surface - y0) * size - offsetY;
       if (sy < -size * 2 || sy > canvas.height + size) continue;
+      if (ctx.surfaceShade) { ctx.surfaceShade(tx * size - offsetX, sy - size * 2.5, size + 1, size * 4); continue; }
       const g = ctx.createLinearGradient(0, sy - size * 2.5, 0, sy + size * 1.5);
       g.addColorStop(0, 'rgba(0,0,0,0)');
       g.addColorStop(1, 'rgba(0,0,0,0.42)');
@@ -254,9 +283,23 @@ function makeRenderer(canvas, deps) {
   const EDGE_TOP = 'rgba(255,255,255,0.16)';
   const EDGE_BOTTOM = 'rgba(0,0,0,0.28)';
   const EDGE_SIDE = 'rgba(0,0,0,0.16)';
-  const GRASS_FRINGE = '#5f9440';
+  const SURFACE_DETAIL = {
+    grass: ['#6c9e47', '#a8bd62'],
+    junglegrass: ['#438d5a', '#81bd63'],
+    peat: ['#777b45', '#a6ac65'],
+    snow: ['#9dc2cf', '#dff5f4'],
+    sand: ['#b98c54', '#e0b978'],
+    redclay: ['#a45e4d', '#d9956e'],
+    stone: ['#777784', '#a0a4b2'],
+    blightgrass: ['#845ca1', '#b986c9'],
+    fleshgrass: ['#a64d61', '#d68186']
+  };
+  const GRASS_PALETTES = {
+    forest: ['#49834d', '#83a855'],
+    savanna: ['#a08442', '#d8b965']
+  };
 
-  function drawTiles(state, view) {
+  function drawTiles(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const wind = (state.weather && state.weather.wind) || 0;
@@ -264,14 +307,15 @@ function makeRenderer(canvas, deps) {
     // One closure for the whole pass rather than one per tile: maskAt is called for
     // every solid tile on the screen and was being handed a freshly allocated function
     // each time.
-    const solidAt = (nx, ny) => tiles.isSolid(state.world.get(nx, ny));
+    const solidAt = (nx, ny) => tiles.isSolid(sample.ids[(ny - y0 + 1) * sample.stride + nx - x0 + 1]);
     let ink = null;
     ctx.imageSmoothingEnabled = false;
     for (let ty = 0; ty < rows; ty += 1) {
       for (let tx = 0; tx < cols; tx += 1) {
         const wx = x0 + tx;
         const wy = y0 + ty;
-        const id = state.world.get(wx, wy);
+        const at = (ty + 1) * sample.stride + tx + 1;
+        const id = sample.ids[at];
         const sx = tx * size - offsetX;
         const sy = ty * size - offsetY;
         const spec = tiles.tile(id);
@@ -300,7 +344,7 @@ function makeRenderer(canvas, deps) {
           const level = state.world.getLevel ? state.world.getLevel(wx, wy) : 255;
           if (level <= 0) continue;
           // A tile with water above it is drawn full, so a deep body has no seams in it.
-          const below = state.world.get(wx, wy - 1);
+          const below = sample.ids[at - sample.stride];
           const brimming = tiles.tile(below).liquid || level >= 250;
           const frac = brimming ? 1 : Math.max(0.08, level / 255);
           const hPix = Math.round(size * frac);
@@ -342,16 +386,29 @@ function makeRenderer(canvas, deps) {
           if (e.left) ctx.fillRect(sx, sy, lip, size);
           if (e.right) ctx.fillRect(sx + size - lip, sy, lip, size);
         }
-        if (e.top && spec.key === 'grass') {
-          ctx.fillStyle = GRASS_FRINGE;
-          ink = GRASS_FRINGE;
-          ctx.fillRect(sx, sy - lip, size, lip);
-          const bend = Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom * 1.6;
-          for (let i = 0; i < 3; i += 1) {
-            const gx = sx + (i * 5 + (texture.variantFor(wx, wy + i) * 3)) % (size - 2);
-            const h = lip * (2 + ((wx + i) % 3));
-            ctx.fillRect(gx + bend, sy - h, Math.max(1, Math.round(zoom)), h);
+        const detail = SURFACE_DETAIL[spec.key];
+        if (e.top && detail && sample.ids[at - sample.stride] === tiles.AIR
+          && wy === cachedSurface(state.world, wx)) {
+          const palette = spec.key === 'grass'
+            ? GRASS_PALETTES[worldgen.biomeAt(state.world.seed, wx).key] || detail
+            : detail;
+          const foliage = spec.key.endsWith('grass') || spec.key === 'peat';
+          const width = Math.max(1, Math.round(zoom));
+          const start = sx + Math.floor(size * (variant % 4 + 1) / 6);
+          ctx.fillStyle = palette[0];
+          if (foliage) {
+            const height = lip * (variant % 3 + 2);
+            const bend = wind ? Math.round(Math.sin(state.time * 2.4 + wx * 0.6) * wind * zoom) : 0;
+            ctx.fillRect(start, sy - height + lip, width, height);
+            ctx.fillStyle = palette[1];
+            ctx.fillRect(start + bend, sy - height, width, lip);
+            if (variant % 2 === 0) ctx.fillRect(start + 2 * width, sy - lip, width, lip);
+          } else if (variant % 2 === 0) {
+            ctx.fillRect(start, sy, width * 3, lip);
+            ctx.fillStyle = palette[1];
+            ctx.fillRect(start + width, sy - lip, width * 2, lip);
           }
+          ink = ctx.fillStyle;
         }
       }
     }
@@ -370,8 +427,8 @@ function makeRenderer(canvas, deps) {
 
   // What liquid, if any, stands in this cell: the tile if it is a liquid, or the water
   // logged into a shell or a frond standing on the sea bed.
-  function liquidKindAt(state, x, y) {
-    const spec = tiles.tile(state.world.get(x, y));
+  function liquidKindAt(state, x, y, id) {
+    const spec = tiles.tile(id);
     if (spec.liquid) {
       const level = state.world.getLevel ? state.world.getLevel(x, y) : 255;
       return level > 0 ? (spec.hot ? 'lava' : 'water') : null;
@@ -381,7 +438,7 @@ function makeRenderer(canvas, deps) {
     return wet > 0 ? 'water' : null;
   }
 
-  function drawLiquidDetail(state, view) {
+  function drawLiquidDetail(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     const t = state.time || 0;
@@ -393,14 +450,18 @@ function makeRenderer(canvas, deps) {
     const runs = [];
     for (let tx = 0; tx < cols; tx += 1) {
       const wx = x0 + tx;
+      const column = tx + 1;
+      const kindAt = (ty) => liquidKindAt(state, wx, y0 + ty,
+        sample.ids[(ty + 1) * sample.stride + column]);
       let ty = 0;
       while (ty < rows) {
-        const kind = liquidKindAt(state, wx, y0 + ty);
+        const kind = kindAt(ty);
         if (!kind) { ty += 1; continue; }
-        let end = ty;
-        while (end < rows && liquidKindAt(state, wx, y0 + end) === kind) end += 1;
+        let end = ty + 1;
+        while (end < rows && kindAt(end) === kind) end += 1;
         const level = state.world.getLevel ? state.world.getLevel(wx, y0 + ty) : 255;
-        const brimming = level >= 250 || liquidKindAt(state, wx, y0 + ty - 1) === kind;
+        const above = kindAt(ty - 1);
+        const brimming = level >= 250 || above === kind;
         const frac = brimming ? 1 : Math.max(0.08, level / 255);
         runs.push({
           tx,
@@ -408,8 +469,7 @@ function makeRenderer(canvas, deps) {
           kind,
           topY: ty * size - offsetY + size * (1 - frac),
           botY: end * size - offsetY,
-          open: !liquidKindAt(state, wx, y0 + ty - 1)
-            && !tiles.isSolid(state.world.get(wx, y0 + ty - 1))
+          open: !above && !tiles.isSolid(sample.ids[ty * sample.stride + column])
         });
         ty = end;
       }
@@ -577,29 +637,37 @@ function makeRenderer(canvas, deps) {
     }
   }
 
+  let lightImage, lastLight = null;
   function drawLighting(state, view) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const margin = 6;
     const lw = cols + margin * 2;
     const lh = rows + margin * 2;
-    field.compute(state.world, x0 - margin, y0 - margin, lw, lh,
-      Math.round(255 * light.sunStrength(state.dayPhase)), state.dayPhase);
-    if (lightCanvas.width !== lw || lightCanvas.height !== lh) {
-      lightCanvas.width = lw;
-      lightCanvas.height = lh;
+    const phaseBucket = Math.round(state.dayPhase * 384);
+    const revision = state.world.renderRevision;
+    const signature = [x0, y0, lw, lh, phaseBucket, revision].join(':');
+    if (revision === undefined || !lastLight || lastLight.world !== state.world || lastLight.signature !== signature) {
+      field.compute(state.world, x0 - margin, y0 - margin, lw, lh,
+        Math.round(255 * light.sunStrength(phaseBucket / 384)), phaseBucket / 384);
+      if (lightCanvas.width !== lw || lightCanvas.height !== lh) {
+        lightCanvas.width = lw;
+        lightCanvas.height = lh;
+      }
+      if (!lightImage || lightImage.width !== lw || lightImage.height !== lh) lightImage = lightCtx.createImageData(lw, lh);
+      const image = lightImage;
+      const buffer = field.buffer;
+      // A floor under the light so unlit rock reads as rock. At zero the multiply blend
+      // turns everything pure black and the underground becomes an unreadable void.
+      const ambient = 88;
+      for (let i = 0; i < lw * lh; i += 1) {
+        image.data[i * 4] = Math.min(255, buffer[i * 3] + ambient);
+        image.data[i * 4 + 1] = Math.min(255, buffer[i * 3 + 1] + ambient);
+        image.data[i * 4 + 2] = Math.min(255, buffer[i * 3 + 2] + ambient);
+        image.data[i * 4 + 3] = 255;
+      }
+      lightCtx.putImageData(image, 0, 0);
+      lastLight = { world: state.world, signature };
     }
-    const image = lightCtx.createImageData(lw, lh);
-    const buffer = field.buffer;
-    // A floor under the light so unlit rock reads as rock. At zero the multiply blend
-    // turns everything pure black and the underground becomes an unreadable void.
-    const ambient = 88;
-    for (let i = 0; i < lw * lh; i += 1) {
-      image.data[i * 4] = Math.min(255, buffer[i * 3] + ambient);
-      image.data[i * 4 + 1] = Math.min(255, buffer[i * 3 + 1] + ambient);
-      image.data[i * 4 + 2] = Math.min(255, buffer[i * 3 + 2] + ambient);
-      image.data[i * 4 + 3] = 255;
-    }
-    lightCtx.putImageData(image, 0, 0);
     const size = TILE * zoom;
     ctx.save();
     ctx.globalCompositeOperation = 'multiply';
@@ -631,14 +699,14 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
-  function drawBloom(state, view) {
+  function drawBloom(state, view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (let ty = -1; ty < rows + 1; ty += 1) {
       for (let tx = -1; tx < cols + 1; tx += 1) {
-        const id = state.world.get(x0 + tx, y0 + ty);
+        const id = sample.ids[(ty + 1) * sample.stride + tx + 1];
         const emit = tiles.emitOf(id);
         if (emit <= 0) continue;
         const tint = light.EMIT_TINTS[tiles.tile(id).key] || [255, 255, 255];
@@ -1044,10 +1112,11 @@ function makeRenderer(canvas, deps) {
   let frames = 0;
 
   function phase(name, run) {
-    if (!profiling) { run(); return; }
+    if (!profiling) return run();
     const t0 = performance.now();
-    run();
+    const result = run();
     timings[name] = (timings[name] || 0) + (performance.now() - t0);
+    return result;
   }
 
   function setProfiling(on) {
@@ -1081,16 +1150,27 @@ function makeRenderer(canvas, deps) {
 
     phase('sky', () => drawSky(state));
     phase('parallax', () => drawParallax(state));
-    phase('walls', () => drawWalls(state, view));
-    phase('tiles', () => drawTiles(state, view));
-    phase('water', () => drawLiquidDetail(state, view));
+    const sample = phase('terrain sampling', () => sampleTerrain(state.world, view));
+    const accelerated = terrain && terrain.begin(canvas.width, canvas.height);
+    backend = accelerated ? 'webgl2-terrain' : 'canvas2d';
+    terrainQuads = 0;
+    if (accelerated) ctx = terrain.painter;
+    try {
+      phase('walls', () => drawWalls(state, view, sample));
+      phase('tiles', () => drawTiles(state, view, sample));
+    } finally { ctx = screen; }
+    if (accelerated) phase('terrain GPU', () => {
+      terrainQuads = terrain.end();
+      screen.drawImage(terrain.canvas, 0, 0);
+    });
+    phase('water', () => drawLiquidDetail(state, view, sample));
     phase('drops', () => drawDrops(state, view));
     phase('enemies', () => drawEnemies(state, view));
     phase('villagers', () => drawVillagers(state, view));
     phase('player', () => drawPlayer(state, view));
     phase('lighting', () => drawLighting(state, view));
     phase('carried', () => drawCarriedLight(state, view));
-    phase('bloom', () => drawBloom(state, view));
+    phase('bloom', () => drawBloom(state, view, sample));
     phase('hook', () => drawHook(state, view));
     phase('bobber', () => drawBobber(state, view));
     phase('shots', () => drawShots(state, view));
@@ -1104,7 +1184,7 @@ function makeRenderer(canvas, deps) {
     return view;
   }
 
-  return { draw, atlas, field, setProfiling, profile };
+  return { draw, atlas, field, setProfiling, profile, get backend() { return backend; }, get terrainQuads() { return terrainQuads; } };
 }
 
 // The module's public surface, declared once. index.html used to repeat these

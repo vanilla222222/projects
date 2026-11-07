@@ -606,3 +606,36 @@ html, body {
   white-space: nowrap;
 }
 .buff-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* Touch controls leave the center of the canvas open for aiming. */
+#stage { touch-action: none; }
+#touch-controls { position: fixed; inset: 0; pointer-events: none; z-index: 8; }
+#touch-controls[hidden] { display: none; }
+#touch-controls button {
+  pointer-events: auto; touch-action: none; min-width: 44px; min-height: 44px;
+  border-radius: 10px; border: 1px solid #829dc47d; background: #101d32ec;
+  color: #f4f6ff; font: 700 12px system-ui; padding: 5px 9px;
+}
+#touch-controls button:active, #touch-controls button[aria-pressed="true"] { background: #38577a; }
+.touch-move, .touch-act, .touch-menu { position: absolute; display: flex; gap: 5px; }
+.touch-menu { top: max(6px, env(safe-area-inset-top)); left: max(6px, env(safe-area-inset-left)); }
+.touch-move { bottom: max(7px, env(safe-area-inset-bottom)); left: max(6px, env(safe-area-inset-left)); }
+.touch-act { bottom: max(7px, env(safe-area-inset-bottom)); right: max(6px, env(safe-area-inset-right)); }
+#touch-controls.modal .touch-move, #touch-controls.modal .touch-act { display: none; }
+@media (pointer: coarse) {
+  .hotbar { bottom: calc(61px + env(safe-area-inset-bottom)); gap: 3px; width: min(96vw, 510px); justify-content: center; }
+  .hotbar .slot { width: clamp(29px, 8.7vw, 48px); height: clamp(34px, 9.8vw, 48px); }
+  .screen { align-items: flex-start; align-content: flex-start; justify-content: center; padding: calc(58px + env(safe-area-inset-top)) 6px 72px; gap: 9px; backdrop-filter: none; }
+  .screen .grid { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; }
+  .screen .grid .slot { width: 100%; height: auto; min-height: 30px; aspect-ratio: 1; }
+  .screen .grid-panel { max-width: 100%; }
+  .screen .equip-panel, .screen .craft-panel, .screen .chest-panel, .screen .shop-panel { max-width: 100%; }
+  .screen .grid-panel, .screen .equip-panel, .screen .chest-panel { padding: 8px; }
+  .readout { display: none; }
+  #hud .stats { top: calc(55px + env(safe-area-inset-top)); }
+  .menu-body button { min-height: 44px; }
+}
+@media (max-width: 360px) {
+  #touch-controls button { padding-inline: 5px; }
+  .touch-move, .touch-act, .touch-menu { gap: 3px; }
+}

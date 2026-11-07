@@ -25,6 +25,8 @@ one at a time, and shift-click sends a stack between the hotbar and the backpack
 slots only accept equipment. Mined blocks fall as items and fly to you, so a full backpack
 leaves them on the ground rather than deleting them.
 
+On touchscreens, hold the movement and jump buttons and tap the world to aim. The Dig / attack button switches to Place / use, and the hotbar is tappable. Bag, Map, zoom, pause, housing inspection and Hook have dedicated buttons.
+
 Health and mana sit top right as hearts and stars, each worth 20. Both regenerate faster the
 longer you go without being hit, and faster again standing still.
 
@@ -90,6 +92,8 @@ a tile had no way out, so spawning inside a tree trunk wedged you there permanen
 
 ## Drawing
 
+WebGL2 batches the walls, terrain atlas, liquid tile fills and tile edges into one GPU draw per frame. The rest of the scene is still composed on Canvas2D. If WebGL2 is unavailable or loses its context, terrain falls back to Canvas2D. The renderer reuses visible tile samples and light buffers while they remain valid, and the game limits backing resolution on high-DPI screens.
+
 No image assets. Tile textures are baked procedurally into one atlas at load, twelve variants
 each - four noise patterns crossed with three brightness bands - so large expanses do not
 visibly tile. The band is chosen by a two-scale coherent hash of the tile's position rather
@@ -135,6 +139,8 @@ the cost of one small canvas.
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
+| `js/webgl.js` | WebGL2 terrain batching and context-loss fallback |
+| `js/touch.js` | multitouch controls and cancellation |
 | `js/render.js` | sky, weather, parallax, walls, tiles, water, lighting, bloom, particles |
 | `js/profile.js` | characters and worlds, kept apart, and seed parsing |
 | `js/menu.js` | title, character select and creation, world select and creation |
