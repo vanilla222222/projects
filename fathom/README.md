@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 52 enemies including five bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 55 enemies including eight bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -187,3 +187,15 @@ Bring relics back to the Relic Appraiser or craft an Ashblade, Vault Bow, or Rel
 Below 2,850, the Void replaces the Trench with connected caverns and shafts. Mine Void
 Crystals with an Emberite Pickaxe and combine them with a Guardian Seal to summon
 the Void Sovereign. Its heart can be forged into the Sovereign Mantle.
+
+
+### The Rift and Aetherite
+
+Summon the Mire Broodmother in the Caves or the Granite Colossus in the Deep
+Caverns for optional accessories. Underground cisterns and reliquaries hold
+supplies for deeper exploration.
+
+Use one of the Void Sovereign's hearts to craft a Rift Sigil and summon the Rift
+Archon in the Void. Forge its Rift Core into a Rift Pickaxe, then look in the
+underside of sky islands for Aetherite. An Aether Sabre and Aetherstep accessory
+can be crafted from the smelted ore.

@@ -678,7 +678,7 @@ function oreAt(seed, x, y, depth) {
 const STRUCTURE_SPACING = 260;
 
 function structureAt(seed, slot) {
-  if (unit(seed, slot, 0, 6001) > 0.72) return null;
+  if (unit(seed, slot, 0, 6001) > 0.86) return null;
   const ax = Math.round(slot * STRUCTURE_SPACING
     + STRUCTURE_SPACING * (0.15 + unit(seed, slot, 0, 6003) * 0.7));
   // Anchored to its own column's surface, so a structure sits at a sane depth whether
@@ -688,7 +688,9 @@ function structureAt(seed, slot) {
   let kind;
   let w;
   let h;
-  if (roll < 0.3) { kind = 'cabin'; w = 11 + Math.floor(unit(seed, slot, 0, 6013) * 8); h = 6 + Math.floor(unit(seed, slot, 0, 6017) * 3); }
+  if (roll >= 0.91) { kind = 'reliquary'; w = 26; h = 12; }
+  else if (roll >= 0.8 && roll < 0.87) { kind = 'cistern'; w = 32; h = 15; }
+  else if (roll < 0.3) { kind = 'cabin'; w = 11 + Math.floor(unit(seed, slot, 0, 6013) * 8); h = 6 + Math.floor(unit(seed, slot, 0, 6017) * 3); }
   else if (roll < 0.52) { kind = 'ruin'; w = 13 + Math.floor(unit(seed, slot, 0, 6013) * 10); h = 7 + Math.floor(unit(seed, slot, 0, 6017) * 4); }
   else if (roll < 0.8) { kind = 'grotto'; w = 26 + Math.floor(unit(seed, slot, 0, 6013) * 30); h = 14 + Math.floor(unit(seed, slot, 0, 6017) * 16); }
   else { kind = 'mineshaft'; w = 46 + Math.floor(unit(seed, slot, 0, 6013) * 40); h = 5; }
@@ -727,10 +729,10 @@ const STRUCTURE_STATIONS = ['workbench', 'furnace', 'anvil'];
 function computeStructureChest(seed, slot) {
   const r = cachedStructurePlaced(seed, slot);
   if (!r) return null;
-  const odds = r.kind === 'cabin' ? 0.86 : r.kind === 'ruin' ? 0.5 : 0;
+  const odds = r.kind === 'cabin' ? 0.86 : r.kind === 'ruin' ? 0.5 : r.kind === 'reliquary' || r.kind === 'cistern' ? 1 : 0;
   if (odds === 0) return null;
   if (unit(seed, slot, 0, 7501) > odds) return null;
-  const x = r.x0 + 2 + Math.floor(unit(seed, slot, 0, 7503) * Math.max(1, r.w - 5));
+  const x = r.kind === 'cistern' ? r.x0 + 1 : r.x0 + 2 + Math.floor(unit(seed, slot, 0, 7503) * Math.max(1, r.w - 5));
   const y = r.y1 - 3;                                  // standing on the floor
   const depth = y - columnOf(seed, r.body.ax).height;
   let band = unit(seed, slot, 0, 7507) < 0.06 ? 'rich' : null;
@@ -789,7 +791,11 @@ function baseContainerAt(seed, x, y) {
   for (let s = slot - 1; s <= slot + 1; s += 1) {
     const chest = cachedStructureChest(seed, s);
     if (!chest || chest.x !== x || chest.y !== y) continue;
-    return rollChest(seed, x, y, chest.band, { unit, kindOf: lootKindOf });
+    const loot = rollChest(seed, x, y, chest.band, { unit, kindOf: lootKindOf });
+    const kind = cachedStructurePlaced(seed, s)?.kind;
+    if (kind === 'cistern') loot.push({ key: 'gills-potion', count: 2, kind: 'use' });
+    if (kind === 'reliquary') loot.push({ key: 'crystal', count: 4, kind: 'block' });
+    return loot;
   }
   return null;
 }
@@ -825,6 +831,23 @@ function structureTileAt(seed, x, y) {
       if (ly === 0) return idOf('wood');                  // the roof beam
       // Upright timbers every few tiles, and the rest open.
       if (lx % 7 === 3 && ly > 0 && ly < r.h - 1) return idOf('wood');
+      return AIR;
+    }
+
+    if (r.kind === 'cistern') {
+      const opening = ly >= 4 && ly <= 7 && (lx === 0 || lx === r.w - 1);
+      if (edge) return opening ? AIR : idOf('brick');
+      if (ly === r.h - 4 && lx % 6 < 4) return idOf('oakplatform');
+      if (ly >= r.h - 5 && lx >= 4 && lx < r.w - 4 && y >= SEA_LEVEL) return idOf('water');
+      if (ly === 3 && lx % 10 === 4) return idOf('lantern');
+      return AIR;
+    }
+
+    if (r.kind === 'reliquary') {
+      if (edge) return (lx === 0 || lx === r.w - 1) && ly >= r.h - 4 && ly < r.h - 1
+        ? AIR : idOf('brick');
+      if (ly === r.h - 5 && lx % 9 < 5) return idOf('oakplatform');
+      if (ly === 3 && lx % 8 === 3) return idOf('lantern');
       return AIR;
     }
 
@@ -1275,6 +1298,9 @@ function islandTile(seed, island, x, y) {
   if (depth === 0) return idOf('grass');
   if (depth < 2 + Math.round(span * 3)) return idOf('dirt');
   const ore = fbm2(seed, x * 0.08, y * 0.08, 4019, 2, 2, 0.5);
+  // Every island has a central seam in its keel plus scattered pockets.
+  if ((Math.abs(x - island.cx) < 3 && Math.abs(y - (island.cy + island.ry)) < 2)
+    || (ore > 0.77 && depth >= 7 && span > 0.45)) return idOf('aetherite');
   if (ore > 0.86) return idOf(depth > island.ry ? 'gold' : 'copper');
   return idOf('skystone');
 }

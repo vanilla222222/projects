@@ -150,6 +150,16 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'aetherite-bar': { name: 'Aetherite Bar', kind: 'bar', colour: '#8de8d3' },
+  'rift-core': { name: 'Rift Core', kind: 'loot', colour: '#b493e9' },
+  'mire-pearl': { name: 'Mire Pearl', kind: 'loot', colour: '#80bd8c' },
+  'granite-eye': { name: 'Granite Eye', kind: 'loot', colour: '#9fb1c5' },
+  'mire-idol': { name: 'Mire Idol', kind: 'use', colour: '#76a76a',
+    use: { summon: 'mirebrood', layer: 'caves' }, text: 'Summon the Mire Broodmother in the Caves' },
+  'granite-idol': { name: 'Granite Idol', kind: 'use', colour: '#839bc2',
+    use: { summon: 'granitecolossus', layer: 'deep' }, text: 'Summon the Granite Colossus in the Deep Caverns' },
+  'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
+    use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
   'vault-relic': { name: 'Vault Relic', kind: 'loot', colour: '#b891c2' },
   'guardian-seal': { name: 'Guardian Seal', kind: 'loot', colour: '#e6b09e' },
@@ -256,6 +266,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'mire-talisman': { name: 'Mire Talisman', colour: '#80bd8c', text: 'Health regenerates 20% faster and breath lasts twice as long', regen: 1.2, breathMul: 2 },
+  'granite-aegis': { name: 'Granite Aegis', colour: '#9fb1c5', text: 'Defence +7 and take 25% less fall damage', defense: 7, fallMul: 0.75 },
+  'aetherstep': { name: 'Aetherstep', colour: '#8de8d3', text: 'Double jump, move 20% faster, and take half fall damage', doubleJump: true, speed: 1.2, fallMul: 0.5 },
+
   'sovereign-mantle': { name: 'Sovereign Mantle', colour: '#a994e4',
     text: 'Defence +12, move 12% faster, and emit light', defense: 12, speed: 1.12, glow: 7 },
 
@@ -394,6 +408,7 @@ const WEAPONS = {
   'gold-bow': { name: 'Gold Bow', damage: 35, useTime: 0.27, reach: 40, ranged: true, ammo: 'arrow' },
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
   'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
+  'aether-sabre': { name: 'Aether Sabre', damage: 118, useTime: 0.20, reach: 4.4 },
   'ashblade': { name: 'Ashblade', damage: 91, useTime: 0.22, reach: 3.9 },
   'relic-staff': { name: 'Relic Staff', damage: 92, useTime: 0.27, reach: 46, magic: true, mana: 12, bolt: '#cb9deb' },
   'emberite-bow': { name: 'Emberite Bow', damage: 64, useTime: 0.2, reach: 48, ranged: true, ammo: 'arrow' },
@@ -689,6 +704,15 @@ RECIPES.push(
   { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
   { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
   { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
+  { out: { key: 'mire-idol', kind: 'use', count: 1 }, need: [['gel', 16], ['chitin', 5], ['iron-bar', 2]], station: 'anvil' },
+  { out: { key: 'granite-idol', kind: 'use', count: 1 }, need: [['crystal', 6], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'mire-talisman', kind: 'accessory', count: 1 }, need: [['mire-pearl', 1], ['shell', 8]], station: 'anvil' },
+  { out: { key: 'granite-aegis', kind: 'accessory', count: 1 }, need: [['granite-eye', 1], ['gold-bar', 5]], station: 'anvil' },
+  { out: { key: 'rift-sigil', kind: 'use', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8]], station: 'anvil' },
+  { out: { key: 'rift-pick', kind: 'tool', count: 1 }, need: [['rift-core', 1], ['emberite-pick', 1], ['emberite-bar', 8]], station: 'anvil' },
+  { out: { key: 'aetherite-bar', kind: 'bar', count: 1 }, need: [['aetherite', 4]], station: 'furnace' },
+  { out: { key: 'aetherstep', kind: 'accessory', count: 1 }, need: [['aetherite-bar', 8], ['feather', 10]], station: 'anvil' },
+  { out: { key: 'aether-sabre', kind: 'tool', count: 1 }, need: [['aetherite-bar', 12], ['void-crystal', 3]], station: 'anvil' },
   { out: { key: 'warden-heart', kind: 'accessory', count: 1 }, need: [['furnace-core', 1], ['obsidian', 6]], station: 'anvil' },
   { out: { key: 'furnace-lance', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['emberite-bar', 8]], station: 'anvil' },
   { out: { key: 'cinder-scepter', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['ruby', 2], ['emberite-bar', 6]], station: 'anvil' },

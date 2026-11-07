@@ -68,7 +68,11 @@ const ARCHETYPES = {
   sovereign: { gravity: 0, boss: true, flies: true, speed: 6, hoverAbove: 6, drift: 4,
     chargeEvery: 3.1, windUp: 0.82, chargeSpeed: 24, chargeFor: 1.05,
     spawnEvery: 4, minion: 'voidshade', minions: 3,
-    enrageAt: 0.38, enrageSpeed: 1.42, enrageCharge: 0.6, enrageWindUp: 0.45 }
+    enrageAt: 0.38, enrageSpeed: 1.42, enrageCharge: 0.6, enrageWindUp: 0.45 },
+  archon: { gravity: 0, boss: true, flies: true, speed: 6.8, hoverAbove: 5, drift: 4.2,
+    chargeEvery: 3.5, windUp: 1.1, chargeSpeed: 29, chargeFor: 0.8,
+    spawnEvery: 4.4, minion: 'voidstalker', minions: 3, enrageAt: 0.45,
+    enrageSpeed: 1.28, enrageCharge: 0.66, enrageWindUp: 0.65, followUp: 0.35 }
 
 };
 
@@ -251,7 +255,17 @@ const ENEMIES = [
     emit: 7, drops: [['cinder', 12], ['coin', 780]], bossDrops: [['guardian-seal', 5]] },
   { key: 'voidsovereign', name: 'Void Sovereign', kind: 'sovereign', body: 'bigeye', hp: 7200,
     damage: 72, weight: 0, w: 5, h: 4.2, colour: '#9378dc', boss: true, summonOnly: true,
-    emit: 9, drops: [['stardust', 12], ['coin', 1350]], bossDrops: ['void-heart'] },
+    emit: 9, drops: [['stardust', 12], ['coin', 1350]], bossDrops: [['void-heart', 2]] },
+
+  { key: 'mirebrood', name: 'Mire Broodmother', kind: 'king', body: 'kingslime', hp: 1450,
+    damage: 29, weight: 0, w: 3.6, h: 3, colour: '#73905b', boss: true, summonOnly: true, emit: 3,
+    drops: [['gel', 22], ['coin', 300]], bossDrops: ['mire-pearl'] },
+  { key: 'granitecolossus', name: 'Granite Colossus', kind: 'guardian', body: 'golem', hp: 2550,
+    damage: 41, weight: 0, w: 3.2, h: 3.1, colour: '#839bc2', boss: true, summonOnly: true, emit: 4,
+    drops: [['crystal', 5], ['coin', 520]], bossDrops: ['granite-eye'] },
+  { key: 'riftarchon', name: 'The Rift Archon', kind: 'archon', body: 'demon', hp: 9700,
+    damage: 86, weight: 0, w: 5.2, h: 4.2, colour: '#a581e4', boss: true, summonOnly: true, emit: 10,
+    drops: [['stardust', 18], ['coin', 1850]], bossDrops: ['rift-core'] },
 
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
@@ -347,7 +361,8 @@ const GAIT = {
   hover: { perTile: 0.3, perSecond: 8 },
   furnace: { perTile: 0.45, perSecond: 6 },
   guardian: { perTile: 0.35, perSecond: 6 },
-  sovereign: { perTile: 0.4, perSecond: 10 }
+  sovereign: { perTile: 0.4, perSecond: 10 },
+  archon: { perTile: 0.45, perSecond: 11 }
 };
 
 // --- the live population ------------------------------------------------------------------
@@ -706,8 +721,13 @@ function makeSwarm(world, tiles, deps) {
       moveAxis(enemy, enemy.vx * dt, 0);
       moveAxis(enemy, 0, enemy.vy * dt);
       if (enemy.charge <= 0) {
-        enemy.chargeCooldown = arch.chargeEvery
-          * (enemy.enraged ? arch.enrageCharge : 1);
+        if (enemy.enraged && arch.followUp && !enemy.followUp) {
+          enemy.followUp = true;
+          enemy.windUp = arch.followUp;
+        } else {
+          enemy.followUp = false;
+          enemy.chargeCooldown = arch.chargeEvery * (enemy.enraged ? arch.enrageCharge : 1);
+        }
         enemy.vx = 0;
         enemy.vy = 0;
       }

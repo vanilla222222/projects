@@ -30,7 +30,7 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 // Meteorite is raw but is in no band: it is not generated with the world at all. A
 // meteor falls where a meteor falls, and its crater is written into the edit diff.
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss',
-  'shell', 'obsidian', 'fallenstar', 'meteorite', 'vault-relic', 'void-crystal', ...enemyDrops, ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', 'vault-relic', 'void-crystal', 'aetherite', ...enemyDrops, ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),

@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart'].includes(k)));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart', 'rift-core', 'mire-pearl', 'granite-eye'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -60,7 +60,7 @@ function minableTiles() {
     // Meteorite is in no band: it arrives in a crater when the King dies. Counted here
     // as minable because what this test measures is the pickaxe gate, and meteorite's
     // gate is a pickaxe like everything else's - the boss is a separate question.
-    'meteorite', 'void-crystal',
+    'meteorite', 'void-crystal', 'aetherite',
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
@@ -136,6 +136,9 @@ function climb() {
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');
     if (was.has('guardian-seal')) gain('vault-relic');
     if (was.has('void-beacon')) gain('void-heart');
+    if (was.has('mire-idol')) gain('mire-pearl');
+    if (was.has('granite-idol')) gain('granite-eye');
+    if (was.has('rift-sigil')) gain('rift-core');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;
       gain(tile.key);
@@ -226,6 +229,11 @@ for (const [ore, previous] of Object.entries({
   ok(!mining.canMine(mining.TOOLS[earlier + '-pick'].power, tiles.BY_KEY[ore]), earlier + ' skips to ' + ore);
 }
 
+ok(ladder.arrived.get('rift-core') < ladder.arrived.get('rift-pick')
+  && ladder.arrived.get('rift-pick') < ladder.arrived.get('aetherite'), 'sky ore bypasses the Rift Archon');
+ok(mining.damagePerHit(250, tiles.BY_KEY.aetherite, mining.TOOLS['emberite-pick'].power) === 0,
+  'buffed emberite bypasses the Rift Pickaxe');
+
 ok(ladder.arrived.get('slimecrown') < ladder.arrived.get('gold-pick'),
   'King Slime is unavailable before gold gear');
 ok(ladder.arrived.get('bloodshotlens') < ladder.arrived.get('gold-pick'),
@@ -272,7 +280,7 @@ for (const r of craft.RECIPES) {
 // If everything arrived in one or two rounds there would be no progression at all; if it
 // took thirty, something is gated behind a chain nobody would ever follow.
 ok(ladder.rounds >= 5, 'the whole game is reachable in ' + ladder.rounds + ' rounds');
-ok(ladder.rounds <= 32, 'the ladder is ' + ladder.rounds + ' rounds deep');
+ok(ladder.rounds <= 36, 'the ladder is ' + ladder.rounds + ' rounds deep');
 
 // --- 6. the deepest things really are the last ones --------------------------------------------
 {

@@ -34,7 +34,8 @@ const TOOLS = {
   'silver-pick': { name: 'Silver Pickaxe', job: 'pick', power: 65, useTime: 0.22, tier: 4 },
   'gold-pick': { name: 'Gold Pickaxe', job: 'pick', power: 75, useTime: 0.2, tier: 5 },
   'cobalt-pick': { name: 'Cobalt Pickaxe', job: 'pick', power: 100, useTime: 0.17, tier: 6 },
-  'emberite-pick': { name: 'Emberite Pickaxe', job: 'pick', power: 125, useTime: 0.14, tier: 7 }
+  'emberite-pick': { name: 'Emberite Pickaxe', job: 'pick', power: 125, useTime: 0.14, tier: 7 },
+  'rift-pick': { name: 'Rift Pickaxe', job: 'pick', power: 180, useTime: 0.12, tier: 8 }
 };
 
 // Which tool a given tile answers to. Anything with a background wall is hammer work,
@@ -66,7 +67,7 @@ function jobFor(spec, isWall) {
 // Doubled power, as Terraria does for dirt, clay and sand: the soft ground you move through
 // rather than the rock you work at.
 // Head colour per tier, so a glance at the hotbar says which pickaxe you are holding.
-const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a'];
+const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5'];
 
 const SOFT = new Set(['dirt', 'grass', 'sand', 'snow', 'clay', 'mud']);
 
@@ -111,10 +112,10 @@ function canMine(power, tileSpec) {
   return power >= requirementOf(tileSpec);
 }
 
-function damagePerHit(power, tileSpec) {
+function damagePerHit(power, tileSpec, basePower = power) {
   if (!tileSpec) return 0;
   if (INSTANT.has(tileSpec.key)) return toughnessOf(tileSpec);
-  if (power < requirementOf(tileSpec)) return 0;
+  if ((tileSpec.basePowerGate ? basePower : power) < requirementOf(tileSpec)) return 0;
   return SOFT.has(tileSpec.key) ? power * 2 : power;
 }
 
