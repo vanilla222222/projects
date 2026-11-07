@@ -313,6 +313,24 @@ for (const [key, name, colour, townDevice] of [
   pushTile({ key, name, colour, townDevice, solid: false, opacity: 3, emit: 5, toughness: 65 });
 }
 
+for (const [key, name, colour, solid, emit] of [
+  ['ashvault-brick', 'Ashvault Brick', '#514152', true, 0],
+  ['ashvault-gate', 'Ashvault Gate', '#ab735c', true, 3],
+  ['ashvault-spikes', 'Ashvault Spikes', '#cf785a', false, 2],
+  ['voidstone', 'Voidstone', '#27233f', true, 0],
+  ['void-crystal', 'Void Crystal', '#9c81dc', true, 8]
+]) {
+  pushTile({ key, name, colour, solid, emit, opacity: solid ? 60 : 2, hardness: 2.8,
+    toughness: key === 'void-crystal' ? 410 : 240, require: key === 'void-crystal' ? 125 : 0,
+    drops: key === 'ashvault-gate' ? null : key });
+}
+defineMulti('ashvault-cache', 'Ashvault Reliquary', 2, 2, () => ({
+  solid: false, opacity: 8, emit: 6, hardness: 0.5, colour: '#9d786d',
+  toughness: 120, chest: 'ashvault-cache', drops: 'ashvault-cache'
+}));
+WALLS.push({ id: WALLS.length, key: 'ashvault-wall', name: 'Ashvault Wall', colour: '#302538', opacity: 7 });
+WALLS.push({ id: WALLS.length, key: 'void-wall', name: 'Void Wall', colour: '#19172c', opacity: 7 });
+
 const WALL_BY_KEY = {};
 for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',

@@ -50,7 +50,7 @@ const FROM_THE_WORLD = new Set([
   // gate has nothing to say about them. The rod that catches them is on the ladder.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
-].filter(k => !MADE.has(k) && !mining.TOOLS[k] && k !== 'furnace-core'));
+].filter(k => !MADE.has(k) && !mining.TOOLS[k] && !['furnace-core', 'guardian-seal', 'void-heart'].includes(k)));
 
 // Which tiles can be dug out of the ground at all. A tile that is generated and solid is
 // a tile the world contains; `require` is what decides whether this pickaxe can take it.
@@ -60,7 +60,7 @@ function minableTiles() {
     // Meteorite is in no band: it arrives in a crater when the King dies. Counted here
     // as minable because what this test measures is the pickaxe gate, and meteorite's
     // gate is a pickaxe like everything else's - the boss is a separate question.
-    'meteorite',
+    'meteorite', 'void-crystal',
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
@@ -133,6 +133,9 @@ function climb() {
     // The Warden is a combat gate. The ladder only assumes victory once its summon
     // is reachable and the player can mine the ore used for its rewards.
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
+    if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');
+    if (was.has('guardian-seal')) gain('vault-relic');
+    if (was.has('void-beacon')) gain('void-heart');
     for (const tile of MINABLE) {
       if (was.has(tile.key) || tile.require > power) continue;
       gain(tile.key);
@@ -265,7 +268,7 @@ for (const r of craft.RECIPES) {
 // If everything arrived in one or two rounds there would be no progression at all; if it
 // took thirty, something is gated behind a chain nobody would ever follow.
 ok(ladder.rounds >= 5, 'the whole game is reachable in ' + ladder.rounds + ' rounds');
-ok(ladder.rounds <= 26, 'the ladder is ' + ladder.rounds + ' rounds deep');
+ok(ladder.rounds <= 32, 'the ladder is ' + ladder.rounds + ' rounds deep');
 
 // --- 6. the deepest things really are the last ones --------------------------------------------
 {

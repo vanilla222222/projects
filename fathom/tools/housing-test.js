@@ -191,7 +191,7 @@ function withoutTile(rows, ch) {
     'a player who has done nothing should attract exactly the guide');
   const rich = villager.eligible({ coins: 500, bars: 0, deaths: 0, deepest: 0 });
   ok(rich.some(v => v.key === 'merchant'), 'carrying coin did not attract the merchant');
-  const all = villager.eligible({ coins: 9999, bars: 99, deaths: 3, deepest: 2000 });
+  const all = villager.eligible({ coins: 9999, bars: 99, deaths: 3, deepest: 3000 });
   ok(all.length === villager.VILLAGERS.length,
     'a player who has done everything should attract everybody');
   for (const v of villager.VILLAGERS) {

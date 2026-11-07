@@ -293,6 +293,16 @@ function paintCrystal(ctx, spec, variant, ox, oy) {
 
 function paintSmall(ctx, spec, variant, ox, oy) {
   ctx.clearRect(ox, oy, TILE, TILE);
+  if (spec.key === 'ashvault-spikes') {
+    ctx.fillStyle = '#33253b';
+    ctx.fillRect(ox, oy + 13, 16, 3);
+    for (let i = 0; i < 4; i += 1) {
+      ctx.fillStyle = spec.colour;
+      ctx.fillRect(ox + i * 4 + 1, oy + 7, 1, 6);
+      ctx.fillRect(ox + i * 4, oy + 10, 3, 3);
+    }
+    return;
+  }
   if (spec.townDevice) {
     ctx.fillStyle = '#29253f';
     ctx.fillRect(ox + 2, oy + 12, 12, 4);
@@ -930,7 +940,7 @@ function bakeAtlas(document, tiles) {
       const ox = v * TILE;
       const oy = spec.id * TILE;
       const band = Math.floor(v / PATTERNS);
-      if (spec.gem) paintGem(ctx, spec, v, ox, oy);
+      if (spec.gem || spec.key === 'void-crystal') paintGem(ctx, spec, v, ox, oy);
       else if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
       else if (spec.bed) paintBed(ctx, spec, v, ox, oy);
@@ -948,7 +958,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.key === 'leaves') paintLeaves(ctx, spec, v, ox, oy);
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);
-      else if (spec.key === 'brick') paintBrick(ctx, spec, v, ox, oy);
+      else if (spec.key === 'brick' || spec.key === 'ashvault-brick') paintBrick(ctx, spec, v, ox, oy);
       else if (spec.liquid) paintWater(ctx, spec, v, ox, oy);
       else if (spec.station) paintStation(ctx, spec, v, ox, oy);
       else if (!spec.solid) paintSmall(ctx, spec, v, ox, oy);

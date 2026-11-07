@@ -150,6 +150,14 @@ const ITEMS = {
   'clarity-potion': { name: 'Clarity Potion', kind: 'use', colour: '#7f8fe8', use: { buff: 'clarity' } },
   'feather-potion': { name: 'Feather Fall Potion', kind: 'use', colour: '#d8d2c2', use: { buff: 'featherfall' } },
 
+  'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'vault-relic': { name: 'Vault Relic', kind: 'loot', colour: '#b891c2' },
+  'guardian-seal': { name: 'Guardian Seal', kind: 'loot', colour: '#e6b09e' },
+  'void-heart': { name: 'Void Heart', kind: 'loot', colour: '#9973d7' },
+  'guardian-effigy': { name: 'Guardian Effigy', kind: 'use', colour: '#a27483',
+    use: { summon: 'ashguardian', layer: 'trench', vault: true }, text: 'Summon inside an Ashvault' },
+  'void-beacon': { name: 'Void Beacon', kind: 'use', colour: '#9d85d2',
+    use: { summon: 'voidsovereign', layer: 'void' }, text: 'Summon the Void Sovereign in the Void' },
   'furnace-core': { name: 'Furnace Core', kind: 'loot', colour: '#f28e59' },
   'cinder-idol': { name: 'Cinder Idol', kind: 'use', colour: '#bd624e',
     use: { summon: 'furnacewarden', layer: 'hell' }, text: 'Summons the Furnace Warden in Hell' },
@@ -248,6 +256,9 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'sovereign-mantle': { name: 'Sovereign Mantle', colour: '#a994e4',
+    text: 'Defence +12, move 12% faster, and emit light', defense: 12, speed: 1.12, glow: 7 },
+
   'trail-buckle': { name: 'Trail Buckle', colour: '#bd955f', text: 'Move 8% faster and take 20% less fall damage', speed: 1.08, fallMul: 0.8 },
   'tidal-locket': { name: 'Tidal Locket', colour: '#62b9c6', text: 'Breath lasts twice as long and defence +3', breathMul: 2, defense: 3 },
   'prism-brooch': { name: 'Prism Brooch', colour: '#b28ddd', text: 'Mana regenerates 25% faster and gives off light', manaRegen: 1.25, glow: 3 },
@@ -382,6 +393,9 @@ const WEAPONS = {
   'silver-bow': { name: 'Silver Bow', damage: 28, useTime: 0.3, reach: 38, ranged: true, ammo: 'arrow' },
   'gold-bow': { name: 'Gold Bow', damage: 35, useTime: 0.27, reach: 40, ranged: true, ammo: 'arrow' },
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
+  'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
+  'ashblade': { name: 'Ashblade', damage: 91, useTime: 0.22, reach: 3.9 },
+  'relic-staff': { name: 'Relic Staff', damage: 92, useTime: 0.27, reach: 46, magic: true, mana: 12, bolt: '#cb9deb' },
   'emberite-bow': { name: 'Emberite Bow', damage: 64, useTime: 0.2, reach: 48, ranged: true, ammo: 'arrow' },
   'talon-sling': { name: 'Talon Sling', damage: 21, useTime: 0.22, reach: 32, ranged: true, ammo: 'arrow', drop: 'harpy' },
 
@@ -668,6 +682,13 @@ RECIPES.push(
   { out: { key: 'forge-gauntlet', kind: 'accessory', count: 1 }, need: [['emberite-bar', 4], ['obsidian', 5], ['leather', 3]], station: 'anvil' },
   { out: { key: 'obsidian-charm', kind: 'accessory', count: 1 }, need: [['obsidian', 6], ['gold-bar', 2]], station: 'anvil' },
   { out: { key: 'cinder-idol', kind: 'use', count: 1 }, need: [['cinder', 8], ['emberite-bar', 3]], station: 'anvil' },
+  { out: { key: 'ashvault-key', kind: 'use', count: 1 }, need: [['furnace-core', 1], ['obsidian', 4]], station: 'anvil' },
+  { out: { key: 'guardian-effigy', kind: 'use', count: 1 }, need: [['cinder', 8], ['emberite-bar', 3]], station: 'anvil' },
+  { out: { key: 'ashblade', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['emberite-bar', 8]], station: 'anvil' },
+  { out: { key: 'vault-bow', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['chitin', 10]], station: 'anvil' },
+  { out: { key: 'relic-staff', kind: 'tool', count: 1 }, need: [['guardian-seal', 1], ['vault-relic', 1], ['diamond', 2]], station: 'anvil' },
+  { out: { key: 'void-beacon', kind: 'use', count: 1 }, need: [['guardian-seal', 1], ['void-crystal', 5]], station: 'anvil' },
+  { out: { key: 'sovereign-mantle', kind: 'accessory', count: 1 }, need: [['void-heart', 1], ['void-crystal', 8], ['silver-bar', 6]], station: 'anvil' },
   { out: { key: 'warden-heart', kind: 'accessory', count: 1 }, need: [['furnace-core', 1], ['obsidian', 6]], station: 'anvil' },
   { out: { key: 'furnace-lance', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['emberite-bar', 8]], station: 'anvil' },
   { out: { key: 'cinder-scepter', kind: 'tool', count: 1 }, need: [['furnace-core', 1], ['ruby', 2], ['emberite-bar', 6]], station: 'anvil' },

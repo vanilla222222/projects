@@ -18,7 +18,7 @@ const context = vm.createContext({
     }
   },
   importScripts(...names) {
-    for (const name of names) vm.runInContext(fs.readFileSync(path.join(workerDir, name), 'utf8'), context);
+    for (const name of names) vm.runInContext(fs.readFileSync(path.join(workerDir, name.split('?')[0]), 'utf8'), context);
   }
 });
 vm.runInContext(fs.readFileSync(path.join(workerDir, 'chunk.js'), 'utf8'), context);
