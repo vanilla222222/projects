@@ -9,13 +9,13 @@ export function drawRoomBackdrop(g,layout,v,t){
  const d=layout.design,depth=layout.minY,seed=[...layout.key].reduce((n,c)=>n+c.charCodeAt(0),0),cave=/caves|deep|depths|vault/.test(layout.key),space=d.motif.startsWith("orbit:"),night=/orbit|lanterns|observatory|rootcrown/.test(d.motif),coastal=/tide-shore|tide-town|tide-gate/.test(layout.key),dunes=/tide-dunes/.test(layout.key),highland=/tide-hunt|tide-cliffs/.test(layout.key);
  const grad=g.createLinearGradient(0,0,0,720);grad.addColorStop(0,d.sky[0]);grad.addColorStop(1,d.sky[1]);g.fillStyle=grad;g.fillRect(0,0,v.width,720);
  g.save();g.translate(-v.x*.16,-v.y*.12);
- if(space){for(let i=0;i<130;i++)rect(g,(i*137+seed*3)%layout.width,(i*71+seed)%900-180,2+i%3,2+i%3,i%5?'#d9e8ffaa':'#bd87ff');const x=layout.width*.18;circle(g,x,150,95,'#967ac3');g.save();g.translate(x,150);g.rotate(-.25);g.strokeStyle='#d8a6e78a';g.lineWidth=10;g.beginPath();g.ellipse(0,0,154,29,0,0,Math.PI*2);g.stroke();g.restore();}
- else if(night){for(let i=0;i<55;i++){const x=(i*137+seed*3)%Math.ceil(layout.width*1.2),y=(i*71+seed)%650-100;rect(g,x,y,2+i%2,2+i%2,'#dcebe0aa');}circle(g,layout.width*.48,-40,45,'#ecdfbf');circle(g,layout.width*.48+18,-48,39,d.sky[0]);}
- else if(!cave){circle(g,layout.width*.45,90,38,'#fff3bf88');for(let i=0;i<15;i++)rect(g,i*240,110+(i%4)*53,130,12,'#f0f2dd25');}
- if(coastal){rect(g,0,300,layout.width,600,'#6eabb5');rect(g,0,300,layout.width,5,'#c4decc');for(let i=0;i<42;i++)rect(g,(i*113+seed)%layout.width,330+i%7*53,35+i%4*14,2,'#c7e1d259');}
+ if(space){for(let i=0;i<54;i++)rect(g,(i*137+seed*3)%layout.width,(i*71+seed)%900-180,2+i%3,2+i%3,i%5?'#d9e8ffaa':'#bd87ff');const x=layout.width*.18;circle(g,x,150,95,'#967ac3');g.save();g.translate(x,150);g.rotate(-.25);g.strokeStyle='#d8a6e78a';g.lineWidth=10;g.beginPath();g.ellipse(0,0,154,29,0,0,Math.PI*2);g.stroke();g.restore();}
+ else if(night){for(let i=0;i<28;i++){const x=(i*137+seed*3)%Math.ceil(layout.width*1.2),y=(i*71+seed)%650-100;rect(g,x,y,2+i%2,2+i%2,'#dcebe0aa');}circle(g,layout.width*.48,-40,45,'#ecdfbf');circle(g,layout.width*.48+18,-48,39,d.sky[0]);}
+ else if(!cave){circle(g,layout.width*.45,90,38,'#fff3bf88');for(let i=0;i<6;i++)rect(g,i*440,110+(i%4)*53,130,12,'#f0f2dd25');}
+ if(coastal){rect(g,0,300,layout.width,600,'#6eabb5');rect(g,0,300,layout.width,5,'#c4decc');for(let i=0;i<16;i++)rect(g,(i*113+seed)%layout.width,330+i%7*53,35+i%4*14,2,'#c7e1d259');}
  const low=depth*.15-150;
- for(let i=0;i<Math.ceil(layout.width/150)+3;i++){
-  const x=i*170,h=160+(i*97+seed)%300;if(x<v.x*.16-260||x>v.x*.16+v.width+260)continue;
+ for(let i=0;i<Math.ceil(layout.width/250)+3;i++){
+  const x=i*270,h=160+(i*97+seed)%300;if(x<v.x*.16-260||x>v.x*.16+v.width+260)continue;
   if(coastal){if(i%3===0){rect(g,x+15,277,125,23,d.rock+'66');rect(g,x+38,261,78,20,d.rock+'66');rect(g,x+58,252,40,12,d.rock+'66');}}
   else if(dunes){g.fillStyle='#b39b7955';g.beginPath();g.moveTo(x-200,720);g.lineTo(x-120,450+h/3);g.lineTo(x,420+h/3);g.lineTo(x+110,460+h/3);g.lineTo(x+260,720);g.fill();}
   else if(highland){g.fillStyle=d.rock+'66';g.beginPath();g.moveTo(x-180,800);g.lineTo(x-90,400-h/3);g.lineTo(x-35,400-h/3);g.lineTo(x,310-h/3);g.lineTo(x+70,390-h/3);g.lineTo(x+230,800);g.fill();}
@@ -26,7 +26,7 @@ export function drawRoomBackdrop(g,layout,v,t){
  g.restore();
  // Weather stays decorative: no random state or gameplay effects.
  const weather=d.weather;
- for(let i=0;i<(weather==='rain'?46:22);i++){
+ for(let i=0;i<(weather==='rain'?22:8);i++){
   const x=((i*113+seed*7-v.x*.35+(weather==='rain'?t*25:t*7))%Math.ceil(v.width+80)+v.width+80)%(v.width+80)-40;
   const y=((i*79+seed-v.y*.25+t*(weather==='rain'?210:weather==='embers'?-21:13))%800+800)%800-40;
   if(weather==='rain')line(g,[[x,y],[x-8,y+32]],'#b4dfdc44',2);
@@ -36,7 +36,7 @@ export function drawRoomBackdrop(g,layout,v,t){
 }
 export function drawRoomSetpieces(g,layout,v,t){
  const d=layout.design,m=d.motif.split(':')[0],x=layout.width*.57,b=644,top=layout.minY+120,height=b-top;
- g.save();g.globalAlpha=.7;
+ g.save();g.globalAlpha=.33;
  if(['oak','roots','fungus','amber','orchids'].includes(m)){
   trunk(g,x,b,top, m==='roots'?250:m==='oak'?115:190,m==='amber'?'#70503e':'#4e5b3f');
   for(let i=0;i<Math.ceil(height/180);i++){const y=b-i*180,side=i%2?-1:1;if(y<v.y-350||y>v.y+1100)continue;line(g,[[x,y-80],[x+side*180,y-150],[x+side*330,y-165]],d.rock,28);
@@ -80,8 +80,6 @@ export function drawRoomSetpieces(g,layout,v,t){
  else if(m==='greenhouse'){for(let y=b-180;y>top;y-=230){if(y<v.y-350||y>v.y+1100)continue;rect(g,x-360,y-120,720,120,'#8bbcb644');line(g,[[x-400,y-120],[x,y-270],[x+400,y-120]],'#bbc7a2',9);for(let xx=x-320;xx<=x+320;xx+=80){line(g,[[xx,y],[xx,y-120]],'#b0b99c',5);rect(g,xx-23,y-55,46,45,['#85b6a5','#b29cbe','#bbc481'][(Math.floor(Math.abs(xx))%3)]);rect(g,xx-12,y-70,24,20,'#d4d1a8');}}}
  else if(m==='lanterns'){for(let y=b-180;y>top;y-=210){if(y<v.y-350||y>v.y+1100)continue;line(g,[[x-600,y],[x,y+40],[x+600,y]],'#6c635f',4);for(let i=0;i<10;i++){const xx=x-550+i*120,yy=y+Math.sin(i/9*Math.PI)*35;circle(g,xx,yy+20,25,'#f0cd7e18');rect(g,xx-10,yy,20,35,'#e6bd76');rect(g,xx-5,yy+7,10,20,'#fff0b4');}}}
  else if(m==='observatory'){for(let y=b-150;y>top;y-=250)rect(g,x-3,y,6,70,'#c9d6bc55');const yy=top+250;g.strokeStyle='#b6c8b9';g.lineWidth=12;g.beginPath();g.arc(x,yy,160,Math.PI,0);g.stroke();rect(g,x-160,yy,320,110,'#7d9695');rect(g,x-50,yy+40,100,70,'#243c59');}
- // Small repeated details bind the upper shelves to each room's identity.
- for(const p of layout.platforms.slice(1)){if(p.y<v.y-200||p.y>v.y+900)continue;if(['lanterns','mine','chains','kilns'].includes(m)){rect(g,p.x+55,p.y-80,4,80,'#6e6656');rect(g,p.x+44,p.y-90,25,27,'#e6c07a');}else if(['orchids','greenhouse','fungus'].includes(m)){rect(g,p.x+45,p.y-40,8,40,'#698a5c');circle(g,p.x+49,p.y-45,17,d.trim);}else{rect(g,p.x+40,p.y-29,35,29,d.rock);rect(g,p.x+45,p.y-34,25,8,d.trim);}}
  g.restore();
 }
 const GROUND_COLOURS={'tide-town':['#8d8969','#d0c099'],'tide-shore':['#a99677','#d5c79b'],'tide-marsh':['#64806b','#b7c18c'],'tide-dunes':['#aa8d6a','#dfc79b'],'tide-bramble':['#698b67','#bfcb8c'],'tide-hunt':['#7d8670','#c3c397'],'tide-cliffs':['#6f8193','#b9c4b6'],'tide-gate':['#7c867f','#d0c5a0'],depths:['#5c7087','#9caec4']};

@@ -67,3 +67,27 @@ for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i
   for(let n=0;n<=i;n++)r(14+n*4,33+(n%2)*4,2,2,'l');
  },a.names[i]+' — distinct anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
 });
+
+// These Astral Reach creatures have silhouettes based on their names and habitats.
+MONSTER_ART['orbit-garden-0']=art({b:'#679b88',l:'#acd6a2',s:'#345e63',f:'#ecadba'},(r,line,oval)=>{
+ oval(21,32,15,11,'o');oval(21,31,13,9,'b');oval(21,27,10,4,'l');
+ for(const x of [10,18,27]){r(x,37,5,9,'s');r(x-1,45,7,2,'o');}
+ r(30,23,12,12,'o');r(31,24,10,9,'l');r(38,27,2,3,'e');r(39,32,7,3,'s');
+ line(19,27,19,13,'s');line(19,18,13,13,'l');line(19,18,26,13,'l');
+ oval(19,10,7,6,'o');oval(19,10,6,5,'f');r(18,8,3,3,'w');
+},'A round garden grazer with a pink starbud sprouting from its green shell','crawl');
+MONSTER_ART['orbit-silk-4']=art({b:'#8b72b7',l:'#caade1',s:'#45375f',f:'#82dedb'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  oval(24+d*11,19,10,12,'o');oval(24+d*11,18,8,10,'b');
+  oval(24+d*10,32,8,9,'s');oval(24+d*11,33,5,6,'l');
+  oval(24+d*13,16,4,5,'s');oval(24+d*13,16,2,3,'f');
+  line(24+d*3,14,24+d*7,5,'l');r(23+d*7,4,3,2,'f');
+ }
+ oval(24,26,5,15,'o');oval(24,25,3,12,'l');r(21,19,6,3,'f');
+},'Nebula moth with four scalloped wings, luminous eyespots, and pale antennae','flutter');
+MONSTER_ART['orbit-relay-0']=art({b:'#5d879c',l:'#a4cbdb',s:'#39445f',f:'#f1c778'},(r,line,oval)=>{
+ r(13,19,22,17,'o');r(15,21,18,13,'b');r(17,22,14,4,'l');r(19,28,10,4,'f');
+ for(const x of [5,36]){r(x,24,7,12,'s');r(x+1,34,5,4,'l');r(x+2,39,3,5,'f');}
+ line(23,20,25,12,'s');line(19,12,32,6,'l');line(20,13,32,8,'b');
+ r(29,6,4,3,'f');r(16,36,16,3,'s');r(21,40,6,3,'l');
+},'A compact receiver drone with a tilted dish, amber visor, and twin thrusters','float');
