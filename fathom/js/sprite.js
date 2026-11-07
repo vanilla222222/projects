@@ -346,6 +346,15 @@ BODIES.golem = function (ctx, g, c) {
     poly(ctx, g, [0.12, -0.62, 0.19, -0.88, 0.39, -0.98, 0.33, -0.62], ice);
   }
 
+  if (c.key === 'windmillwarden') {
+    const turn = c.anim * 0.7;
+    for (let i = 0; i < 4; i += 1) {
+      const a = turn + i * Math.PI / 2;
+      limb(ctx, g, 0, -0.66, Math.cos(a) * 0.28, -0.66 + Math.sin(a) * 0.28, 0.11, '#e1c38d');
+    }
+    dot(ctx, g, 0, -0.66, 0.054, '#8c6a4e');
+  }
+
 };
 
 // Wings shared by everything that flies on membrane rather than feather. `beat` is the
@@ -727,6 +736,12 @@ BODIES.cloud = function (ctx, g, c) {
       poly(ctx, g, [x - 0.1, y, x + 0.13, y - 0.06, x + 0.21, y + 0.04, x, y + 0.08],
         c.windUp > 0 ? '#f4e9cd' : '#c0afd3');
     }
+  }
+
+  if (c.key === 'buriedstandard') {
+    const fold = Math.sin(c.anim) * 0.09;
+    poly(ctx, g, [-0.43, -0.71, 0.17, -0.80 + fold, 0.39, -0.62,
+      0.17, -0.42 + fold, -0.40, -0.54], c.windUp > 0 ? '#f4e2a3' : '#c3cdd9');
   }
 
 };

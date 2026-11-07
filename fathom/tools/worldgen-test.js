@@ -678,6 +678,21 @@ for (const seed of [SEED, 4242, -98765]) {
     'Winterroot Barrow has no traps');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -12294, y);
+    if (site?.biome === 'plains') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Plains are missing a structure depth');
+  const cellar = sites.get('Chalk Cellar');
+  check(gen.baseTileAt(SEED, cellar.x - 5, cellar.top + cellar.height - 2) === tiles.idOf('workbench'),
+    'Chalk Cellar has no bench');
+  const standard = sites.get('Buried Standard');
+  check(gen.baseTileAt(SEED, standard.x - 5, standard.top + standard.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Buried Standard has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;
