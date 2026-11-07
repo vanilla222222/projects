@@ -693,6 +693,20 @@ for (const seed of [SEED, 4242, -98765]) {
     'Buried Standard has no traps');
 }
 
+for (const [biome, x] of [['blight', -10460], ['crimson', -9586], ['ocean', -13647]]) {
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, x, y);
+    if (site?.biome === biome) sites.set(site.layer, site);
+  }
+  check(sites.size === 3, biome + ' is missing a structure depth');
+  for (const site of sites.values()) {
+    const y = site.top + site.height - 3;
+    check(!!tiles.tile(gen.baseTileAt(SEED, site.x + 7, y)).chest, site.name + ' has no chest');
+    if (biome === 'ocean') check(gen.baseLevelAt(SEED, site.x, y) === 0, site.name + ' has no air pocket');
+  }
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;

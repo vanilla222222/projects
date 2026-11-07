@@ -135,7 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
-| `js/enemy.js` | 185 enemies including twenty-eight bosses, spawn pools per biome, layer and event |
+| `js/enemy.js` | 224 enemies including thirty-four bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
 | `js/sprite.js` | 22 body plans covering every creature, and the poses they are drawn in |
@@ -294,3 +294,11 @@ Buried Standard ruin deep below. Some deep ruin chests awaken as Chalklock Mimic
 
 Use a Windmill Token on the surface or a Standard Pennant in the deep Plains
 to summon the Windmill Warden or the Buried Standard. Both bosses are optional.
+
+
+### Blight, Crimson, and Ocean expansions
+
+Each biome adds ten regular enemies, a chest mimic, and a structure in each of
+three depth bands. Blight has Spore Crown and Hollowroot, Crimson has Bloodcrest
+and Vein Warden, and Ocean has Reef Leviathan and Abyssal Eye. All six encounters
+are optional. Their summon recipes and locations appear in the Progression Journal.

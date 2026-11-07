@@ -829,7 +829,10 @@ const BADLAND_SITES = ['Claybreak Camp', 'Redstone Kiln', 'Ochre Catacomb'];
 const SAVANNA_SITES = ['Acacia Waystation', 'Termite Galleries', 'Sunken Sun Court'];
 const TAIGA_SITES = ['Pinewatch Hut', 'Resinworks', 'Winterroot Barrow'];
 const PLAINS_SITES = ['Windmill Crossing', 'Chalk Cellar', 'Buried Standard'];
-const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES };
+const BLIGHT_SITES = ['Shadebound Camp', 'Spore Chapel', 'Hollow Root Vault'];
+const CRIMSON_SITES = ['Crimwood Lookout', 'Vein Foundry', 'Sanguine Crypt'];
+const OCEAN_SITES = ['Reef Shelter', 'Drowned Station', 'Abyssal Vault'];
+const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES, blight: BLIGHT_SITES, crimson: CRIMSON_SITES, ocean: OCEAN_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
@@ -840,7 +843,7 @@ const biomeSite = cacheStructure((seed, slot) => {
     biomeAt(seed, x - 14).key !== biome || biomeAt(seed, x + 14).key !== biome) return null;
   const make = (layer, top, height) => ({ x, top, height, layer, biome,
     name: names[layer], mimic: layer === 2 && (slot === 0 || unit(seed, slot, 0, 6323) < 0.4) });
-  const sites = [make(0, surface - 7, 8),
+  const sites = [make(0, biome === 'ocean' ? Math.max(SEA_LEVEL + 2, Math.min(SEA_LEVEL + 36, surface - 7)) : surface - 7, 8),
     make(1, SEA_LEVEL + 175 + Math.floor(unit(seed, slot, 0, 6317) * 330), 12),
     make(2, SEA_LEVEL + 810 + Math.floor(unit(seed, slot, 0, 6319) * 335), 16)];
   // Keep older generated chests intact instead of cutting off one of their cells.
@@ -860,13 +863,16 @@ function biomeSiteAt(seed, x, y) {
   const sites = biomeSite(seed, Math.floor(x / BIOME_SITE_SPACING));
   if (!sites || Math.abs(x - sites[0].x) > 12) return null;
   return sites.find(site => y >= site.top && (y < site.top + site.height
-    || (site.layer === 0 && y <= columnOf(seed, x).height))) || null;
+    || (site.layer === 0 && site.biome !== 'ocean' && y <= columnOf(seed, x).height))) || null;
 }
 
 function forestSiteAt(seed, x, y) {
   const site = biomeSiteAt(seed, x, y);
   return site?.biome === 'forest' ? site : null;
 }
+
+const BIOME_SITE_MATERIALS = { blight: ['shadewood', 'blight', 'brick'],
+  crimson: ['crimwood', 'flesh', 'brick'], ocean: ['sandstone', 'brick', 'slate'] };
 
 function biomeSiteTile(site, x, y) {
   const dx = x - site.x, row = y - site.top, floor = site.height - 1;
@@ -879,23 +885,28 @@ function biomeSiteTile(site, x, y) {
   const savanna = site.biome === 'savanna';
   const taiga = site.biome === 'taiga';
   const plains = site.biome === 'plains';
-  const material = plains ? ['oakwood', 'stone', 'brick'][site.layer] : taiga ? ['pinewood', 'granite', 'slate'][site.layer] : savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
+  const specialMaterials = BIOME_SITE_MATERIALS[site.biome];
+  const material = specialMaterials ? specialMaterials[site.layer] : plains ? ['oakwood', 'stone', 'brick'][site.layer] : taiga ? ['pinewood', 'granite', 'slate'][site.layer] : savanna ? ['acaciawood', 'redclay', 'sandstone'][site.layer] : badlands ? ['redclay', 'sandstone', 'brick'][site.layer] : highland ? ['stone', 'granite', 'brick'][site.layer] : marsh ? ['oakwood', 'brick', 'slate'][site.layer] : jungle ? ['mahoganywood', 'mud', 'brick'][site.layer] : tundra ? ['pinewood', 'ice', 'slate'][site.layer] : desert ? (site.layer === 2 ? 'brick' : 'sandstone')
     : site.layer === 0 ? 'oakwood' : site.layer === 1 ? 'brick' : 'ashvault-brick';
   if (row >= floor) return idOf(material);
-  if (site.layer === 0) {
+  if (site.layer === 0 && site.biome !== 'ocean') {
     // A roof and posts over an open camp rather than a sealed underground room.
     if (row === (Math.abs(dx) > 8 ? 2 : Math.abs(dx) > 4 ? 1 : 0)) return idOf(material);
     if (Math.abs(dx) === 11 && row >= 3) return idOf(savanna ? 'acacialog' : jungle ? 'mahoganylog' : tundra || taiga ? 'pinelog' : desert ? 'sandstone' : 'oaklog');
   } else {
     if (row === 0) return idOf(material);
-    if (Math.abs(dx) === 12) return row >= floor - 3 ? AIR : idOf(material);
+    if (Math.abs(dx) === 12) return site.biome !== 'ocean' && row >= floor - 3 ? AIR : idOf(material);
   }
   if (dx >= 7 && dx <= 8 && row >= floor - 2) {
-    const chest = site.mimic ? (badlands || savanna || taiga || plains ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
+    const chest = site.mimic ? (badlands || savanna || taiga || plains || specialMaterials ? 'forest-mimic' : site.biome + '-mimic') : site.layer === 2 ? 'goldchest' : 'woodchest';
     return cellOf(chest, dx - 7, row - floor + 2).id;
   }
   if (row === 2 && (dx === -8 || dx === 5)) return idOf('lantern');
   if (site.layer === 0 && dx === -6 && row === floor - 1) return idOf('campfire');
+  if (site.biome === 'blight' && site.layer === 1 && dx === -4 && row === floor - 1) return idOf('crystal');
+  if (site.biome === 'crimson' && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('furnace');
+  if (site.biome === 'ocean' && site.layer === 1 && dx === -5 && row === floor - 1) return idOf('workbench');
+  if (specialMaterials && site.layer === 2 && row === floor - 1 && dx >= -5 && dx <= -2) return idOf('ashvault-spikes');
   if (plains && site.layer === 0 && row >= 1 && row <= 5 && Math.abs(dx) === (row - 3) ** 2) return idOf('oakplatform');
   if (plains && site.layer === 0 && row === floor - 1 && dx === -7) return idOf('oakbench');
   if (plains && site.layer === 1 && row === floor - 1 && dx === -5) return idOf('workbench');
@@ -1720,7 +1731,7 @@ function baseLevelAt(seed, x, y) {
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
-  if (spec.solid) return 0;
+  if (spec.solid || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
   return submergedVoid(seed, x, y, column) ? 255 : 0;
