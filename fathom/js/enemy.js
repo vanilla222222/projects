@@ -104,7 +104,11 @@ const ARCHETYPES = {
   ochredrake: { gravity: 0, boss: true, flies: true, speed: 5.8, hoverAbove: 4, drift: 4.1,
     chargeEvery: 3.8, windUp: 1.0, chargeSpeed: 28, chargeFor: 0.82, spawnEvery: 5.1,
     minion: 'siltbat', minions: 3, enrageAt: 0.46, enrageSpeed: 1.27,
-    enrageCharge: 0.6, enrageWindUp: 0.64, followUp: 0.46 }
+    enrageCharge: 0.6, enrageWindUp: 0.64, followUp: 0.46 },
+  sunscarab: { gravity: 0, boss: true, flies: true, speed: 5.8, hoverAbove: 3, drift: 3,
+    chargeEvery: 3.9, windUp: 1.15, chargeSpeed: 30, chargeFor: 0.78, spawnEvery: 4.8,
+    minion: 'courtcarapace', minions: 2, enrageAt: 0.47, enrageSpeed: 1.28,
+    enrageCharge: 0.60, enrageWindUp: 0.68, followUp: 0.48 }
 
 };
 
@@ -501,6 +505,33 @@ const ENEMIES = [
     damage: 56, weight: 0, w: 4.4, h: 3.2, colour: '#c99766', boss: true, summonOnly: true, emit: 6,
     drops: [['bone', 12], ['coin', 860]], bossDrops: ['ochre-scale'] },
 
+  ...[
+    ['grassrunner', 'Grass Runner', 'surface', 'walker', 'lizard', 42, 11, '#b89a5d', 'leather'],
+    ['acaciakite', 'Acacia Kite', 'surface', 'flyer', 'bird', 48, 12, '#a69064', 'feather'],
+    ['goldentick', 'Golden Tick', 'surface', 'crawler', 'beetle', 51, 13, '#b7964f', 'chitin'],
+    ['heatshimmer', 'Heat Shimmer', 'surface', 'flyer', 'cloud', 56, 14, '#e0b47b', 'glowmoss'],
+    ['termiteguard', 'Termite Guard', 'caves', 'crawler', 'beetle', 89, 20, '#95754f', 'chitin'],
+    ['dustborer', 'Dust Borer', 'caves', 'worm', 'worm', 93, 21, '#a28256', 'wormtooth'],
+    ['amberwasp', 'Amber Wasp', 'caves', 'flyer', 'wasp', 84, 19, '#c59048', 'stinger'],
+    ['courtcarapace', 'Court Carapace', 'deep', 'crawler', 'beetle', 200, 32, '#a27e54', 'chitin'],
+    ['suncryptshade', 'Suncrypt Shade', 'deep', 'flyer', 'cloud', 161, 27, '#bbaa81', 'stardust'],
+    ['sunbones', 'Sun Bones', 'deep', 'walker', 'skeleton', 187, 30, '#c2ae81', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6,
+    w: layer === 'deep' ? 1.35 : 1.05, h: body === 'skeleton' ? 1.9 : 1,
+    biomes: ['savanna'], layers: [layer], emit: key === 'heatshimmer' ? 4 : 0,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 13 : layer === 'caves' ? 8 : 5]]
+  })),
+  { key: 'savannamimic', name: 'Gilt Mimic', kind: 'walker', body: 'mimic', hp: 385,
+    damage: 41, weight: 0, w: 1.8, h: 1.5, colour: '#bc9e62', hiddenSpawn: true,
+    drops: [['gilt-fang', 2], ['coin', 185]] },
+  { key: 'sunmane', name: 'Sunmane', kind: 'king', body: 'lizard', hp: 2500,
+    damage: 44, weight: 0, w: 4.4, h: 3, colour: '#bc9457', boss: true, summonOnly: true, emit: 4,
+    drops: [['leather', 14], ['coin', 520]], bossDrops: ['sunmane-tuft'] },
+  { key: 'sunscarab', name: 'Sun Court Scarab', kind: 'sunscarab', body: 'beetle', hp: 4500,
+    damage: 57, weight: 0, w: 4.6, h: 3.1, colour: '#c49e55', boss: true, summonOnly: true, emit: 6,
+    drops: [['chitin', 13], ['coin', 870]], bossDrops: ['sun-carat'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -604,7 +635,8 @@ const GAIT = {
   strangler: { perTile: 0.4, perSecond: 7 },
   fenwidow: { perTile: 0.46, perSecond: 10 },
   cairnshade: { perTile: 0.43, perSecond: 9 },
-  ochredrake: { perTile: 0.45, perSecond: 9 }
+  ochredrake: { perTile: 0.45, perSecond: 9 },
+  sunscarab: { perTile: 0.47, perSecond: 9 }
 };
 
 // --- the live population ------------------------------------------------------------------

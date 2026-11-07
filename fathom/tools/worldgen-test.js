@@ -648,6 +648,21 @@ for (const seed of [SEED, 4242, -98765]) {
     'Ochre Catacomb has no traps');
 }
 
+{
+  const sites = new Map();
+  for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+    const site = gen.biomeSiteAt(SEED, -13794, y);
+    if (site?.biome === 'savanna') sites.set(site.name, site);
+  }
+  check(sites.size === 3, 'Savanna is missing a structure depth');
+  const waystation = sites.get('Acacia Waystation');
+  check(gen.baseTileAt(SEED, waystation.x - 7, waystation.top + waystation.height - 2) === tiles.idOf('acaciabench'),
+    'Acacia Waystation has no bench');
+  const court = sites.get('Sunken Sun Court');
+  check(gen.baseTileAt(SEED, court.x - 5, court.top + court.height - 2) === tiles.idOf('ashvault-spikes'),
+    'Sunken Sun Court has no traps');
+}
+
 // Sky and space hold their own structures, and the vacuum above space holds nothing.
 let islands = 0;
 let bodies = 0;

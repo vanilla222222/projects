@@ -1236,6 +1236,8 @@ function makeGame(canvas, deps) {
       ['cairnshade', 'Cairnshade', 'cairn-bell', 'Optional. Summon in the deep Highlands.'],
       ['claybehemoth', 'Clay Behemoth', 'clay-effigy', 'Optional. Summon on the Badlands surface.'],
       ['ochredrake', 'Ochre Drake', 'ochre-sigil', 'Optional. Summon in the deep Badlands.'],
+      ['sunmane', 'Sunmane', 'sunmane-idol', 'Optional. Summon on the Savanna surface.'],
+      ['sunscarab', 'Sun Court Scarab', 'sun-court-seal', 'Optional. Summon in the deep Savanna.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1806,7 +1808,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=badlands-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=savanna-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

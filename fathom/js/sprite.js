@@ -460,6 +460,12 @@ BODIES.beetle = function (ctx, g, c) {
   poly(ctx, g, [0.38, -0.5 - gape, 0.56, -0.56 - gape, 0.4, -0.44], dark);
   poly(ctx, g, [0.38, -0.42 + gape, 0.56, -0.34 + gape, 0.4, -0.48], dark);
   dot(ctx, g, 0.34, -0.54, 0.06, '#1b1410');
+  if (c.key === 'sunscarab') {
+    const gold = c.windUp > 0 ? '#fff3a8' : '#eac077';
+    poly(ctx, g, [-0.30, -0.51, -0.14, -0.78, 0.04, -0.57, -0.10, -0.40], gold);
+    poly(ctx, g, [0.26, -0.58, 0.48, -0.80, 0.44, -0.49, 0.31, -0.44], '#f4cf85');
+  }
+
 };
 
 BODIES.spider = function (ctx, g, c) {
@@ -676,6 +682,11 @@ BODIES.lizard = function (ctx, g, c) {
   dot(ctx, g, 0.38, -0.52, 0.07, '#f2e2b8');
   dot(ctx, g, 0.4, -0.52, 0.035, '#1a1410');
   poly(ctx, g, [0.46, -0.44, 0.56, -0.4, 0.46, -0.36], dark);
+  if (c.key === 'sunmane') {
+    poly(ctx, g, [0.03, -0.68, 0.02, -0.91, 0.19, -0.83, 0.27, -0.99,
+      0.39, -0.83, 0.46, -0.6, 0.35, -0.43], '#d6a357');
+  }
+
 };
 
 BODIES.cloud = function (ctx, g, c) {
