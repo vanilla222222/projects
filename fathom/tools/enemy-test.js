@@ -345,6 +345,7 @@ ok(victim.dead, 'a killed enemy is not marked dead');
 
   const mimicSwarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat });
   ok(mimicSwarm.wakeMimic(20, FLOOR - 2)?.key === 'forestmimic', 'chest did not awaken a mimic');
+  ok(mimicSwarm.wakeMimic(40, FLOOR - 2, 'desertmimic')?.key === 'desertmimic', 'Dune Mimic did not awaken');
   ok(mimicSwarm.wakeMimic(20, FLOOR) === null, 'mimic spawned inside rock');
 
   const bosses = ENEMIES.filter(e => e.boss);

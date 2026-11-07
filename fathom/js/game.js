@@ -206,7 +206,9 @@ function makeGame(canvas, deps) {
       defeatedBosses.add(target.spec.key);
       for (const entry of target.spec.bossDrops) {
         const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
-        dropItem(target.x + target.width / 2, target.y, key, craft.kindOf(key), count);
+        const x = target.x + target.width / 2;
+        const buried = target.key === 'desertscourge' && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
+        dropItem(buried ? state.player.x : x, buried ? state.player.y : target.y, key, craft.kindOf(key), count);
       }
       say(target.spec.name + ' is dead', 3.4);
       return;
@@ -249,7 +251,7 @@ function makeGame(canvas, deps) {
         return true;
       }
       if (use.biome && worldgen.biomeAt(seed, Math.floor(state.player.x)).key !== use.biome) {
-        say('Use this in the Forest', 2);
+        say('Use this in the ' + worldgen.BIOMES.find(b => b.key === use.biome).name, 2);
         return true;
       }
       let arena;
@@ -660,8 +662,8 @@ function makeGame(canvas, deps) {
       say('This seal must be opened with a key', 1.4);
       return;
     }
-    if (spec.chest === 'forest-mimic') {
-      wakeForestMimic(tiles.originOf(spec, aim.x, aim.y));
+    if (spec.mimic) {
+      wakeChestMimic(tiles.originOf(spec, aim.x, aim.y), spec.mimic);
       state.player.mining = null;
       return;
     }
@@ -1014,8 +1016,8 @@ function makeGame(canvas, deps) {
   // case and walling the doorway up instead would be infuriating.
   // Open the chest under the cursor, or shut the one that is open. A chest is a
   // multi-tile object, so any of its four cells opens the same box.
-  function wakeForestMimic(origin) {
-    const mimic = swarm && swarm.wakeMimic(origin.x, origin.y);
+  function wakeChestMimic(origin, key) {
+    const mimic = swarm && swarm.wakeMimic(origin.x, origin.y, key);
     if (mimic) {
       breakMulti(origin);
       sfx('roar');
@@ -1033,7 +1035,7 @@ function makeGame(canvas, deps) {
     }
     const origin = tiles.originOf(spec, aim.x, aim.y);
     if (!origin) return false;
-    if (spec.chest === 'forest-mimic') return wakeForestMimic(origin);
+    if (spec.mimic) return wakeChestMimic(origin, spec.mimic);
     if (openChest && openChest.x === origin.x && openChest.y === origin.y) {
       closeChest();
       return true;
@@ -1220,6 +1222,8 @@ function makeGame(canvas, deps) {
       ['ashguardian', 'Ashvault Guardian', 'guardian-effigy', 'Bring the key to an Ashvault in the Trench.'],
       ['briarwarden', 'Briar Warden', 'briar-idol', 'Optional. Summon on the Forest surface.'],
       ['rootcrown', 'Root Crown', 'rootcrown-idol', 'Optional. Summon in the deep Forest.'],
+      ['thunderbird', 'Thunderbird', 'storm-feather', 'Optional. Summon on the Desert surface.'],
+      ['desertscourge', 'Desert Scourge', 'desert-medallion', 'Optional. Summon in the Underground Desert.'],
       ['mirebrood', 'Mire Broodmother', 'mire-idol', 'Optional. Summon in the Caves for the Mire Talisman.'],
       ['granitecolossus', 'Granite Colossus', 'granite-idol', 'Optional. Summon in the Deep Caverns for the Granite Aegis.'],
       ['voidsovereign', 'Void Sovereign', 'void-beacon', 'Mine Void Crystals with an Emberite Pickaxe.'],
@@ -1790,7 +1794,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=forest-expansion-1');
+      const worker = new Worker('workers/chunk.js?v=desert-expansion-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

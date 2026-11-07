@@ -336,7 +336,12 @@ pushTile({ key: 'aetherite', name: 'Aetherite Ore', colour: '#8de8d3', solid: tr
 
 defineMulti('forest-mimic', 'Iron Chest', 2, 2, () => ({
   solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
-  toughness: 70, chest: 'forest-mimic', drops: null
+  toughness: 70, chest: 'forest-mimic', mimic: 'forestmimic', drops: null
+}));
+
+defineMulti('desert-mimic', 'Iron Chest', 2, 2, () => ({
+  solid: false, opacity: 10, emit: 0, hardness: 0.4, colour: '#8e949e', grain: 0.05,
+  toughness: 70, chest: 'desert-mimic', mimic: 'desertmimic', drops: null
 }));
 
 const WALL_BY_KEY = {};

@@ -72,7 +72,15 @@ const ARCHETYPES = {
   archon: { gravity: 0, boss: true, flies: true, speed: 6.8, hoverAbove: 5, drift: 4.2,
     chargeEvery: 3.5, windUp: 1.1, chargeSpeed: 29, chargeFor: 0.8,
     spawnEvery: 4.4, minion: 'voidstalker', minions: 3, enrageAt: 0.45,
-    enrageSpeed: 1.28, enrageCharge: 0.66, enrageWindUp: 0.65, followUp: 0.35 }
+    enrageSpeed: 1.28, enrageCharge: 0.66, enrageWindUp: 0.65, followUp: 0.35 },
+  thunderbird: { gravity: 0, boss: true, flies: true, speed: 6.2, hoverAbove: 7, drift: 4,
+    chargeEvery: 3.2, windUp: 0.8, chargeSpeed: 24, chargeFor: 0.72, spawnEvery: 5.2,
+    minion: 'dunefalcon', minions: 2, enrageAt: 0.5, enrageSpeed: 1.25, enrageCharge: 0.65,
+    enrageWindUp: 0.56, followUp: 0.42 },
+  scourge: { gravity: 0, boss: true, flies: true, burrows: true, speed: 5.4, hoverAbove: -7, drift: 3,
+    chargeEvery: 3.6, windUp: 0.85, chargeSpeed: 25, chargeFor: 0.87, spawnEvery: 5.8,
+    minion: 'glassborer', minions: 2, enrageAt: 0.45, enrageSpeed: 1.33, enrageCharge: 0.62,
+    enrageWindUp: 0.5 }
 
 };
 
@@ -307,6 +315,33 @@ const ENEMIES = [
     damage: 48, weight: 0, w: 4, h: 3, colour: '#a6806f', boss: true, summonOnly: true, emit: 5,
     drops: [['chitin', 12], ['coin', 680]], bossDrops: ['rootcrown-core'] },
 
+  ...[
+    ['dunefalcon', 'Dune Falcon', 'surface', 'flyer', 'bird', 38, 10, '#b48a65', 'feather'],
+    ['sandjackal', 'Sand Jackal', 'surface', 'walker', 'lizard', 46, 12, '#c89a5b', 'leather'],
+    ['dustscarab', 'Dust Scarab', 'surface', 'crawler', 'beetle', 42, 11, '#997744', 'chitin'],
+    ['mirageeye', 'Mirage Eye', 'surface', 'flyer', 'eye', 56, 14, '#cda56e', 'lens'],
+    ['glassborer', 'Glass Borer', 'caves', 'worm', 'worm', 76, 17, '#bd8c57', 'wormtooth'],
+    ['saltstinger', 'Salt Stinger', 'caves', 'crawler', 'spider', 83, 18, '#ad8067', 'stinger'],
+    ['cisternjelly', 'Cistern Jelly', 'caves', 'swimmer', 'jelly', 89, 19, '#84aea8', 'gel'],
+    ['amberreaver', 'Amber Reaver', 'deep', 'crawler', 'beetle', 155, 25, '#d29749', 'chitin'],
+    ['tombshade', 'Tomb Shade', 'deep', 'flyer', 'cloud', 130, 23, '#9e828d', 'stardust'],
+    ['fossilguard', 'Fossil Guard', 'deep', 'walker', 'skeleton', 180, 29, '#c4aa83', 'bone']
+  ].map(([key, name, layer, kind, body, hp, damage, colour, loot]) => ({
+    key, name, kind, body, hp, damage, colour, weight: 6, w: layer === 'deep' ? 1.3 : 1.05,
+    h: body === 'skeleton' ? 1.8 : 1, biomes: ['desert'], layers: [layer],
+    wet: kind === 'swimmer', day: key === 'mirageeye' ? false : undefined,
+    drops: [[loot, 1], ['coin', layer === 'deep' ? 12 : layer === 'caves' ? 7 : 4]]
+  })),
+  { key: 'desertmimic', name: 'Dune Mimic', kind: 'walker', body: 'mimic', hp: 315,
+    damage: 36, weight: 0, w: 1.8, h: 1.5, colour: '#c3a275', hiddenSpawn: true,
+    drops: [['dune-fang', 2], ['coin', 145]] },
+  { key: 'thunderbird', name: 'Thunderbird', kind: 'thunderbird', body: 'bird', hp: 1900,
+    damage: 36, weight: 0, w: 4.3, h: 2.8, colour: '#d8ab64', boss: true, summonOnly: true, emit: 6,
+    drops: [['feather', 14], ['coin', 420]], bossDrops: ['storm-plume'] },
+  { key: 'desertscourge', name: 'Desert Scourge', kind: 'scourge', body: 'worm', hp: 3550,
+    damage: 47, weight: 0, w: 4.1, h: 2.9, colour: '#cb9a58', boss: true, summonOnly: true, emit: 3,
+    drops: [['wormtooth', 12], ['coin', 710]], bossDrops: ['scourge-scale'] },
+
   { key: 'starjelly', name: 'Star Jelly', kind: 'flyer', body: 'jelly', hp: 70, damage: 20, weight: 9,
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
@@ -402,7 +437,9 @@ const GAIT = {
   furnace: { perTile: 0.45, perSecond: 6 },
   guardian: { perTile: 0.35, perSecond: 6 },
   sovereign: { perTile: 0.4, perSecond: 10 },
-  archon: { perTile: 0.45, perSecond: 11 }
+  archon: { perTile: 0.45, perSecond: 11 },
+  thunderbird: { perTile: 0.4, perSecond: 10 },
+  scourge: { perTile: 0.45, perSecond: 7 }
 };
 
 // --- the live population ------------------------------------------------------------------
@@ -507,7 +544,7 @@ function makeSwarm(world, tiles, deps) {
           const above = Math.floor(player.y) - 9;
           const y = arena ? Math.max(arena.top, Math.min(above, arena.bottom - spec.h)) : above;
           if (arena && (x < arena.left || x + spec.w > arena.right)) continue;
-          if (overlaps(probe, x, y)) continue;
+          if (!arch.burrows && overlaps(probe, x, y)) continue;
           const boss = makeEnemy(spec, x, y);
           list.push(boss);
           return boss;
@@ -522,8 +559,9 @@ function makeSwarm(world, tiles, deps) {
     return null;
   }
 
-  function wakeMimic(x, y) {
-    const spec = ENEMY_BY_KEY.forestmimic;
+  function wakeMimic(x, y, key = 'forestmimic') {
+    const spec = ENEMY_BY_KEY[key];
+    if (!spec?.hiddenSpawn) return null;
     const mimic = makeEnemy(spec, x, y + 2 - spec.h);
     if (overlaps(mimic, mimic.x, mimic.y)) return null;
     list.push(mimic);
@@ -749,6 +787,15 @@ function makeSwarm(world, tiles, deps) {
   // A boss that flies, hovers out of reach, and charges in a straight line it chooses
   // before it starts and cannot change afterwards.
   function stepHoverBoss(enemy, arch, player, dt, toward) {
+    function move() {
+      if (arch.burrows) {
+        enemy.x += enemy.vx * dt;
+        enemy.y += enemy.vy * dt;
+      } else {
+        moveAxis(enemy, enemy.vx * dt, 0);
+        moveAxis(enemy, 0, enemy.vy * dt);
+      }
+    }
     const left = Math.max(0, enemy.hp / enemy.maxHp);
     enemy.enraged = left <= arch.enrageAt;
     // Enraged it stops calling for help: the second half of the fight is only the boss.
@@ -766,8 +813,7 @@ function makeSwarm(world, tiles, deps) {
     if (enemy.charge > 0) {
       // Committed. It cannot steer, which is what makes a charge dodgeable.
       enemy.charge -= dt;
-      moveAxis(enemy, enemy.vx * dt, 0);
-      moveAxis(enemy, 0, enemy.vy * dt);
+      move();
       if (enemy.charge <= 0) {
         if (enemy.enraged && arch.followUp && !enemy.followUp) {
           enemy.followUp = true;
@@ -815,8 +861,7 @@ function makeSwarm(world, tiles, deps) {
     const bob = Math.sin(enemy.timer * 1.7) * arch.drift;
     enemy.vx = (dx / len) * arch.speed;
     enemy.vy = (dy / len) * arch.speed + bob;
-    moveAxis(enemy, enemy.vx * dt, 0);
-    moveAxis(enemy, 0, enemy.vy * dt);
+    move();
     enemy.facing = toward;
   }
 

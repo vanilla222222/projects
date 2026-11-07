@@ -172,7 +172,7 @@ for (let x = -300; x <= 300; x += 23) {
   for (let y = surface - 6; y < surface + 260; y += 1) {
     const w = gen.baseWallAt(SEED, x, y);
     if (y < surface) {
-      if (w !== 0 && !gen.forestSiteAt(SEED, x, y)) strayWall += 1;
+      if (w !== 0 && !gen.biomeSiteAt(SEED, x, y)) strayWall += 1;
     } else if (w === 0) missingWall += 1;
     else walled += 1;
   }
@@ -267,7 +267,7 @@ for (const s of SURVEY_SEEDS) {
       // Below the ground, water means a flooded cave: this column must have a water
       // table, the tile must be above its floor, and it must be a cave in the first
       // place, never water sitting inside what should be solid rock.
-      if (gen.structureTileAt(s, x, y) === WATER) continue; // Constructed cistern.
+      if (gen.structureTileAt(s, x, y) === WATER || gen.biomeSiteAt(s, x, y)?.name === 'Buried Cistern') continue;
       undergroundWater += 1;
       // The generator's own rule for what is submerged, not a restatement of it.
       check(gen.submergedVoid(s, x, y, column),
@@ -558,6 +558,22 @@ for (const seed of [SEED, 4242, -98765]) {
     check(site.mimic ? tile.chest === 'forest-mimic' && !gen.baseContainerAt(seed, x, y)
       : !!gen.baseContainerAt(seed, x, y), site.name + ' chest and loot disagree');
   }
+}
+
+{
+  const sites = new Map();
+  for (const x of [-11028, -11135]) {
+    for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
+      const site = gen.biomeSiteAt(SEED, x, y);
+      if (site?.biome === 'desert') sites.set(site.name, site);
+    }
+  }
+  check(sites.size === 3, 'Desert is missing a structure depth');
+  const cistern = sites.get('Buried Cistern');
+  check(gen.baseTileAt(SEED, cistern.x, cistern.top + cistern.height - 2) === WATER, 'cistern has no pool');
+  const tomb = sites.get('Amber Tomb');
+  const cache = gen.baseTileAt(SEED, tomb.x + 7, tomb.top + tomb.height - 3);
+  check(!!tiles.tile(cache).chest, 'Amber Tomb has no cache');
 }
 
 // Sky and space hold their own structures, and the vacuum above space holds nothing.

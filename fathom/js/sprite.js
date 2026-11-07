@@ -381,6 +381,14 @@ BODIES.bird = function (ctx, g, c) {
   // Legs tucked up under it.
   limb(ctx, g, 0.04, -0.2, 0.14, -0.08, 0.07, '#caa45e');
   poly(ctx, g, [0.0, -0.62, -0.46, -0.66 + beat * 0.34, -0.38, -0.42, 0.0, -0.48], light);
+  if (c.key === 'thunderbird') {
+    poly(ctx, g, [0.10, -0.72, 0.13, -0.99, 0.28, -0.84, 0.35, -0.96, 0.35, -0.72], '#443657');
+    const wing = -0.66 + beat * 0.34;
+    poly(ctx, g, [-0.47, wing, -0.26, wing + 0.06, -0.34, wing + 0.13,
+      -0.06, wing + 0.18, -0.39, wing + 0.17, -0.31, wing + 0.10],
+      c.windUp > 0 || c.charge > 0 ? '#fff6ba' : '#a98ac2');
+  }
+
 };
 
 BODIES.wasp = function (ctx, g, c) {
@@ -562,11 +570,13 @@ BODIES.worm = function (ctx, g, c) {
   // The body trails backwards out of the box along a travelling sine, which is how a
   // creature far longer than its own hitbox is drawn without pretending the hitbox is
   // the creature.
+  const scourge = c.key === 'desertscourge';
   for (let i = 9; i >= 1; i -= 1) {
     const x = -i * 0.3;
     const y = -0.5 + Math.sin(c.anim - i * 0.55) * 0.3;
     const r = 0.3 - i * 0.02;
     ell(ctx, g, x, y, r, r * 0.95, i % 2 ? c.colour : dark);
+    if (scourge) poly(ctx, g, [x - r, y, x - r * 0.55, y - r * 1.28, x + r * 0.6, y - r * 0.7], '#ecd1a0');
   }
   const hy = -0.5 + Math.sin(c.anim) * 0.3;
   ell(ctx, g, 0.04, hy, 0.34, 0.34, c.colour);
