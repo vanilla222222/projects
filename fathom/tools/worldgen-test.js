@@ -172,7 +172,7 @@ for (let x = -300; x <= 300; x += 23) {
   for (let y = surface - 6; y < surface + 260; y += 1) {
     const w = gen.baseWallAt(SEED, x, y);
     if (y < surface) {
-      if (w !== 0 && !gen.biomeSiteAt(SEED, x, y)) strayWall += 1;
+      if (w !== 0 && !gen.biomeSiteAt(SEED, x, y) && !gen.dungeonAt(SEED, x, y)) strayWall += 1;
     } else if (w === 0) missingWall += 1;
     else walled += 1;
   }

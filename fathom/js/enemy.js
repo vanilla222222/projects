@@ -296,6 +296,15 @@ const ENEMIES = [
   { key: 'voidshade', name: 'Void Shade', kind: 'flyer', body: 'cloud', hp: 295,
     damage: 44, weight: 8, w: 1.5, h: 1.6, colour: '#8273c7', layers: ['void'], emit: 4,
     drops: [['stardust', 3], ['coin', 19]] },
+  { key: 'dungeonkeeper', name: 'Ossuary Keeper', kind: 'guardian', body: 'skeleton', hp: 2350,
+    damage: 39, weight: 0, w: 3.8, h: 4, colour: '#c1d9e5', boss: true, summonOnly: true,
+    minion: 'ossuary-skull', emit: 5, drops: [['bone', 14], ['coin', 410]], bossDrops: ['dungeon-key'] },
+  { key: 'ossuary-guard', name: 'Crypt Guard', kind: 'walker', body: 'skeleton', hp: 108,
+    damage: 25, weight: 12, w: 0.85, h: 1.9, colour: '#a2b7c9', dungeon: true,
+    drops: [['bone', 2], ['coin', 12], ['dungeon-key', 1]] },
+  { key: 'ossuary-skull', name: 'Lantern Skull', kind: 'flyer', body: 'skull', hp: 75,
+    damage: 21, weight: 6, w: 1.1, h: 1.1, colour: '#99d8ee', dungeon: true, emit: 5,
+    drops: [['bone', 1], ['coin', 9]] },
   { key: 'ashguardian', name: 'Ashvault Guardian', kind: 'guardian', body: 'golem', hp: 4600,
     damage: 55, weight: 0, w: 4.2, h: 3.8, colour: '#b07780', boss: true, summonOnly: true,
     emit: 7, drops: [['cinder', 12], ['coin', 780]], bossDrops: [['guardian-seal', 5]] },
@@ -673,6 +682,7 @@ function matches(spec, ctx) {
   if (spec.summonOnly || spec.hiddenSpawn) return false;
   // An event enemy exists only during its event, and an event does not suppress the
   // ordinary roster: a blood moon is the usual night with worse things added to it.
+  if (Boolean(spec.dungeon) !== Boolean(ctx.dungeon)) return false;
   if (spec.event && ctx.event !== spec.event) return false;
   if (spec.layers && spec.layers.indexOf(ctx.layer) === -1) return false;
   if (spec.biomes && spec.biomes.indexOf(ctx.biome) === -1) return false;
@@ -818,7 +828,9 @@ function makeSwarm(world, tiles, deps) {
     // Underground is never daylit, whatever the clock says.
     const surfaceish = layer === 'surface' || layer === 'sky' || layer === 'space';
     const day = surfaceish ? (dayPhase < 0.25 || dayPhase > 0.75) : false;
-    return { biome, layer, wet, day, event: event || null };
+    const site = worldgen.dungeonAt?.(world.seed, Math.floor(x), Math.floor(y));
+    const dungeon = !!site && y > site.y && !!deps.dungeonOpen?.();
+    return { biome, layer, wet, day, dungeon, event: event || null };
   }
 
   // Terraria's rule, and the one that makes building worth doing: a player-placed wall
@@ -905,10 +917,13 @@ function makeSwarm(world, tiles, deps) {
     // ordinary spawns while one is alive: the fight is the fight.
     if (list.some(e => e.boss)) return null;
     if (list.length >= (event ? EVENT_ALIVE : MAX_ALIVE)) return null;
+    const inOssuary = contextAt(player.x, player.y, dayPhase, event).dungeon;
+    const spawnMin = inOssuary ? 12 : SPAWN_MIN;
+    const spawnMax = inOssuary ? 27 : SPAWN_MAX;
     // A few columns per attempt, so one unlucky column does not cost a whole tick.
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const side = rng() < 0.5 ? -1 : 1;
-      const x = Math.floor(player.x + side * (SPAWN_MIN + rng() * (SPAWN_MAX - SPAWN_MIN)));
+      const x = Math.floor(player.x + side * (spawnMin + rng() * (spawnMax - spawnMin)));
       const y0 = Math.floor(player.y - SPAWN_MAX * 0.6);
       const y1 = Math.floor(player.y + SPAWN_MAX * 0.6);
 

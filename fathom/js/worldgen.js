@@ -945,7 +945,67 @@ function biomeSiteTile(site, x, y) {
   return AIR;
 }
 
+const OSSUARY_FLOORS = [18, 38, 58];
+const OSSUARY_LOOT = ['ossuary-sabre', 'ossuary-bow', 'ossuary-staff'];
+const cachedOssuary = cacheStructure(seed => {
+  const side = unit(seed, 196, 31) < 0.5 ? -1 : 1;
+  for (const direction of [side, -side]) {
+    for (let distance = 840; distance < 2200; distance += 64) {
+      const x = distance * direction;
+      const y = surfaceHeight(seed, x);
+      if (y >= SEA_LEVEL - 8) continue;
+      const slot = Math.floor(x / STRUCTURE_SPACING);
+      const overlaps = [slot - 1, slot, slot + 1].some(s => {
+        const chest = cachedStructureChest(seed, s);
+        return chest && Math.abs(chest.x - x) <= 25 && chest.y >= y - 9 && chest.y <= y + 58;
+      });
+      if (!overlaps) return { x, y };
+    }
+  }
+  return null;
+});
+
+function dungeonLayout(seed) { return cachedOssuary(seed, 0); }
+
+function dungeonAt(seed, x, y) {
+  if (Math.abs(x) < 816 || Math.abs(x) > 2224 || y > SEA_LEVEL + 58) return null;
+  const site = dungeonLayout(seed);
+  if (!site) return null;
+  const dy = y - site.y;
+  return dy >= -8 && dy <= 58 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
+}
+
+function dungeonTile(site, x, y) {
+  const dx = x - site.x;
+  const dy = y - site.y;
+  const brick = idOf('dungeon-brick');
+  if (dy < 0) {
+    if (dx === -6 && dy === -1) return idOf('dungeon-bell');
+    return dy === -8 || (Math.abs(dx) === 12 && dy < -3) ? brick : AIR;
+  }
+  if (dy === 0) return Math.abs(dx) <= 2 ? idOf('dungeon-gate') : brick;
+  if (Math.abs(dx) === 24 || dy === 58) return brick;
+  if (OSSUARY_FLOORS.includes(dy) && Math.abs(dx) > 2) return brick;
+  if (dx === 0) return idOf('rope');
+  for (const [row, floor] of OSSUARY_FLOORS.entries()) {
+    const cx = row % 2 ? -19 : 18;
+    if (dx >= cx && dx < cx + 2 && dy >= floor - 2 && dy < floor) {
+      return cellOf('dungeon-cache', dx - cx, dy - floor + 2).id;
+    }
+    if (dy === floor - 1 && Math.abs(dx) >= 8 && Math.abs(dx) <= 10) return idOf('ashvault-spikes');
+    if (dy > floor - 13 && dy < floor - 4 && Math.abs(dx) === 14) return brick;
+  }
+  return AIR;
+}
+
 function baseContainerAt(seed, x, y) {
+  const dungeon = dungeonAt(seed, x, y);
+  if (dungeon) {
+    const row = OSSUARY_FLOORS.indexOf(y - dungeon.y + 2);
+    if (row < 0 || x !== dungeon.x + (row % 2 ? -19 : 18)) return null;
+    return [[OSSUARY_LOOT[row], 1], ['coin', 140 + row * 40]]
+      .map(([key, count]) => ({ key, count, kind: lootKindOf(key) }));
+  }
   const site = biomeSiteAt(seed, x, y);
   if (site && x === site.x + 7 && y === site.top + site.height - 3) {
     if (site.mimic) return null;
@@ -1189,6 +1249,8 @@ function weatherAt(seed, at, biomeKey) {
 }
 
 function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
+  const dungeon = dungeonAt(seed, x, y);
+  if (dungeon) return dungeonTile(dungeon, x, y);
   const surface = column.height;
   const site = biomeSiteAt(seed, x, y);
   if (site) return biomeSiteTile(site, x, y);
@@ -1663,6 +1725,8 @@ function decorate(write, seed, x, yFrom, yTo) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
+  const dungeon = dungeonAt(seed, x, y);
+  if (dungeon) return y < dungeon.y ? 0 : wallIdOf('dungeon-wall');
   const site = biomeSiteAt(seed, x, y);
   if (site) return wallIdOf(site.layer === 0 && site.biome !== 'desert' ? 'plankwall'
     : (site.biome === 'jungle' || site.biome === 'marsh') && site.layer === 1 ? 'mudwall' : site.biome === 'tundra' ? 'snowwall' : site.biome === 'desert' ? 'sandwall' : site.biome === 'badlands' ? 'redclaywall' : 'brickwall');
@@ -1801,7 +1865,7 @@ function generateChunk(seed, cx, cy) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= CHUNK || ly < 0 || ly >= CHUNK) return;
-    if (!canStamp(tiles[ly * CHUNK + lx], id)) return;
+    if (dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
     tiles[ly * CHUNK + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
@@ -1817,7 +1881,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,

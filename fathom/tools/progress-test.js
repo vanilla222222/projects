@@ -203,7 +203,11 @@ for (const key of Object.keys(mining.TOOLS)) {
 }
 for (const key of Object.keys(craft.WEAPONS)) {
   const w = craft.WEAPONS[key];
-  if (w.drop) continue;                      // dropped things are not climbed to
+  const ossuary = worldgen.dungeonLayout(20260105);
+  const cacheLoot = [16, 36, 56].some((dy, row) =>
+    worldgen.baseContainerAt(20260105, ossuary.x + (row % 2 ? -19 : 18), ossuary.y + dy)
+      ?.some(item => item.key === key));
+  if (w.drop || cacheLoot) continue;                      // dropped things are not climbed to
   ok(ladder.held.has(key), 'the weapon ' + key + ' is unreachable');
 }
 for (const key of Object.keys(craft.ARMOUR)) {

@@ -253,6 +253,15 @@ function makeGame(canvas, deps) {
         say('Use this in ' + worldgen.LAYERS.find(layer => layer.key === use.layer).name, 1.8);
         return true;
       }
+      let arena;
+      if (use.dungeon) {
+        const site = worldgen.dungeonLayout(seed);
+        if (!site || Math.abs(state.player.x - site.x) > 18 || Math.abs(state.player.y - site.y) > 12) {
+          say('Ring the bell at the Ossuary entrance', 2);
+          return true;
+        }
+        arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
       if (use.vault && !inventory.countOf('ashvault-key')) {
         say('Bring an Ashvault Key forged from a Furnace Core', 2);
         return true;
@@ -261,7 +270,6 @@ function makeGame(canvas, deps) {
         say('Use this in the ' + worldgen.BIOMES.find(b => b.key === use.biome).name, 2);
         return true;
       }
-      let arena;
       if (use.vault) {
         const x = Math.floor(state.player.x), y = Math.floor(state.player.y);
         const vault = worldgen.ashvaultAt(seed, x, y);
@@ -664,6 +672,14 @@ function makeGame(canvas, deps) {
     const held = selectedItem();
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
+    const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
+    if (spec.key === 'dungeon-gate' || spec.key === 'dungeon-bell'
+      || (spec.key === 'dungeon-brick' && !defeatedBosses.has('dungeonkeeper'))
+      || (cache && !world.hasStoredContainer(cache.x, cache.y))) {
+      state.player.mining = null;
+      say('The Ossuary is sealed', 1.4);
+      return;
+    }
     if (spec.key === 'ashvault-gate' || (spec.chest === 'ashvault-cache' && !inventory.countOf('guardian-seal'))) {
       state.player.mining = null;
       say('This seal must be opened with a key', 1.4);
@@ -1060,6 +1076,14 @@ function makeGame(canvas, deps) {
     }
     const origin = tiles.originOf(spec, aim.x, aim.y);
     if (!origin) return false;
+    if (spec.chest === 'dungeon-cache' && !world.hasStoredContainer(origin.x, origin.y)) {
+      if (!defeatedBosses.has('dungeonkeeper') || !inventory.countOf('dungeon-key')) {
+        say('Defeat the Keeper and bring a Gilded Ossuary Key', 2);
+        return true;
+      }
+      inventory.take('dungeon-key', 1);
+      world.setContainer(origin.x, origin.y, world.getContainer(origin.x, origin.y) || []);
+    }
     if (spec.mimic) return wakeChestMimic(origin, spec.mimic);
     if (openChest && openChest.x === origin.x && openChest.y === origin.y) {
       closeChest();
@@ -1256,6 +1280,10 @@ function makeGame(canvas, deps) {
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
+    const dungeon = worldgen.dungeonLayout(seed);
+    if (dungeon && defeatedBosses.has('hollloweye')) {
+      rows.push('Ossuary entrance · x ' + dungeon.x + ' · Ring the bell at night with a Bone Clapper.');
+    }
     const mainHints = {
       kingslime: 'Its defeat brings down a meteor.',
       hollloweye: 'Summon at night. Its lens improves ranged combat.',
@@ -1521,6 +1549,23 @@ function makeGame(canvas, deps) {
     if (liquid) liquid.activateAround(origin.x, origin.y);
   }
 
+  function useDungeonEntrance(aim) {
+    const key = tiles.tile(world.get(aim.x, aim.y)).key;
+    if (key !== 'dungeon-bell' && key !== 'dungeon-gate') return false;
+    if (!defeatedBosses.has('dungeonkeeper')) {
+      if (key === 'dungeon-bell' && inventory.countOf('bone-toll')) return useConsumable({ key: 'bone-toll' });
+      say('Bring a Bone Clapper to the Ossuary Bell at night', 2.5);
+      return true;
+    }
+    const site = worldgen.dungeonAt(seed, aim.x, aim.y);
+    if (!site) return true;
+    for (let x = site.x - 2; x <= site.x + 2; x += 1) {
+      if (tiles.tile(world.get(x, site.y)).key === 'dungeon-gate') world.set(x, site.y, tiles.AIR);
+    }
+    say('The Ossuary is open', 1.5);
+    return true;
+  }
+
   function unlockAshvault(aim) {
     if (tiles.tile(world.get(aim.x, aim.y)).key !== 'ashvault-gate') return false;
     const vault = worldgen.ashvaultAt(seed, aim.x, aim.y);
@@ -1539,7 +1584,7 @@ function makeGame(canvas, deps) {
 
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
-    if (aim0.inReach && (unlockAshvault(aim0) || useTownDevice(aim0))) return;
+    if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;
     if (aim0.inReach && useBed(aim0)) return;
@@ -1838,7 +1883,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=hardmode-1');
+      const worker = new Worker('workers/chunk.js?v=ossuary-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2120,7 +2165,7 @@ function makeGame(canvas, deps) {
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
-    swarm = enemyModule.makeSwarm(world, tiles, { worldgen });
+    swarm = enemyModule.makeSwarm(world, tiles, { worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper') });
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
       { tiles, worldgen });
     village = villagerModule.makeVillage(world, tiles, { housing });

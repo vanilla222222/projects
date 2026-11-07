@@ -892,6 +892,29 @@ function paintStation(ctx, spec, variant, ox, oy) {
   ctx.fillRect(ox + 2, oy + 7, 12, 1);
 }
 
+function paintOssuaryFixture(ctx, spec, ox, oy) {
+  if (spec.solid) {
+    ctx.fillStyle = '#302d40';
+    ctx.fillRect(ox, oy, TILE, TILE);
+    ctx.fillStyle = '#8e7147';
+    ctx.fillRect(ox, oy + 2, TILE, 2);
+    ctx.fillRect(ox, oy + 12, TILE, 2);
+    ctx.fillStyle = spec.colour;
+    ctx.fillRect(ox + 6, oy + 4, 4, 8);
+    ctx.fillRect(ox + 3, oy + 7, 10, 2);
+    return;
+  }
+  ctx.fillStyle = '#53526a';
+  ctx.fillRect(ox + 2, oy + 13, 12, 3);
+  ctx.fillRect(ox + 3, oy + 1, 2, 12);
+  ctx.fillRect(ox + 11, oy + 1, 2, 12);
+  ctx.fillRect(ox + 5, oy + 1, 6, 2);
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox + 7, oy + 3, 2, 2);
+  ctx.fillRect(ox + 5, oy + 5, 6, 5);
+  ctx.fillRect(ox + 4, oy + 10, 8, 2);
+}
+
 function paintBrick(ctx, spec, variant, ox, oy) {
   ctx.fillStyle = shade(spec.colour, -0.18);
   ctx.fillRect(ox, oy, TILE, TILE);
@@ -966,7 +989,8 @@ function bakeAtlas(document, tiles) {
       else if (spec.key === 'leaves') paintLeaves(ctx, spec, v, ox, oy);
       else if (spec.key === 'crystal') paintCrystal(ctx, spec, v, ox, oy);
       else if (spec.key === 'glass') paintGlass(ctx, spec, v, ox, oy);
-      else if (spec.key === 'brick' || spec.key === 'ashvault-brick') paintBrick(ctx, spec, v, ox, oy);
+      else if (spec.key === 'dungeon-gate' || spec.key === 'dungeon-bell') paintOssuaryFixture(ctx, spec, ox, oy);
+      else if (['brick', 'ashvault-brick', 'dungeon-brick'].includes(spec.key)) paintBrick(ctx, spec, v, ox, oy);
       else if (spec.liquid) paintWater(ctx, spec, v, ox, oy);
       else if (spec.station) paintStation(ctx, spec, v, ox, oy);
       else if (!spec.solid) paintSmall(ctx, spec, v, ox, oy);

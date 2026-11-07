@@ -273,6 +273,25 @@ BODIES.humanoid = function (ctx, g, c) {
   limb(ctx, g, 0.08, -0.78, 0.3 + k.frontArm * 0.4, -0.58 + k.frontArm * 0.3, 0.18, light);
 };
 
+BODIES.skull = function (ctx, g, c) {
+  g = { ...g, by: g.by + g.h * 0.075 * Math.sin(c.anim || 0) };
+  const bone = c.colour;
+  const shadow = spriteShade(bone, -0.4);
+  ell(ctx, g, 0, -0.62, 0.36, 0.31, shadow);
+  ell(ctx, g, 0, -0.68, 0.32, 0.26, bone);
+  rect(ctx, g, -0.19, -0.43, 0.38, 0.24, shadow);
+  for (const x of [-0.15, -0.05, 0.05, 0.15]) rect(ctx, g, x, -0.39, 0.06, 0.14, bone);
+  for (const x of [-0.13, 0.14]) {
+    ell(ctx, g, x, -0.64, 0.105, 0.11, '#182235');
+    dot(ctx, g, x, -0.63, 0.06, '#d3f6ff');
+  }
+  dot(ctx, g, 0, -0.48, 0.07, '#182235');
+  if (c.key === 'ossuary-skull') {
+    rect(ctx, g, -0.19, -0.91, 0.38, 0.045, '#53768b');
+    dot(ctx, g, 0, -0.87, 0.12, '#e2bd6e');
+  }
+};
+
 BODIES.skeleton = function (ctx, g, c) {
   const bone = c.colour;
   const dark = spriteShade(bone, -0.35);

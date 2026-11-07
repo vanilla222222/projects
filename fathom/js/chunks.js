@@ -423,7 +423,7 @@ function makeWorld(seed, generator) {
   }
 
   return { seed, get, set, biomeAt, enableHardmode, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
-    getContainer, setContainer, clearContainer,
+    getContainer, setContainer, clearContainer, hasStoredContainer: (x, y) => containers.has(containerKey(x, y)),
     markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },
     get liquidRevision() { return liquidRevision; },

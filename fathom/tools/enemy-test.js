@@ -87,7 +87,7 @@ for (const layer of ['caves', 'deep', 'hell', 'hellcaves', 'sky', 'space']) {
 for (const spec of ENEMIES) {
   const layer = (spec.layers || ['surface'])[0];
   const biome = (spec.biomes || ['plains'])[0];
-  const ctx = { biome, layer, wet: !!spec.wet, day: spec.day === false ? false : true,
+  const ctx = { biome, layer, dungeon: spec.dungeon, wet: !!spec.wet, day: spec.day === false ? false : true,
     event: spec.event || null };
   if (spec.summonOnly || spec.hiddenSpawn) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
