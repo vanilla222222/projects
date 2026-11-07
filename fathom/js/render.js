@@ -700,7 +700,9 @@ function makeRenderer(canvas, deps) {
   // than fed into the tile light field, because the field is computed per tile from the
   // world and the player is not in the world.
   function drawCarriedLight(state, view) {
-    const glow = Math.max(state.gear?.glow || 0, state.held?.shape === 'torch' ? 5 : 0);
+    const gearGlow = state.gear?.glow || 0;
+    const torch = state.held?.shape === 'torch' && gearGlow < 3;
+    const glow = torch ? 3 : gearGlow;
     if (!glow) return;
     const { x0, y0, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
@@ -708,8 +710,8 @@ function makeRenderer(canvas, deps) {
     const sy = (state.player.y + state.player.height / 2 - y0) * size - offsetY;
     const radius = glow * size;
     const g = ctx.createRadialGradient(sx, sy, size * 0.3, sx, sy, radius);
-    g.addColorStop(0, 'rgba(255, 221, 160, 0.55)');
-    g.addColorStop(0.5, 'rgba(255, 200, 120, 0.22)');
+    g.addColorStop(0, torch ? 'rgba(255, 214, 146, 0.24)' : 'rgba(255, 221, 160, 0.55)');
+    g.addColorStop(0.5, torch ? 'rgba(255, 192, 111, 0.075)' : 'rgba(255, 200, 120, 0.22)');
     g.addColorStop(1, 'rgba(255, 190, 110, 0)');
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';

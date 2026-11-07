@@ -354,7 +354,7 @@ function climateChoice(seed, x) {
   // interleaved tongues of each. Height already blends across every weight.
   const share = second >= 0 && weights[best] > 0
     ? weights[second] / (weights[best] + weights[second]) : 0;
-  return { weights, best, second, share, chosen: best,
+  return { weights, smooth: smooth2, total, best, second, share, chosen: best,
     bias: total > 0 ? blended / total : 0 };
 }
 
@@ -365,9 +365,26 @@ function buildColumn(seed, x) {
   const land = continent(seed, x);
 
   // Height first, because whether this column is shore or sea depends on where it lands.
-  const rolling = (fbm1(seed, x * 0.0085, 11, 4, 2, 0.5) - 0.5) * 48;
-  const hills = (fbm1(seed, x * 0.0022, 29, 3, 2, 0.55) - 0.5) * 132;
-  const detail = (fbm1(seed, x * 0.055, 53, 2, 2, 0.5) - 0.5) * 9;
+  // Blend landforms with the same climate weights as elevation so biome borders
+  // meet smoothly. Long ridges, dry escarpments and low wet basins have different profiles.
+  let ridgeWeight = 0, flatWeight = 0, dryWeight = 0;
+  for (let i = 0; i < CLIMATE_BIOMES.length; i += 1) {
+    const key = CLIMATE_BIOMES[i].key;
+    const weight = choice.smooth[i] / (choice.total || 1);
+    if (key === 'highlands' || key === 'taiga') ridgeWeight += weight;
+    if (key === 'marsh' || key === 'plains') flatWeight += weight;
+    if (key === 'desert' || key === 'badlands') dryWeight += weight;
+  }
+  const warp = (fbm1(seed, x * 0.0039, 71, 2, 2, 0.5) - 0.5) * 95;
+  const u = x + warp;
+  const rolling = (fbm1(seed, u * 0.0085, 11, 4, 2, 0.5) - 0.5) * (53 - flatWeight * 26);
+  const broad = fbm1(seed, u * 0.0022, 29, 3, 2, 0.55) - 0.5;
+  const hills = broad * (126 + ridgeWeight * 58 - flatWeight * 42);
+  const ridge = 1 - Math.abs(2 * fbm1(seed, u * 0.006, 73, 2, 2, 0.5) - 1);
+  const landform = -ridgeWeight * ridge ** 4 * 31
+    + dryWeight * Math.sin(broad * 19) * 10;
+  const detail = (fbm1(seed, u * 0.055, 53, 2, 2, 0.5) - 0.5) * 8;
+  const cover = fbm1(seed, u * 0.016, 79, 2, 2, 0.5);
   // Below sea level the shape flattens into a basin rather than keeping its hills, so an
   // ocean floor reads as a floor and not as drowned countryside.
   // Land sits above sea level by default; only a column whose continent field has gone
@@ -381,7 +398,7 @@ function buildColumn(seed, x) {
   // The first slice of negative continent is still coast, not sea: without that offset
   // the steeper curve turned almost a third of the world into ocean.
   const abyss = Math.pow(Math.max(0, shelf - 0.14), 1.4) * 2600;
-  let h = SEA_LEVEL - 34 + (rolling + hills) * relief + detail + bias * relief
+  let h = SEA_LEVEL - 34 + (rolling + hills + landform) * relief + detail + bias * relief
     + abyss - Math.max(0, land) * 12;
   // Pull the ground up towards dry land near the origin. Below the ceiling nothing
   // happens at all, so the homeland keeps its own hills and valleys; only a column that
@@ -401,7 +418,7 @@ function buildColumn(seed, x) {
     const blight = blightAt(seed, x);
     if (blight) biome = BY_BIOME[blight];
   }
-  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land,
+  return { x, biome, climate: CLIMATE_BIOMES[best], height: h, bias, land, cover,
     weights: choice.weights, choice };
 }
 
@@ -436,7 +453,7 @@ const CAVE_PROFILES = {
   // Tundra: tight, winding, little open space.
   narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 , bore: 0.66 },
   // Desert: broad flat halls carved along the bedding planes of the sandstone.
-  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.28 },
+  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.4 },
   // Jungle: enormous chambers, the largest in the world.
   caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 , bore: 1.1 },
   // Highlands and badlands: vertical shafts punched through the rock.
@@ -464,10 +481,8 @@ function caveProfile(column) {
 //
 // Both are pure functions of (x, y), so like the sky islands they cannot disagree at a
 // chunk seam and need no stamping margin.
-// Galleries every 50 tiles with the widened radius left the jungle underground 53% open
-// - more air than rock, which is a void rather than a cave system. 62 keeps the layers
-// distinct and the rock between them worth mining through.
-const GALLERY_SPACING = 62;
+// Leave more rock between the galleries while retaining the shafts that link them.
+const GALLERY_SPACING = 74;
 // Measured, not guessed. At 108 apart with 62% of them breaking the surface there was
 // one cave mouth every 160 to 267 tiles - two or three screens of walking between doors,
 // each only a few tiles wide and easily hidden behind a tree. Connectivity was already
@@ -483,8 +498,8 @@ function inGallery(seed, x, depth, bore) {
     const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
     const shape = fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5);
     // Swell narrow corridors into chambers without severing their centerlines.
-    const chamber = Math.max(0, shape - 0.65) ** 2 * 45;
-    const radius = (2.5 + unit(seed, b, 0, 5207) * 3.2
+    const chamber = Math.max(0, shape - 0.68) ** 2 * 42;
+    const radius = (2.35 + unit(seed, b, 0, 5207) * 3.15
       + (shape - 0.5) * 3 + chamber) * bore;
     if (Math.abs(depth - (base + wander + (shape - 0.5) * 7)) < radius) return true;
   }
@@ -574,7 +589,8 @@ function caveDensity(seed, x, y, depth, column) {
 }
 
 function caveThreshold(column) {
-  return (column ? caveProfile(column) : CAVE_PROFILES.normal).threshold + 0.045;
+  const profile = column ? caveProfile(column) : CAVE_PROFILES.normal;
+  return profile.threshold + (profile === CAVE_PROFILES.halls ? 0.035 : 0.055);
 }
 
 // How far down standing water reaches. Beneath an ocean the sea soaks into the rock, so
@@ -1093,7 +1109,7 @@ function treeAt(seed, x) {
   // Nothing roots underwater, and nothing roots on a beach.
   if (column.height >= SEA_LEVEL - 2) return null;
   if (((x % spec.spacing) + spec.spacing) % spec.spacing !== 0) return null;
-  if (unit(seed, x, 0, 2003) > spec.chance) return null;
+  if (unit(seed, x, 0, 2003) > spec.chance * (0.5 + column.cover)) return null;
   const span = spec.height[1] - spec.height[0];
   const height = spec.height[0] + Math.floor(unit(seed, x, 0, 2011) * (span + 1));
   const root = column.height;
@@ -1396,7 +1412,7 @@ function decorate(write, seed, x, yFrom, yTo) {
   const surface = column.height;
   const flora = FLORA[biome.key];
 
-  if (flora && unit(seed, x, 0, 2101) < flora.chance) {
+  if (flora && unit(seed, x, 0, 2101) < flora.chance * (0.65 + column.cover * 0.7)) {
     const key = pickProp(seed, x, flora.props);
     const underwater = surface > SEA_LEVEL;
     // Seaweed and coral only grow submerged; everything else only grows in air. Shells
