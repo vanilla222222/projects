@@ -14,7 +14,10 @@ export const voidUnlocked=s=>!!(s.kills.singularity||s.bossHunt?.kills.singulari
 const specialist=(c,skill)=>!!c.voidClass&&VOID_CLASSES[c.class]?.skill===skill;
 const gain=(c,skill,n)=>c.skills[skill]+=n*(1+worldSkillBonus(c,skill,EQUIPMENT));
 export function voidLock(s,area){
- if(VOID_PROJECTS[area]&&!s.voidProjects.includes(area))return 'Survey the anchor and build its bridge.';
+ if(VOID_PROJECTS[area]&&!s.voidProjects.includes(area)){
+  const [source,zone]=allAreas.find(a=>a.id===area).entry;
+  return 'Survey '+roomLayout(source,zone).title+' and build '+VOID_PROJECTS[area].name+' there.';
+ }
  if(area==='void-wound'&&!s.voidLights.includes(area))return 'Kindle a Void Lantern and light the hidden footholds.';
  return '';
 }
@@ -23,7 +26,7 @@ export function bridgeStatus(s,c,id){
  if(!d||!a)return null;
  const [area,zone]=a.entry,surveyed=s.surveys.includes(area+'-'+zone),built=s.voidProjects.includes(id);
  const present=near(c,area,zone,'bridge-'+id);
- return {...d,surveyed,built,ready:voidUnlocked(s)&&surveyed&&!built&&present&&canPay(s,d.cost,c)};
+ return {...d,destination:a.name,surveyed,built,ready:voidUnlocked(s)&&surveyed&&!built&&present&&canPay(s,d.cost,c)};
 }
 export function buildVoidBridge(s,c,id){
  const d=bridgeStatus(s,c,id);

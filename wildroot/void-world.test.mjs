@@ -87,3 +87,24 @@ test('Either Tier 2 branch qualifies for Tier 3 and the Unmoored requires a surv
  assert.equal(w.map.sever,null);
  assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
 });
+
+
+test('The three back-world crossings have distinct and attainable rewards',()=>{
+ const {s,c,visit}=setup();
+ const recipe=D.RECIPES.find(r=>r.equipment==='ravine-axe');
+ assert.ok(D.ENEMIES['void-watch-1'].loot.some(d=>d.id===recipe.dropBlueprint));
+ assert.equal(E.recipeOpen(s,recipe),false);
+ E.give(c,recipe.dropBlueprint,1);assert.ok(E.useWorldReward(s,c,recipe.dropBlueprint));
+ assert.ok(E.recipeOpen(s,recipe));
+ assert.ok(D.areaById('void-reef').resources[1].includes('wrecklight-koi'));
+ assert.ok(D.FOODS['wrecklight-chowder'].heal>D.FOODS['anchor-supper'].heal);
+ const star=D.CONSTELLATIONS.find(d=>d.id==='sealed-orrery');
+ s.stars.unlocked=true;
+ visit(star.area,star.zone,'portal-left');c.position={x:star.x,y:star.y};
+ assert.equal(E.observeConstellation(s,c,star.id),'seen');
+ c.journey.kills['void-vault-1']=1;
+ assert.equal(E.observeConstellation(s,c,star.id),'complete');
+ assert.equal(E.observeConstellation(s,c,star.id),'seen');
+ assert.equal(c.bag['sealed-orrery-relic'],1);
+ assert.doesNotThrow(()=>E.restoreSave(JSON.parse(JSON.stringify(s))));
+});

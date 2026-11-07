@@ -17,7 +17,7 @@ import {npcDialogue} from './dialogue-panels.mjs?v=50';
 import * as Parity from './parity-panels.mjs?v=50';
 import * as EconomyUI from './economy-panels.mjs?v=50';
 import * as Prof from './profession-panels.mjs?v=50';
-import * as UI from './ui-panels.mjs?v=56';
+import * as UI from './ui-panels.mjs?v=57';
 import {icon,portrait} from './ui-art.mjs?v=50';
 import * as AUI from './adventure-panels.mjs?v=50';
 import * as T from './town-panels.mjs?v=50';
@@ -26,7 +26,7 @@ import {GameAudio} from './audio.mjs?v=45';
 import {CLASSES,SKILLS,AREAS,ITEMS,RECIPES,OFFERINGS,STORY,SECRETS,purposes,areaById,zoneEnemy} from './content.mjs?v=45';
 import * as E from './engine.mjs?v=45';
 import {World,ABILITIES,GROUND,abilitySet,assignedAbilities,abilityAvailable} from './world.mjs?v=49';
-import {drawWorld,viewFor} from './scene.mjs?v=56';
+import {drawWorld,viewFor} from './scene.mjs?v=57';
 const $=id=>document.getElementById(id),KEY='wildroot-v1';
 installAtlasPanning($('panel-content'));
 const atlasZoom=installAtlasZoom($('panel-content'));
@@ -49,7 +49,7 @@ function handleIntent(event){
  const service=event.type==='station'?event.entity.station:event.type==='telescope'?'stars':event.type;
  if(E.SERVICES[service]){uiView.profession=service;uiView.firstVisit=E.discoverService(state,world.c,service)?service:null;save();}
  if(event.type==='telescope'){if(E.unlockStars(state,world.c)){save();openPanel('stars');}}
- if(event.type==='constellation'){const result=E.observeConstellation(state,world.c,event.entity.constellation);toast(result==='complete'?'Constellation completed · +2 star points':result?'Constellation observed. Meet its requirement and return.':'Climb to the telescope in Crown Observatory first.');save();}
+ if(event.type==='constellation'){const result=E.observeConstellation(state,world.c,event.entity.constellation);toast(result==='complete'?(event.entity.constellation==='sealed-orrery'?'Constellation completed · Sealed Orrery Relic recovered':'Constellation completed · +2 star points'):result?'Constellation observed. Meet its requirement and return.':'Climb to the telescope in Crown Observatory first.');save();}
  if(['dungeon','bossboard','museum'].includes(event.type))openPanel(event.type);
  if(event.type==='dungeon-result'){dungeonResult=event.result;save();openPanel('dungeon-result');}
  if(event.type==='arena')openPanel('trial');
@@ -98,7 +98,8 @@ function renderPanel(preserveScroll=false){
  if(kind==='world-gate'){title='The World Gate';body=`<div class="world-gate-card"><span>⌖</span><h3>World Two · ${WORLD_TWO.name}</h3><p>32 rooms across eight areas: shores, marshes, buried ruins, berry uplands, hunting highlands and storm cliffs. Fishing uses rods; bugs use nets; digging uses shovels; foraging uses gloves. Hunting trains through kills.</p><p>${E.areaUnlocked(state,'tide-town')?'The Rootwarden has fallen. The gate is open.':'Defeat the Rootwarden to enter.'}</p><button data-enter-world-two="" ${E.areaUnlocked(state,'tide-town')?'':'disabled'}>ENTER TIDEHAVEN</button><button data-reveal-room="tide-town:0">VIEW WORLD TWO MAP</button></div>`;}
  if(kind==='void-bridge'){
   const d=E.bridgeStatus(state,c,voidFacility.project);title=d.name;
-  body=`<p>${d.built?'This bridge is open for the roster.':d.surveyed?'The far anchor has been charted.':'Climb to this room’s Survey Cache to chart the far anchor first.'}</p>`+costs(d.cost)+`<button data-build-void="${voidFacility.project}" ${d.ready?'':'disabled'}>Build crossing</button>`;
+  body=`<h3>${d.destination}</h3><p>${d.built?'Crossing open for the roster.':d.surveyed?'Anchor charted. Bring the materials below to build the crossing.':'Climb to this room’s Survey Cache to chart the anchor.'}</p>${d.reward?`<p>${d.reward}</p>`:''}`;
+  if(!d.built)body+=costs(d.cost)+(d.surveyed?`<button data-build-void="${voidFacility.project}" ${d.ready?'':'disabled'}>Build crossing</button>`:'<button data-find-void-survey>Walk to survey cache</button>');
  }
  if(kind==='void-work'){
   const skill=voidFacility.skill,d=VOID_WORK[skill];title=SKILLS[skill];
@@ -339,6 +340,7 @@ document.addEventListener('click',event=>{
   const fresh=E.freshSave();try{persistReset(localStorage,KEY,fresh);}catch{toast('Reset failed: browser storage could not be written. Your current game is still open.');return;}
   paused=true;loadError=null;location.reload();return;
  }
+ if(d.findVoidSurvey!==undefined&&world.select('survey')){closePanel();return;}
  if(d.buildVoid||d.workVoid||d.bindVoid!==undefined||d.lightVoid!==undefined||d.trainVoid!==undefined||d.useVoidRift!==undefined){
   const dest=d.useVoidRift!==undefined&&E.voidRiftDestination(state,c);
   const ok=d.buildVoid?E.buildVoidBridge(state,c,d.buildVoid):d.workVoid?E.workVoid(state,c,d.workVoid):d.bindVoid!==undefined?E.bindVoidEcho(state,c):d.lightVoid!==undefined?E.lightVoidRoute(state,c):d.trainVoid!==undefined?E.chooseVoidClass(state,c):dest&&world.travel(dest,0);
