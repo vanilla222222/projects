@@ -35,7 +35,7 @@ function adventurer(g,x,y,c,t){
  g.restore();}g.restore();
 }
 function enemy(g,x,y,e,t,boss=false){drawMonsterArt(g,e,x,y,t,boss);}
-import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=40';
+import {PLATFORMS,LADDERS,WIDTH,HEIGHT,GROUND} from './world.mjs?v=43';
 function label(g,text,x,y,color='#fff8db',size=14){g.font=`bold ${size}px Trebuchet MS, sans-serif`;g.textAlign='center';g.fillStyle='#172d38';g.fillText(text,x+1,y+2);g.fillStyle=color;g.fillText(text,x,y);}
 function platform(g,p,cave){const y=p.y;R(p.x,y,p.w,18,cave?'#687e82':'#6eab43',g);R(p.x,y+18,p.w,18,cave?'#50646f':'#7a643c',g);R(p.x,y+36,p.w,p.y===GROUND?90:26,cave?'#364757':'#514c35',g);for(let x=p.x;x<p.x+p.w;x+=32){R(x,y,24,5,cave?'#8da6a3':'#a9d467',g);R(x+8,y+25,8,6,cave?'#749091':'#ae925a',g);R(x+17,y+48,12,5,cave?'#465e6e':'#6d603f',g);}if(!cave)for(let x=p.x+8;x<p.x+p.w;x+=43){R(x,y-5,3,7,'#74ae45',g);R(x+4,y-10,3,12,'#a6cf61',g);}}
 function portal(g,e,t,locked=false,progress=''){g.save();g.translate(e.x,e.y);const color=locked?'#687786':'#5ed5ff';for(let i=3;i>=0;i--){g.strokeStyle=[color+'20',color+'40',color+'80',color][3-i];g.lineWidth=7+i*4;g.beginPath();g.ellipse(0,-62,27+i*2,52+i*3,0,0,Math.PI*2);g.stroke();}R(-43,-8,86,13,'#65788a',g);R(-32,-15,64,8,'#a1b0b1',g);g.fillStyle='#143c6377';g.beginPath();g.ellipse(0,-64,23,49,0,0,Math.PI*2);g.fill();for(let i=0;i<6;i++){const phase=t*1.1+i;R(Math.sin(phase)*17,-60+Math.cos(phase*1.5)*39,3,5,'#d0f9ff',g);}label(g,e.name==='The Rootwarden'?'BOSS GATE':e.name,e.direction<0?55:e.direction>0?-55:0,-135,'#d8f6ff',10);if(progress)label(g,progress,e.direction<0?55:e.direction>0?-55:0,-115,'#ffe3a8',11);g.restore();}
