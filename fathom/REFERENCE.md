@@ -1024,3 +1024,45 @@ to the boss code *after* its archetype branches, and the flying boss has gravity
 the ordinary flyer branch claims. The Hollow Eye hovered like a bat and never charged
 once. The dispatch is first now. The test caught it immediately, because "it never charged
 in twenty seconds" is a thing a test can notice and a screenshot cannot.
+
+## Fishing
+
+The design problem with fishing in a game with this much water is that water is
+everywhere - an ocean, a flooded cavern, a bucket's worth in a hole you dug. If a puddle
+fishes like the sea then fishing is a button you press rather than a place you go.
+
+So the catch depends on how much water is actually there, and the amount is **measured**
+rather than assumed: a box of tiles around the bobber is counted, and three bands fall
+out of it. A puddle catches almost nothing but junk. A pond catches the common fish of
+wherever it is. The sea, and the flooded caverns under it, catch everything including
+crates. Where also decides what: cold water has trout and warm has perch, salt water has
+shrimp and swordfish, underground has cave fish - and the flooded caverns under an ocean
+are salt and underground at once, which makes them the one place that fishes like both.
+
+Casting is right click at water, and right click again pulls the line. Between those is a
+wait and then a window of about a second in which the bobber dips, rings spread from it,
+and pulling gets you what was on the line. Walk away and the line breaks; mine the water
+out from under it and it breaks too.
+
+A better rod does not unlock anything. It shortens the wait and tilts the draw away from
+junk - it wastes less of your time, which is the only thing a fishing upgrade should
+ever do. Fish cook at a furnace into the cheapest healing in the game, which is the point
+of a pond near the house.
+
+Three minutes with a gilded rod in open ocean: 84 catches - 27 bass, 18 junk, 14 shrimp,
+12 perch, 8 swordfish, 4 crates and one goldfish.
+
+### The bug this found
+
+`fishing.js` declared `function poolFor` and so did `enemy.js`. Every module shares one
+global scope in the browser, and two function declarations of the same name **do not
+throw** - the later one silently replaces the earlier. fishing.js loads second, so the
+enemy spawner started drawing from the fishing table and crashed trying to read an
+archetype off a bass.
+
+Every Node suite passed, because in Node they are two modules. The boot test - written
+one commit earlier for exactly this class of bug - also passed, because it catches a
+duplicate `const` by running the bundle and a duplicate `function` does not error. It now
+scans every module for top-level declarations and reports any name claimed by two files,
+which is a stronger check than running the bundle and would have caught all four of the
+collisions this project has had.

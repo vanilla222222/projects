@@ -7,12 +7,12 @@ const DAY_SECONDS = 600;
 const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
-  const { tiles, worldgen, chunks, light, texture, render, player: physics,
+  const { rng, tiles, worldgen, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule, sprite, audio: audioModule,
-    buffs: buffModule } = deps;
+    buffs: buffModule, fishing: fishModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -47,6 +47,7 @@ function makeGame(canvas, deps) {
     arrows: [],
     stars: [],
     hook: null,
+    bobber: null,
     stats: null,
     player: null,
     colours: null,
@@ -240,6 +241,14 @@ function makeGame(canvas, deps) {
       // Drinking a potion leaves the bottle, which is most of what makes bottles worth
       // keeping rather than a one-off cost.
       inventory.add({ key: 'bottle', kind: 'use' }, 1);
+    } else if (use.open !== undefined) {
+      // A crate holds what it holds because of where it was caught, like a pot.
+      const px = Math.floor(state.player.x);
+      const py = Math.floor(state.player.y);
+      for (const got of fishModule.crateContents(rng.unit, seed, px, py)) {
+        dropItem(px, py, got.key, craft.kindOf(got.key), got.count);
+      }
+      sfx('chest');
     } else if (use.restore !== undefined) {
       if (stats.mana >= stats.maxMana) { say('Your mana is full', 1.2); return true; }
       stats.mana = Math.min(stats.maxMana, stats.mana + use.restore);
@@ -305,6 +314,99 @@ function makeGame(canvas, deps) {
     }
     say('A star has fallen to the ' + (site.side > 0 ? 'east' : 'west'), 4.6);
     return site;
+  }
+
+  // --- fishing ------------------------------------------------------------------------
+  // Cast at water, wait, and pull when it dips. The bobber is a thing in the world with
+  // its own position, like the hook, so the same shape applies: the game holds it and
+  // the player is only attached to it.
+  function castLine(item) {
+    if (!fishModule) return false;
+    const spec = craft.ITEMS[item.key];
+    if (!spec || !spec.rod) return false;
+    if (state.bobber) { reelIn(); return true; }
+    const cx = state.player.x + state.player.width / 2;
+    const cy = state.player.y + state.player.height * 0.4;
+    const away = Math.hypot(pointer.x - cx, pointer.y - cy);
+    if (away > fishModule.CAST_RANGE) { say('Too far', 1.0); return true; }
+    const tx = Math.floor(pointer.x);
+    const ty = Math.floor(pointer.y);
+    const at = tiles.tile(world.get(tx, ty));
+    if (!at.liquid || at.hot) { say('Cast at water', 1.2); return true; }
+
+    const water = fishModule.waterAround(world, tiles, tx, ty);
+    if (water < fishModule.PUDDLE / 3) { say('There is hardly any water there', 1.6); return true; }
+    const rod = fishModule.RODS[item.key] || { power: 1 };
+    state.bobber = {
+      x: pointer.x,
+      y: pointer.y,
+      tx,
+      ty,
+      rod: item.key,
+      power: rod.power,
+      water,
+      wait: fishModule.biteDelay(Math.random(), rod.power, water),
+      biting: 0,
+      bob: 0
+    };
+    sfx('splash', { gain: 0.5, pitch: 1.3 });
+    return true;
+  }
+
+  // Pull. Early and you get nothing; during the bite and you get what was on the line.
+  function reelIn() {
+    const bobber = state.bobber;
+    state.bobber = null;
+    if (!bobber) return;
+    if (bobber.biting <= 0) {
+      sfx('swing', { gain: 0.4 });
+      say('Nothing yet', 0.9);
+      return;
+    }
+    const ctx = {
+      biome: worldgen.biomeAt(seed, bobber.tx).key,
+      layer: worldgen.layerAt(bobber.ty).key,
+      water: bobber.water
+    };
+    const got = fishModule.rollCatch(ctx, Math.random(), bobber.power);
+    if (!got) { say('Nothing is biting here', 1.4); return; }
+    dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
+    sfx('pickup', { pitch: 1.35 });
+    spawnParticles(bobber.x, bobber.y, '#bfe6ff', 8);
+    say(craft.nameOf(got.key, tiles), 1.6);
+  }
+
+  function stepFishing(dt) {
+    const bobber = state.bobber;
+    if (!bobber) return;
+    // The line breaks if you walk away from it, which is what stops a cast being a
+    // thing you set down and forget.
+    const away = Math.hypot(bobber.x - state.player.x, bobber.y - state.player.y);
+    if (away > fishModule.CAST_RANGE + 6) {
+      state.bobber = null;
+      say('The line broke', 1.2);
+      return;
+    }
+    const still = tiles.tile(world.get(bobber.tx, bobber.ty));
+    if (!still.liquid || still.hot) {
+      state.bobber = null;
+      say('The water is gone', 1.2);
+      return;
+    }
+    bobber.bob += dt;
+    if (bobber.biting > 0) {
+      bobber.biting -= dt;
+      if (bobber.biting <= 0) {
+        say('It got away', 1.1);
+        bobber.wait = fishModule.biteDelay(Math.random(), bobber.power, bobber.water);
+      }
+      return;
+    }
+    bobber.wait -= dt;
+    if (bobber.wait <= 0) {
+      bobber.biting = fishModule.BITE_WINDOW;
+      sfx('splash', { gain: 0.35, pitch: 1.6 });
+    }
   }
 
   // --- the grappling hook ----------------------------------------------------------
@@ -793,6 +895,7 @@ function makeGame(canvas, deps) {
     state.player.vy = 0;
     if (swarm) swarm.clear();
     releaseHook();
+    state.bobber = null;
     sfx('death');
     const blame = lastHurt || 'something';
     deathsBy[blame] = (deathsBy[blame] || 0) + 1;
@@ -1044,6 +1147,8 @@ function makeGame(canvas, deps) {
     if (aim0.inReach && useDoor(aim0)) return;
     const item = selectedItem();
     if (!item) return;
+    // A rod casts rather than places, and casting again pulls the line in.
+    if (castLine(item)) return;
     // Something used rather than placed is used wherever you are standing.
     if (useConsumable(item)) return;
     const aim = physics.aimTile(state.player, pointer);
@@ -1193,6 +1298,7 @@ function makeGame(canvas, deps) {
 
     if (village) village.step(dt);
     stepStars(dt);
+    stepFishing(dt);
     if (buffs) {
       buffs.step(dt);
       // Standing buffs are re-given while their source is in reach and expire a second

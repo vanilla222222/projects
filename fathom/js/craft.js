@@ -70,6 +70,28 @@ const ITEMS = {
     text: 'Restores 70 health' },
   'mana-salve': { name: 'Mana Salve', kind: 'use', colour: '#5c8ae0', use: { restore: 60 },
     text: 'Restores 60 mana' },
+  // Rods, and what comes out of the water. A fish is food: cooked at a furnace it is the
+  // cheapest healing in the game, which is the point of a pond near the house.
+  'wood-rod': { name: 'Wooden Rod', kind: 'tool', colour: '#8a6038', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  'iron-rod': { name: 'Iron Rod', kind: 'tool', colour: '#a8a29b', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  'gold-rod': { name: 'Gilded Rod', kind: 'tool', colour: '#e0c054', rod: true,
+    text: 'Right click at water to cast, and again to pull' },
+  junk: { name: 'Old Boot', kind: 'loot', colour: '#6a5b52' },
+  bass: { name: 'Bass', kind: 'loot', colour: '#7f8f6a' },
+  trout: { name: 'Trout', kind: 'loot', colour: '#9fb0c0' },
+  perch: { name: 'Perch', kind: 'loot', colour: '#c0a060' },
+  shrimp: { name: 'Shrimp', kind: 'loot', colour: '#e49a86' },
+  cavefish: { name: 'Cave Fish', kind: 'loot', colour: '#8a8f9a' },
+  glowfish: { name: 'Glowfish', kind: 'loot', colour: '#9fe8d0' },
+  swordfish: { name: 'Swordfish', kind: 'loot', colour: '#5f7f9f' },
+  goldfish: { name: 'Goldfish', kind: 'loot', colour: '#e0a63c' },
+  crate: { name: 'Sealed Crate', kind: 'use', colour: '#8a6038', use: { open: 'crate' },
+    text: 'Open it and see' },
+  'cooked-fish': { name: 'Cooked Fish', kind: 'use', colour: '#d8a06a',
+    use: { heal: 45 }, text: 'Restores 45 health' },
+
   // Grappling hooks. A hook is a tool rather than a weapon: it is fired with its own
   // key, it does no damage, and what it changes is where you can go. `range` is how far
   // the head flies before giving up, `speed` how fast it flies, and `pull` how hard the
@@ -406,6 +428,20 @@ function describe(key, tilesModule) {
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   const item = ITEMS[key];
+  if (item && item.rod) {
+    const rod = (typeof require === 'function')
+      ? require('./fishing.js').RODS[key]
+      : (typeof RODS === 'undefined' ? null : RODS[key]);
+    lines.push('Fishing rod');
+    if (rod) lines.push('Power ' + rod.power.toFixed(2));
+    lines.push('Right click at water to cast, and again when it dips');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  if (item && item.use && item.use.open) {
+    lines.push('Used where you stand');
+    lines.push('Open it and see what is inside');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
   if (item && item.grapple) {
     lines.push('Grappling hook');
     lines.push(item.grapple.range + ' tiles of rope');
@@ -628,6 +664,10 @@ RECIPES.push(
   { out: { key: 'clarity-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['amethyst', 2]], station: 'workbench' },
   { out: { key: 'feather-potion', kind: 'use', count: 2 }, need: [['bottle', 2], ['feather', 5]], station: 'workbench' },
   { out: { key: 'campfire', kind: 'block', count: 1 }, need: [['#wood', 10], ['torch', 3]], station: null },
+  { out: { key: 'wood-rod', kind: 'tool', count: 1 }, need: [['#wood', 12]], station: 'workbench' },
+  { out: { key: 'iron-rod', kind: 'tool', count: 1 }, need: [['iron-bar', 6], ['#wood', 6]], station: 'anvil' },
+  { out: { key: 'gold-rod', kind: 'tool', count: 1 }, need: [['gold-bar', 8], ['silver-bar', 4]], station: 'anvil' },
+  { out: { key: 'cooked-fish', kind: 'use', count: 1 }, need: [['#fish', 1]], station: 'furnace' },
   { out: { key: 'rope', kind: 'block', count: 8 }, need: [['#wood', 2]], station: 'workbench' },
   { out: { key: 'grapple', kind: 'tool', count: 1 }, need: [['iron-bar', 10], ['leather', 4]], station: 'anvil' },
   { out: { key: 'crystal-hook', kind: 'tool', count: 1 }, need: [['crystal', 10], ['gold-bar', 6], ['leather', 4]], station: 'anvil' },
@@ -679,16 +719,25 @@ function stationsNear(world, tiles, px, py) {
 // pickaxe be made from whichever tree happened to be nearest without the recipe list
 // having to be written out once per species.
 const TAGS = {
+  // Any fish cooks the same way, so the furnace takes a tag rather than nine recipes.
+  '#fish': (key) => ['bass', 'trout', 'perch', 'shrimp', 'cavefish', 'glowfish',
+    'swordfish', 'goldfish'].includes(key),
   '#wood': (key) => {
     const spec = CRAFT_TILES.BY_KEY[key];
     return !!(spec && spec.wood && key.endsWith('wood'));
   }
 };
 
+// Everything a tag stands for. Tiles and items both, because `#wood` is a family of
+// tiles and `#fish` is a family of items, and a tag that could only ever mean tiles would
+// have quietly matched nothing at all.
 function tagMembers(tag) {
   const test = TAGS[tag];
   if (!test) return [];
-  return CRAFT_TILES.TILES.filter(t => test(t.key)).map(t => t.key);
+  const out = [];
+  for (const spec of CRAFT_TILES.TILES) if (test(spec.key)) out.push(spec.key);
+  for (const key of Object.keys(ITEMS)) if (test(key) && out.indexOf(key) === -1) out.push(key);
+  return out;
 }
 
 // How much of an ingredient the inventory holds, counting every member of a tag.
@@ -769,8 +818,13 @@ function kindOf(key) {
 
 
 
+// Tags need names of their own: the crafting list shows what a recipe costs, and "#fish"
+// is not something to show a player. Kept beside the tag table rather than inside it so
+// a tag is a predicate and nothing else.
+const TAG_NAMES = { '#wood': 'Wood', '#fish': 'Fish' };
+
 function nameOf(key, tiles) {
-  if (key === '#wood') return 'Wood';
+  if (TAG_NAMES[key]) return TAG_NAMES[key];
   if (CRAFT_TILES.MULTI && CRAFT_TILES.MULTI[key]) return CRAFT_TILES.MULTI[key].name;
   if (ACCESSORIES[key]) return ACCESSORIES[key].name;
   if (ARMOUR[key]) return ARMOUR[key].name;

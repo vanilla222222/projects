@@ -45,6 +45,9 @@ const FROM_THE_WORLD = new Set([
   ...enemies.ENEMIES.flatMap(e => (e.drops || []).map(([k]) => k)),
   ...loot.allLootKeys(),
   ...worldgen.POT_TABLE.map(e => e.key),
+  // Fish are pulled out of the water rather than dug out of the ground, so the pickaxe
+  // gate has nothing to say about them. The rod that catches them is on the ladder.
+  ...require('../js/fishing.js').CATCHES.map(c => c.key),
   'fallenstar'
 ].filter(k => !MADE.has(k) && !mining.TOOLS[k]));
 

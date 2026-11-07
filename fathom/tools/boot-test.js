@@ -57,6 +57,39 @@ for (const src of sources) {
   }
 }
 
+// --- two modules claiming the same global name --------------------------------------------
+// Running the bundle catches a duplicate `const`, because that throws. It does not catch
+// a duplicate `function`, because two function declarations of the same name in one
+// scope are perfectly legal: the later one silently replaces the earlier.
+//
+// That is worse than the error, not better. fishing.js declared `function poolFor` and so
+// did enemy.js; fishing.js loads second; the enemy spawner started drawing from the
+// fishing table and crashed trying to read an archetype off a bass. Nothing threw at load
+// and every suite passed, because in Node they are two modules.
+{
+  const owners = new Map();
+  for (const src of sources) {
+    const text = fs.readFileSync(path.join(root, src), 'utf8');
+    // Top-level declarations only: column zero, which is what shares the global scope.
+    const re = /^(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/gm;
+    let m = re.exec(text);
+    while (m) {
+      const name = m[1];
+      if (!owners.has(name)) owners.set(name, []);
+      if (!owners.get(name).includes(src)) owners.get(name).push(src);
+      m = re.exec(text);
+    }
+  }
+  let shared = 0;
+  for (const [name, files] of owners) {
+    if (files.length < 2) continue;
+    shared += 1;
+    ok(false, 'the global name "' + name + '" is declared in ' + files.join(' and ')
+      + ' - they share one scope in the browser and the later one wins');
+  }
+  ok(shared === 0 || true, 'checked ' + owners.size + ' top-level names for collisions');
+}
+
 // --- a browser, as far as loading is concerned ------------------------------------------------
 function stubCanvas() {
   const ctx = new Proxy({}, {
@@ -179,9 +212,15 @@ if (!loadError) {
     // The names game.js destructures out of deps must all be there, or the game throws
     // the moment it starts rather than when it loads.
     const game = fs.readFileSync(path.join(root, 'js/game.js'), 'utf8');
-    const block = game.slice(game.indexOf('} = deps;') - 700, game.indexOf('} = deps;'));
-    const wanted = [...block.matchAll(/(?:^|[,{]\s*)([a-zA-Z]+)\s*(?::\s*[a-zA-Z]+)?\s*(?=[,}])/g)]
-      .map(m => m[1]);
+    // From the opening brace of the destructure, not from a fixed number of characters
+    // before it: a window that size swallows the comment above it, and "loop, input,
+    // camera, mining, placing, drops, events, save" reads as a list of dependencies.
+    const closes = game.indexOf('} = deps;');
+    const opens = game.lastIndexOf('const {', closes);
+    const block = game.slice(opens + 'const {'.length, closes);
+    const wanted = block.split(',')
+      .map(part => part.split(':')[0].trim())
+      .filter(Boolean);
     for (const name of new Set(wanted)) {
       if (!name || name === 'deps') continue;
       ok(FATHOM[name] !== undefined,

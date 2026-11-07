@@ -223,6 +223,31 @@ function makeUI(root, deps) {
       ctx.fill();
       return canvas;
     }
+    // A rod: a tapering pole with a line and a float on the end.
+    if (craft && craft.ITEMS[item.key] && craft.ITEMS[item.key].rod) {
+      const u = size / 16;
+      ctx.strokeStyle = craft.ITEMS[item.key].colour;
+      ctx.lineWidth = 1.6 * u;
+      ctx.beginPath();
+      ctx.moveTo(2 * u, 14 * u);
+      ctx.lineTo(12 * u, 3 * u);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(230,236,244,0.7)';
+      ctx.lineWidth = 0.9 * u;
+      ctx.beginPath();
+      ctx.moveTo(12 * u, 3 * u);
+      ctx.quadraticCurveTo(14 * u, 8 * u, 11 * u, 11 * u);
+      ctx.stroke();
+      ctx.fillStyle = '#d8524c';
+      ctx.beginPath();
+      ctx.arc(11 * u, 12 * u, 1.8 * u, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#f2efe6';
+      ctx.beginPath();
+      ctx.arc(11 * u, 12 * u, 1.8 * u, 0, Math.PI);
+      ctx.fill();
+      return canvas;
+    }
     // A hook: a shaft with two barbs and a length of chain.
     const hooked = craft && craft.grappleOf(item);
     if (hooked) {

@@ -141,6 +141,7 @@ the cost of one small canvas.
 | `js/inventory.js` | slots, stacking, splitting, equipment restrictions |
 | `js/stats.js` | health, mana, regeneration, death and respawn |
 | `js/ui.js` | hearts and stars, hotbar, backpack and equipment screen |
+| `js/fishing.js` | rods, what is in the water, and how much water a place has |
 | `js/buffs.js` | effects that expire: potions, and what a campfire does |
 | `js/audio.js` | every sound in the game, the ambience beds and the music |
 | `js/game.js` | loop, input, camera, mining, placing, drops, events, save |

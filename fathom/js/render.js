@@ -843,6 +843,58 @@ function makeRenderer(canvas, deps) {
     ctx.restore();
   }
 
+  // The bobber, and the line out to it. It rides the surface, and the whole signal that
+  // something is on the line is that it goes under - so when it bites it is drawn low,
+  // with rings spreading out from it.
+  function drawBobber(state, view) {
+    const b = state.bobber;
+    if (!b) return;
+    const { x0, y0, offsetX, offsetY, zoom } = view;
+    const size = TILE * zoom;
+    const p = state.player;
+    const px = (p.x + p.width / 2 - x0) * size - offsetX;
+    const py = (p.y + p.height * 0.35 - y0) * size - offsetY;
+    const biting = b.biting > 0;
+    const bob = biting
+      ? size * (0.42 + Math.sin(b.bob * 22) * 0.1)
+      : Math.sin(b.bob * 2.1) * size * 0.08;
+    const bx = (b.x - x0) * size - offsetX;
+    const by = (b.y - y0) * size - offsetY + bob;
+    ctx.save();
+    // The line: a shallow catenary rather than a straight stroke, because a taut
+    // straight line reads as a crack in the screen.
+    ctx.strokeStyle = 'rgba(230,236,244,0.55)';
+    ctx.lineWidth = Math.max(1, zoom * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(px, py);
+    ctx.quadraticCurveTo((px + bx) / 2, Math.max(py, by) + size * 0.5, bx, by);
+    ctx.stroke();
+    if (biting) {
+      // Rings, so the bite is visible from across the screen rather than only if you
+      // happen to be looking at the float.
+      ctx.strokeStyle = 'rgba(214,240,255,0.5)';
+      ctx.lineWidth = Math.max(1, zoom * 0.7);
+      for (let i = 0; i < 2; i += 1) {
+        const t = ((b.bob * 1.6 + i * 0.5) % 1);
+        ctx.globalAlpha = 0.55 * (1 - t);
+        ctx.beginPath();
+        ctx.ellipse(bx, by, size * (0.3 + t * 1.1), size * (0.12 + t * 0.42), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    const r = size * 0.17;
+    ctx.fillStyle = '#d8524c';
+    ctx.beginPath();
+    ctx.arc(bx, by, r, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = '#f2efe6';
+    ctx.beginPath();
+    ctx.arc(bx, by, r, 0, Math.PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Stars falling at night: a bright head with a long tail behind it.
   function drawStars(state, view) {
     if (!state.stars || state.stars.length === 0) return;
@@ -1039,6 +1091,7 @@ function makeRenderer(canvas, deps) {
     phase('carried', () => drawCarriedLight(state, view));
     phase('bloom', () => drawBloom(state, view));
     phase('hook', () => drawHook(state, view));
+    phase('bobber', () => drawBobber(state, view));
     phase('shots', () => drawShots(state, view));
     phase('stars', () => drawStars(state, view));
     phase('particles', () => drawParticles(state, view));
