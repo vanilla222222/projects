@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
-import * as U from './panels.mjs?v=45';
-import {World,GROUND} from './world.mjs?v=45';
+import * as U from './panels.mjs?v=49';
+import {World,GROUND} from './world.mjs?v=49';
 const setup=()=>{const s=E.freshSave(),c=E.selected(s);return{s,c};};
 const sum=(c,id)=>E.bagSlots(c).reduce((n,t)=>n+(t?.id===id?t.qty:0),0);
 test('Positional grid keeps holes and split stacks through saves and crafting deltas',()=>{

@@ -1,6 +1,6 @@
 import {validateAdvancements} from './world-two.mjs?v=45';
 import * as Rewards from './reward-progression.mjs?v=45';
-import {roomLayout} from './layouts.mjs?v=45';
+import {roomLayout} from './layouts.mjs?v=49';
 import {QUEST_ACTIONS,recordQuestAction} from './quest-content.mjs?v=45';
 import * as J from './journey.mjs?v=45';
 import * as Builds from './class-builds.mjs?v=45';

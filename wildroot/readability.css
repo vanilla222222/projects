@@ -146,3 +146,5 @@
 @media(max-width:800px){#panel[open]{height:96dvh;max-height:96dvh}#panel>.panel-footer{flex-wrap:wrap;gap:4px 10px}#panel>.panel-footer span{min-width:0;overflow-wrap:anywhere}}
 .atlas-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 0}.atlas-toolbar>span{margin-right:auto;font:700 11px system-ui;letter-spacing:1.5px;color:#496557}.atlas-toolbar output{min-width:48px;text-align:center;font:700 13px system-ui}.atlas-toolbar button{min-width:40px}.atlas-canvas{position:relative;overflow:hidden;flex-shrink:0}.atlas-canvas>.world-atlas{position:absolute;left:0;top:0;transform-origin:0 0}
 @media(max-width:600px){.atlas-toolbar>span{flex-basis:100%}.atlas-toolbar{gap:5px}.atlas-toolbar button{padding:7px!important}}
+/* Empty tab bars must not move content into the unbounded auto row. */
+#panel>.panel-header{grid-row:1}#panel>#panel-tabs{grid-row:2}#panel>#panel-content{grid-row:3}#panel>.panel-footer{grid-row:4}

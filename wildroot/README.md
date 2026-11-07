@@ -283,3 +283,6 @@ Runtime 40 finishes contextual Getting Started lessons and adds confirmed Reset 
 
 
 Runtime 43–45 follow-up: rebuilt the teleport atlas with illustrated regions, real portal connections, readable labels and distinct room states; fixed directional climbing at shared ladder landings and invalid coordinates after releasing climb input. NPCs now use an immediate quest/action hub with optional story and a separate class-training tab. Tidehaven has physically gated crafting services, three expedition NPCs and nine personal quests. Five storm-forged weapons, a three-phase active boss and a completion reward connect the existing skill routes into a complete campaign. World Three and the second Tier 2 class branches remain sealed.
+
+
+Visual refresh (runtime 49): forest-green controls, warm-paper panels, consistent type and focus states across the HUD and menus; distinct class portraits; 316 unique original item textures shared by inventory, recipes, rewards and ground loot. The atlas supports anchored zoom, fit-world, reset and drag panning. Dialog content stays in its own bounded grid row even when the tab bar is hidden. Full live desktop/mobile visual QA still depends on browser availability.

@@ -3,7 +3,7 @@ import {EXPANSION_AREAS,ADVANCEMENTS} from './expansion-content.mjs?v=45';
 import {ATTACKS,encounterStyle,makeTell} from './combat-patterns.mjs?v=45';
 import {surveyPoint} from './exploration.mjs?v=45';
 import {CLASSES,AREAS,ENEMIES,ITEMS,SECRETS,CONSTELLATIONS,TELESCOPE,TRIAL_WAVES,areaById,zoneEnemy} from './content.mjs?v=45';
-import {roomLayout,pointFor} from './layouts.mjs?v=45';
+import {roomLayout,pointFor} from './layouts.mjs?v=49';
 import * as E from './engine.mjs?v=45';
 export const WIDTH=1280,HEIGHT=720,GROUND=644;
 export const PLATFORMS=[{x:0,w:1280,y:GROUND},{x:180,w:410,y:462},{x:730,w:440,y:342}];

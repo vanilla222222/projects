@@ -41,7 +41,7 @@ The Tempest Sovereign waits in the Eye of the Tempest, reached through The Seale
 
 ## Travel and NPC interface
 
-The teleport atlas shows illustrated regions and the actual portal graph. Labels remain visible; locked routes, undiscovered rooms, discovered destinations, selection and current location have different appearances. Selecting a room spends no charge; its separate teleport button confirms travel. Find Me centres the current room. Shared ladder landings choose a ladder extending in the requested direction, and releasing climb input retains finite coordinates.
+The teleport atlas shows illustrated regions and the actual portal graph. Labels remain visible; locked routes, undiscovered rooms, discovered destinations, selection and current location have different appearances. Selecting a room spends no charge; its separate teleport button confirms travel. Drag with the mouse to pan; touch keeps native scrolling. The +/− controls, Fit World, 100% reset and Ctrl/Command-wheel adjust zoom without losing reachable destinations. Find Me centres the current room. Shared ladder landings choose a ladder extending in the requested direction, and releasing climb input retains finite coordinates.
 
 NPC menus immediately show the current quest, objectives, progress and rewards. Accept and hand-in have separate explicit actions; story text is optional. Class training is a separate tab. Character identity, NPC proximity, quest dependencies, materials and one-time reward checks remain enforced.
 
@@ -50,3 +50,6 @@ NPC menus immediately show the current quest, objectives, progress and rewards. 
 `node --test wildroot/*.test.mjs` runs the regression suite. `node wildroot/world2-sim.mjs` first completes Greenreach, then uses actual gathering, bank transfers, recipe queues, personal crafting, route kills, NPC claims, Tier 2 training and active combat to finish Tidewilds. It does not insert completed expedition quests or grant their required resources. Its reference Warrior run takes about 1,784 simulated minutes in World Two, excluding human reading and navigation. This is an optimized idle-system model, not a human playtime promise or a claim that the pacing is final. Tests separately exercise legal expedition builds for all five classes against the boss, save migration, phase changes, anti-replay rewards and no offline boss kills.
 
 Desktop and mobile live visual verification remains outstanding when the preview/browser service is unavailable. Automated rendering checks do not replace real phone playtesting.
+
+
+Runtime 49 refreshes the interface with a forest-and-paper visual system across the HUD, menus, inventory, recipes, NPCs and atlas. All 316 current items have distinct, locally generated pixel textures, reused in item panes and ground loot. Class portraits have separate hats, tools and silhouettes. Texture generation and SVG image payloads are cached; menus do not create hundreds of SVG rectangle DOM nodes per item. Dialog sections have explicit grid rows so hiding an empty tab bar cannot displace the scrollable body.

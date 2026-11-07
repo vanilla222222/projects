@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as E from './engine.mjs?v=45';
 import * as D from './content.mjs?v=45';
-import {World} from './world.mjs?v=45';
+import {World} from './world.mjs?v=49';
 export function runWorldOne({rng=()=>.5,completeNpcChains=false,starter='warrior',includeHarness=false}={}){
  assert.ok(['warrior','mage','blacksmith'].includes(starter),'Starter trainer must be in the first settlement or its adjacent skill rooms.');
  const s=E.freshSave(),events=[];let seconds=0,depth=0;

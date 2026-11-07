@@ -33,6 +33,6 @@ export const ROOM_DESIGNS={
  boss:{mood:'Heart of the broken crown',sky:['#291d3b','#785368'],rock:'#675362',trim:'#c09678',motif:'rootcrown',weather:'embers',shelves:[[850,1000,70],[1450,1000,-170],[2000,950,-410]],exit:false}
 };
 
-for(const [aIndex,a]of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++)ROOM_DESIGNS[a.id+'-'+i]={mood:a.zones[i],sky:[`hsl(${(aIndex*39+i*9+160)%360} 40% ${50-i*3}%)`,a.sky[1]],rock:['#718e91','#706f8d','#93785c','#67805a'][aIndex%4],trim:['#c4e2cb','#e5bb8e','#bdd1ed'][i%3],motif:a.motif+':'+a.id+'-'+i,weather:['mist','seeds','sparks','leaves'][i%4],shelves:[],exit:!a.town};
+for(const [aIndex,a]of EXPANSION_AREAS.entries())for(let i=0;i<a.zones.length;i++)ROOM_DESIGNS[a.id+'-'+i]={mood:a.zones[i],sky:['#'+[1,3,5].map((k,j)=>Math.max(0,Math.min(255,parseInt(a.sky[0].slice(k,k+2),16)-i*(3+j))).toString(16).padStart(2,'0')).join(''),a.sky[1]],rock:['#718e91','#706f8d','#93785c','#67805a'][aIndex%4],trim:['#c4e2cb','#e5bb8e','#bdd1ed'][i%3],motif:a.motif+':'+a.id+'-'+i,weather:['mist','seeds','sparks','leaves'][i%4],shelves:[],exit:!a.town};
 
 ROOM_DESIGNS.tempest={mood:'Stormglass amphitheatre',sky:['#263d67','#a0bfc3'],rock:'#526d83',trim:'#8dd9d6',motif:'cathedral:tempest',weather:'rain',shelves:[[400,900,100],[1100,800,-130]],exit:false};
