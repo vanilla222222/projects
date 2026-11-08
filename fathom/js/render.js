@@ -847,6 +847,24 @@ function makeRenderer(canvas, deps) {
       const len = Math.hypot(a.vx, a.vy) || 1;
       const ux = a.vx / len;
       const uy = a.vy / len;
+      if (a.throwStyle && a.throwStyle !== 'pierce') {
+        ctx.save();
+        ctx.translate(Math.round(sx), Math.round(sy));
+        ctx.rotate(a.throwStyle === 'fan' ? Math.atan2(uy, ux) : state.time * 15);
+        ctx.fillStyle = '#30243c';
+        ctx.fillRect(-4 * zoom, -2 * zoom, 8 * zoom, 4 * zoom);
+        ctx.fillStyle = a.colour;
+        if (a.throwStyle === 'returning') {
+          ctx.fillRect(-4 * zoom, -zoom, 8 * zoom, 2 * zoom);
+          ctx.fillRect(-zoom, -4 * zoom, 2 * zoom, 7 * zoom);
+        } else if (a.throwStyle === 'blast') {
+          ctx.fillRect(-2 * zoom, -3 * zoom, 4 * zoom, 6 * zoom);
+          ctx.fillStyle = '#f8d5a1';
+          ctx.fillRect(-zoom, -4 * zoom, 2 * zoom, zoom);
+        } else ctx.fillRect(-3 * zoom, -zoom, 7 * zoom, 2 * zoom);
+        ctx.restore();
+        continue;
+      }
       if (a.magic) {
         // A bolt is a glowing head with a tail behind it, drawn as a gradient so it
         // reads as light rather than as a painted lozenge.

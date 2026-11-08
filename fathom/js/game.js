@@ -1082,10 +1082,45 @@ function makeGame(canvas, deps) {
     rareDrop(target);
   }
 
+  function throwWeapon(weapon) {
+    const player = state.player;
+    const x = player.x + player.width / 2, y = player.y + player.height * 0.4;
+    const angle = Math.atan2(pointer.y - y, pointer.x - x);
+    const style = weapon.throwStyle;
+    const speed = style === 'blast' ? 31 : style === 'pierce' ? 51 : 39;
+    for (const spread of style === 'fan' ? [-0.18, 0, 0.18] : [0]) {
+      state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
+        life: weapon.reach / speed, colour: weapon.colour, throwStyle: style,
+        gravity: style === 'blast' ? 24 : 11, hitLimit: style === 'pierce' ? 3 : Infinity,
+        hits: style === 'pierce' || style === 'returning' ? new Set() : null,
+        damage: Math.round(weapon.damage * (state.gear?.thrower || 1) * (spread ? 0.38 : 1)) });
+    }
+    sfx('swing');
+  }
+
+  function burstThrow(a) {
+    spawnParticles(a.x, a.y, a.colour, 14);
+    for (const enemy of swarm.list) {
+      if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
+      const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
+      if (Math.hypot(a.x - x, a.y - y) <= 4 && spiritLine(a.x, a.y, x, y)) {
+        projectileHit(enemy, Math.round(a.damage * 0.7));
+      }
+    }
+  }
+
   function updateArrows(dt) {
     for (let i = state.arrows.length - 1; i >= 0; i -= 1) {
       const a = state.arrows[i];
       a.life -= dt;
+      if (a.returning) {
+        const dx = state.player.x + state.player.width / 2 - a.x;
+        const dy = state.player.y + state.player.height * 0.4 - a.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance < 0.7 || a.life <= 0) { state.arrows.splice(i, 1); continue; }
+        a.vx = dx / distance * 49;
+        a.vy = dy / distance * 49;
+      }
       a.vy += (a.gravity === undefined ? 26 : a.gravity) * dt;
       const steps = Math.ceil(Math.hypot(a.vx, a.vy) * dt / 0.3) || 1;
       let hit = false;
@@ -1093,7 +1128,7 @@ function makeGame(canvas, deps) {
         a.x += (a.vx * dt) / steps;
         a.y += (a.vy * dt) / steps;
         const solid = tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)));
-        if (solid && !a.escapeTerrain) hit = true;
+        if (solid && !a.escapeTerrain && !a.returning) hit = true;
         else if (a.hostile) {
           if (!solid) {
             a.escapeTerrain = false;
@@ -1105,7 +1140,7 @@ function makeGame(canvas, deps) {
         } else if (a.trap && pointHitsPlayer(a.x, a.y)) {
           if (statsModule.damage(stats, a.damage) > 0) lastHurt = 'a dart trap';
           hit = true;
-        } else if (swarm) {
+        } else if (swarm && (!a.returning || !solid)) {
           const target = swarm.at(a.x, a.y);
           if (target && !a.hits?.has(target)) {
             a.hits?.add(target);
@@ -1132,7 +1167,23 @@ function makeGame(canvas, deps) {
           }
         }
       }
-      if (hit || a.life <= 0) state.arrows.splice(i, 1);
+      if (hit || a.life <= 0) {
+        if (a.throwStyle === 'returning' && !a.returning) {
+          if (hit) { a.x -= a.vx * dt / steps; a.y -= a.vy * dt / steps; }
+          a.returning = true;
+          a.gravity = 0;
+          a.life = 2;
+          a.hits.clear();
+        } else {
+          if (a.throwStyle === 'blast') {
+            if (hit && tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) {
+              a.x -= a.vx * dt / steps; a.y -= a.vy * dt / steps;
+            }
+            burstThrow(a);
+          }
+          state.arrows.splice(i, 1);
+        }
+      }
     }
   }
 
@@ -1194,6 +1245,11 @@ function makeGame(canvas, deps) {
     const item = selectedItem();
     if (item?.key === 'critter-net') return true;
     const weapon = item ? craft.WEAPONS[item.key] : null;
+    if (weapon?.throwStyle) {
+      throwWeapon(weapon);
+      swingCooldown = swingTotal = weapon.useTime * (state.gear?.swing || 1);
+      return true;
+    }
     if (weapon?.summon) {
       if (boundFocus !== item.key) {
         boundFocus = item.key;

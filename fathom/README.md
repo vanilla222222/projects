@@ -178,6 +178,14 @@ withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
 
+### Thrower
+
+Craft an Oak Boomerang at a Work Bench to start. Thrower weapons are reusable
+and use neither ammunition nor mana. Boomerangs and discs can strike on the
+return, knives fan out, javelins pierce, and flasks blast nearby enemies
+without destroying blocks. Upgrade through Astral materials and equip
+throwing accessories to boost damage.
+
 ### Ranger arsenal
 
 Bows fire quickly, crossbows fire slower piercing bolts with less drop, and
