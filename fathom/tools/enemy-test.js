@@ -424,6 +424,10 @@ ok(victim.dead, 'a killed enemy is not marked dead');
       swarm.damage(boss, 60);
       swarm.step(player, 1 / 60, 0.5);
     }
+    for (let i = 0; i < 180 && (boss.signatureAttack || boss.signatureRecovery > 0); i += 1) {
+      swarm.step(player, 1 / 60, 0.5);
+    }
+    swarm.step(player, 1 / 60, 0.5);
     const changed = boss.width < beforeW * 0.9 || (!!boss.enraged && !beforeEnraged);
     ok(changed, spec.key + ' fights exactly the same at 20% health as at full');
 
@@ -444,7 +448,7 @@ ok(victim.dead, 'a killed enemy is not marked dead');
     ['glasscolossus', 'shatter', 2], ['coilserpent', 'cross', 4], ['zenithengine', 'fan', 5]
   ]) {
     const volleys = [];
-    const swarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat, bossBarrage: (_, shot) => volleys.push(shot) });
+    const swarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat, bossBarrage: (_, shot) => { if (shot.pattern !== 'signature') volleys.push(shot); } });
     const boss = swarm.summon(key, player);
     ok(!!boss, key + ' cannot be summoned for the barrage check');
     if (!boss) continue;
@@ -591,6 +595,39 @@ for (const layer of worldgen.LAYERS) {
   const exposedHP = guard.hp;
   swarm.damage(guard, 100);
   ok(exposedHP - guard.hp === 100, 'guard kept its damage reduction during its opening');
+}
+
+{
+  const bosses = ENEMIES.filter(spec => spec.signature);
+  const names = new Set(bosses.map(spec => spec.signature[0]));
+  const orders = new Set(bosses.map(spec => spec.signature.slice(1, 3).join(':')));
+  ok(names.size === bosses.length && orders.size === bosses.length, 'two bosses share a signature sequence');
+  const signatures = new Set();
+  for (const spec of bosses) {
+    const phases = [];
+    for (const phase of [1, 0.45]) {
+      const shots = [];
+      const swarm = makeSwarm(makeTestWorld(40), tiles, { worldgen,
+        bossBarrage: (_, shot) => { if (shot.pattern === 'signature') shots.push(shot); } });
+      const boss = enemyModule.makeEnemy(spec, 0, 28);
+      boss.hp = boss.maxHp * phase;
+      boss.signatureCooldown = 0;
+      swarm.list.push(boss);
+      const player = { x: 8, y: 36, width: 1, height: 2 };
+      swarm.step(player, 1 / 60, 0.5);
+      ok(boss.signatureAttack?.name === spec.signature[0] && shots.length === 0, spec.key + ' attacks without a warning');
+      for (let i = 0; i < 140 && !(boss.signatureRecovery > 0); i += 1) swarm.step(player, 1 / 60, 0.5);
+      ok(shots.length > 0 && boss.signatureRecovery > 0, spec.key + ' has no signature volley or recovery');
+      ok(shots.every(shot => shot.speed > 0 && shot.range > 0 && Number.isFinite(shot.angles[0])),
+        spec.key + ' emits an invalid signature shot');
+      phases.push(JSON.stringify(shots.map(({ x, y, angles, speed, gravity, bounces }) =>
+        [x, y, angles, speed, gravity, bounces])));
+    }
+    ok(phases[0] !== phases[1], spec.key + ' repeats its first phase');
+    const sequence = phases.join('|');
+    ok(!signatures.has(sequence), spec.key + ' duplicates another signature sequence');
+    signatures.add(sequence);
+  }
 }
 
 console.log('\n' + checks + ' checks, ' + failures + ' failures');

@@ -263,7 +263,7 @@ for (const key of Object.keys(craft.ARMOUR)) {
   ok(ladder.held.has(key) || chapterLoot.has(key), 'the armour ' + key + ' is unreachable');
 }
 for (const key of Object.keys(craft.ACCESSORIES)) {
-  if (craft.ACCESSORIES[key].drop) continue;
+  if (craft.ACCESSORIES[key].drop || craft.ACCESSORIES[key].legacy) continue;
   ok(ladder.held.has(key), 'the accessory ' + key + ' is unreachable');
 }
 

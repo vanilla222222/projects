@@ -79,6 +79,9 @@ for (const line of settlement.QUESTLINES) {
   assert.equal(line.steps.length, 3);
   for (const step of line.steps) {
     for (const [key] of [...step.reward, ...(step.needs || [])]) itemExists(key);
+    if (step.boss) assert.ok(enemy.BY_KEY[step.boss]?.boss);
+    if (step.key?.startsWith('defeat:')) assert.ok(enemy.BY_KEY[step.key.slice(7)]);
+    if (step.key?.startsWith('craft:')) assert.ok(craft.RECIPES.some(recipe => recipe.out.key === step.key.slice(6)));
   }
 }
 restored.increment('hunt:forest');

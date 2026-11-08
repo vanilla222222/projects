@@ -905,6 +905,87 @@ for (const [index, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
   }
 }
 
+// A move is a telegraphed formation. The second move replaces the first at half health.
+const BOSS_SIGNATURES = {
+  dungeonkeeper: ['Ossuary Procession', 'sides', 'aisles', 7.2],
+  ashguardian: ['Furnace Fault', 'fault', 'crossfire', 6.8],
+  granitecolossus: ['Quarry Collapse', 'roof', 'squeeze', 7.6],
+  kingslime: ['Crown Splash', 'bounce', 'crest', 8.4],
+  briarwarden: ['Briar Cordon', 'hedge', 'sides', 7.7],
+  mirebrood: ['Bog Eruption', 'pockets', 'fault', 7.3],
+  rimehorn: ['Rime Avalanche', 'squeeze', 'roof', 7.9],
+  reedking: ['Reedwater Ambush', 'crossfire', 'pockets', 7.1],
+  cragbreaker: ['Crag Split', 'crest', 'aisles', 7.5],
+  claybehemoth: ['Clay Mortars', 'arc', 'bounce', 7.4],
+  sunmane: ['Sundial Teeth', 'dial', 'crest', 6.9],
+  pinemaw: ['Needle Fall', 'aisles', 'hedge', 8.1],
+  windmillwarden: ['Millwheel Gust', 'wheel', 'dial', 7.8],
+  sporecrown: ['Spore Bloom', 'ring', 'arc', 7.5],
+  hollowroot: ['Undercut Roots', 'pockets', 'hedge', 7.8],
+  veinwarden: ['Blood Lattice', 'lattice', 'ring', 7.2],
+  breakwatercrab: ['Breakwater Surge', 'fault', 'bounce', 7.6],
+  saltmarrow: ['Saltbone Volley', 'sides', 'arc', 7.4],
+  'ashwood-guardian-1': ['Rootglass Fence', 'hedge', 'pockets', 6.9],
+  'ashwood-guardian-2': ['Reliquary Embers', 'arc', 'roof', 6.8],
+  'glass-dunes-guardian-1': ['Cistern Refraction', 'lattice', 'squeeze', 7.2],
+  'glass-dunes-guardian-2': ['Prism Court Halo', 'ring', 'dial', 6.6],
+  'brine-depths-guardian-1': ['Pump Backwash', 'crossfire', 'fault', 7.0],
+  'brine-depths-guardian-2': ['Salt Vault Deluge', 'aisles', 'crossfire', 6.7],
+  'ember-bloom-guardian-1': ['Spore Furnace Jets', 'pockets', 'arc', 7.1],
+  'ember-bloom-guardian-2': ['Heartbloom Petals', 'crest', 'ring', 6.9],
+  'gloom-frost-guardian-1': ['Observatory Transit', 'dial', 'lattice', 7.3],
+  'gloom-frost-guardian-2': ['Crypt Bell Resonance', 'wheel', 'sides', 6.8],
+  'underworld-crown': ['Decree of the Last Divide', 'squeeze', 'lattice', 6.4],
+  ossuarymechanist: ['Gearbox Misfire', 'lattice', 'wheel', 7.2],
+  furnacewarden: ['Overpressure', 'fault', 'crest', 7.6],
+  voidsovereign: ['Event Horizon', 'ring', 'squeeze', 6.8],
+  riftarchon: ['Rift Shear', 'lattice', 'aisles', 7.0],
+  rootcrown: ['Canopy Snare', 'hedge', 'roof', 7.8],
+  thunderbird: ['Lightning Perch', 'roof', 'dial', 7.0],
+  desertscourge: ['Buried Dune', 'pockets', 'squeeze', 7.4],
+  aurorawraith: ['Aurora Curtain', 'aisles', 'ring', 6.8],
+  bloodcrest: ['Crimson Dive', 'dial', 'arc', 7.6],
+  reefleviathan: ['Riptide Breach', 'crossfire', 'hedge', 7.0],
+  abyssaleye: ['Blackwater Aperture', 'wheel', 'crossfire', 7.1],
+  'trial-comet-observatory': ['Comet Shower', 'roof', 'ring', 7.4],
+  'trial-broken-dock': ['Cargo Rail Rupture', 'fault', 'aisles', 7.3],
+  'trial-starwell': ['Gravity Collapse', 'ring', 'wheel', 7.1],
+  'trial-cinder-bastion': ['Marshal’s Fusillade', 'arc', 'fault', 7.0],
+  'trial-slag-chapel': ['Cantor’s Refrain', 'wheel', 'pockets', 7.4],
+  'trial-furnace-crypt': ['Crypt Flue', 'pockets', 'roof', 7.5],
+  'trial-null-sanctum': ['Null Horizon', 'dial', 'squeeze', 7.2],
+  'trial-hollow-spire': ['Castellan’s Parapet', 'sides', 'hedge', 7.3],
+  'trial-echo-prison': ['Echo Barricade', 'squeeze', 'sides', 7.1],
+  'trial-windlock-citadel': ['Windlock Downburst', 'roof', 'bounce', 7.1],
+  'charcoal-hart': ['Antler Break', 'crest', 'hedge', 7.0],
+  'rootglass-weaver': ['Spindle Web', 'lattice', 'pockets', 7.1],
+  'slag-caravan': ['Toll Road Blockade', 'sides', 'fault', 7.4],
+  'mirage-regent': ['False Sun Eclipse', 'dial', 'wheel', 7.2],
+  'quartz-maw': ['Quartz Shards', 'pockets', 'lattice', 7.5],
+  'silica-admiral': ['Broadside Orders', 'sides', 'crossfire', 6.8],
+  'lantern-jaw': ['Lantern Lure', 'ring', 'pockets', 7.3],
+  'pearl-abbess': ['Pearl Processional', 'aisles', 'crest', 7.4],
+  'boilwater-engine': ['Blowdown', 'crossfire', 'roof', 7.0],
+  'scarlet-apiarch': ['Hive Formation', 'arc', 'hedge', 7.3],
+  'kiln-orchid': ['Kiln Pollen', 'ring', 'crest', 7.0],
+  'winterfire-saint': ['Winterfire Litany', 'wheel', 'roof', 7.2],
+  'rime-gravekeeper': ['Graveside Frost', 'hedge', 'dial', 7.1],
+  'eclipse-bell': ['Midnight Toll', 'lattice', 'dial', 7.0],
+  hollloweye: ['Blind Spot', 'dial', 'sides', 8.2],
+  starwyvern: ['Starlight Molt', 'crest', 'wheel', 7.5],
+  orchidqueen: ['Royal Swarm', 'wheel', 'crest', 7.0],
+  amberroot: ['Amber Rootburst', 'hedge', 'lattice', 7.5],
+  fenwidow: ['Blackfen Trap Lines', 'lattice', 'hedge', 7.1],
+  cairnshade: ['Cairn Stones', 'aisles', 'squeeze', 7.6],
+  ochredrake: ['Ochre Dive Bomb', 'arc', 'squeeze', 7.0],
+  sunscarab: ['Sun Court Glare', 'dial', 'ring', 7.4],
+  winterroot: ['Root Ice Break', 'fault', 'hedge', 7.3],
+  buriedstandard: ['Chalk Legion', 'sides', 'lattice', 7.5]
+};
+for (const spec of ENEMIES) {
+  if (BOSS_SIGNATURES[spec.key]) spec.signature = BOSS_SIGNATURES[spec.key];
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -1245,6 +1326,8 @@ function makeSwarm(world, tiles, deps) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
     const railArmor = enemy.key === 'railbreaker' && enemy.railRunning && !enemy.recovering;
+    if (enemy.signatureRecovery > 0) amount = Math.round(amount * (enemy.key === 'granitecolossus' ? 1.55 : 1.2));
+    else if (enemy.key === 'granitecolossus' && enemy.signatureAttack) amount = Math.max(1, Math.round(amount * 0.5));
     enemy.hp -= shielded ? 0 : enemy.fieldGuard ? Math.max(1, Math.round(amount * 0.42)) : railArmor ? Math.max(1, Math.round(amount * 0.25))
       : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
@@ -1298,6 +1381,82 @@ function makeSwarm(world, tiles, deps) {
     return false;
   }
 
+  function signatureFormation(pattern, enemy, player) {
+    const px = player.x + player.width / 2, py = player.y + player.height / 2;
+    const bx = enemy.x + enemy.width / 2, by = enemy.y + enemy.height / 2;
+    const aim = Math.atan2(py - by, px - bx);
+    const shot = (x, y, angle, range = 15, speed = 18) => ({ x, y, angle, range, speed });
+    const fromBoss = (offsets, range, speed) => offsets.map(offset => shot(bx, by, aim + offset, range, speed));
+    const down = offsets => offsets.map(dx => shot(px + dx, py - 7, Math.PI / 2, 12, 19));
+    const up = offsets => offsets.map(dx => shot(px + dx, py + 0.45, -Math.PI / 2, 8, 16));
+    switch (pattern) {
+      case 'roof': return down([-6, -3, 0, 3, 6]);
+      case 'aisles': return down([-8, -4, -2, 2, 4, 8]);
+      case 'pockets': return up([-4, 0, 4]);
+      case 'hedge': return up([-7, -5, -2, 2, 5, 7]);
+      case 'sides': return [-1, 1].flatMap(side => [-2.1, 0.15].map(dy =>
+        shot(px + side * 7, py + dy, side > 0 ? Math.PI : 0)));
+      case 'squeeze': return [-1, 1].flatMap(side => [0, 1, 2].map(index =>
+        shot(px + side * (6 + index), py - 4 + index * 2, side > 0 ? 2.86 : 0.28, 13, 15)));
+      case 'fault': return [-1, 1].map(side => shot(px + side * 8, py + 0.55, side > 0 ? Math.PI : 0, 17, 21));
+      case 'crossfire': return [-1, 1].flatMap(side => [-0.9, 0.45].map(dy =>
+        shot(px + side * 6, py + dy, side > 0 ? Math.PI : 0, 12, 22)));
+      case 'lattice': return [-1, 1].flatMap(side => [-2, 0, 2].map(dy =>
+        shot(px + side * 6, py + dy, side > 0 ? Math.PI + 0.36 : -0.36, 14, 17)));
+      case 'arc': {
+        const side = px >= bx ? 1 : -1;
+        return [0.7, 1.0, 1.3].map((time, index) => {
+          const vx = (px + (index - 1) * side * 3 - bx) / time;
+          const vy = (py - by) / time - 12 * time;
+          const speed = Math.hypot(vx, vy);
+          return { ...shot(bx, by, Math.atan2(vy, vx), speed * (time + 0.15), speed), gravity: 24 };
+        });
+      }
+      case 'bounce': return fromBoss([-0.48, 0, 0.48], 17, 15).map(projectile =>
+        ({ ...projectile, gravity: 10, bounces: 1 }));
+      case 'crest': return fromBoss([-1.15, -0.78, 0, 0.78, 1.15], 18, 20);
+      case 'ring': return Array.from({ length: 9 }, (_, index) => shot(bx, by, index * Math.PI * 2 / 9, 13, 16));
+      case 'wheel': return Array.from({ length: 6 }, (_, index) => shot(bx, by, aim + index * Math.PI / 3, 18, 20));
+      case 'dial': return fromBoss([-1.1, -0.55, 0.55, 1.1], 19, 24);
+    }
+  }
+
+  function stepBossSignature(enemy, player, dt) {
+    const [name, first, second, cadence] = enemy.spec.signature;
+    const late = enemy.hp <= enemy.maxHp * 0.5;
+    if (enemy.signatureRecovery > 0) {
+      enemy.signatureRecovery -= dt;
+      return true;
+    }
+    if (enemy.signatureAttack) {
+      const attack = enemy.signatureAttack;
+      attack.warning -= dt;
+      if (attack.warning > 0) return true;
+      for (const [index, shot] of attack.shots.entries()) deps.bossBarrage?.(enemy, {
+        ...shot, angles: [shot.angle], pattern: 'signature', enraged: attack.late, first: index === 0
+      });
+      if (attack.late && !attack.encore) {
+        const shots = signatureFormation(first, enemy, player).filter(shot => !solid(shot.x, shot.y));
+        if (shots.length) {
+          enemy.signatureAttack = { ...attack, shots, warning: 0.72, encore: true };
+          return true;
+        }
+      }
+      enemy.signatureAttack = null;
+      enemy.signatureRecovery = enemy.key === 'granitecolossus' ? 1.65 : attack.late ? 0.9 : 1.25;
+      enemy.signatureCooldown = attack.late ? cadence * 0.73 : cadence;
+      return true;
+    }
+    enemy.signatureCooldown = (enemy.signatureCooldown ?? cadence * 0.66) - dt;
+    if (enemy.signatureCooldown > 0 || enemy.beams || enemy.charge > 0
+      || Math.hypot(enemy.x - player.x, enemy.y - player.y) > 24) return false;
+    const shots = signatureFormation(late ? second : first, enemy, player)
+      .filter(shot => !solid(shot.x, shot.y));
+    if (shots.length === 0) { enemy.signatureCooldown = 0.75; return false; }
+    enemy.signatureAttack = { name, late, shots, warning: late ? 0.8 : 1.05 };
+    return true;
+  }
+
   function stepOne(enemy, player, dt) {
     const arch = ARCHETYPES[enemy.spec.kind];
     const toward = Math.sign(player.x - enemy.x) || 1;
@@ -1309,6 +1468,7 @@ function makeSwarm(world, tiles, deps) {
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
+      if (enemy.spec.signature && stepBossSignature(enemy, player, dt)) return;
       if (enemy.key === 'lenscustodian') enemy.shielded = !!deps.lensLit && !deps.lensLit();
       if (enemy.key === 'railbreaker') stepRailbreaker(enemy, player, dt);
       else if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
