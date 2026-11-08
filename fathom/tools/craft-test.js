@@ -507,3 +507,21 @@ rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
   assert.equal(craft.WEAPONS['tin-handcannon'].signature, 'ricochet');
   assert.equal(craft.WEAPONS['mythril-charge'].signature, 'fuse');
 }
+
+{
+  const assert = require('node:assert/strict');
+  const classes = new Map();
+  for (const weapon of Object.values(craft.WEAPONS)) {
+    const role = craft.classOf(weapon);
+    if (!classes.has(role)) classes.set(role, { starter: 0, rhythms: new Set() });
+    const group = classes.get(role);
+    if (!weapon.rhythm) { group.starter += 1; continue; }
+    assert.equal(new Set(weapon.rhythm).size, 3);
+    assert.ok(weapon.rhythm.every(beat => Object.hasOwn(craft.COMBAT_BEATS, beat)));
+    const identity = [...weapon.rhythm].sort().join('/');
+    assert.ok(!group.rhythms.has(identity), role + ' repeats a weapon rhythm');
+    group.rhythms.add(identity);
+  }
+  assert.equal(classes.size, 5);
+  for (const group of classes.values()) assert.equal(group.starter, 5);
+}

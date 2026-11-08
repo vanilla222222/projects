@@ -812,6 +812,10 @@ function describe(key, tilesModule) {
     if (weapon.summon) lines.push('Click to call a spirit. It fights while this focus is held.',
       'Spirit attack · ' + weapon.summon);
     if (weapon.signature) lines.push(COMBAT_SIGNATURES[weapon.signature]);
+    if (weapon.rhythm) {
+      lines.push('Attack rhythm · ' + weapon.rhythm.join(' → '));
+      for (const beat of weapon.rhythm) lines.push(beat + ' · ' + COMBAT_BEATS[beat][1]);
+    }
     if (weapon.summon) lines.push('Click an enemy to direct the spirit’s attacks');
     if (weapon.scatter) lines.push('Fires five close-range pellets for one bullet');
     if (weapon.volley) lines.push('Fires a three-shot fan for one round of ammo');
@@ -1777,6 +1781,51 @@ for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
   })) WEAPONS[chapter.key + '-' + form].signature = signature;
 }
 
+// Starter gear teaches each class. Later weapons have a three-attack rhythm.
+const STARTER_COMBAT_WEAPONS = new Set([
+  'wood-sword', 'tin-sword', 'copper-sword', 'iron-sword', 'silver-sword',
+  'wood-bow', 'tin-bow', 'copper-bow', 'iron-bow', 'tin-handcannon',
+  'spark-wand', 'amethyst-staff', 'topaz-staff', 'sapphire-staff', 'emerald-staff',
+  'twig-spirit-focus', 'iron-spirit-focus', 'gold-spirit-focus', 'cobalt-spirit-focus', 'emberite-spirit-focus',
+  'oak-boomerang', 'tin-knives', 'iron-javelin', 'gold-chakram', 'cobalt-darts'
+]);
+const COMBAT_BEATS = {
+  Break: ['#f1b47e', 'hits harder'],
+  Recoil: ['#f2c580', 'pushes you away from the hit'],
+  Launch: ['#dbe4a0', 'knocks smaller enemies upward'],
+  Frost: ['#9eddf5', 'briefly slows enemies'],
+  Spark: ['#ffdf82', 'jumps to a second nearby enemy'],
+  Mend: ['#a8e5a0', 'restores health on hit'],
+  Ward: ['#c8acf7', 'briefly raises defence on hit'],
+  Pull: ['#b5a3e6', 'pulls smaller enemies toward you'],
+  Pulse: ['#f295a6', 'splashes around the impact'],
+  Focus: ['#8ad4fa', 'restores mana on hit']
+};
+
+const BEAT_ORDERS = {
+  melee: ['Break', 'Launch', 'Ward', 'Recoil', 'Pull', 'Mend', 'Pulse', 'Frost', 'Spark', 'Focus'],
+  ranged: ['Recoil', 'Launch', 'Break', 'Spark', 'Frost', 'Pulse', 'Pull', 'Ward', 'Mend', 'Focus'],
+  magic: ['Focus', 'Frost', 'Spark', 'Ward', 'Pulse', 'Break', 'Pull', 'Recoil', 'Launch', 'Mend'],
+  summoner: ['Spark', 'Pull', 'Ward', 'Mend', 'Pulse', 'Frost', 'Focus', 'Break', 'Launch', 'Recoil'],
+  thrower: ['Launch', 'Pulse', 'Recoil', 'Pull', 'Break', 'Frost', 'Ward', 'Spark', 'Mend', 'Focus']
+};
+for (const [role, order] of Object.entries(BEAT_ORDERS)) {
+  const rhythms = [];
+  for (let gap = 1; gap <= 8; gap += 1) {
+    for (let first = 0; first < order.length - gap - 1; first += 1) {
+      for (let third = first + gap + 1; third < order.length; third += 1) {
+        rhythms.push([order[first], order[first + gap], order[third]]);
+      }
+    }
+  }
+  const weapons = Object.entries(WEAPONS)
+    .filter(([key, weapon]) => classOf(weapon) === role && !STARTER_COMBAT_WEAPONS.has(key))
+    .sort((a, b) => a[1].damage - b[1].damage || a[0].localeCompare(b[0], 'en'));
+  weapons.forEach(([, weapon], index) => {
+    weapon.rhythm = rhythms[(index * 37) % rhythms.length];
+  });
+}
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;
@@ -1980,7 +2029,7 @@ function restoreBossProgress(saved) {
 const EXPORTS_craft = { RECIPES, ITEMS, BOSS_CHAPTERS, HARDMODE_TRIO, bossPrerequisite, restoreBossProgress, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
-    classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe,
+    classOf, dropOnly, COMBAT_BEATS, AMMO, bestAmmo, grappleOf, describe,
     EFFECT_FIELDS, baseEffects, applyEffect };
 
 if (typeof module !== 'undefined' && module.exports) {

@@ -845,6 +845,11 @@ function makeRenderer(canvas, deps) {
       const sx = (a.x - x0) * size - offsetX;
       const sy = (a.y - y0) * size - offsetY;
       if (a.delay > 0) continue;
+      if (a.beat && !a.beat.used) {
+        const pixel = Math.max(2, Math.round(zoom));
+        ctx.fillStyle = a.beat.colour;
+        ctx.fillRect(Math.round(sx / pixel) * pixel - pixel, Math.round(sy / pixel) * pixel - 2 * pixel, 3 * pixel, pixel);
+      }
       if (a.armed || a.shockwave) {
         const pixel = Math.max(2, Math.round(zoom));
         const x = Math.round(sx / pixel) * pixel, y = Math.round(sy / pixel) * pixel;

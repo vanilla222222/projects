@@ -1565,7 +1565,9 @@ function makeSwarm(world, tiles, deps) {
       }
       const wasX = enemy.x;
       const wasY = enemy.y;
-      stepOne(enemy, player, dt);
+      const chilled = enemy.combatChill > 0;
+      if (chilled) enemy.combatChill = Math.max(0, enemy.combatChill - dt);
+      stepOne(enemy, player, chilled ? dt * (enemy.boss ? 0.88 : 0.62) : dt);
       const gait = GAIT[enemy.spec.kind] || GAIT.walker;
       enemy.anim += Math.hypot(enemy.x - wasX, enemy.y - wasY) * gait.perTile
         + gait.perSecond * dt;
