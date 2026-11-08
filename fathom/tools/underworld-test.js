@@ -112,3 +112,42 @@ for (let i = 1; i <= 8; i += 1) {
 }
 assert.equal(directions.size, 2);
 console.log('All 15 campaign arenas, summons, barrages and trophy recipes verified in both world orientations');
+
+const dungeons = tiles.UNDERWORLD_DUNGEONS;
+assert.equal(dungeons.length, 5);
+assert.equal(new Set(dungeons.map(encounter => encounter.order.join())).size, 5);
+for (let i = 1; i <= 8; i += 1) {
+  const dungeonSeed = overworld.generationSeed(i);
+  const realm = makeWorld(dungeonSeed, underworld);
+  const volleySizes = [];
+  for (const encounter of dungeons) {
+    const site = underworld.dungeonSite(dungeonSeed, encounter);
+    const { x, top, floor, entrance, cache, conduits, waystone } = site;
+    assert.equal(underworld.biomeAt(dungeonSeed, x).key, encounter.biome);
+    assert.equal(underworld.encounterSiteAt(dungeonSeed, x, floor - 1).encounter, encounter);
+    assert.equal(realm.get(x + 3, entrance - 1), tiles.idOf('underworld-dungeon-tablet'));
+    for (let y = entrance; y < top; y += 1) assert.equal(realm.get(x, y), tiles.idOf('rope'));
+    for (const dx of [-1, 0, 1]) assert.equal(realm.get(x + dx, top), tiles.idOf('underworld-dungeon-lock'));
+    for (const conduit of conduits) {
+      assert.equal(realm.get(conduit.x, conduit.y), tiles.idOf('underworld-conduit'));
+      assert.ok(tiles.isSolid(realm.get(conduit.x, conduit.y + 1)));
+    }
+    assert.equal(realm.get(x, floor - 1), tiles.idOf('underworld-campaign-seal'));
+    assert.equal(realm.get(waystone.x, waystone.y), tiles.idOf('underworld-waystone'));
+    assert.equal(tiles.tile(realm.get(cache.x, cache.y)).chest, 'goldchest');
+    assert.ok(underworld.baseContainerAt(dungeonSeed, cache.x, cache.y).some(item => item.key === encounter.biome + '-relic'));
+    assert.equal(craft.ITEMS[encounter.summon].use.summon, encounter.key);
+    assert.equal(craft.bossPrerequisite(encounter.key, new Set()), null);
+    assert.ok(craft.RECIPES.some(recipe => recipe.out.kind === 'accessory' && recipe.need.some(([key]) => key === encounter.trophy)));
+    const player = { x, y: floor - 2, width: 0.8, height: 1.8 };
+    const volleys = [];
+    const swarm = enemy.makeSwarm(realm, tiles, { worldgen: underworld, random: () => 0.5,
+      bossBarrage: (_, shot) => volleys.push(shot.angles) });
+    assert.ok(swarm.summon(encounter.key, player, { ...site, top: top + 1 }));
+    for (let step = 0; step < 360; step += 1) swarm.step(player, 1 / 60, 0.5);
+    assert.ok(volleys.length && volleys[0].every(Number.isFinite));
+    volleySizes.push(volleys[0].length);
+  }
+  assert.deepEqual(volleySizes, [2, 5, 4, 4, 8]);
+}
+console.log('All five optional dungeons verified across seeds, including conduits, caches, boss volleys and loot recipes');

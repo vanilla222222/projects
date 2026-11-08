@@ -1812,7 +1812,7 @@ for (const [index, biome] of CRAFT_TILES.UNDERWORLD_BIOMES.entries()) {
   );
 }
 
-for (const { key, name, summon, summonName, trophy, biome, colour, structure, index } of CRAFT_TILES.UNDERWORLD_CAMPAIGN) {
+for (const { key, name, summon, summonName, trophy, biome, colour, structure, index } of [...CRAFT_TILES.UNDERWORLD_CAMPAIGN, ...CRAFT_TILES.UNDERWORLD_DUNGEONS]) {
   ITEMS[summon] = { name: summonName, kind: 'use', colour, use: { summon: key, campaign: true },
     text: 'Reusable. Awakens ' + name + ' at ' + structure + '.' };
   ITEMS[trophy] = { name: name + ' Trophy', kind: 'loot', colour };
@@ -1831,6 +1831,19 @@ for (const [index, [key, name, effect, text]] of [
   ACCESSORIES[key] = { name, ...effect, text, colour: leg[0].colour };
   RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
     need: leg.map(encounter => [encounter.trophy, 1]), station: 'anvil' });
+}
+
+for (const [index, [key, name, effect, text]] of [
+  ['kiln-striders', 'Kiln Striders', { lavaDamage: 0.70, speed: 1.09 }, 'Lava damage −30% and movement speed +9%'],
+  ['mirrorstep-brooch', 'Mirrorstep Brooch', { doubleJump: true, fallMul: 0.65 }, 'Double jump and fall damage −35%'],
+  ['sluice-divers-lamp', 'Sluice Diver’s Lamp', { breathMul: 2.2, fishingPower: 1.20, glow: 8 }, 'Longer breath, faster bites and emits light'],
+  ['sporeheart-clasp', 'Sporeheart Clasp', { regen: 1.32, defense: 9 }, 'Regeneration +32% and defence +9'],
+  ['whiteout-pendant', 'Whiteout Pendant', { flightBonus: 0.45, pickup: 1.45 }, 'Longer flight and pickup range +45%']
+].entries()) {
+  const { trophy, colour, biome } = CRAFT_TILES.UNDERWORLD_DUNGEONS[index];
+  ACCESSORIES[key] = { name, ...effect, text, colour };
+  RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
+    need: [[trophy, 1], [biome + '-bar', 5]], station: 'anvil' });
 }
 
 for (const [key, name, colour, need] of [

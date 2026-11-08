@@ -109,15 +109,79 @@ function makeUnderworldGenerator(overworld) {
     return AIR;
   }
 
+  const dungeons = UNDERWORLD_TILES.UNDERWORLD_DUNGEONS;
+
+  function dungeonSite(seed, encounter) {
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const x = direction * (encounter.index * bandWidth - 125);
+    const entrance = surfaceHeight(seed, x);
+    const floor = surface + 88 + encounter.index * 16;
+    const top = floor - 19;
+    const depths = [[49, 32, 15], [52, 30, 11], [60, 40, 16], [53, 36, 13], [61, 44, 20]][encounter.index];
+    const decks = depths.map(depth => top - depth);
+    return { encounter, x, entrance, floor, top, bottom: floor, left: x - 18, right: x + 18,
+      conduits: decks.map((y, index) => ({
+        x: x + direction * (index % 2 === 0 ? 24 : -24), y: y - 1
+      })),
+      decks, cache: { x: x - direction * 27, y: decks[0] - 2 }, waystone: { x: x + 12, y: floor - 1 } };
+  }
+
+  function dungeonSiteAt(seed, x, y) {
+    if (y < surface - 40 || y > surface + 152) return null;
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const index = Math.round((x * direction + 125) / bandWidth);
+    if (!dungeons[index] || Math.abs(x - direction * (index * bandWidth - 125)) > 32) return null;
+    const site = dungeonSite(seed, dungeons[index]);
+    const distance = Math.abs(x - site.x);
+    if (y < site.entrance - 4 || y > site.floor) return null;
+    if (y < site.top && distance > 5 && !site.decks.some(deck => y >= deck - 7 && y <= deck)) return null;
+    if (y >= site.top && distance > 18) return null;
+    return site;
+  }
+
+  function dungeonTile(site, x, y) {
+    const { encounter, floor, entrance, top } = site;
+    const dx = x - site.x;
+    const distance = Math.abs(dx);
+    const stone = idOf(encounter.biome + '-stone');
+    if (y === entrance - 1 && dx === 3) return idOf('underworld-dungeon-tablet');
+    if (y === entrance && distance >= 2 && distance <= 5) return stone;
+    if (y === top && distance <= 1) return idOf('underworld-dungeon-lock');
+    if (y < floor - 2 && distance <= 1) return dx === 0 && y >= entrance ? idOf('rope') : AIR;
+    if (y < top) {
+      const deck = site.decks.find(row => y >= row - 7 && y <= row);
+      if (deck !== undefined) {
+        if (distance === 32 || y === deck || y === deck - 7) return stone;
+        if (x >= site.cache.x && x <= site.cache.x + 1 && y >= site.cache.y && y < site.cache.y + 2) {
+          return cellOf('goldchest', x - site.cache.x, y - site.cache.y).id;
+        }
+        if (site.conduits.some(conduit => conduit.x === x && conduit.y === y)) return idOf('underworld-conduit');
+        if (distance === 12 && y === deck - 4) return idOf('lantern');
+        if (distance === 18 && y === deck - 2) return idOf(landmarkDecor[encounter.biome]);
+        return AIR;
+      }
+      return y > entrance && distance >= 2 ? stone : AIR;
+    }
+    if (y === floor || y === top || distance === 18) return stone;
+    if (dx === 0 && y === floor - 1) return idOf('underworld-campaign-seal');
+    if (x === site.waystone.x && y === site.waystone.y) return idOf('underworld-waystone');
+    if (distance === 10 && y === floor - 4) return idOf('lantern');
+    if (distance >= 6 && distance <= 9 && y === floor - 7) return idOf(landmarkDecor[encounter.biome]);
+    return AIR;
+  }
+
   function baseTileAt(seed, x, y) {
     if (Math.abs(x) <= 11 && y >= surface - 5 && y <= surface) {
       if (y === surface) return idOf('ashwood-stone');
       if (x === 0 && y === surface - 1) return returnGate;
+      if (x === 5 && y === surface - 1) return idOf('underworld-waystone');
       if ((x === -8 || x === 8) && y === surface - 3) return idOf('lantern');
       return AIR;
     }
     const biome = biomeAt(seed, x);
     const floor = surfaceHeight(seed, x);
+    const dungeon = dungeonSiteAt(seed, x, y);
+    if (dungeon) return dungeonTile(dungeon, x, y);
     const arena = campaignSiteAt(seed, x, y);
     if (arena) return campaignTile(arena, x, y);
     const site = siteAt(seed, x, y);
@@ -153,6 +217,8 @@ function makeUnderworldGenerator(overworld) {
   }
 
   function baseWallAt(seed, x, y) {
+    const dungeon = dungeonSiteAt(seed, x, y);
+    if (dungeon && y >= dungeon.entrance) return wallIdOf(dungeon.encounter.biome + '-wall');
     const arena = campaignSiteAt(seed, x, y);
     if (arena) return wallIdOf(arena.encounter.biome + '-wall');
     return siteAt(seed, x, y) || y >= surfaceHeight(seed, x)
@@ -160,6 +226,15 @@ function makeUnderworldGenerator(overworld) {
   }
 
   function baseContainerAt(seed, x, y) {
+    const dungeon = dungeonSiteAt(seed, x, y);
+    if (dungeon && x === dungeon.cache.x && y === dungeon.cache.y) {
+      const { biome, index } = dungeon.encounter;
+      return [
+        { key: biome + '-ore', kind: 'block', count: 6 + index * 2 },
+        { key: biome + '-relic', kind: 'loot', count: 3 + index },
+        { key: 'torch', kind: 'block', count: 12 }
+      ];
+    }
     const site = siteAt(seed, x, y);
     if (!site || site.mimic || x !== site.x + 5 || y !== site.floor - 2) return null;
     return [
@@ -181,7 +256,12 @@ function makeUnderworldGenerator(overworld) {
 
   const absent = () => null;
   return { ...overworld, realm: 'underworld', BIOMES: biomes, layerAt, biomeAt, surfaceHeight,
-    campaignSiteAt, campaignSite, generateChunk, baseTileAt, baseWallAt, baseContainerAt, biomeSiteAt: siteAt, BIOME_SITE_SPACING: bandWidth,
+    campaignSiteAt, campaignSite, dungeonSiteAt, dungeonSite,
+    encounterSiteAt(seed, x, y) {
+      const dungeon = dungeonSiteAt(seed, x, y);
+      return dungeon && y >= dungeon.top ? dungeon : campaignSiteAt(seed, x, y);
+    },
+    generateChunk, baseTileAt, baseWallAt, baseContainerAt, biomeSiteAt: siteAt, BIOME_SITE_SPACING: bandWidth,
     biomeSitesForSlot: (seed, slot) => {
       const center = slot * bandWidth;
       return [siteAt(seed, center + 84, surfaceHeight(seed, center + 84)),

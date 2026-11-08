@@ -808,12 +808,14 @@ for (const [biomeIndex, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
 
 const ENEMY_UNDERWORLD_CAMPAIGN = typeof require === 'function'
   ? require('./tiles.js').UNDERWORLD_CAMPAIGN : UNDERWORLD_CAMPAIGN;
-for (const encounter of ENEMY_UNDERWORLD_CAMPAIGN) {
-  const { key, name, kind, body, colour, barrage, tactic, index, biome, trophy } = encounter;
-  ENEMIES.push({ key, name, kind, body, colour, barrage, tactic, campaignBoss: true, underworld: true,
+const ENEMY_UNDERWORLD_DUNGEONS = typeof require === 'function'
+  ? require('./tiles.js').UNDERWORLD_DUNGEONS : UNDERWORLD_DUNGEONS;
+for (const encounter of [...ENEMY_UNDERWORLD_CAMPAIGN, ...ENEMY_UNDERWORLD_DUNGEONS]) {
+  const { key, name, kind, body, colour, barrage, tactic, index, biome, trophy, side } = encounter;
+  ENEMIES.push({ key, name, kind, body, colour, barrage, tactic, sideBoss: side, dungeonVolley: side ? index : undefined, campaignBoss: true, underworld: true,
     boss: true, summonOnly: true, weight: 0, minion: biome + '-foe-' + (tactic === 'brood' ? 8 : 4),
     w: 3.4 + index % 3 * 0.4, h: 3 + index % 3 * 0.2, emit: 9,
-    hp: 19600 + index * 1750, damage: 142 + index * 5,
+    hp: (side ? 22500 : 19600) + index * (side ? 4500 : 1750), damage: 142 + index * (side ? 15 : 5),
     bossDrops: [[trophy, 1], [biome + '-relic', 6 + index % 3 * 3], ['coin', 1400 + index * 110]] });
 }
 
@@ -1438,15 +1440,35 @@ function makeSwarm(world, tiles, deps) {
     if (!enemy.beams) {
       const aim = Math.atan2(player.y + player.height / 2 - y, player.x + player.width / 2 - x);
       const fan = enraged ? [-0.66, -0.44, -0.22, 0, 0.22, 0.44, 0.66] : [-0.48, -0.24, 0, 0.24, 0.48];
-      const angles = pattern === 'shatter' ? [0, Math.PI]
+      let angles = pattern === 'shatter' ? [0, Math.PI]
         : pattern === 'cross' ? [aim - 0.25, aim + 0.25, aim - 1.12, aim + 1.12]
           : pattern === 'starburst' ? Array.from({ length: enraged ? 12 : 8 }, (_, i) =>
             aim + i * Math.PI * 2 / (enraged ? 12 : 8)) : fan.map(offset => aim + offset);
-      if (tactic === 'orbit') {
+      const alternating = (enemy.volley || 0) % 2 ? 1 : -1;
+      switch (enemy.spec.dungeonVolley) {
+        case 0: // A tight antler fork changes into a wide shot at half health.
+          angles = (enraged ? [-0.94, -0.5, 0.5, 0.94] : [-0.24, 0.24]).map(offset => aim + offset);
+          break;
+        case 1: // Reflected volleys alternate their safe flank.
+          angles = [-0.62, -0.31, 0, 0.31, 0.62].map(offset => aim + offset + alternating * 0.76);
+          break;
+        case 2: // The undertow sends two horizontal lanes and a narrow aimed pair.
+          angles = [0, Math.PI, aim - 0.12, aim + 0.12];
+          if (enraged) angles.push(aim - 0.57, aim + 0.57);
+          break;
+        case 3: // Spore clouds leave a gap directly ahead, then close it when enraged.
+          angles = [-0.9, -0.56, 0.56, 0.9].map(offset => aim + offset);
+          if (enraged) angles.push(aim);
+          break;
+        case 4: // Each bell peal rotates a spoke pattern by half a spoke.
+          angles = Array.from({ length: 8 }, (_, i) => (i + alternating * 0.25) * Math.PI / 4);
+          break;
+      }
+      if (tactic === 'orbit' && !enemy.spec.sideBoss) {
         const rotation = (enemy.volley || 0) % 2 ? 0.32 : -0.32;
         for (let i = 0; i < angles.length; i += 1) angles[i] += rotation;
       }
-      if (tactic === 'sweep' && enraged) angles.push(0, Math.PI);
+      if (tactic === 'sweep' && enraged && !enemy.spec.sideBoss) angles.push(0, Math.PI);
       enemy.beams = { live: false, range: pattern === 'shatter' ? 17 : 23, angles, origin: pattern === 'shatter' ? 'feet' : null,
         colour: enemy.spec.colour };
     }
@@ -1458,7 +1480,7 @@ function makeSwarm(world, tiles, deps) {
     deps.bossBarrage?.(enemy, { x, y, angles: enemy.beams.angles, pattern, enraged });
     enemy.beams = null;
     enemy.barrageTime = 0;
-    if (tactic === 'orbit') enemy.volley = (enemy.volley || 0) + 1;
+    if (tactic === 'orbit' || enemy.spec.sideBoss) enemy.volley = (enemy.volley || 0) + 1;
   }
 
   function stepPrismBoss(enemy, arch, player, dt, toward) {
