@@ -140,6 +140,39 @@ ok(audio.AMBIENCE.caves.cutoff < audio.AMBIENCE.sky.cutoff,
     'an unknown place has no mood to fall back on');
 }
 
+// Every named fight and dungeon has an independently audible score.
+{
+  const bosses = require('../js/enemy.js').ENEMIES.filter(spec => spec.boss);
+  const gen = require('../js/worldgen.js');
+  const signature = score => JSON.stringify([score.root, score.scale, score.beat, score.voice, score.motif]);
+  const bossThemes = bosses.map(boss => audio.scoreFor('surface', false, { boss: boss.key }));
+  ok(new Set(bossThemes.map(signature)).size === bosses.length, 'two bosses share a musical signature');
+  const aquatic = ['reefleviathan', 'abyssaleye', 'saltmarrow', 'breakwatercrab', 'drownedarchivist'];
+  for (const key of aquatic) {
+    const score = audio.scoreFor('caves', false, { boss: key });
+    ok(score.style === 'aquatic-boss' && ['sine', 'triangle'].includes(score.voice), key + ' lacks an aquatic arrangement');
+  }
+  const dungeons = new Set(Object.keys(audio.DUNGEON_SCORES));
+  for (let slot = -240; slot <= 240; slot += 1) {
+    for (const site of gen.biomeSitesForSlot(20260105, slot) || []) dungeons.add(site.name);
+  }
+  const dungeonThemes = [...dungeons].map(dungeon => audio.scoreFor('caves', false, { dungeon }));
+  ok(new Set(dungeonThemes.map(signature)).size === dungeons.size, 'two dungeons share a musical signature');
+  ok(gen.BIOMES.every(biome => audio.BIOME_SCORES[biome.key]), 'a biome is missing its surface track');
+  for (const [biome, day] of Object.entries(audio.BIOME_SCORES)) {
+    const night = audio.scoreFor('surface', true, { biome });
+    ok(signature(day) !== signature(night) && night.beat > day.beat, biome + ' lacks a separate night arrangement');
+  }
+  const special = audio.scoreFor('caves', false, { boss: 'railbreaker', dungeon: 'Runaway Mine', event: 'bloodmoon' });
+  ok(special.id === 'boss:railbreaker', 'a local score overrode the boss theme');
+  for (const score of [...bossThemes, ...dungeonThemes, ...Object.values(audio.BIOME_SCORES)]) {
+    const notes = Array.from({ length: 32 }, (_, i) => audio.scoreNoteAt(score, i));
+    const scale = new Set(audio.SCALES[score.scale]);
+    ok(notes.every(note => note === null || scale.has((note - score.root) % 12)), score.id + ' left its scale');
+    ok(new Set(notes.filter(note => note !== null)).size >= 3, score.id + ' has no melodic variation');
+  }
+}
+
 // --- 5. the player degrades rather than throwing ------------------------------------------
 // There is no AudioContext here, which is the same situation as a browser that has not
 // seen a gesture yet. Nothing may throw and nothing may claim to have played.
@@ -159,6 +192,43 @@ ok(audio.AMBIENCE.caves.cutoff < audio.AMBIENCE.sky.cutoff,
   ok(player.setMusic(false) === false && player.setMusic(true) === true,
     'the music toggle does not toggle');
   ok(player.setVolume(2) === 1 && player.setVolume(-1) === 0, 'volume is not clamped');
+}
+
+// Run the live scheduler through a small AudioContext stand-in to check the actual mix.
+{
+  const rendered = [];
+  const param = () => ({
+    value: 0,
+    setValueAtTime(value) { this.value = value; },
+    linearRampToValueAtTime(value) { this.value = value; },
+    exponentialRampToValueAtTime(value) { this.value = value; },
+    cancelScheduledValues() {}
+  });
+  class Context {
+    constructor() { this.currentTime = 5; this.state = 'running'; this.sampleRate = 1000; }
+    createGain() { return { gain: param(), connect() {}, disconnect() {} }; }
+    createDynamicsCompressor() { return { threshold: param(), ratio: param(), connect() {} }; }
+    createBuffer() { return { getChannelData: () => new Float32Array(1200) }; }
+    createOscillator() {
+      const osc = { frequency: param(), connect() {}, stop() {}, start(at) {
+        rendered.push({ type: osc.type, at, hz: osc.frequency.value });
+      } };
+      return osc;
+    }
+  }
+  const player = audio.makeAudio({ AudioContext: Context });
+  player.unlock();
+  player.stepMusic(0.02, 'space', false, { boss: 'astralregent' });
+  ok(rendered.some(note => note.type === 'sawtooth'), 'Astral Regent did not schedule its lead');
+  ok(rendered.some(note => note.hz < 50), 'Astral Regent did not schedule its kick or bass');
+  rendered.length = 0;
+  player.stepMusic(0.02, 'caves', false, { boss: 'drownedarchivist' });
+  ok(rendered.some(note => note.at > 5.2 && note.type === 'sine'), 'aquatic theme did not schedule a delayed echo');
+  ok(rendered.every(note => note.type === 'sine'), 'aquatic theme scheduled harsh percussion');
+  player.setMusic(false);
+  const count = rendered.length;
+  player.stepMusic(1, 'caves', false, { dungeon: 'Tidal Archive' });
+  ok(rendered.length === count, 'muted music kept scheduling notes');
 }
 
 console.log('\n' + names.length + ' sounds, longest ' + longest.toFixed(2) + 's; '

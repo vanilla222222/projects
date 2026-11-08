@@ -846,7 +846,8 @@ function drawPerson(ctx, box, look, pose) {
   const shirtLight = spriteShade(shirt, 0.16);
   const pantsDark = spriteShade(pants, -0.3);
   const skinDark = spriteShade(skin, -0.2);
-  const boot = gear.feet?.colour || spriteShade(pants, -0.42);
+  const boot = gear.feet?.colour || look.boots || spriteShade(pants, -0.42);
+  const accent = look.accent || '#d6a455';
   const shinCol = spriteShade(pants, -0.14);
 
   const anim = pose.anim || 0;
@@ -905,7 +906,22 @@ function drawPerson(ctx, box, look, pose) {
   rect(ctx, g, -0.19, -0.5, 0.38, 0.055, spriteShade(shirt, -0.45));
   rect(ctx, g, -0.18, -0.46, 0.36, 0.045, pants);
 
-  rect(ctx, g, -0.052, -0.49, 0.105, 0.036, '#d6a455');
+  rect(ctx, g, -0.052, -0.49, 0.105, 0.036, accent);
+  if (!gear.chest) {
+    if (look.outfit === 'jacket') {
+      rect(ctx, g, -0.032, -0.77, 0.065, 0.265, shirtDark);
+      rect(ctx, g, -0.006, -0.76, 0.016, 0.23, accent);
+    } else if (look.outfit === 'vest') {
+      poly(ctx, g, [-0.14, -0.76, 0, -0.7, 0.14, -0.76, 0.14, -0.54, -0.14, -0.54], accent);
+    } else if (look.outfit === 'scarf') {
+      rect(ctx, g, -0.2, -0.791, 0.38, 0.055, accent);
+      poly(ctx, g, [-0.14, -0.76, -0.05, -0.76, -0.08, -0.56, -0.17, -0.58], accent);
+    } else if (look.outfit === 'overalls') {
+      for (const x of [-0.14, 0.09]) rect(ctx, g, x, -0.775, 0.055, 0.23, pants);
+      rect(ctx, g, -0.16, -0.61, 0.32, 0.11, pants);
+      for (const x of [-0.11, 0.11]) dot(ctx, g, x, -0.61, 0.032, accent);
+    }
+  }
   if (gear.chest) {
     poly(ctx, g, [-0.26, -0.78, 0.26, -0.78, 0.17, -0.57, 0, -0.53, -0.17, -0.57], shirtDark);
     poly(ctx, g, [-0.22, -0.77, 0.22, -0.77, 0.14, -0.61, 0, -0.57, -0.14, -0.61], shirtLight);
@@ -937,6 +953,21 @@ function drawPerson(ctx, box, look, pose) {
         hx + 0.12, -0.94], hair);
     } else if (hairstyle === 'curls') {
       for (let i = 0; i < 4; i += 1) dot(ctx, g, hx - 0.16 + i * 0.083, -0.958 - (i % 2) * 0.018, 0.065, hair);
+    } else if (hairstyle === 'bob') {
+      rect(ctx, g, hx - 0.17, -0.95, 0.085, 0.16, hair);
+      rect(ctx, g, hx + 0.105, -0.95, 0.06, 0.12, hair);
+    } else if (hairstyle === 'ponytail') {
+      poly(ctx, g, [hx - 0.14, -0.95, hx - 0.25, -0.93, hx - 0.27, -0.75, hx - 0.17, -0.79], hair);
+      dot(ctx, g, hx - 0.18, -0.926, 0.044, accent);
+    } else if (hairstyle === 'undercut') {
+      rect(ctx, g, hx - 0.18, -0.943, 0.13, 0.05, spriteShade(hair, 0.38));
+      poly(ctx, g, [hx - 0.12, -0.95, hx - 0.08, -1.015, hx + 0.15, -0.992, hx + 0.11, -0.95], hair);
+    } else if (hairstyle === 'locs') {
+      for (let i = 0; i < 4; i += 1) limb(ctx, g, hx - 0.16 + i * 0.05, -0.97,
+        hx - 0.18 + i * 0.035, -0.79 + i * 0.025, 0.06, hair);
+    } else if (hairstyle === 'bun') {
+      dot(ctx, g, hx - 0.15, -0.99, 0.115, hair);
+      dot(ctx, g, hx - 0.12, -0.968, 0.035, accent);
     } else {
       poly(ctx, g, [hx - 0.17, -0.97, hx - 0.24, -0.87, hx - 0.13, -0.88, hx + 0.12, -0.97], hair);
     }
@@ -959,6 +990,23 @@ function drawPerson(ctx, box, look, pose) {
     rect(ctx, g, hx + 0.03, -0.873, 0.107, 0.017, look.eyes || '#349d9b');
   } else if (look.marking === 'scar') {
     limb(ctx, g, hx + 0.03, -0.88, hx - 0.02, -0.844, 0.022, skinDark);
+  }
+  if (look.marking === 'tattoo') {
+    poly(ctx, g, [hx + 0.015, -0.888, hx + 0.05, -0.865, hx + 0.015, -0.843, hx - 0.02, -0.865], accent);
+  } else if (look.marking === 'blush') dot(ctx, g, hx + 0.09, -0.873, 0.037, '#cf797e');
+  if (look.facialHair === 'stubble') {
+    for (let i = 0; i < 4; i += 1) dot(ctx, g, hx + i * 0.025, -0.835 - (i % 2) * 0.012, 0.014, hair);
+  } else if (look.facialHair === 'mustache') {
+    rect(ctx, g, hx + 0.027, -0.857, 0.109, 0.021, hair);
+  } else if (look.facialHair === 'goatee') {
+    poly(ctx, g, [hx + 0.02, -0.84, hx + 0.11, -0.839, hx + 0.067, -0.805], hair);
+  } else if (look.facialHair === 'full beard') {
+    poly(ctx, g, [hx - 0.11, -0.872, hx + 0.134, -0.86, hx + 0.102, -0.817, hx - 0.003, -0.804, hx - 0.09, -0.831], hair);
+  }
+  if (look.eyewear && look.eyewear !== 'none') {
+    if (look.eyewear !== 'monocle') rect(ctx, g, hx - 0.075, -0.907, 0.19, 0.015, '#332a40');
+    dot(ctx, g, hx + 0.085, -0.899, look.eyewear === 'goggles' ? 0.098 : 0.079, accent);
+    dot(ctx, g, hx + 0.089, -0.899, 0.046, look.eyes || '#34435b');
   }
   if (gear.head) {
     const { colour, tier } = gear.head;

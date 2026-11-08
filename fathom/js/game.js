@@ -36,6 +36,9 @@ function makeGame(canvas, deps) {
   let archiveSite = null;
   let mineSite = null;
   let nextSkyAnchor = 0;
+  let nextAudioScene = 0;
+  let nextRailSound = 0;
+  let audioScene = {};
   let cargoItems = [];
   let archiveFlooded = false;
   let liquidSensors = new Map();
@@ -137,6 +140,26 @@ function makeGame(canvas, deps) {
     const dx = x - (state.player.x + state.player.width / 2);
     const dy = y - (state.player.y + state.player.height / 2);
     audio.play(name, Object.assign({ distance: Math.hypot(dx, dy) }, opts || {}));
+  }
+
+  function sampleAudioScene() {
+    const x = Math.floor(state.player.x);
+    const y = Math.floor(state.player.y);
+    const layer = worldgen.layerAt(y).key;
+    const biome = world.biomeAt(x, y).key;
+    const ossuary = worldgen.dungeonAt(seed, x, y);
+    const site = worldgen.biomeSiteAt(seed, x, y);
+    let dungeon = site?.name;
+    if (ossuary) dungeon = y >= ossuary.y + 100 ? 'Lens Vault'
+      : y >= ossuary.y + 58 ? 'Hardmode Ossuary' : 'Ossuary';
+    else if (worldgen.ashvaultAt(seed, x, y)) dungeon = 'Ashvault';
+    else if (worldgen.foundryAt(seed, x, y)) dungeon = 'Starfall Foundry';
+    else if (worldgen.archiveAt(seed, x, y)) dungeon = 'Tidal Archive';
+    else if (worldgen.runawayMineAt(seed, x, y)) dungeon = 'Runaway Mine';
+    else if (worldgen.siegeAt(seed, x, y)) dungeon = 'Astral Siege';
+    return { layer, biome, dungeon, boss: swarm?.bossAlive()?.key, event: eventKey(),
+      night: state.dayPhase > 0.27 && state.dayPhase < 0.73, rain: state.weather?.rain > 0.35,
+      submerged: state.player.submerged };
   }
 
   function sfx(name, opts) {
@@ -1978,6 +2001,7 @@ function makeGame(canvas, deps) {
     } else if (spec.archive === 'fill') {
       fillArchiveRows(archiveSite, 10, 24, true);
       world.set(aim.x, aim.y, tiles.idOf('archive-filled'));
+      sfx('flood');
       say('Gallery flooded · Swim to the balcony', 2);
     } else if (spec.archive === 'drain') {
       if (tiles.tile(world.get(archiveSite.x - 18, archiveSite.y + 24)).archive !== 'filled'
@@ -2043,6 +2067,7 @@ function makeGame(canvas, deps) {
     for (const key of sensors) {
       if (previouslyLit.has(key)) continue;
       const [x, y] = key.split(':').map(Number);
+      sfxAt('sensor', x, y, { gain: 0.55 });
       wiring.pulseAll(x, y, state.time);
     }
   }
@@ -2086,7 +2111,7 @@ function makeGame(canvas, deps) {
         player.flightUsed = Math.max(0, player.flightUsed - 0.55);
         player.vy = -6;
         nextSkyAnchor = state.time + 5;
-        sfx('upgrade');
+        sfx('anchor');
         say('Sky Anchor restored a burst of flight', 1.5);
       }
       return true;
@@ -2119,7 +2144,7 @@ function makeGame(canvas, deps) {
       const connected = wiring.pulseAll(aim.x, aim.y, state.time);
       if (connected < 0) say('Circuit exceeds 1,024 wire segments', 2);
       else if (!connected) say('Connect copper wire to this switch', 1.5);
-      else sfx('use');
+      else sfx('switch');
       return true;
     }
     if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(spec.circuit)) {
@@ -2156,7 +2181,7 @@ function makeGame(canvas, deps) {
       }
       target.dead = true;
       recordWildlife(target.spec, 'caught');
-      sfx('use');
+      sfx('net');
       say('Caught ' + target.spec.name, 2);
       return true;
     }
@@ -2388,6 +2413,10 @@ function makeGame(canvas, deps) {
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
     const player = state.player;
+    if (player.cart && Math.abs(player.cart.speed) > 2 && state.time >= nextRailSound) {
+      nextRailSound = state.time + Math.max(0.085, 2.3 / Math.abs(player.cart.speed));
+      sfx('rail', { gain: 0.32 });
+    }
     const footX = Math.floor(player.x + player.width / 2);
     const footY = Math.floor(player.y + player.height - 0.01);
     const plate = player.onGround && wiring.channelsAt(footX, footY).length
@@ -2462,12 +2491,15 @@ function makeGame(canvas, deps) {
     // Weather lives in worldgen because it is a property of the world, pure in seed and
     // clock. Keeping one definition matters more here than usual: a copy of this rule in
     // the test would make the test agree with the copy rather than with the game.
-    if (audio) {
-      const layerKey = worldgen.layerAt(Math.floor(state.player.y)).key;
-      audio.setAmbience(layerKey);
-      audio.stepMusic(dt, layerKey, state.dayPhase > 0.27 && state.dayPhase < 0.73);
-    }
     stepEvents();
+    if (audio?.running) {
+      if (state.time >= nextAudioScene) {
+        nextAudioScene = state.time + 0.24;
+        audioScene = sampleAudioScene();
+        audio.setAmbience(audioScene.layer, audioScene);
+      }
+      audio.stepMusic(dt, audioScene.layer, audioScene.night, audioScene);
+    }
     state.weather = worldRules.weather ? worldgen.weatherAt(seed, state.time,
       worldgen.biomeAt(seed, Math.floor(state.player.x)).key) : null;
 
@@ -2575,7 +2607,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=world-settings-1');
+      const worker = new Worker('workers/chunk.js?v=appearance-score-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2968,6 +3000,8 @@ function makeGame(canvas, deps) {
     if (defeatedBosses.has('prismsentinel') && !world.hardmode) world.enableHardmode();
     if (defeatedBosses.has('astralregent') && !world.astral) world.enableAstral();
     nextSkyAnchor = 0;
+    nextAudioScene = nextRailSound = 0;
+    audioScene = {};
     state.wardUntil = 0;
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;

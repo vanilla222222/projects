@@ -361,6 +361,7 @@ html, body {
 .form { display: grid; gap: 13px; margin-bottom: 18px; }
 .world-settings-button { margin: 0 8px; align-self: center; }
 .world-setting-group { border: 1px solid var(--edge); border-radius: 8px; padding: 12px; min-width: 0; }
+.custom-swatch { width: 28px; height: 26px; padding: 0; border: 1px solid var(--edge); border-radius: 4px; background: transparent; }
 .world-setting-group legend { padding: 0 5px; color: var(--accent); font-size: 13px; }
 .world-setting-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .world-setting-help { color: var(--dim); font-size: 11px; line-height: 1.4; }
@@ -392,9 +393,10 @@ html, body {
   background: rgba(6, 10, 20, 0.7);
 }
 .preview-art canvas { image-rendering: pixelated; display: block; }
-.preview-picks { display: grid; gap: 8px; flex: 1; }
+.preview-picks { display: grid; gap: 8px; flex: 1; min-width: 0; }
 
-.swatches { display: grid; gap: 4px; }
+.swatches { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; }
+.swatch-label { grid-column: 1 / -1; }
 .swatch-label { color: var(--dim); font-size: 11px; }
 .swatch-wrap { display: flex; gap: 5px; flex-wrap: wrap; }
 

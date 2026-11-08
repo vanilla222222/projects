@@ -124,6 +124,22 @@ const SOUNDS = {
     tone('square', 300, 180, 0.18, 0.002, 0.12),
     hiss(1800, 600, 0.14, 0.002, 0.1, { q: 1.6 })
   ] },
+  rail: { spread: 0.1, layers: [
+    tone('triangle', 175, 110, 0.12, 0.003, 0.08), hiss(3400, 1200, 0.12, 0.002, 0.07)
+  ] },
+  switch: { spread: 0.04, layers: [tone('square', 460, 230, 0.09, 0.002, 0.06)] },
+  sensor: { spread: 0.02, layers: [
+    tone('sine', 740, 1030, 0.12, 0.01, 0.15), tone('triangle', 480, 660, 0.055, 0.025, 0.18)
+  ] },
+  net: { spread: 0.08, layers: [
+    hiss(3800, 1100, 0.14, 0.005, 0.11), tone('sine', 610, 950, 0.09, 0.04, 0.13)
+  ] },
+  anchor: { spread: 0.02, layers: [
+    tone('sine', 310, 950, 0.13, 0.035, 0.32), tone('triangle', 510, 780, 0.09, 0.09, 0.3)
+  ] },
+  flood: { spread: 0.05, layers: [
+    hiss(280, 1600, 0.15, 0.09, 0.38), tone('sine', 100, 58, 0.12, 0.02, 0.32)
+  ] },
   // A boss arriving. Long, low, and the only sound in the game that is allowed to be.
   roar: { spread: 0.02, layers: [
     tone('sawtooth', 110, 55, 0.3, 0.06, 1.4),
@@ -174,6 +190,116 @@ const MOODS = {
   void: { root: 33, scale: 'dark', chord: [0, 6, 12], beat: 4.1 }
 };
 
+function makeScore(id, root, scale, beat, motif, voice, style = 'wander') {
+  return { id, root, scale, beat, motif, voice, style, chord: scale === 'dark' ? [0, 3, 7] : [0, 4, 7] };
+}
+
+const BIOME_SCORES = Object.fromEntries([
+  ['forest', 64, 'bright', 0.62, [0, 2, 4, 2, 1, null, 3, 1], 'triangle'],
+  ['plains', 62, 'bright', 0.78, [0, 1, 3, null, 4, 3, 1, null], 'triangle'],
+  ['desert', 58, 'dark', 0.54, [0, 3, 2, 1, null, 2, 4, 3], 'square'],
+  ['badlands', 55, 'dark', 0.69, [0, 2, 1, 3, 2, null, 4, 0], 'triangle'],
+  ['savanna', 65, 'bright', 0.48, [0, 3, 1, 2, null, 4, 2, 1], 'triangle'],
+  ['jungle', 60, 'bright', 0.45, [0, 2, null, 3, 1, 4, null, 2], 'triangle'],
+  ['marsh', 54, 'dark', 0.91, [0, null, 2, 1, null, 4, 3, 0], 'sine'],
+  ['highlands', 67, 'bright', 0.74, [0, 3, 5, 4, 2, null, 3, 1], 'triangle'],
+  ['taiga', 63, 'dark', 0.79, [0, 2, 4, null, 3, 1, 0, null], 'sine'],
+  ['tundra', 72, 'bright', 1.02, [0, null, 4, 2, null, 3, 1, null], 'sine'],
+  ['beach', 66, 'bright', 0.67, [0, 2, 3, null, 4, 2, 1, 3], 'triangle'],
+  ['ocean', 59, 'bright', 0.98, [0, null, 3, 4, 2, null, 1, null], 'sine'],
+  ['blight', 48, 'dark', 0.73, [0, 1, 4, 2, 1, null, 3, 0], 'triangle'],
+  ['crimson', 50, 'dark', 0.58, [0, 4, 1, 3, null, 2, 0, 1], 'square'],
+  ['hallow', 74, 'bright', 0.59, [0, 4, 2, 5, 3, 1, null, 4], 'sine']
+].map(([key, ...data]) => [key, makeScore('biome:' + key, ...data)]));
+
+const DUNGEON_SCORES = Object.fromEntries([
+  ['Ossuary', 53, 'dark', 0.7, [0, 2, null, 1, 4, 3, 1, null], 'triangle'],
+  ['Hardmode Ossuary', 50, 'dark', 0.48, [0, 0, 2, 3, 1, 4, 2, 1], 'square'],
+  ['Lens Vault', 64, 'bright', 0.55, [0, 4, 1, null, 3, 5, 2, 1], 'sine'],
+  ['Ashvault', 42, 'dark', 0.61, [0, 1, 3, 0, 4, null, 2, 1], 'triangle'],
+  ['Starfall Foundry', 56, 'dark', 0.44, [0, 2, 2, 4, 1, 3, null, 0], 'square'],
+  ['Tidal Archive', 57, 'dark', 0.85, [0, null, 3, 2, 4, null, 1, 2], 'sine'],
+  ['Runaway Mine', 52, 'bright', 0.43, [0, 0, 3, 1, 0, 4, 2, 1], 'triangle'],
+  ['Astral Siege', 62, 'dark', 0.5, [0, 4, 2, 5, 3, 4, null, 1], 'triangle']
+].map(([key, ...data]) => [key, makeScore('dungeon:' + key, ...data, key === 'Tidal Archive' ? 'water-dungeon' : 'dungeon')]));
+
+const AUTHORED_BOSSES = Object.fromEntries([
+  ['kingslime', 53, 'bright', 0.42, [0, 2, 0, 3, 1, 4, 2, 1], 'triangle'],
+  ['hollloweye', 48, 'dark', 0.39, [0, 0, 4, 2, 1, 3, 4, 1], 'square'],
+  ['furnacewarden', 42, 'dark', 0.37, [0, 1, 0, 4, 3, 2, 4, 1], 'sawtooth'],
+  ['dungeonkeeper', 47, 'dark', 0.5, [0, 3, null, 2, 1, 0, 4, 2], 'triangle'],
+  ['ashguardian', 44, 'dark', 0.45, [0, 0, 1, 4, 3, 0, 2, 3], 'sawtooth'],
+  ['voidsovereign', 40, 'dark', 0.43, [0, null, 4, 1, 6, null, 3, 2], 'sine'],
+  ['riftarchon', 54, 'dark', 0.36, [0, 5, 1, 4, 0, 6, 2, 3], 'square'],
+  ['ossuarymechanist', 45, 'dark', 0.34, [0, 0, 2, 0, 3, 4, 2, 4], 'square'],
+  ['foundrywarden', 48, 'dark', 0.35, [0, 1, 0, 3, 0, 4, 2, 1], 'sawtooth'],
+  ['glasscolossus', 59, 'bright', 0.42, [0, 4, 2, null, 5, 2, 4, 1], 'triangle'],
+  ['coilserpent', 46, 'dark', 0.32, [0, 2, 1, 3, 1, 4, 2, 0], 'square'],
+  ['zenithengine', 64, 'bright', 0.31, [0, 3, 5, 4, 2, 5, 6, 3], 'triangle'],
+  ['prismsentinel', 62, 'bright', 0.35, [0, 4, 5, 3, 2, 4, 1, 3], 'triangle'],
+  ['starwyvern', 57, 'dark', 0.33, [0, 4, 6, 3, 1, 5, 2, 4], 'triangle'],
+  ['lenscustodian', 61, 'bright', 0.41, [0, 2, 5, 1, 4, 6, 3, 1], 'sine'],
+  ['drownedarchivist', 51, 'dark', 0.52, [0, 3, 1, 4, null, 5, 2, 4], 'sine'],
+  ['reefleviathan', 45, 'dark', 0.48, [0, null, 2, 4, 1, 3, 2, null], 'sine'],
+  ['abyssaleye', 43, 'dark', 0.62, [0, 4, null, 1, 5, 2, null, 3], 'sine'],
+  ['breakwatercrab', 59, 'bright', 0.46, [0, 2, 1, null, 4, 0, 3, 1], 'triangle'],
+  ['saltmarrow', 50, 'dark', 0.54, [0, null, 1, 3, 2, null, 4, 1], 'sine'],
+  ['reedking', 54, 'dark', 0.45, [0, 1, 4, null, 3, 1, 2, 0], 'triangle'],
+  ['mirebrood', 47, 'dark', 0.49, [0, 2, 0, 3, null, 4, 1, 2], 'sine'],
+  ['fenwidow', 52, 'dark', 0.58, [0, 1, null, 4, 2, 3, null, 1], 'triangle'],
+  ['railbreaker', 46, 'dark', 0.29, [0, 0, 2, 0, 4, 1, 3, 2], 'square'],
+  ['astralregent', 55, 'dark', 0.31, [0, 5, 4, 2, 6, 3, 1, 4], 'sawtooth']
+].map(([key, ...data]) => [key, makeScore('boss:' + key, ...data,
+  /reef|abyssal|breakwater|saltmarrow|drowned|reedking|mirebrood|fenwidow/.test(key) ? 'aquatic-boss' : 'boss')]));
+
+const derivedScores = new Map();
+function keyedScore(type, key) {
+  const id = type + ':' + key;
+  if (derivedScores.has(id)) return derivedScores.get(id);
+  let hash = 2166136261;
+  for (const letter of id) hash = Math.imul(hash ^ letter.charCodeAt(0), 16777619) >>> 0;
+  const combat = type === 'boss';
+  const motif = Array.from({ length: 8 }, (_, i) => (hash >>> (i * 4) & 15) % 8);
+  const profiles = [
+    [/rime|aurora|winter|glacier|frost|barrow/i, 63, 'bright', 0.44, 'sine'],
+    [/desert|scarab|sand|ochre|sunmane|amber|caravan/i, 51, 'dark', 0.35, 'triangle'],
+    [/root|briar|pinemaw|orchid|forest|spore/i, 54, 'dark', 0.42, 'triangle'],
+    [/crag|cairn|clay|granite|kiln|quarry|standard/i, 43, 'dark', 0.39, 'square'],
+    [/blood|vein|hollow|blight|crim|marrow/i, 44, 'dark', 0.36, 'sawtooth'],
+    [/thunder|windmill|prairie|savanna/i, 58, 'bright', 0.33, 'triangle']
+  ];
+  const profile = profiles.find(([pattern]) => pattern.test(key));
+  const [, root, scale, beat, voice] = profile || [null, combat ? 47 : 53, hash % 3 ? 'dark' : 'bright',
+    combat ? 0.34 : 0.61, ['triangle', 'square', 'sine', 'sawtooth'][(hash >>> 9) % 4]];
+  const score = makeScore(id, root + hash % 8, scale, beat + (hash >>> 5) % 12 / 100 + (combat ? 0 : 0.12),
+    motif, voice, type);
+  derivedScores.set(id, score);
+  return score;
+}
+
+const BLOOD_MOON_SCORE = makeScore('event:bloodmoon', 43, 'dark', 0.38, [0, 3, 0, 2, 4, 1, 3, 2], 'triangle', 'boss');
+const NIGHT_BIOME_SCORES = Object.fromEntries(Object.entries(BIOME_SCORES).map(([key, score]) => [
+  key, makeScore('night:' + key, score.root - 7, 'dark', score.beat * 1.45, score.motif.slice().reverse(), 'sine')
+]));
+
+function scoreFor(layer, night, scene = {}) {
+  if (scene.boss) return AUTHORED_BOSSES[scene.boss] || keyedScore('boss', scene.boss);
+  if (scene.event === 'bloodmoon') return BLOOD_MOON_SCORE;
+  if (scene.dungeon) return DUNGEON_SCORES[scene.dungeon] || keyedScore('dungeon', scene.dungeon);
+  if (layer === 'surface' && BIOME_SCORES[scene.biome]) return (night ? NIGHT_BIOME_SCORES : BIOME_SCORES)[scene.biome];
+  return moodFor(layer, night);
+}
+
+function scoreNoteAt(score, step, roll = 0.5) {
+  if (!score.motif) return noteAt(score, step, roll);
+  const base = score.motif[step % score.motif.length];
+  const phrase = Math.floor(step / score.motif.length) % 4;
+  const degree = base === null ? null : base + (phrase === 2 ? 2 : phrase === 3 && step % 4 === 3 ? 1 : 0);
+  if (degree === null) return null;
+  const scale = SCALES[score.scale];
+  return score.root + scale[degree % scale.length] + 12 * Math.floor(degree / scale.length);
+}
+
 function midiToHz(note) {
   return 440 * Math.pow(2, (note - 69) / 12);
 }
@@ -215,7 +341,8 @@ function makeAudio(win) {
   let musicOn = true;
   let nextNote = 0;
   let step = 0;
-  let mood = MOODS.surface;
+  let mood = null;
+  let trackGain = null;
 
   function ready() {
     return !!(ctx && enabled && ctx.state === 'running');
@@ -317,10 +444,17 @@ function makeAudio(win) {
   }
 
   // --- ambience ---------------------------------------------------------------------
-  function setAmbience(layerKey) {
+  function setAmbience(layerKey, scene = {}) {
     if (!ready()) return;
-    const want = AMBIENCE[layerKey] || AMBIENCE.surface;
-    if (current && current.key === layerKey) return;
+    const base = AMBIENCE[layerKey] || AMBIENCE.surface;
+    const underwater = scene.submerged || scene.dungeon === 'Tidal Archive';
+    const biome = layerKey === 'surface' ? scene.biome : null;
+    const key = [layerKey, biome, underwater, Boolean(scene.rain)].join(':');
+    if (current && current.key === key) return;
+    const cutoff = { forest: 1380, jungle: 1700, desert: 760, marsh: 470, ocean: 510, beach: 690, tundra: 1100 };
+    const want = underwater ? { ...base, cutoff: 250, q: 0.85, drone: 61, droneGain: 0.03 }
+      : biome ? { ...base, cutoff: scene.rain ? 2100 : cutoff[biome] || base.cutoff,
+        gain: scene.rain ? 0.072 : base.gain } : base;
     const now = ctx.currentTime;
     if (current) {
       current.gain.gain.cancelScheduledValues(now);
@@ -357,45 +491,78 @@ function makeAudio(win) {
       drone.start(now);
     }
     ambienceGain.gain.setTargetAtTime(1, now, 0.4);
-    current = { key: layerKey, gain, src, drone };
+    current = { key, gain, src, drone };
   }
 
   // --- music ---------------------------------------------------------------------------
   // Scheduled one note at a time from the game loop rather than from a timer, so it
   // stops when the game stops and never runs on in a background tab.
-  function stepMusic(dt, layerKey, night) {
-    if (!ready() || !musicOn) return;
-    mood = moodFor(layerKey, night);
-    nextNote -= dt;
-    if (nextNote > 0) return;
-    nextNote = mood.beat * (0.75 + Math.random() * 0.5);
-    const at = ctx.currentTime + 0.02;
-    const note = noteAt(mood, step, Math.random());
-    step += 1;
-    // The line.
+  function musicVoice(type, note, peak, at, attack, duration) {
     const gain = ctx.createGain();
-    gain.connect(musicGain);
-    envelope(gain, 0.09, at, 0.08, mood.beat * 0.8);
+    gain.connect(trackGain);
+    envelope(gain, peak, at, attack, duration);
     const osc = ctx.createOscillator();
-    osc.type = 'triangle';
+    osc.type = type;
     osc.frequency.value = midiToHz(note);
     osc.connect(gain);
     osc.start(at);
-    osc.stop(at + mood.beat + 0.2);
-    // And a held chord under it, every fourth note, so the line has somewhere to sit.
-    if (step % 4 === 1) {
-      for (const interval of mood.chord) {
-        const pad = ctx.createGain();
-        pad.connect(musicGain);
-        envelope(pad, 0.035, at, 0.9, mood.beat * 3.4);
-        const po = ctx.createOscillator();
-        po.type = 'sine';
-        po.frequency.value = midiToHz(mood.root - 12 + interval);
-        po.connect(pad);
-        po.start(at);
-        po.stop(at + mood.beat * 4.6);
+    osc.stop(at + attack + duration + 0.04);
+  }
+
+  function stepMusic(dt, layerKey, night, scene) {
+    if (!ready() || !musicOn) return;
+    const score = scoreFor(layerKey, night, scene);
+    if (score !== mood) {
+      const now = ctx.currentTime;
+      if (trackGain) {
+        const old = trackGain;
+        old.gain.cancelScheduledValues(now);
+        old.gain.setValueAtTime(old.gain.value, now);
+        old.gain.linearRampToValueAtTime(0, now + 0.65);
+        setTimeout(() => old.disconnect(), 850);
       }
+      trackGain = ctx.createGain();
+      trackGain.gain.setValueAtTime(0.08, now);
+      trackGain.gain.linearRampToValueAtTime(1, now + 0.35);
+      trackGain.connect(musicGain);
+      mood = score;
+      nextNote = 0;
+      step = 0;
     }
+    nextNote -= dt;
+    if (nextNote > 0) return;
+    const beat = mood.beat;
+    nextNote = mood.motif ? beat : beat * (0.75 + Math.random() * 0.5);
+    const at = ctx.currentTime + 0.02;
+    const note = scoreNoteAt(mood, step, Math.random());
+    const aquatic = mood.style === 'aquatic-boss' || mood.style === 'water-dungeon';
+    const urgent = mood.style === 'boss' || mood.style === 'aquatic-boss';
+    const bar = Math.floor(step / 8) % 4;
+    const harmony = mood.motif ? (mood.scale === 'dark' ? [0, 8, 3, 10] : [0, 9, 5, 7])[bar] : 0;
+    const third = mood.motif ? (mood.scale === 'dark' ? [3, 4, 4, 4] : [4, 3, 4, 4])[bar] : mood.chord[1];
+    const brightVoice = mood.voice === 'sawtooth' || mood.voice === 'square';
+    if (note !== null) musicVoice(mood.voice || 'triangle', note,
+      brightVoice ? 0.052 : 0.09, at, urgent ? 0.015 : 0.075, beat * 0.78);
+    if (aquatic && note !== null && step % 2 === 0) {
+      musicVoice('sine', note - 12, 0.045, at + beat * 0.48, 0.09, beat * 1.6);
+      musicVoice('sine', note, 0.021, at + beat * 0.83, 0.04, beat * 1.2);
+    }
+    if (urgent && !aquatic) {
+      if (step % 4 === 0) musicVoice('sine', 32, 0.19, at, 0.007, 0.12);
+      if (step % 4 === 2) musicVoice('triangle', 77, 0.045, at, 0.006, 0.075);
+      if (step % 2 === 1) musicVoice('square', 100, 0.013, at, 0.004, 0.035);
+    }
+    if (mood.motif && step % 2 === 0) {
+      const bass = step % 4 === 0 ? 0 : 7;
+      musicVoice(urgent && !aquatic ? 'triangle' : 'sine', mood.root - (urgent ? 24 : 12) + harmony + bass,
+        aquatic ? 0.083 : urgent ? 0.13 : 0.045, at, aquatic ? 0.095 : 0.018, beat * (aquatic ? 1.4 : urgent ? 0.45 : 1.1));
+    }
+    if (step % 4 === 0) {
+      const chord = mood.motif ? [0, third, 7] : mood.chord;
+      for (const interval of chord) musicVoice('sine', mood.root - 12 + harmony + interval,
+        urgent ? 0.023 : 0.032, at, aquatic ? 0.38 : mood.motif ? 0.14 : 0.9, beat * 3.2);
+    }
+    step += 1;
     stats.notes += 1;
   }
 
@@ -423,7 +590,7 @@ function makeAudio(win) {
     get running() { return ready(); } };
 }
 
-const EXPORTS_audio = { SOUNDS, AMBIENCE, SCALES, MOODS, noteAt, moodFor, midiToHz,
+const EXPORTS_audio = { SOUNDS, AMBIENCE, SCALES, MOODS, BIOME_SCORES, DUNGEON_SCORES, noteAt, moodFor, scoreFor, scoreNoteAt, midiToHz,
   makeAudio, tone, hiss };
 
 if (typeof module !== 'undefined' && module.exports) {
