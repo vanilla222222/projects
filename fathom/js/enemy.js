@@ -908,6 +908,16 @@ function makeSwarm(world, tiles, deps) {
     return mimic;
   }
 
+  function summonPractice(key, x, y) {
+    const spec = ENEMY_BY_KEY[key];
+    if (!spec || spec.boss || list.filter(enemy => enemy.practice && !enemy.dead).length >= 6) return false;
+    const enemy = makeEnemy(spec, x + 0.5 - spec.w / 2, y + 1 - spec.h);
+    if (overlaps(enemy, enemy.x, enemy.y)) return false;
+    enemy.practice = true;
+    list.push(enemy);
+    return true;
+  }
+
   function bossAlive() {
     return list.find(e => e.boss) || null;
   }
@@ -1344,7 +1354,7 @@ function makeSwarm(world, tiles, deps) {
     list.length = 0;
   }
 
-  return { list, step, trySpawn, summon, wakeMimic, bossAlive, touching, at, damage, contextAt,
+  return { list, step, trySpawn, summon, summonPractice, wakeMimic, bossAlive, touching, at, damage, contextAt,
     poolFor, clear, candidatesIn,
     get count() { return list.length; } };
 }

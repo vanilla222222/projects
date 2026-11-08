@@ -1137,6 +1137,14 @@ for (const w of CRAFT_TILES.WOODS) {
 
 
 RECIPES.push(...CRAFT_TILES.WORKSHOP_PLANS);
+ITEMS['wire-spool'] = { name: 'Copper Wire', kind: 'loot', colour: '#d28d5d',
+  text: 'Hold to see circuits. Use on a tile to lay one segment.' };
+ITEMS['wire-cutters'] = { name: 'Wire Cutters', kind: 'loot', colour: '#9cb5bf',
+  text: 'Hold to see circuits. Use on a wire to remove and recover it.' };
+RECIPES.push(
+  { out: { key: 'wire-spool', kind: 'loot', count: 12 }, need: [['copper-bar', 1]], station: 'anvil' },
+  { out: { key: 'wire-cutters', kind: 'loot', count: 1 }, need: [['iron-bar', 2]], station: 'anvil' }
+);
 function workshopItem(key, item, count, need, station) {
   ITEMS[key] = item;
   RECIPES.push({ out: { key, kind: item.kind, count }, need, station });
