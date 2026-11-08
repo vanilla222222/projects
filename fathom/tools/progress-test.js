@@ -143,6 +143,7 @@ function climb() {
       gain('wyvern-essence');
     }
     if (was.has('warden-igniter')) gain('foundry-prism');
+    if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');

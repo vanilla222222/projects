@@ -557,6 +557,13 @@ function makeRenderer(canvas, deps) {
         ctx.ellipse(sx + w / 2, sy + h, w * 0.46, Math.max(1, size * 0.1), 0, 0, Math.PI * 2);
         ctx.fill();
       }
+      if (enemy.shielded) {
+        ctx.strokeStyle = '#bcafffc0';
+        ctx.lineWidth = size * 0.14;
+        ctx.beginPath();
+        ctx.ellipse(sx + w / 2, sy + h / 2, w * 0.61, h * 0.61, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       if (enemy.beams) {
         ctx.save();
         ctx.lineWidth = size * (enemy.beams.live ? 0.34 : 0.075);

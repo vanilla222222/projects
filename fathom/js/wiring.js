@@ -81,7 +81,7 @@ function makeWiring(world, tiles, hooks = {}) {
         if (next.solid !== spec.solid) hooks.liquid?.(point.x, point.y);
       } else if (spec.circuit === 'inlet') inlets.push(point);
       else if (spec.circuit === 'outlet') outlets.push(point);
-      else if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(spec.circuit)) continue;
+      else if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(spec.circuit)) continue;
       else if (spec.circuit === 'trap' || spec.circuit === 'arena-trap' || spec.statueEnemy) {
         if ((cooldowns.get(key) || 0) > time) continue;
         const activated = spec.statueEnemy
@@ -93,7 +93,7 @@ function makeWiring(world, tiles, hooks = {}) {
     for (let i = 0; i < Math.min(inlets.length, outlets.length); i += 1) pump(inlets[i], outlets[i]);
     for (const point of queue) {
       const circuit = tiles.tile(world.get(point.x, point.y)).circuit;
-      if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(circuit)) hooks.puzzle?.(point, circuit);
+      if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(circuit)) hooks.puzzle?.(point, circuit);
     }
     for (const point of outputs) pulse(point.x, point.y, time, 'copper');
     return queue.length;
@@ -170,6 +170,49 @@ function makeWiring(world, tiles, hooks = {}) {
     get size() { return wires.size; } };
 }
 
-const EXPORTS_wiring = { makeWiring };
+// Beams advance one tile at a time and stop at a wall, sensor, or repeating state.
+function traceBeam(world, tiles, x, y, limit = 48) {
+  const points = [{ x, y }];
+  let dx = 1, dy = 0;
+  const visited = new Set();
+  for (let distance = 0; distance < limit; distance += 1) {
+    x += dx;
+    y += dy;
+    const spec = tiles.tile(world.get(x, y));
+    if (spec.solid) break;
+    const key = x + ':' + y + ':' + dx + ':' + dy;
+    if (visited.has(key)) break;
+    visited.add(key);
+    points.push({ x, y });
+    if (spec.optic === 'sensor') return { points, sensor: { x, y } };
+    if (spec.optic === 'slash') [dx, dy] = [-dy, -dx];
+    if (spec.optic === 'backslash') [dx, dy] = [dy, dx];
+  }
+  return { points, sensor: null };
+}
+
+function seedLensWiring(wiring, site) {
+  function line(channel, x, y, x2, y2) {
+    for (;;) {
+      wiring.add(site.x + x, site.y + y, channel);
+      if (x === x2 && y === y2) break;
+      x += Math.sign(x2 - x);
+      y += Math.sign(y2 - y);
+    }
+  }
+  line('blue', 4, 120, 4, 119);
+  line('blue', 4, 119, 8, 119);
+  line('green', 15, 120, 8, 120);
+  line('green', 8, 120, 8, 119);
+  line('copper', 8, 119, 8, 114);
+  line('copper', 8, 114, 11, 114);
+  line('copper', 11, 119, 11, 121);
+  line('copper', 11, 110, 18, 110);
+  line('copper', 18, 110, 18, 119);
+  line('copper', -14, 144, -14, 135);
+  line('copper', -14, 135, -10, 135);
+}
+
+const EXPORTS_wiring = { makeWiring, traceBeam, seedLensWiring };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_wiring;
 else if (typeof FATHOM !== 'undefined') FATHOM.wiring = EXPORTS_wiring;

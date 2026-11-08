@@ -1076,6 +1076,21 @@ function paintTerrarium(ctx, spec, ox, oy) {
 
 function paintWorkshopFixture(ctx, spec, ox, oy) {
   if (spec.fixture === 'terrarium') return paintTerrarium(ctx, spec, ox, oy);
+  if (spec.fixture === 'optics') {
+    ctx.fillStyle = '#383147';
+    ctx.fillRect(ox + 2, oy + 3, 12, 11);
+    ctx.fillStyle = spec.colour;
+    if (spec.optic === 'slash' || spec.optic === 'backslash') {
+      for (let i = 3; i <= 11; i += 1) {
+        ctx.fillRect(ox + i, oy + (spec.optic === 'slash' ? 14 - i : i), 2, 2);
+      }
+    } else {
+      ctx.fillRect(ox + 5, oy + 5, 6, 6);
+      ctx.fillStyle = spec.optic === 'off' ? '#383147' : '#effafb';
+      ctx.fillRect(ox + 7, oy + 7, 2, 2);
+    }
+    return;
+  }
   if (spec.glyph) return paintGlyphStatue(ctx, spec, ox, oy);
   if (WORKSHOP_SILHOUETTES[spec.fixture]) return paintWorkshopSilhouette(ctx, spec, ox, oy);
   const pixels = WORKSHOP_PIXELS[spec.fixture];
