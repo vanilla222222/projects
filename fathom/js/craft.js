@@ -1679,23 +1679,25 @@ const GENERAL_ACCESSORY_ROUTES = [
 
 function percent(value) { return Math.round(value * 100); }
 
+const ACTIVE_UTILITY_TIERS = new Map([[0, [0.045, 0.10]], [3, [0.09, 0.17]], [5, [0.14, 0.25]], [9, [0.20, 0.45]]]);
+
 for (const [tier, [stage, colour, material, reagent, station, enemies]] of GENERAL_ACCESSORY_STAGES.entries()) {
-  const speed = (4 + tier) / 100;
-  const utility = (8 + tier * 2) / 100;
+  const active = ACTIVE_UTILITY_TIERS.get(tier);
+  const [speed, utility] = active || [(4 + tier) / 100, (8 + tier * 2) / 100];
   const dropSlots = [tier % 10, (tier + 4) % 10];
   for (const [route, [key, name, build]] of GENERAL_ACCESSORY_ROUTES.entries()) {
     const id = 'utility-' + stage.toLowerCase() + '-' + key;
     const [effect, text] = build(speed, utility, tier);
-    const drop = enemies[dropSlots.indexOf(route)];
-    ACCESSORIES[id] = { name: stage + ' ' + name, colour, text, ...effect, ...(drop ? { drop } : {}) };
-    if (!drop) RECIPES.push({ out: { key: id, kind: 'accessory', count: 1 },
+    const drop = active && enemies[dropSlots.indexOf(route)];
+    ACCESSORIES[id] = { name: stage + ' ' + name, colour, text, ...effect, ...(active ? {} : { legacy: true }), ...(drop ? { drop } : {}) };
+    if (active && !drop) RECIPES.push({ out: { key: id, kind: 'accessory', count: 1 },
       need: [[material, 3 + route % 3], [reagent, 4 + route % 4]], station });
   }
 }
 
 // Use the same stacking rules as equipment. Fusion retains the inputs' effects
 // while occupying one slot, and uses actual accessories as recipe ingredients.
-function addTinkerRecipe(key, name, first, second, colour) {
+function addTinkerRecipe(key, name, first, second, colour, legacy = false) {
   const combined = baseEffects();
   applyEffect(combined, ACCESSORIES[first]);
   applyEffect(combined, ACCESSORIES[second]);
@@ -1704,8 +1706,8 @@ function addTinkerRecipe(key, name, first, second, colour) {
     const accessory = ACCESSORIES[part];
     return accessory.effectLines || (accessory.text ? [accessory.text] : []);
   });
-  ACCESSORIES[key] = { name, colour, effectLines, ...combined };
-  RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
+  ACCESSORIES[key] = { name, colour, effectLines, ...combined, ...(legacy ? { legacy: true } : {}) };
+  if (!legacy) RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
     need: [[first, 1], [second, 1]], station: 'tinkers-workshop' });
 }
 
@@ -1719,11 +1721,11 @@ const TINKER_UTILITY_PAIRS = [
   ['surveyors-harness', 'Surveyor’s Harness', 'traveler', 'softfall'],
   ['rescue-satchel', 'Rescue Satchel', 'deepwater', 'mender']
 ];
-for (const [stage, colour] of GENERAL_ACCESSORY_STAGES) {
+for (const [index, [stage, colour]] of GENERAL_ACCESSORY_STAGES.entries()) {
   const tier = stage.toLowerCase();
   for (const [key, name, first, second] of TINKER_UTILITY_PAIRS) {
     addTinkerRecipe('tinker-' + tier + '-' + key, stage + ' ' + name,
-      'utility-' + tier + '-' + first, 'utility-' + tier + '-' + second, colour);
+      'utility-' + tier + '-' + first, 'utility-' + tier + '-' + second, colour, !ACTIVE_UTILITY_TIERS.has(index));
   }
 }
 

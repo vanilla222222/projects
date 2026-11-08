@@ -262,6 +262,7 @@ function makeGame(canvas, deps) {
 
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
+    settlements.increment('defeat:' + target.key);
     if (target.spec.campaignBoss) {
       if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
         defeatedBosses.add(target.key);
@@ -2012,6 +2013,7 @@ function makeGame(canvas, deps) {
       }
     }
     const key = recipe.out.key;
+    settlements.record('craft:' + key, key);
     if (craft.ITEMS[key]?.use?.meal || key === 'cooked-fish' || key === 'seared-fish') settlements.record('food', key);
     if (tiles.BY_KEY[key]?.circuit) settlements.record('mechanism', key);
   }
@@ -2449,6 +2451,13 @@ function makeGame(canvas, deps) {
     return goals;
   }
 
+  function recipeLine(key) {
+    const recipe = craft.RECIPES.find(r => r.out.key === key);
+    return recipe.need.map(([item, count]) =>
+      craft.heldOf(inventory, item) + '/' + count + ' ' + craft.nameOf(item, tiles)).join(' · ')
+      + (recipe.station ? ' · ' + recipe.station : '');
+  }
+
   function campaignBossDetails(key) {
     const boss = enemyModule.BY_KEY[key];
     const summon = Object.entries(craft.ITEMS).find(([, item]) => item.use?.summon === key);
@@ -2493,7 +2502,7 @@ function makeGame(canvas, deps) {
     const rows = [active < 0 ? 'Campaign complete · The Astral Siege is over.' :
       'Act ' + (active + 1) + ' / ' + chapters.length + ' · ' + chapters[active].name,
       'Objectives follow your world progress. Claim earned supplies here whenever you have room.'];
-    const actions = [{ label: 'Boss Side Quests', run: openCampaignHunts },
+    const actions = [{ label: 'Boss Side Quests', run: () => openCampaignHunts() },
       { label: 'Progression Journal', run: openProgression }, { label: 'Deepwood Town Quest', run: openRangerTrail },
       { label: 'Town Hall', run: checkHousing }];
     if (active >= 0) {
@@ -2503,6 +2512,12 @@ function makeGame(canvas, deps) {
       if (landmark) rows.push(landmark);
       for (const key of (chapter.trio ? craft.HARDMODE_TRIO : chapter.bosses || [])) {
         if (!defeatedBosses.has(key)) rows.push(...campaignBossDetails(key));
+      }
+      const hunts = (chapter.recommendedHunts || []).filter(key => !defeatedBosses.has(key)
+        && !craft.bossPrerequisite(key, defeatedBosses));
+      if (hunts.length) {
+        rows.push('Optional detours for this act · ' + hunts.map(key => enemyModule.BY_KEY[key].name).join(', '));
+        actions.push({ label: 'This act’s detours', run: () => openCampaignHunts(hunts) });
       }
     }
     for (const [index, chapter] of chapters.entries()) {
@@ -2907,13 +2922,13 @@ function makeGame(canvas, deps) {
     say('The encounter resets when you leave the arena', 3);
   }
 
-  function openCampaignHunts() {
+  function openCampaignHunts(only) {
     ui.showTown('Campaign · Boss Side Quests', [], [], query => {
       const rows = ['Optional hunts unlock as you advance. Each pays once in this world.'];
       const actions = [{ label: 'Campaign', run: openCampaign }];
       for (const [chapter, bosses] of craft.BOSS_CHAPTERS.entries()) {
         for (const key of bosses.slice(1)) {
-          if (craft.HARDMODE_TRIO.includes(key)) continue;
+          if (craft.HARDMODE_TRIO.includes(key) || (only && !only.includes(key))) continue;
           const boss = enemyModule.BY_KEY[key];
           const title = settlementModule.CAMPAIGN_HUNTS[key] || boss.name;
           const label = title + ' · ' + boss.name;
@@ -2957,12 +2972,6 @@ function makeGame(canvas, deps) {
     const rank = picks.reduce((best, [, spec], index) => spec.power <= power ? index : best, -1);
     const rows = ['Mining · ' + (rank < 0 ? 'Recover a pickaxe from the Guide or make one at a Work Bench.'
       : power + ' base pickaxe power')];
-    const recipeLine = key => {
-      const recipe = craft.RECIPES.find(r => r.out.key === key);
-      return recipe.need.map(([item, count]) =>
-        craft.heldOf(inventory, item) + '/' + count + ' ' + craft.nameOf(item, tiles)).join(' · ')
-        + (recipe.station ? ' · ' + recipe.station : '');
-    };
     if (rank >= 0 && rank + 1 < picks.length) {
       const [key, spec] = picks[rank + 1];
       rows.push('Next pickaxe · ' + spec.name + ' · ' + recipeLine(key));
@@ -3115,11 +3124,11 @@ function makeGame(canvas, deps) {
         if (index < 0) { rows.push(name + ' · Complete'); continue; }
         const step = line.steps[index];
         const id = 'quest:' + line.id + ':' + index;
-        const count = step.key ? settlements.count(step.key) : 0;
-        const objective = step.key ? Math.min(count, step.goal) + ' / ' + step.goal : townItems(step.needs);
+        const count = step.boss ? Number(defeatedBosses.has(step.boss)) : step.key ? settlements.count(step.key) : 0;
+        const objective = (step.key || step.boss) ? Math.min(count, step.goal) + ' / ' + step.goal : townItems(step.needs);
         rows.push(name + ' · ' + (index + 1) + '/3 · ' + step.name + ' · ' + objective
           + ' · Reward ' + townItems(step.reward));
-        if (step.key && count < step.goal) continue;
+        if ((step.key || step.boss) && count < step.goal) continue;
         const charter = nearestTown(player.x, player.y, device => {
           const local = settlements.town(device);
           return local?.rank >= 2 && (!line.region || line.region === local.region)
@@ -3469,12 +3478,15 @@ function makeGame(canvas, deps) {
     }
     const wave = shot.pattern === 'shatter';
     const fieldShot = shot.pattern === 'field';
-    const speed = fieldShot ? 14 : wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
+    const signature = shot.pattern === 'signature';
+    const speed = signature ? shot.speed : fieldShot ? 14 : wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
     const inside = tiles.isSolid(world.get(Math.floor(shot.x), Math.floor(shot.y)));
     for (const angle of shot.angles) {
       state.arrows.push({ x: shot.x, y: shot.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-        life: (fieldShot ? shot.range : wave ? 17 : 23) / speed, gravity: 0,
-        damage: fieldShot ? boss.spec.damage : shot.enraged ? 109 : 96,
+        life: (fieldShot || signature ? shot.range : wave ? 17 : 23) / speed,
+        gravity: shot.gravity || 0, bounces: shot.bounces,
+        damage: signature ? Math.round(boss.spec.damage * (shot.enraged ? 0.9 : 0.72))
+          : fieldShot ? boss.spec.damage : shot.enraged ? 109 : 96,
         colour: boss.spec.colour, hostile: boss.spec.name,
         escapeTerrain: shot.pattern === 'cross' && inside });
     }
@@ -3486,7 +3498,9 @@ function makeGame(canvas, deps) {
         say('The Custodian reversed the mirror · Use the arena switch', 1.6);
       }
     }
-    sfxAt(wave ? 'hit' : 'cast', shot.x, shot.y);
+    if (!signature || shot.first) {
+      sfxAt(wave ? 'hit' : 'cast', shot.x, shot.y);
+    }
   }
 
   function fireMechanismDart(point, direction = 1) {

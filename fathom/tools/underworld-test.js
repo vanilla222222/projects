@@ -142,7 +142,7 @@ for (let i = 1; i <= 8; i += 1) {
     const player = { x, y: floor - 2, width: 0.8, height: 1.8 };
     const volleys = [];
     const swarm = enemy.makeSwarm(realm, tiles, { worldgen: underworld, random: () => 0.5,
-      bossBarrage: (_, shot) => volleys.push(shot.angles) });
+      bossBarrage: (_, shot) => { if (shot.pattern !== 'signature') volleys.push(shot.angles); } });
     assert.ok(swarm.summon(encounter.key, player, { ...site, top: top + 1 }));
     for (let step = 0; step < 360; step += 1) swarm.step(player, 1 / 60, 0.5);
     assert.ok(volleys.length && volleys[0].every(Number.isFinite));

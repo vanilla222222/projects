@@ -63,29 +63,57 @@ const SETTLEMENT_EXPEDITIONS = [
     rule: 'The Regent returns with full platform bombardment.' }
 ];
 
-// Each regional chain combines a landmark visit, a local assignment and a supply delivery.
+// The quest IDs and step numbers stay stable for worlds with claimed board rewards.
 const SETTLEMENT_QUESTLINES = [
-  ['forest', 'Deepwood Watch', 'hunt', 8, 'rope', 18, 'spelunk-potion'],
-  ['desert', 'Caravan Relief', 'hunt', 8, 'glass', 16, 'swift-potion'],
-  ['tundra', 'The Long Winter', 'specimen', 2, 'torch', 20, 'ironskin-potion'],
-  ['jungle', 'Canopy Survey', 'specimen', 3, 'rope', 25, 'regen-potion'],
-  ['marsh', 'Mire Provisioners', 'fish', 3, 'bottle', 8, 'gills-potion'],
-  ['highlands', 'Crag Watch Relief', 'hunt', 10, 'stone', 40, 'feather-potion'],
-  ['badlands', 'Kiln Road', 'hunt', 8, 'copper-bar', 6, 'ironskin-potion'],
-  ['savanna', 'Acacia Crossing', 'specimen', 2, 'rope', 20, 'swift-potion'],
-  ['taiga', 'Winterroot Rangers', 'hunt', 10, 'pinelog', 16, 'regen-potion'],
-  ['plains', 'Windmill Dispatch', 'specimen', 3, 'glass', 12, 'swift-potion'],
-  ['blight', 'Shadebound Patrol', 'hunt', 12, 'torch', 30, 'shine-potion'],
-  ['crimson', 'Crimwood Relief', 'hunt', 12, 'iron-bar', 5, 'rage-potion'],
-  ['ocean', 'Reef Commission', 'fish', 3, 'shell', 10, 'gills-potion'],
-  ['beach', 'Saltmarrow Dispatch', 'fish', 3, 'rope', 20, 'gills-potion']
-].map(([region, name, job, goal, item, amount, prize]) => ({
-  id: region, name, region, steps: [
-    { name: 'Chart a landmark', key: 'survey:' + region, goal: 1, reward: [['coin', 100], ['torch', 12]] },
-    { name: job === 'hunt' ? 'Clear local hostiles' : job === 'fish' ? 'Catch distinct local fish' : 'Net distinct local critters',
-      key: job + ':' + region, goal, reward: [[prize, 3], ['coin', 220]] },
-    { name: 'Deliver supplies', needs: [[item, amount]], reward: [[prize, 5], ['coin', 480]] }
-  ]
+  ['forest', 'Deepwood Watch', 'spelunk-potion', [
+    ['survey:forest', 1, 'Chart the watchpost foundations'], ['defeat:field-bramble-lynx', 3, 'Drive off the Bramble Lynxes'],
+    ['craft:lantern-charm', 1, 'Make a Lantern Charm for night patrol']]],
+  ['desert', 'Caravan Relief', 'swift-potion', [
+    [[['bottle', 8], ['cooked-fish', 3]], 0, 'Pack rations for the dry crossing'], ['craft:desert-medallion', 1, 'Forge the Dunes challenge medallion'],
+    [{ boss: 'desertscourge' }, 1, 'Break the Desert Scourge’s hold on the road']]],
+  ['tundra', 'The Long Winter', 'ironskin-potion', [
+    ['defeat:field-drift-hound', 3, 'Clear the Drift Hounds from the trail'], [[['pinewood', 12], ['torch', 10]], 0, 'Stock a winter fuel reserve'],
+    [{ boss: 'rimehorn' }, 1, 'End Rimehorn’s avalanche season']]],
+  ['jungle', 'Canopy Survey', 'regen-potion', [
+    ['specimen:jungle', 3, 'Record three canopy species'], ['defeat:field-orchid-dartwing', 3, 'Clear Dartwings from the survey route'],
+    ['craft:orchid-lure', 1, 'Bait the Orchid Queen away from the canopy camp']]],
+  ['marsh', 'Mire Provisioners', 'gills-potion', [
+    ['fish:marsh', 2, 'Test two catches from the Mire'], ['craft:gills-potion', 1, 'Brew a dive ration'],
+    [[['cooked-fish', 4], ['bottle', 5]], 0, 'Supply the flooded kitchens']]],
+  ['highlands', 'Crag Watch Relief', 'feather-potion', [
+    ['craft:feather-fall', 1, 'Make a descent charm'], [{ boss: 'cragbreaker' }, 1, 'Reopen the pass by defeating Cragbreaker'],
+    ['survey:highlands', 2, 'Chart both sides of the reopened pass']]],
+  ['badlands', 'Kiln Road', 'ironskin-potion', [
+    [[['stone', 20], ['copper-bar', 4]], 0, 'Repair the kiln lining'], ['craft:clay-effigy', 1, 'Fire the Clay Effigy'],
+    [{ boss: 'claybehemoth' }, 1, 'Take down the Clay Behemoth']]],
+  ['savanna', 'Acacia Crossing', 'swift-potion', [
+    ['craft:acaciaplatform', 1, 'Build a raised acacia crossing'], ['defeat:field-thornveld-jackal', 4, 'Keep Jackals away from the crossing'],
+    [[['acacialog', 12], ['rope', 10]], 0, 'Stock replacement decking and rigging']]],
+  ['taiga', 'Winterroot Rangers', 'regen-potion', [
+    ['survey:taiga', 1, 'Mark the old pine shelter'], [[['pinelog', 16], ['leather', 5]], 0, 'Outfit the shelter for winter'],
+    [{ boss: 'winterroot' }, 1, 'Drive Winterroot away from the shelter']]],
+  ['plains', 'Windmill Dispatch', 'swift-potion', [
+    ['craft:windmill-token', 1, 'Cast a Windmill Token'], [{ boss: 'windmillwarden' }, 1, 'Free the mill from its Warden'],
+    [[['glass', 12], ['iron-bar', 4]], 0, 'Replace the mill’s windows and fittings']]],
+  ['blight', 'Shadebound Patrol', 'shine-potion', [
+    ['craft:shine-potion', 1, 'Brew light for the patrol'], ['defeat:field-blight-prowler', 4, 'Track Blight Prowlers in the shade'],
+    [{ boss: 'hollowroot' }, 1, 'Cut Hollowroot out of the patrol route']]],
+  ['crimson', 'Crimwood Relief', 'rage-potion', [
+    ['defeat:field-marrow-spitter', 4, 'Silence the Marrow Spitters'], ['craft:bloodcrest-lure', 1, 'Make a Bloodcrest Lure'],
+    [{ boss: 'bloodcrest' }, 1, 'Defeat Bloodcrest above the Crimwood']]],
+  ['ocean', 'Reef Commission', 'gills-potion', [
+    ['defeat:field-riptide-barracuda', 3, 'Clear barracudas from the reef'], ['craft:reef-conch', 1, 'Assemble a Reef Conch'],
+    [{ boss: 'reefleviathan' }, 1, 'Defeat the Reef Leviathan']]],
+  ['beach', 'Saltmarrow Dispatch', 'gills-potion', [
+    [[['shell', 10], ['rope', 10]], 0, 'Lay shell markers along the shore'], ['fish:beach', 3, 'Record the tide’s three catches'],
+    [{ boss: 'saltmarrow' }, 1, 'Put Saltmarrow to rest']]]
+].map(([region, name, prize, steps]) => ({
+  id: region, region, name,
+  steps: steps.map(([objective, goal, name], index) => ({
+    name, ...(Array.isArray(objective) ? { needs: objective }
+      : typeof objective === 'string' ? { key: objective, goal } : { ...objective, goal }),
+    reward: [[prize, [2, 3, 5][index]], ['coin', [100, 220, 480][index]]]
+  }))
 }));
 
 for (const [id, name, key, goals, prize] of [
@@ -119,34 +147,42 @@ const CAMPAIGN_CHAPTERS = [
     clue: 'Upgrade your pick through cobalt and emberite. Bring an Obsidian Charm and use a Cinder Idol in Hell.',
     reward: [['spelunk-potion', 3], ['healing-salve', 5]] },
   { id: 'ashvault', name: 'The Ashvault Seal', bosses: ['ashguardian'],
+    recommendedHunts: ['hollowroot', 'veinwarden'],
     story: 'The Furnace Warden’s core can unlock the Ashvaults in the Trench.',
     clue: 'Forge an Ashvault Key from a Furnace Core. Open an Ashvault and challenge its guardian in the main hall.',
     reward: [['shine-potion', 4], ['coin', 420]] },
   { id: 'void', name: 'At the Bottom of Light', bosses: ['voidsovereign'],
+    recommendedHunts: ['abyssaleye', 'saltmarrow'],
     story: 'Below the Trench, the Void Sovereign guards the route into the Rift.',
     clue: 'Mine Void Crystals with an Emberite Pickaxe and use a Void Beacon in the Void.',
     reward: [['clarity-potion', 4], ['coin', 650]] },
   { id: 'archon', name: 'The Rift Opens', bosses: ['riftarchon'],
+    recommendedHunts: ['aurorawraith', 'cairnshade'],
     story: 'Turn the Sovereign’s heart into a way through the Rift.',
     clue: 'Summon the Archon in the Void. Use its core to forge a Rift Pickaxe for Aetherite beneath the sky islands.',
     reward: [['feather-potion', 4], ['coin', 850]] },
   { id: 'prism', name: 'The Sky Breaks', bosses: ['prismsentinel'],
+    recommendedHunts: ['thunderbird', 'sunscarab'],
     story: 'The Prism Sentinel stands between the surface and Hardmode.',
     clue: 'Gather Aetherite, craft a Prism Sigil, and summon the Sentinel in the sky. Its defeat unlocks new ores.',
     reward: [['ironskin-potion', 4], ['coin', 1050]] },
   { id: 'machines', name: 'Three Machines', trio: true,
+    recommendedHunts: ['ossuarymechanist'],
     story: 'Three machines hold the keys to space. You can challenge them in any order.',
     clue: 'Mine Palladium, then Mythril, then Adamantite. Use the Hallow crystals to make the three summons.',
     reward: [['regen-potion', 5], ['coin', 1500]] },
   { id: 'wyvern', name: 'Beyond the Sky Islands', bosses: ['starwyvern'],
+    recommendedHunts: ['pinemaw', 'rimehorn'],
     story: 'The machines are quiet. A signal above the islands calls the Star Wyvern.',
     clue: 'Use the Starcall Horn in space. After the fight, hunt wild wyverns for wing materials.',
     reward: [['healing-salve', 8], ['coin', 1800]] },
   { id: 'foundry', name: 'The Starfall Foundry', bosses: ['foundrywarden'],
+    recommendedHunts: ['railbreaker', 'claybehemoth'],
     story: 'Follow the landing pads into the foundry and take its prism.',
     clue: 'Cross to the far platform and use the Warden Igniter there.',
     reward: [['clarity-potion', 6], ['coin', 2300]] },
   { id: 'regent', name: 'The Astral Siege', bosses: ['astralregent'],
+    recommendedHunts: ['lenscustodian', 'drownedarchivist'],
     story: 'The Regent has fortified three platforms in space. The last siege begins here.',
     clue: 'Raise an Astral Standard on the middle platform. Use wings to move away from marked bombardment lanes.',
     reward: [['regen-potion', 8], ['coin', 4200]] },

@@ -123,7 +123,7 @@ for (const w of tiles.WOODS) {
 
 // Workshop recipes must have one owner and a reachable station chain.
 {
-  const expected = { 'heavy-workbench': 601, sawmill: 181, 'alchemy-table': 40, cauldron: 70, loom: 136, 'tinkers-workshop': 96 };
+  const expected = { 'heavy-workbench': 601, sawmill: 181, 'alchemy-table': 40, cauldron: 70, loom: 136, 'tinkers-workshop': 48 };
   const workshop = craft.RECIPES.filter(r => expected[r.station] || ['heavy-workbench', 'tinkers-workshop'].includes(r.out.key));
   ok(new Set(workshop.map(r => r.out.key)).size === workshop.length, 'duplicate workshop output');
   for (const [station, count] of Object.entries(expected)) {
@@ -469,11 +469,15 @@ rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
 
 {
   const assert = require('node:assert/strict');
-  const keys = Object.keys(craft.ACCESSORIES).filter(key => key.startsWith('utility-'));
-  assert.equal(keys.length, 100);
+  const keys = Object.keys(craft.ACCESSORIES).filter(key => key.startsWith('utility-') && !craft.ACCESSORIES[key].legacy);
+  assert.equal(keys.length, 40);
   const drops = craft.dropOnly().filter(entry => keys.includes(entry.key));
-  assert.equal(drops.length, 14);
-  assert.equal(craft.RECIPES.filter(recipe => keys.includes(recipe.out.key)).length, 86);
+  assert.equal(drops.length, 6);
+  assert.equal(craft.RECIPES.filter(recipe => keys.includes(recipe.out.key)).length, 34);
+  assert.equal(craft.ACCESSORIES['utility-copper-deepwater'].legacy, true);
+  const breaths = ['trail', 'gold', 'ember', 'eventide']
+    .map(tier => craft.equipEffects([], ['utility-' + tier + '-deepwater']).breathMul);
+  assert.ok(breaths.every((breath, i) => i === 0 || breath - breaths[i - 1] >= 0.13));
   assert.ok(craft.equipEffects([], ['utility-eventide-traveler']).flightBonus > 0);
   assert.ok(craft.equipEffects([], ['utility-trail-pathfinder']).speed > 1);
 }

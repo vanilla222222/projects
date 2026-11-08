@@ -275,8 +275,16 @@ backpack or hotbar before combining them. The result carries both sets of
 effects in one accessory slot, and equipped accessories are left alone.
 
 Start with combinations such as Swift Boots and a Cloud Charm for Cloudstep
-Boots. The Workshop also combines class accessories and utility gear from
-Trail through Eventide.
+Boots. The Workshop also combines class accessories and four tiers of utility
+gear: Trail, Gold, Ember, and Eventide. Retired tiers remain usable in saves.
+
+### Boss encounters
+
+Bosses with shared movement have their own named attack sequences. Orange
+lines telegraph where the attacks will travel. At half health the boss leads
+with a different attack and follows with a second volley. Afterward it briefly
+takes extra damage. Encounters with dedicated mechanics, such as the siege,
+the floodgate, and the dungeon side bosses, use their own tells.
 
 ### Signature attacks
 

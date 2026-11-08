@@ -541,6 +541,26 @@ function makeRenderer(canvas, deps) {
         ctx.ellipse(sx + w / 2, sy + h / 2, w * 0.61, h * 0.61, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
+      if (enemy.signatureAttack) {
+        ctx.save();
+        ctx.strokeStyle = '#ffc38c';
+        ctx.lineWidth = size * 0.105;
+        for (const shot of enemy.signatureAttack.shots) {
+          const x = (shot.x - x0) * size - offsetX;
+          const y = (shot.y - y0) * size - offsetY;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          const vx = Math.cos(shot.angle) * shot.speed;
+          const vy = Math.sin(shot.angle) * shot.speed;
+          const segments = shot.gravity ? 12 : 1;
+          for (let i = 1; i <= segments; i += 1) {
+            const t = shot.range / shot.speed * i / segments;
+            ctx.lineTo(x + vx * t * size, y + (vy * t + (shot.gravity || 0) * t * t / 2) * size);
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
       if (enemy.beams) {
         ctx.save();
         ctx.lineWidth = size * (enemy.beams.live ? 0.34 : 0.075);
@@ -607,7 +627,8 @@ function makeRenderer(canvas, deps) {
     ctx.fillStyle = '#efe7d6';
     ctx.font = '13px ui-monospace, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(boss.spec.name + '  ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp,
+    const cue = boss.signatureAttack ? ' · ' + boss.signatureAttack.name : boss.signatureRecovery > 0 ? ' · Exposed' : '';
+    ctx.fillText(boss.spec.name + '  ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp + cue,
       canvas.width / 2, y + h + 16);
     ctx.textAlign = 'left';
     ctx.restore();
