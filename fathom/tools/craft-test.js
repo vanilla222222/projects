@@ -123,7 +123,7 @@ for (const w of tiles.WOODS) {
 
 // Workshop recipes must have one owner and a reachable station chain.
 {
-  const expected = { 'heavy-workbench': 588, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136 };
+  const expected = { 'heavy-workbench': 596, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136 };
   const workshop = craft.RECIPES.filter(r => expected[r.station] || r.out.key === 'heavy-workbench');
   ok(new Set(workshop.map(r => r.out.key)).size === workshop.length, 'duplicate workshop output');
   for (const [station, count] of Object.entries(expected)) {

@@ -29,6 +29,7 @@ function makeGame(canvas, deps) {
   let ui = null;
   let liquid = null;
   let swarm = null;
+  let wiring = null;
   let minimap = null;
   let village = null;
   let townDevices = [];
@@ -92,6 +93,7 @@ function makeGame(canvas, deps) {
     ['S \u2193', 'Crouch, drop through, climb down'],
     ['Click', 'Mine, chop, attack'],
     ['Right click', 'Place, use, talk'],
+    ['Wiring', 'Lay wire or cut it to recover it'],
     ['1 \u2013 0', 'Hotbar'],
     ['E', 'Backpack'],
     ['G', 'Grappling hook'],
@@ -679,6 +681,11 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
+    if (spec.circuit === 'puzzle-gate' || spec.chest === 'ossuary-workshop-cache') {
+      state.player.mining = null;
+      say('Find the switch for the Mechanist Cache', 1.6);
+      return;
+    }
     if (spec.key === 'dungeon-gate' || spec.key === 'dungeon-bell'
       || (spec.key === 'dungeon-brick' && !defeatedBosses.has('dungeonkeeper'))
       || (cache && !world.hasStoredContainer(cache.x, cache.y))) {
@@ -773,7 +780,10 @@ function makeGame(canvas, deps) {
         }
       }
       if (origin) breakMulti(origin);
-      else world.set(aim.x, aim.y, tiles.AIR);
+      else {
+        wiring?.clearDevice(aim.x, aim.y);
+        world.set(aim.x, aim.y, tiles.AIR);
+      }
       spawnParticles(aim.x, aim.y, spec.colour, 9);
       sfxAt('break', aim.x, aim.y);
       const leaves = mining.dropsOf(spec);
@@ -909,7 +919,7 @@ function makeGame(canvas, deps) {
   }
 
   function projectileHit(target, damage) {
-    if (!swarm.damage(target, damage)) return;
+    if (!swarm.damage(target, damage) || target.practice) return;
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
     }
@@ -928,7 +938,10 @@ function makeGame(canvas, deps) {
         a.x += (a.vx * dt) / steps;
         a.y += (a.vy * dt) / steps;
         if (tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) hit = true;
-        else if (swarm) {
+        else if (a.trap && pointHitsPlayer(a.x, a.y)) {
+          if (statsModule.damage(stats, a.damage) > 0) lastHurt = 'a dart trap';
+          hit = true;
+        } else if (swarm) {
           const target = swarm.at(a.x, a.y);
           if (target && !a.hits?.has(target)) {
             a.hits?.add(target);
@@ -994,7 +1007,7 @@ function makeGame(canvas, deps) {
     target.vx += Math.sign(target.x - cx) * 6;
     target.vy -= 3;
     spawnParticles(target.x, target.y, target.spec.colour, 5);
-    if (swarm.damage(target, hit)) {
+    if (swarm.damage(target, hit) && !target.practice) {
       for (const [key, count] of target.spec.drops || []) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
       }
@@ -1076,6 +1089,14 @@ function makeGame(canvas, deps) {
   function useChest(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.chest) return false;
+    if (spec.chest === 'ossuary-workshop-cache') {
+      const site = worldgen.dungeonAt(seed, aim.x, aim.y);
+      if (!site || !defeatedBosses.has('dungeonkeeper')
+        || tiles.tile(world.get(site.x + 14, site.y + 17)).circuit === 'puzzle-gate') {
+        say('Trace the circuit to open the Mechanist Cache', 2);
+        return true;
+      }
+    }
     if (spec.chest === 'ashvault-cache' && !inventory.countOf('guardian-seal')) {
       say('The reliquary needs a Guardian Seal', 2);
       return true;
@@ -1285,6 +1306,8 @@ function makeGame(canvas, deps) {
     }
     rows.push('Workshop · Build a Heavy Workbench at a Work Bench to unlock advanced stations and statues.');
     rows.push('Sawmill furniture · Loom textiles · Alchemy Table potions · Cauldron meals');
+    rows.push('Mechanisms · Craft Copper Wire and Wire Cutters at an Anvil. Build devices at a Heavy Workbench.');
+    if (defeatedBosses.has('dungeonkeeper')) rows.push('Ossuary · Find the switch for the Mechanist Cache in the first gallery.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1505,8 +1528,8 @@ function makeGame(canvas, deps) {
       const p = state.player;
       for (let dy = 0; dy < origin.h; dy += 1) {
         const ty = origin.y + dy;
-        if (origin.x + 1 > p.x && origin.x < p.x + p.width
-          && ty + 1 > p.y && ty < p.y + p.height) {
+        if (world.getLevel(origin.x, ty) || (origin.x + 1 > p.x && origin.x < p.x + p.width
+          && ty + 1 > p.y && ty < p.y + p.height)) {
           say('Something is in the way', 0.9);
           return true;
         }
@@ -1590,15 +1613,54 @@ function makeGame(canvas, deps) {
     return true;
   }
 
+  function pointHitsPlayer(x, y) {
+    const player = state.player;
+    return x >= player.x && x < player.x + player.width && y >= player.y && y < player.y + player.height;
+  }
+
+  function useCircuit(aim, item) {
+    if (!wiring) return false;
+    if (item?.key === 'wire-spool' || item?.key === 'wire-cutters') {
+      if (!aim.inReach) return true;
+      if (item.key === 'wire-spool') {
+        if (wiring.add(aim.x, aim.y)) inventory.take(item.key, 1);
+      } else if (wiring.remove(aim.x, aim.y)) {
+        if (inventory.add({ key: 'wire-spool', kind: 'loot' }, 1)) {
+          dropItem(aim.x, aim.y, 'wire-spool', 'loot', 1);
+        }
+      }
+      return true;
+    }
+    if (!aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (spec.circuit === 'timer') {
+      say(wiring.toggleTimer(aim.x, aim.y, state.time) ? 'Timer running · pulse every 2 seconds' : 'Timer stopped', 1.5);
+      return true;
+    }
+    if (spec.circuit === 'switch') {
+      const connected = wiring.pulse(aim.x, aim.y, state.time);
+      if (connected < 0) say('Circuit exceeds 1,024 wire segments', 2);
+      else if (!connected) say('Connect copper wire to this switch', 1.5);
+      else sfx('use');
+      return true;
+    }
+    if (spec.circuit === 'puzzle-gate') {
+      say('Follow the mechanism back to its switch', 2);
+      return true;
+    }
+    return false;
+  }
+
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
+    const item = selectedItem();
+    if (useCircuit(aim0, item)) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;
     if (aim0.inReach && useBed(aim0)) return;
     if (aim0.inReach && useChest(aim0)) return;
     if (aim0.inReach && useDoor(aim0)) return;
-    const item = selectedItem();
     if (!item) return;
     // A rod casts rather than places, and casting again pulls the line in.
     if (castLine(item)) return;
@@ -1713,6 +1775,12 @@ function makeGame(canvas, deps) {
     stepHook(dt);
     const before = state.player.x;
     physics.step(state.player, world, tiles, input, dt);
+    const player = state.player;
+    const footX = Math.floor(player.x + player.width / 2);
+    const footY = Math.floor(player.y + player.height - 0.01);
+    const plate = player.onGround && wiring.has(footX, footY)
+      && tiles.tile(world.get(footX, footY)).circuit === 'plate';
+    wiring.step(state.time, plate ? { x: footX, y: footY } : null);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
     statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving,
       (state.gear && state.gear.manaRegen) || 1);
@@ -1891,7 +1959,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=workshop-2');
+      const worker = new Worker('workers/chunk.js?v=mechanisms-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -1987,6 +2055,21 @@ function makeGame(canvas, deps) {
     const sx = (aim.x - lastView.x0) * size - lastView.offsetX;
     const sy = (aim.y - lastView.y0) * size - lastView.offsetY;
     ctx.save();
+    const held = selectedItem()?.key;
+    if (wiring?.size && (held === 'wire-spool' || held === 'wire-cutters')) {
+      ctx.fillStyle = '#f9ad6ee0';
+      const line = Math.max(2, size / 7);
+      for (let y = lastView.y0; y <= lastView.y0 + Math.ceil(canvas.height / size) + 1; y += 1) {
+        for (let x = lastView.x0; x <= lastView.x0 + Math.ceil(canvas.width / size) + 1; x += 1) {
+          if (!wiring.has(x, y)) continue;
+          const cx = (x - lastView.x0 + 0.5) * size - lastView.offsetX;
+          const cy = (y - lastView.y0 + 0.5) * size - lastView.offsetY;
+          ctx.fillRect(cx - line, cy - line, line * 2, line * 2);
+          if (wiring.has(x + 1, y)) ctx.fillRect(cx, cy - line / 2, size, line);
+          if (wiring.has(x, y + 1)) ctx.fillRect(cx - line / 2, cy, line, size);
+        }
+      }
+    }
     ctx.lineWidth = 2;
     ctx.strokeStyle = aim.inReach ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.18)';
     ctx.strokeRect(sx + 1, sy + 1, size - 2, size - 2);
@@ -2136,6 +2219,7 @@ function makeGame(canvas, deps) {
     });
     profiles.saveWorld(worldId, {
       world: world.serialize(),
+      wiring: wiring.serialize(),
       dayPhase: state.dayPhase,
       spawn: state.spawn || null,
       nights: state.nights,
@@ -2174,6 +2258,34 @@ function makeGame(canvas, deps) {
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper') });
+    wiring = deps.wiring.makeWiring(world, tiles, {
+      door: point => useDoor(point),
+      occupied: (x, y) => {
+        const p = state.player;
+        return x + 1 > p.x && x < p.x + p.width && y + 1 > p.y && y < p.y + p.height;
+      },
+      liquid: (x, y) => liquid.activateAround(x, y),
+      statue: (key, point) => swarm.summonPractice(key, point.x, point.y),
+      trap: point => {
+        if (state.arrows.length >= 100) return false;
+        state.arrows.push({ x: point.x + 0.8, y: point.y + 0.48, vx: 28, vy: 0,
+          life: 0.9, gravity: 0, damage: 18, colour: '#d7c0a8', trap: true });
+        return true;
+      },
+      puzzle: point => {
+        const site = worldgen.dungeonAt(seed, point.x, point.y);
+        if (!site || !defeatedBosses.has('dungeonkeeper')) return;
+        for (let y = site.y + 14; y <= site.y + 17; y += 1) {
+          if (tiles.tile(world.get(point.x, y)).circuit === 'puzzle-gate') world.set(point.x, y, tiles.AIR);
+        }
+        say('The Mechanist Cache is open', 2.5);
+      }
+    });
+    if (worldRecord.wiring) wiring.restore(worldRecord.wiring, state.time);
+    else {
+      const site = worldgen.dungeonLayout(seed);
+      if (site) for (let dx = 5; dx <= 16; dx += 1) wiring.add(site.x + dx, site.y + 17);
+    }
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
       { tiles, worldgen });
     village = villagerModule.makeVillage(world, tiles, { housing });

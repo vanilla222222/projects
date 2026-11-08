@@ -150,6 +150,7 @@ the cost of one small canvas.
 | `js/fishing.js` | rods, what is in the water, and how much water a place has |
 | `js/buffs.js` | effects that expire: potions, and what a campfire does |
 | `js/audio.js` | every sound in the game, the ambience beds and the music |
+| `js/wiring.js` | Circuit propagation, timers, pump transfers and wire persistence |
 | `js/game.js` | loop, input, camera, mining, placing, drops, events, save |
 
 ### Progression

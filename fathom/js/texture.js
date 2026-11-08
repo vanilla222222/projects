@@ -895,6 +895,14 @@ function paintStation(ctx, spec, variant, ox, oy) {
 // Workshop fixtures share a palette grammar but each shape has its own silhouette.
 // 1 is shadow, 2 is the material, 3 is a highlight and 4 is a metal or flame accent.
 const WORKSHOP_PIXELS = {
+  'wire-switch': ['00000000','00004000','00044000','00440000','00330000','03333330','02222220','01111110'],
+  'pressure-plate': ['00000000','00000000','00000000','00000000','00000000','00000000','03344330','22222222'],
+  'wire-timer': ['00000000','00333300','03422430','03242430','03244430','03422430','00333300','00222200'],
+  'wire-lamp': ['00333300','03222230','03244230','03244230','03222230','00333300','00022000','00222200'],
+  'dart-trap': ['00000000','00000000','23333330','22444432','22223432','23333330','02000200','02000200'],
+  'inlet-pump': ['00033000','00033000','02344320','02344320','02344320','02222220','01111110','01111110'],
+  'outlet-pump': ['00033000','00033000','02433420','02433420','02433420','02222220','01111110','01111110'],
+  'actuator-block': ['33333333','32222223','32422423','32244223','32244223','32422423','32222223','33333333'],
   'heavy-workbench': ['00000000','00044000','02444220','23333332','21111112','02022020','02011020','02000020'],
   'sawmill': ['00000000','00044000','00433400','23344332','21111112','02022020','02000020','02000020'],
   'alchemy-table': ['00000000','04044040','04344340','03333330','01111110','02002020','02002020','02000020'],
@@ -1049,8 +1057,8 @@ function paintWorkshopFixture(ctx, spec, ox, oy) {
     spec.emit ? '#ffd68a' : '#b6a69f'];
   for (const [y, row] of pixels.entries()) {
     for (let x = 0; x < row.length; x += 1) {
-      const colour = palette[row[x]];
-      if (!colour) continue;
+      const colour = spec.powered && row[x] === '4' ? '#aef6ff' : palette[row[x]];
+      if (!colour || (spec.powered && spec.circuit === 'actuator' && row[x] === '2')) continue;
       ctx.fillStyle = colour;
       ctx.fillRect(ox + x * 2, oy + y * 2, 2, 2);
     }

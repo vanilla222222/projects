@@ -530,6 +530,37 @@ for (const source of MASONRY_SOURCES) {
     colour, shape, [[polished, cost]], 'heavy-workbench', { furniture });
 }
 
+for (const [key, name, colour, circuit, need] of [
+  ['wire-switch', 'Circuit Switch', '#bfa16d', 'switch', [['iron-bar', 1], ['wire-spool', 2]]],
+  ['pressure-plate', 'Pressure Plate', '#b5926b', 'plate', [['iron-bar', 1], ['wire-spool', 2]]],
+  ['wire-timer', 'Two-Second Timer', '#9e93c9', 'timer', [['glass', 1], ['silver-bar', 1], ['wire-spool', 3]]],
+  ['wire-lamp', 'Circuit Lamp', '#b7a480', 'lamp', [['glass', 2], ['torch', 1], ['wire-spool', 2]]],
+  ['dart-trap', 'Right-Facing Dart Trap', '#a89ca4', 'trap', [['iron-bar', 2], ['stone', 4], ['wire-spool', 2]]],
+  ['inlet-pump', 'Inlet Pump', '#67b0c7', 'inlet', [['iron-bar', 4], ['wire-spool', 3]]],
+  ['outlet-pump', 'Outlet Pump', '#d09264', 'outlet', [['iron-bar', 4], ['wire-spool', 3]]],
+  ['actuator-block', 'Retractable Actuator Block', '#7f93a5', 'actuator', [['stone', 2], ['iron-bar', 1], ['wire-spool', 1]]]
+]) {
+  const pair = circuit === 'lamp' || circuit === 'actuator' ? key + '-on' : undefined;
+  const solid = circuit === 'actuator';
+  workshopFixture(key, name, colour, key, need, 'heavy-workbench',
+    { circuit, circuitPair: pair, solid, opacity: solid ? 55 : 4 });
+  if (pair) pushTile({ key: pair, name, colour, fixture: key, circuit,
+    circuitPair: key, solid: false, opacity: 4, emit: circuit === 'lamp' ? 11 : 0,
+    toughness: 50, hardness: 0.25, drops: key, powered: true });
+}
+
+pushTile({ key: 'ossuary-circuit-gate', name: 'Ossuary Circuit Gate', colour: '#729ba4',
+  fixture: 'actuator-block', circuit: 'puzzle-gate', solid: true, opacity: 55, drops: null });
+defineMulti('ossuary-workshop-cache', 'Mechanist Cache', 2, 2, () => ({
+  solid: false, opacity: 8, emit: 4, colour: '#84b6af',
+  toughness: 95, chest: 'ossuary-workshop-cache', drops: null
+}));
+
+for (const tile of TILES) {
+  const enemy = /^(?:stone|gilt|obsidian)-(slime|bat|spider|zombie|demon-eye|skeleton)-statue$/.exec(tile.key)?.[1];
+  if (enemy) tile.statueEnemy = { slime: 'greenslime', bat: 'cavebat', spider: 'cragstalker', 'demon-eye': 'demoneye' }[enemy] || enemy;
+}
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {

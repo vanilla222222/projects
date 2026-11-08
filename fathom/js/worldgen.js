@@ -986,6 +986,12 @@ function dungeonTile(site, x, y) {
   if (dy === 0) return Math.abs(dx) <= 2 ? idOf('dungeon-gate') : brick;
   if (Math.abs(dx) === 24 || dy === 58) return brick;
   if (OSSUARY_FLOORS.includes(dy) && Math.abs(dx) > 2) return brick;
+  if (dy > 0 && dy < 18) {
+    if (dx === 14) return dy < 14 ? brick : idOf('ossuary-circuit-gate');
+    if (dx === 5 && dy === 17) return idOf('wire-switch');
+    if (dx === 16 && dy === 17) return idOf('wire-lamp');
+    if (dx >= 21 && dx <= 22 && dy >= 16) return cellOf('ossuary-workshop-cache', dx - 21, dy - 16).id;
+  }
   if (dx === 0) return idOf('rope');
   for (const [row, floor] of OSSUARY_FLOORS.entries()) {
     const cx = row % 2 ? -19 : 18;
@@ -1001,6 +1007,11 @@ function dungeonTile(site, x, y) {
 function baseContainerAt(seed, x, y) {
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) {
+    if (x === dungeon.x + 21 && y === dungeon.y + 16) {
+      return [['wire-spool', 36], ['wire-cutters', 1], ['wire-timer', 1], ['pressure-plate', 2],
+        ['actuator-block', 4], ['dart-trap', 1], ['inlet-pump', 1], ['outlet-pump', 1]]
+        .map(([key, count]) => ({ key, count, kind: lootKindOf(key) }));
+    }
     const row = OSSUARY_FLOORS.indexOf(y - dungeon.y + 2);
     if (row < 0 || x !== dungeon.x + (row % 2 ? -19 : 18)) return null;
     return [[OSSUARY_LOOT[row], 1], ['coin', 140 + row * 40]]
