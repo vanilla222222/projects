@@ -880,6 +880,9 @@ function makeUI(root, deps) {
     if (gear.melee !== 1) lines.push('Melee ' + Math.round(gear.melee * 100) + '%');
     if (gear.ranged !== 1) lines.push('Ranged ' + Math.round(gear.ranged * 100) + '%');
     if (gear.magic !== 1) lines.push('Magic ' + Math.round(gear.magic * 100) + '%');
+    if (gear.meleeReach) lines.push('Melee reach +' + Number(gear.meleeReach.toFixed(2)) + ' tiles');
+    if (gear.spiritInterval !== 1) lines.push('Spirit attack interval ' + Math.round(Math.max(0.6, gear.spiritInterval) * 100) + '%');
+    if (gear.throwBlast !== 1) lines.push('Throwing blast radius ' + Math.round(gear.throwBlast * 100) + '%');
     if (gear.thrower !== 1) lines.push('Thrower ' + Math.round(gear.thrower * 100) + '%');
     if (gear.summoner !== 1) lines.push('Summoner ' + Math.round(gear.summoner * 100) + '%');
     if (gear.manaCost !== 1) lines.push('Mana cost ' + Math.round(gear.manaCost * 100) + '%');
