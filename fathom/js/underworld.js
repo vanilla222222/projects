@@ -68,6 +68,47 @@ function makeUnderworldGenerator(overworld) {
     return AIR;
   }
 
+  const campaign = UNDERWORLD_TILES.UNDERWORLD_CAMPAIGN;
+
+  function campaignSite(seed, encounter) {
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const stage = encounter.index % 3;
+    const center = Math.floor(encounter.index / 3) * bandWidth;
+    const x = direction * (center + [48, 110, bandWidth / 2][stage]);
+    const floor = stage === 0 ? surfaceHeight(seed, x) + 1 : surface + (stage === 1 ? 74 : 124 + 17 * Math.floor(encounter.index / 3));
+    const radius = 17 + stage * 2;
+    return { encounter, x, floor, left: x - radius, right: x + radius, top: floor - 14 - stage * 2, bottom: floor };
+  }
+
+  function campaignSiteAt(seed, x, y) {
+    if (x < -1650 || x > 1650 || y < surface - 55 || y > surface + 192) return null;
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const leg = Math.floor((x * direction + 25) / bandWidth);
+    if (leg < 0 || leg >= biomes.length) return null;
+    for (let index = leg * 3; index < leg * 3 + 3; index += 1) {
+      const site = campaignSite(seed, campaign[index]);
+      if (x >= site.left && x <= site.right && y >= site.top && y <= site.bottom) return site;
+    }
+    return null;
+  }
+
+  function campaignTile(site, x, y) {
+    const { encounter, floor, left, right, top } = site;
+    const dx = x - site.x, depth = floor - y;
+    const stage = encounter.index % 3;
+    if (depth === 0 || y === top) return idOf(encounter.biome + '-stone');
+    if (stage === 0 && Math.abs(dx) < 12 && y === top + 1 + Math.floor(Math.abs(dx) / 4)) {
+      return idOf(encounter.biome + '-wood');
+    }
+    if ((x === left || x === right) && (depth > 5 || depth === 1)) return idOf(encounter.biome + '-wood');
+    if (dx === 0 && depth === 1) return idOf('underworld-campaign-seal');
+    if (Math.abs(dx) === 12 && depth === 2) return idOf('lantern');
+    if (Math.abs(dx) >= 5 && Math.abs(dx) <= 9 && depth === 5 + stage) return idOf(landmarkDecor[encounter.biome]);
+    if (stage === 1 && Math.abs(dx) === 14 && depth >= 1 && depth <= 4) return idOf(encounter.biome + '-stone');
+    if (stage === 2 && Math.abs(dx) >= 12 && Math.abs(dx) <= 16 && depth === 10) return idOf(landmarkDecor[encounter.biome]);
+    return AIR;
+  }
+
   function baseTileAt(seed, x, y) {
     if (Math.abs(x) <= 11 && y >= surface - 5 && y <= surface) {
       if (y === surface) return idOf('ashwood-stone');
@@ -77,6 +118,8 @@ function makeUnderworldGenerator(overworld) {
     }
     const biome = biomeAt(seed, x);
     const floor = surfaceHeight(seed, x);
+    const arena = campaignSiteAt(seed, x, y);
+    if (arena) return campaignTile(arena, x, y);
     const site = siteAt(seed, x, y);
     if (site) return structureTile(site, x, y);
     const depth = y - floor;
@@ -110,6 +153,8 @@ function makeUnderworldGenerator(overworld) {
   }
 
   function baseWallAt(seed, x, y) {
+    const arena = campaignSiteAt(seed, x, y);
+    if (arena) return wallIdOf(arena.encounter.biome + '-wall');
     return siteAt(seed, x, y) || y >= surfaceHeight(seed, x)
       ? wallIdOf(biomeAt(seed, x).key + '-wall') : 0;
   }
@@ -136,7 +181,7 @@ function makeUnderworldGenerator(overworld) {
 
   const absent = () => null;
   return { ...overworld, realm: 'underworld', BIOMES: biomes, layerAt, biomeAt, surfaceHeight,
-    generateChunk, baseTileAt, baseWallAt, baseContainerAt, biomeSiteAt: siteAt, BIOME_SITE_SPACING: bandWidth,
+    campaignSiteAt, campaignSite, generateChunk, baseTileAt, baseWallAt, baseContainerAt, biomeSiteAt: siteAt, BIOME_SITE_SPACING: bandWidth,
     biomeSitesForSlot: (seed, slot) => {
       const center = slot * bandWidth;
       return [siteAt(seed, center + 84, surfaceHeight(seed, center + 84)),

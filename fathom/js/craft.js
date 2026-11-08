@@ -1812,6 +1812,27 @@ for (const [index, biome] of CRAFT_TILES.UNDERWORLD_BIOMES.entries()) {
   );
 }
 
+for (const { key, name, summon, summonName, trophy, biome, colour, structure, index } of CRAFT_TILES.UNDERWORLD_CAMPAIGN) {
+  ITEMS[summon] = { name: summonName, kind: 'use', colour, use: { summon: key, campaign: true },
+    text: 'Reusable. Awakens ' + name + ' at ' + structure + '.' };
+  ITEMS[trophy] = { name: name + ' Trophy', kind: 'loot', colour };
+  RECIPES.push({ out: { key: summon, kind: 'use', count: 1 },
+    need: [[biome + '-bar', 2 + index % 3], [biome + '-relic', 2 + index % 3]], station: 'anvil' });
+}
+
+for (const [index, [key, name, effect, text]] of [
+  ['cinder-vanguard', 'Cinder Vanguard', { melee: 1.20, meleeReach: 0.35 }, 'Melee damage +20% and reach +0.35 tiles'],
+  ['mirage-marksman', 'Mirage Marksman', { ranged: 1.20, arrowSpeed: 1.12 }, 'Ranged damage +20% and arrow speed +12%'],
+  ['brine-litany', 'Brine Litany', { magic: 1.20, manaCost: 0.85 }, 'Magic damage +20% and mana cost −15%'],
+  ['apiarch-command', 'Apiarch Command', { summoner: 1.20, spiritInterval: 0.86 }, 'Summon damage +20% and time between spirit attacks −14%'],
+  ['last-divide-grip', 'Last Divide Grip', { thrower: 1.20, throwSpeed: 1.12 }, 'Throwing damage +20% and throw speed +12%']
+].entries()) {
+  const leg = CRAFT_TILES.UNDERWORLD_CAMPAIGN.slice(index * 3, index * 3 + 3);
+  ACCESSORIES[key] = { name, ...effect, text, colour: leg[0].colour };
+  RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
+    need: leg.map(encounter => [encounter.trophy, 1]), station: 'anvil' });
+}
+
 for (const [key, name, colour, need] of [
   ['saltroot-rod', 'Saltroot Rod', '#82c2be', [['brine-depths-wood', 8], ['brine-depths-bar', 5], ['rope', 8]]],
   ['kilnline-rod', 'Kilnline Rod', '#ed926d', [['hellfire-rod', 1], ['ember-bloom-bar', 5], ['ember-bloom-relic', 3]]]
@@ -2078,6 +2099,10 @@ const BOSS_PREREQUISITES = new Map();
 for (const [index, [main, ...optional]] of BOSS_CHAPTERS.entries()) {
   BOSS_PREREQUISITES.set(main, BOSS_CHAPTERS[index - 1]?.[0] || null);
   for (const boss of optional) BOSS_PREREQUISITES.set(boss, main);
+}
+
+for (const [index, encounter] of CRAFT_TILES.UNDERWORLD_CAMPAIGN.entries()) {
+  BOSS_PREREQUISITES.set(encounter.key, CRAFT_TILES.UNDERWORLD_CAMPAIGN[index - 1]?.key || null);
 }
 
 function bossPrerequisite(key, defeated) {

@@ -74,3 +74,41 @@ for (const biome of tiles.UNDERWORLD_BIOMES) {
 }
 assert.equal(fishing.RODS['kilnline-rod'].lava, true);
 assert.ok(fishing.RODS['saltroot-rod'].power > fishing.RODS['gold-rod'].power);
+
+const route = tiles.UNDERWORLD_CAMPAIGN;
+assert.equal(route.length, 15);
+for (const key of ['key', 'structure', 'summon', 'trophy']) {
+  assert.equal(new Set(route.map(encounter => encounter[key])).size, 15);
+}
+const directions = new Set();
+for (let i = 1; i <= 8; i += 1) {
+  const routeSeed = overworld.generationSeed(i);
+  const realm = makeWorld(routeSeed, underworld);
+  const sites = route.map(encounter => underworld.campaignSite(routeSeed, encounter));
+  const direction = Math.sign(sites[0].x);
+  directions.add(direction);
+  for (const [index, site] of sites.entries()) {
+    const { encounter, x, floor } = site;
+    assert.equal(underworld.campaignSiteAt(routeSeed, x, floor - 1).encounter, encounter);
+    assert.equal(realm.get(x, floor - 1), tiles.idOf('underworld-campaign-seal'));
+    if (index % 3 === 2) {
+      assert.equal(underworld.biomeAt(routeSeed, site.left).key === underworld.biomeAt(routeSeed, site.right).key, false);
+    } else assert.equal(underworld.biomeAt(routeSeed, x).key, encounter.biome);
+    assert.equal(craft.ITEMS[encounter.summon].use.summon, encounter.key);
+    assert.ok(craft.RECIPES.some(recipe => recipe.out.key === encounter.summon && recipe.station === 'anvil'));
+    assert.ok(craft.RECIPES.some(recipe => recipe.out.kind === 'accessory' && recipe.need.some(([key]) => key === encounter.trophy)));
+    const player = { x, y: floor - 2, width: 0.8, height: 1.8 };
+    let volleys = 0;
+    const swarm = enemy.makeSwarm(realm, tiles, { worldgen: underworld, random: () => 0.5,
+      bossBarrage: () => { volleys += 1; } });
+    const boss = swarm.summon(encounter.key, player, { ...site, top: site.top + 1 });
+    assert.ok(boss, encounter.name + ' could not spawn in ' + encounter.structure);
+    assert.equal(boss.spec.bossDrops[0][0], encounter.trophy);
+    assert.equal(swarm.summon(encounter.key, player, site), null);
+    for (let step = 0; step < 420; step += 1) swarm.step(player, 1 / 60, 0.5);
+    assert.ok(volleys > 0, encounter.name + ' did not fire a barrage');
+    assert.ok(boss.x >= site.left && boss.x + boss.width <= site.right);
+  }
+}
+assert.equal(directions.size, 2);
+console.log('All 15 campaign arenas, summons, barrages and trophy recipes verified in both world orientations');
