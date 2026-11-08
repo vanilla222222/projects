@@ -249,5 +249,49 @@ checks += 3;
   checks += 6;
 }
 
+{
+  const track = new Map();
+  const setRail = (x, y, key = 'minecart-rail') => track.set(x + ':' + y, tiles.idOf(key));
+  const world = { get: (x, y) => track.get(x + ':' + y) || tiles.AIR };
+  for (let x = 0; x <= 17; x += 1) setRail(x, 20);
+  setRail(5, 20, 'brake-rail');
+  setRail(8, 20, 'stop-rail');
+  track.delete('12:20');
+  const rider = physics.makePlayer(0, 0);
+  const dt = 1 / 120;
+  assert.equal(physics.mountMinecart(rider, world, tiles, 0, 19), false);
+  assert.equal(physics.mountMinecart(rider, world, tiles, 0, 20), true);
+  for (let i = 0; i < 600; i += 1) {
+    physics.step(rider, world, tiles, { right: true }, dt);
+    if (rider.cart.x === 5) assert.ok(rider.cart.speed <= 4, 'brake rail did not slow the cart');
+  }
+  assert.equal(rider.cart.x, 8, 'held input bypassed a stop');
+  assert.equal(rider.cart.speed, 0);
+  physics.step(rider, world, tiles, {}, dt);
+  for (let i = 0; i < 240; i += 1) physics.step(rider, world, tiles, { right: true }, dt);
+  assert.equal(rider.cart.x, 11, 'cart crossed a broken span');
+  setRail(12, 20);
+  for (let i = 0; i < 120; i += 1) physics.step(rider, world, tiles, { right: true }, dt);
+  assert.equal(rider.cart.x, 17, 'cart could not use a repaired span');
+  physics.step(rider, world, tiles, { jump: true }, dt);
+  assert.equal(rider.cart, null);
+  assert.ok(rider.vy < 0, 'Jump did not launch the rider off the cart');
+
+  setRail(20, 20, 'rail-junction');
+  setRail(21, 19);
+  setRail(21, 21);
+  assert.equal(physics.mountMinecart(rider, world, tiles, 20, 20), true);
+  for (let i = 0; i < 90; i += 1) physics.step(rider, world, tiles, { right: true }, dt);
+  assert.equal(rider.cart.y, 19, 'junction did not select its upper branch');
+  setRail(20, 20, 'rail-junction-lower');
+  assert.equal(physics.mountMinecart(rider, world, tiles, 20, 20), true);
+  for (let i = 0; i < 90; i += 1) physics.step(rider, world, tiles, { right: true }, dt);
+  assert.equal(rider.cart.y, 21, 'junction did not select its lower branch');
+  track.delete('21:21');
+  physics.step(rider, world, tiles, {}, dt);
+  assert.equal(rider.cart, null, 'mined track kept the cart mounted');
+  checks += 13;
+}
+
 console.log('Physics: ' + checks + ' invariants held over ' + steps.toLocaleString()
   + ' simulated steps across six columns; 0 ended inside a solid tile');

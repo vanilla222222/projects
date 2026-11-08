@@ -613,18 +613,46 @@ function caveRockAt(seed, x, y) {
   return cave.style;
 }
 
+function railCacheFits(seed, cave) {
+  if (cave.cacheFits !== undefined) return cave.cacheFits;
+  for (let dx = 0; dx < 2; dx += 1) for (let dy = 0; dy < 2; dy += 1) {
+    const x = cave.x2 + 2 + dx, y = cave.y1 - 1 + dy;
+    const column = columnOf(seed, x);
+    const long = longCaveAt(seed, x, y);
+    const track = long?.rail ? Math.round(long.centre) + 2 : null;
+    if (column.biome.drowned || y < column.height + 18 || archiveAt(seed, x, y)
+      || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)
+      || chestTileAt(seed, x, y) !== null || structureTileAt(seed, x, y) !== null
+      || (track !== null && (y === track || y === track + 1))) {
+      cave.cacheFits = false;
+      return false;
+    }
+  }
+  cave.cacheFits = true;
+  return true;
+}
+
 function railCaveTile(seed, x, y, column) {
   if (column.biome.drowned || y < column.height + 18 || altitudeOf(y) >= 1250) return null;
   const long = longCaveAt(seed, x, y);
   if (long?.rail) {
     const track = Math.round(long.centre) + 2;
-    if (y === track) return idOf('minecart-rail');
+    if (y === track) {
+      const cave = longCaveLayout(seed, Math.floor(x / LONG_CAVE_WIDTH));
+      const offset = x - cave.left;
+      const broken = offset > 22 && cave.right - x > 22
+        && offset % 73 < 2 && unit(seed, Math.floor(x / 73), cave.left, 5317) < 0.73;
+      return broken ? AIR : idOf('minecart-rail');
+    }
     if (y === track + 1) return idOf('stone');
   }
   const cell = Math.floor(x / CAVE_WIDTH);
   const row = Math.floor((y - localCave(seed, cell, 0).surface) / CAVE_DEPTH);
   const cave = row > 0 ? localCave(seed, cell, row) : null;
   if (cave?.style === 'rail' && x >= cave.x1 - 6 && x <= cave.x2 + 6) {
+    if (x >= cave.x2 + 2 && x <= cave.x2 + 3 && y >= cave.y1 - 1 && y <= cave.y1 && railCacheFits(seed, cave)) {
+      return cellOf('rail-cache', x - cave.x2 - 2, y - cave.y1 + 1).id;
+    }
     if (y === cave.y1 + 1) return idOf('minecart-rail');
     if (y === cave.y1 + 2) return idOf('stone');
   }
@@ -1098,6 +1126,12 @@ function lensVaultTile(dx, dy, bulkhead) {
 }
 
 function baseContainerAt(seed, x, y) {
+  const rail = railCaveTile(seed, x, y, columnOf(seed, x));
+  const part = rail !== null ? tile(rail).part : null;
+  if (part?.of === 'rail-cache' && part.dx === 0 && part.dy === 0 && baseTileAt(seed, x, y) === rail) {
+    return [['minecart-rail', 14], ['torch', 12], ['rope', 20], ['iron-bar', 2]]
+      .map(([key, count]) => ({ key, count, kind: lootKindOf(key) }));
+  }
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) {
     const armory = MECHANIST_CACHES.indexOf(x - dungeon.x);

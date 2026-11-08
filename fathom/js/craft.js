@@ -1220,6 +1220,15 @@ for (const w of CRAFT_TILES.WOODS) {
 
 
 RECIPES.push(...CRAFT_TILES.WORKSHOP_PLANS);
+ITEMS.minecart = { name: 'Minecart', kind: 'loot', colour: '#9aa6b6',
+  text: 'Use on rail. Move to drive, Down to brake, Jump to exit.' };
+RECIPES.push(
+  { out: { key: 'minecart', kind: 'loot', count: 1 }, need: [['iron-bar', 5], ['#wood', 6]], station: 'anvil' },
+  { out: { key: 'minecart-rail', kind: 'block', count: 12 }, need: [['iron-bar', 1], ['#wood', 3]], station: 'anvil' },
+  { out: { key: 'rail-junction', kind: 'block', count: 2 }, need: [['minecart-rail', 4], ['wire-spool', 2]], station: 'anvil' },
+  { out: { key: 'brake-rail', kind: 'block', count: 2 }, need: [['minecart-rail', 2], ['copper-bar', 1]], station: 'anvil' },
+  { out: { key: 'stop-rail', kind: 'block', count: 2 }, need: [['minecart-rail', 2], ['iron-bar', 1]], station: 'anvil' }
+);
 ITEMS['critter-net'] = { name: 'Critter Net', kind: 'loot', colour: '#bbd4b1',
   text: 'Use on a nearby critter to catch it alive.' };
 RECIPES.push({ out: { key: 'critter-net', kind: 'loot', count: 1 },

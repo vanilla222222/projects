@@ -31,7 +31,7 @@ function makePlayer(x, y) {
     mining: null, selected: 0,
     fell: 0, landed: 0, breath: 1,
     speedScale: 1, canDoubleJump: false, usedAir: false, heldJump: false,
-    flight: 0, flightUsed: 0, wingsSpread: false
+    flight: 0, flightUsed: 0, wingsSpread: false, cart: null
   };
 }
 
@@ -148,7 +148,99 @@ function onClimbable(player, world, tiles) {
   return false;
 }
 
+function railAt(world, tiles, x, y) {
+  return tiles.tile(world.get(x, y)).rail;
+}
+
+function mountMinecart(player, world, tiles, x, y) {
+  if (!railAt(world, tiles, x, y) || overlapsSolid(world, tiles,
+    x + 0.5 - player.width / 2, y - player.height, player.width, player.height)) return false;
+  player.x = x + 0.5 - player.width / 2;
+  player.y = y - player.height;
+  player.cart = { x, y, speed: 0, stopReady: false };
+  player.vx = player.vy = player.fell = player.landed = 0;
+  player.onGround = true;
+  return true;
+}
+
+function dismountMinecart(player, jump = false) {
+  player.cart = null;
+  player.vx = 0;
+  player.vy = jump ? -7 : 0;
+  player.onGround = false;
+  player.coyote = 0;
+}
+
+function stepMinecart(player, world, tiles, input, dt) {
+  const cart = player.cart;
+  const rail = railAt(world, tiles, cart.x, cart.y);
+  if (input.jump || !rail) {
+    dismountMinecart(player, Boolean(input.jump && rail));
+    player.heldJump = Boolean(input.jump);
+    return false;
+  }
+  const direction = Number(Boolean(input.right)) - Number(Boolean(input.left));
+  if (rail === 'stop' && !direction) cart.stopReady = true;
+  const limit = rail === 'brake' ? 4 : 22;
+  if (rail === 'stop' && !cart.stopReady) cart.speed = 0;
+  else if (input.down) cart.speed *= Math.pow(0.78, dt * 60);
+  else if (direction) cart.speed += direction * 30 * dt;
+  else cart.speed *= Math.pow(0.994, dt * 60);
+  cart.speed = Math.max(-limit, Math.min(limit, cart.speed));
+
+  let distance = cart.speed * dt;
+  while (Math.abs(distance) > 1e-7) {
+    const dx = Math.sign(distance) * Math.min(Math.abs(distance), 0.16);
+    const nx = player.x + dx;
+    const tx = Math.floor(nx + player.width / 2);
+    let ty = cart.y;
+    if (tx !== cart.x) {
+      const source = railAt(world, tiles, cart.x, cart.y);
+      const offsets = source === 'upper' ? [-1, 0, 1] : source === 'lower' ? [1, 0, -1] : [0, -1, 1];
+      const step = offsets.find(offset => railAt(world, tiles, tx, cart.y + offset)
+        && !overlapsSolid(world, tiles, nx, cart.y + offset - player.height, player.width, player.height));
+      if (step === undefined) {
+        cart.speed = 0;
+        break;
+      }
+      ty += step;
+    }
+    if (overlapsSolid(world, tiles, nx, ty - player.height, player.width, player.height)) {
+      cart.speed = 0;
+      break;
+    }
+    const entered = tx !== cart.x;
+    player.x = nx;
+    player.y = ty - player.height;
+    cart.x = tx;
+    cart.y = ty;
+    if (entered) {
+      cart.stopReady = false;
+      const next = railAt(world, tiles, tx, ty);
+      if (next === 'stop') {
+        cart.speed = 0;
+        break;
+      }
+      if (next === 'brake' && Math.abs(cart.speed) > 4) {
+        cart.speed = Math.sign(cart.speed) * 4;
+        break;
+      }
+    }
+    distance -= dx;
+  }
+  player.vx = cart.speed;
+  player.vy = player.fell = player.landed = 0;
+  player.onGround = true;
+  player.onPlatform = true;
+  player.climbing = player.wingsSpread = false;
+  player.swimming = inLiquid(player, world, tiles);
+  player.submerged = player.swimming && submerged(player, world, tiles);
+  if (cart.speed) player.facing = Math.sign(cart.speed);
+  return true;
+}
+
 function step(player, world, tiles, input, dt) {
+  if (player.cart && stepMinecart(player, world, tiles, input, dt)) return;
   unstick(player, world, tiles, 4);
   const swimming = inLiquid(player, world, tiles);
   player.swimming = swimming;
@@ -304,7 +396,7 @@ function aimTile(player, pointer) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_player = { onClimbable, CLIMB_SPEED, CLIMB_DRIFT, makePlayer, step, overlapsSolid, unstick, aimTile, inLiquid, submerged, liquidFraction, SWIM_DEPTH,
-  landsOnPlatform, onPlatform,
+  landsOnPlatform, onPlatform, mountMinecart, dismountMinecart,
     GRAVITY, MOVE_SPEED, JUMP_SPEED, REACH, MAX_FALL };
 
 if (typeof module !== 'undefined' && module.exports) {

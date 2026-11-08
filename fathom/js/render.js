@@ -784,6 +784,22 @@ function makeRenderer(canvas, deps) {
     ctx.beginPath();
     ctx.ellipse(sx + w / 2, sy + h, w * 0.5, w * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
+    if (p.cart) {
+      const left = sx - w * 0.44;
+      const base = sy + h - size * 0.17;
+      ctx.fillStyle = '#302b39';
+      ctx.fillRect(left, base - size * 0.4, w * 1.88, size * 0.42);
+      ctx.fillStyle = '#8793aa';
+      ctx.fillRect(left - size * 0.03, base - size * 0.36, w * 1.96, size * 0.1);
+      ctx.fillStyle = '#626980';
+      ctx.fillRect(left + size * 0.06, base - size * 0.23, w * 1.7, size * 0.12);
+      ctx.fillStyle = '#272333';
+      for (const offset of [0.26, 0.75]) {
+        ctx.beginPath();
+        ctx.arc(left + w * 1.88 * offset, base, size * 0.115, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     if (p.facing < 0) {
       ctx.translate(sx + w / 2, 0);
       ctx.scale(-1, 1);
@@ -791,7 +807,7 @@ function makeRenderer(canvas, deps) {
     }
     sprite.drawPerson(ctx, { x: sx, y: sy, w, h }, state.colours || {}, {
       anim: state.anim || 0,
-      walking: p.onGround && Math.abs(p.vx) > 0.05,
+      walking: !p.cart && p.onGround && Math.abs(p.vx) > 0.05,
       airborne: !p.onGround && !p.swimming,
       swimming: !!p.swimming,
       swingArm: state.swingArm === null ? undefined : state.swingArm,

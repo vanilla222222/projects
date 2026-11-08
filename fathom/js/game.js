@@ -553,6 +553,7 @@ function makeGame(canvas, deps) {
   function fireHook() {
     const spec = craft.grappleOf(selectedItem());
     if (!spec) return false;
+    if (state.player.cart) physics.dismountMinecart(state.player);
     if (state.hook) { releaseHook(); return true; }
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height * 0.4;
@@ -1128,6 +1129,7 @@ function makeGame(canvas, deps) {
     state.progress.deaths += 1;
     statsModule.respawn(stats);
     const spot = state.spawn || defaultSpawn();
+    if (state.player.cart) physics.dismountMinecart(state.player);
     state.player.x = spot.x;
     state.player.y = spot.y;
     state.player.vx = 0;
@@ -1443,6 +1445,7 @@ function makeGame(canvas, deps) {
       rows.push('Tidal Archive · Airlock beneath the ocean at x ' + archiveSite.x + ', y ' + (archiveSite.y - 2) + '.');
     }
     if (defeatedBosses.has('foundrywarden')) rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
+    rows.push('Minecarts · Craft at an Anvil. Repair abandoned rail gaps or lay your own route.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1624,6 +1627,7 @@ function makeGame(canvas, deps) {
           if (!landing) { say('Clear a landing beside the destination pylon', 2.5); return; }
           releaseHook();
           closeChest();
+          if (state.player.cart) physics.dismountMinecart(state.player);
           Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
           state.camera.x = landing.x;
           state.camera.y = landing.y;
@@ -1901,6 +1905,7 @@ function makeGame(canvas, deps) {
     player.y = y;
     player.vx = player.vy = player.fell = 0;
     releaseHook();
+    if (player.cart) physics.dismountMinecart(player);
     state.camera.x = x;
     state.camera.y = y;
   }
@@ -2113,10 +2118,34 @@ function makeGame(canvas, deps) {
     return true;
   }
 
+  function useRail(aim, item) {
+    if (!aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (item?.key === 'minecart') {
+      if (state.player.cart) {
+        physics.dismountMinecart(state.player);
+        return true;
+      }
+      if (physics.mountMinecart(state.player, world, tiles, aim.x, aim.y)) {
+        releaseHook();
+        say('Move to drive · Down to brake · Jump to exit', 2.5);
+        sfx('use');
+      } else say('Use the minecart on clear rail', 1.4);
+      return true;
+    }
+    if (spec.rail === 'upper' || spec.rail === 'lower') {
+      world.set(aim.x, aim.y, tiles.idOf(spec.circuitPair));
+      say(spec.rail === 'upper' ? 'Junction set to lower track' : 'Junction set to upper track', 1.4);
+      sfx('use');
+      return true;
+    }
+    return false;
+  }
+
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useWildlife(aim0, item) || useCircuit(aim0, item)) return;
+    if (useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && useFoundryShortcut(aim0)) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -2166,7 +2195,7 @@ function makeGame(canvas, deps) {
       || tiles.isSolid(world.get(aim.x, aim.y - 1))
       || tiles.isSolid(world.get(aim.x, aim.y + 1));
     const againstWall = world.getWall(aim.x, aim.y) !== 0;
-    if (!againstBlock && !((spec.emit > 0 || spec.optic) && againstWall)) return;
+    if (!againstBlock && !((spec.emit > 0 || spec.optic || spec.rail) && againstWall)) return;
     if (spec.townDevice) {
       if (!tiles.isSolid(world.get(aim.x, aim.y + 1))) { say('Place it on a floor', 1.4); return; }
       townDevices.push({ x: aim.x, y: aim.y, type: spec.townDevice });
@@ -2428,7 +2457,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=terrain-reform-1');
+      const worker = new Worker('workers/chunk.js?v=minecarts-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

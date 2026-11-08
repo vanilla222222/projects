@@ -582,6 +582,13 @@ function paintPlatform(ctx, spec, variant, ox, oy) {
     ctx.fillStyle = '#b3adb5';
     ctx.fillRect(ox, oy + 1, TILE, 1);
     ctx.fillRect(ox, oy + 4, TILE, 1);
+    if (spec.rail !== true) {
+      ctx.fillStyle = spec.colour;
+      ctx.fillRect(ox + 5, oy + 1, 6, 4);
+      if (spec.rail === 'upper' || spec.rail === 'lower') {
+        ctx.fillRect(ox + 10, oy + (spec.rail === 'upper' ? 0 : 5), 5, 2);
+      }
+    }
     return;
   }
   ctx.fillStyle = spec.colour;

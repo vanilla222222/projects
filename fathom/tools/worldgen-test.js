@@ -985,11 +985,23 @@ for (const seed of [SEED, SEED + 1, SEED + 2]) {
 // Generated geology and tracks must appear in the terrain, not only in metadata.
 {
   const geology = new Set();
-  let shortRails = 0, longRails = 0, longSystems = 0;
+  let shortRails = 0, longRails = 0, longSystems = 0, caches = 0, broken = 0;
   for (let cell = -26; cell <= 26; cell += 1) for (let row = 1; row <= 4; row += 1) {
     const cave = gen.localCave(SEED, cell, row);
     if (!cave || gen.biomeAt(SEED, cave.x1).key === 'ocean') continue;
-    if (cave.style === 'rail' && gen.baseTileAt(SEED, cave.x1, cave.y1 + 1) === tiles.idOf('minecart-rail')) shortRails += 1;
+    if (cave.style === 'rail' && gen.baseTileAt(SEED, cave.x1, cave.y1 + 1) === tiles.idOf('minecart-rail')) {
+      shortRails += 1;
+      const x = cave.x2 + 2, y = cave.y1 - 1;
+      if (tiles.tile(gen.baseTileAt(SEED, x, y)).chest === 'rail-cache') {
+        caches += 1;
+        for (const dx of [0, 1]) for (const dy of [0, 1]) {
+          check(gen.baseTileAt(SEED, x + dx, y + dy) === tiles.cellOf('rail-cache', dx, dy).id,
+            'a supply cache was partially generated');
+        }
+        check(gen.baseContainerAt(SEED, x, y)?.some(item => item.key === 'minecart-rail'),
+          'a rail cache lacked repair supplies');
+      }
+    }
     if (cave.style === 'marble' || cave.style === 'granite') {
       for (let y = cave.y1; y <= cave.y1 + cave.ry1 + 5; y += 1) {
         if (gen.baseTileAt(SEED, cave.x1, y) === tiles.idOf(cave.style)) geology.add(cave.style);
@@ -1007,12 +1019,18 @@ for (const seed of [SEED, SEED + 1, SEED + 2]) {
     longSystems += 1;
     check(cave.right - cave.left >= 230 && cave.right - cave.left < 330, 'extended cave has no finite length');
     check(!gen.longCaveAt(SEED, cave.right + 1, cave.y), 'extended cave has no end');
+    for (let x = cave.left + 20; cave.rail && x < cave.right - 20; x += 1) {
+      const track = Math.round(gen.longCaveAt(SEED, x, cave.y).centre) + 2;
+      if (gen.baseTileAt(SEED, x, track) === tiles.AIR
+        && gen.baseTileAt(SEED, x, track + 1) === tiles.idOf('stone')) broken += 1;
+    }
     for (let x = cave.left + 12; cave.rail && x < cave.right - 12; x += 19) {
       const section = gen.longCaveAt(SEED, x, cave.y);
       if (gen.baseTileAt(SEED, x, Math.round(section.centre) + 2) === tiles.idOf('minecart-rail')) longRails += 1;
     }
   }
   check(['marble', 'granite', 'aquifer'].every(key => geology.has(key)), 'a geology variant did not generate');
+  check(caches > 4 && broken > 4, 'rail systems lack caches or repairable spans');
   check(shortRails > 4 && longRails > 10 && longSystems < 34, 'rail caves or rare extended caves are out of range');
 }
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
