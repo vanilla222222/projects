@@ -230,5 +230,24 @@ checks += 3;
   checks += 4;
 }
 
+// Wings have a finite charge, glide after it is spent, and recharge on landing.
+{
+  const platform = { get: (x, y) => y >= 40 ? tiles.idOf('stone') : tiles.AIR };
+  const flyer = physics.makePlayer(10, 40 - 1.72);
+  flyer.onGround = true;
+  flyer.flight = 1.15;
+  const dt = 1 / 120;
+  for (let i = 0; i < 180; i += 1) physics.step(flyer, platform, tiles, { jump: true }, dt);
+  assert.ok(flyer.y < 30 && !flyer.onGround, 'wings did not extend the jump');
+  assert.equal(flyer.flightUsed, flyer.flight);
+  assert.ok(flyer.wingsSpread && flyer.vy <= 5, 'spent wings failed to glide');
+  physics.step(flyer, platform, tiles, {}, dt);
+  assert.equal(flyer.wingsSpread, false);
+  for (let i = 0; i < 480; i += 1) physics.step(flyer, platform, tiles, {}, dt);
+  assert.equal(flyer.flightUsed, 0);
+  assert.equal(flyer.onGround, true);
+  checks += 6;
+}
+
 console.log('Physics: ' + checks + ' invariants held over ' + steps.toLocaleString()
   + ' simulated steps across six columns; 0 ended inside a solid tile');

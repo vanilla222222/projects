@@ -30,7 +30,8 @@ function makePlayer(x, y) {
     health: 100, maxHealth: 100, breath: 1,
     mining: null, selected: 0,
     fell: 0, landed: 0, breath: 1,
-    speedScale: 1, canDoubleJump: false, usedAir: false, heldJump: false
+    speedScale: 1, canDoubleJump: false, usedAir: false, heldJump: false,
+    flight: 0, flightUsed: 0, wingsSpread: false
   };
 }
 
@@ -170,6 +171,8 @@ function step(player, world, tiles, input, dt) {
   // produces a fight between two rules.
   const climbing = !swimming && onClimbable(player, world, tiles);
   player.climbing = climbing;
+  player.wingsSpread = false;
+  if (player.onGround) player.flightUsed = 0;
 
   player.coyote = player.onGround ? COYOTE : Math.max(0, player.coyote - dt);
   if (player.hooked) {
@@ -195,6 +198,11 @@ function step(player, world, tiles, input, dt) {
       player.coyote = 0;
       player.onGround = false;
       player.usedAir = false;
+    } else if (input.jump && player.flight > 0 && player.flightUsed < player.flight && !player.onGround) {
+      const thrust = Math.min(dt, player.flight - player.flightUsed);
+      player.flightUsed += thrust;
+      player.vy = Math.max(-JUMP_SPEED * 0.82, player.vy - 105 * thrust);
+      player.wingsSpread = true;
     } else if (input.jump && !player.heldJump && player.canDoubleJump && !player.usedAir
       && !player.onGround) {
       // The second jump, once, until the feet touch something again. Tracking whether
@@ -204,6 +212,10 @@ function step(player, world, tiles, input, dt) {
     }
     if (player.onGround) player.usedAir = false;
     player.vy = Math.min(MAX_FALL, player.vy + GRAVITY * dt);
+    if (input.jump && player.flight > 0 && !player.onGround && player.vy > 0) {
+      player.vy = Math.min(player.vy, 5);
+      player.wingsSpread = true;
+    }
   }
 
   let dx = player.vx * dt;

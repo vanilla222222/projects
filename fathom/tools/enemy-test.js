@@ -87,7 +87,7 @@ for (const layer of ['caves', 'deep', 'hell', 'hellcaves', 'sky', 'space']) {
 for (const spec of ENEMIES) {
   const layer = (spec.layers || ['surface'])[0];
   const biome = (spec.biomes || ['plains'])[0];
-  const ctx = { biome, layer, dungeon: spec.dungeon, lowerOssuary: spec.lowerOssuary, wet: !!spec.wet, day: spec.day === false ? false : true,
+  const ctx = { biome, layer, dungeon: spec.dungeon, lowerOssuary: spec.lowerOssuary, wyvernsUnlocked: spec.wyvernsUnlocked, wet: !!spec.wet, day: spec.day === false ? false : true,
     event: spec.event || null };
   if (spec.summonOnly || spec.hiddenSpawn) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
@@ -116,6 +116,15 @@ for (const spec of ENEMIES) {
   // A dry enemy must never appear in a wet context, and a wet one never in a dry one.
   ok(poolFor({ ...ctx, wet: !spec.wet }).indexOf(spec) === -1,
     spec.key + ' ignores whether its spawn point is underwater');
+}
+
+{
+  const habitat = { biome: 'forest', layer: 'space', wet: false, day: true, event: null };
+  const wild = ENEMIES.find(spec => spec.key === 'wildwyvern');
+  ok(!poolFor(habitat).includes(wild), 'wild wyverns spawned before Astraeus was defeated');
+  ok(poolFor({ ...habitat, wyvernsUnlocked: true }).includes(wild), 'wild wyverns remain locked after victory');
+  ok(!poolFor({ ...habitat, layer: 'sky', wyvernsUnlocked: true }).includes(wild), 'wild wyverns left Space');
+  ok(wild.drops.some(([key, count]) => key === 'wyvern-essence' && count > 0), 'wild wyverns do not supply essence');
 }
 
 // --- 4. spawning rules against a real world ---------------------------------------------

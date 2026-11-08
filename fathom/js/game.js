@@ -215,6 +215,8 @@ function makeGame(canvas, deps) {
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
         say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
+      } else if (target.key === 'starwyvern') {
+        say('Wild wyverns now roam Space. Hunt them for essence to craft wings.', 6);
       } else say(target.spec.name + ' is dead', 3.4);
       return;
     }
@@ -1352,6 +1354,7 @@ function makeGame(canvas, deps) {
     if (defeatedBosses.has('dungeonkeeper')) rows.push('Ossuary · Find the switch for the Mechanist Cache in the first gallery.');
     if (world.hardmode) rows.push('Hardmode trio · ' + craft.HARDMODE_TRIO.filter(key => defeatedBosses.has(key)).length
       + ' / 3 defeated · Fight in any order. All three cores craft the Triune Emblem.');
+    if (defeatedBosses.has('starwyvern')) rows.push('Space · Hunt wild wyverns. Craft Wyvern Wings or Starweave Wings at an Anvil.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1366,7 +1369,8 @@ function makeGame(canvas, deps) {
       ashguardian: 'Bring the key to an Ashvault in the Trench.',
       voidsovereign: 'Mine Void Crystals with an Emberite Pickaxe.',
       riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.',
-      prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.' 
+      prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.',
+      starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -2018,6 +2022,7 @@ function makeGame(canvas, deps) {
     stats.defense = gear.defense + (state.wardUntil > state.time ? 14 : 0);
     state.player.speedScale = gear.speed;
     state.player.canDoubleJump = gear.doubleJump;
+    state.player.flight = gear.flight;
 
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase, eventKey());
@@ -2116,7 +2121,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=hardmode-trio-1');
+      const worker = new Worker('workers/chunk.js?v=star-wyvern-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2418,7 +2423,8 @@ function makeGame(canvas, deps) {
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, {
-      worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage
+      worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage,
+      wyvernsUnlocked: () => defeatedBosses.has('starwyvern')
     });
     wiring = deps.wiring.makeWiring(world, tiles, {
       door: point => useDoor(point),

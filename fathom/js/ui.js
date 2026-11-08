@@ -853,6 +853,7 @@ function makeUI(root, deps) {
     if (gear.speed !== 1) lines.push('Speed ' + Math.round(gear.speed * 100) + '%');
     if (gear.power !== 1) lines.push('Mining ' + Math.round(gear.power * 100) + '%');
     if (gear.doubleJump) lines.push('Double jump');
+    if (gear.flight) lines.push('Flight ' + gear.flight + 's');
     if (gear.fireproof) lines.push('Fireproof');
     else if (gear.lavaDamage !== 1) lines.push('Lava damage x' + gear.lavaDamage);
     if (gear.breathMul !== 1) {
