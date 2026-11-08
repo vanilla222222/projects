@@ -151,6 +151,9 @@ function climb() {
       const prior = tiles.UNDERWORLD_CAMPAIGN[index - 1];
       if (was.has('siege-core') && was.has(encounter.summon) && (!prior || was.has(prior.trophy))) gain(encounter.trophy);
     }
+    for (const encounter of tiles.UNDERWORLD_DUNGEONS) {
+      if (was.has('siege-core') && was.has(encounter.summon)) gain(encounter.trophy);
+    }
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('railbreaker-whistle')) gain('railbreaker-drive');
     if (was.has('clockwork-heart')) gain('mechanist-core');
@@ -342,7 +345,7 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
 }
 
 {
-  const ordered = [...craft.BOSS_CHAPTERS.flat(), ...tiles.UNDERWORLD_CAMPAIGN.map(encounter => encounter.key)];
+  const ordered = [...craft.BOSS_CHAPTERS.flat(), ...tiles.UNDERWORLD_CAMPAIGN.map(encounter => encounter.key), ...tiles.UNDERWORLD_DUNGEONS.map(encounter => encounter.key)];
   const summoned = Object.values(craft.ITEMS).flatMap(item => item.use?.summon ? [item.use.summon] : []);
   ok(new Set(ordered).size === ordered.length && summoned.length === ordered.length
     && summoned.every(key => ordered.includes(key)), 'boss order must cover each summon once');

@@ -350,7 +350,7 @@ function makeGame(canvas, deps) {
       statsModule.heal(stats, use.heal);
     } else if (use.campaign) {
       if (dimension !== 'underworld') { say('Bring this to its Underworld campaign altar', 2); return true; }
-      const site = worldgen.campaignSiteAt(seed, Math.floor(state.player.x), Math.floor(state.player.y));
+      const site = worldgen.encounterSiteAt(seed, Math.floor(state.player.x), Math.floor(state.player.y));
       if (site?.encounter.key !== use.summon) { say(spec.text, 3); return true; }
       return startUnderworldCampaignFight(site);
     } else if (use.summon !== undefined) {
@@ -858,6 +858,7 @@ function makeGame(canvas, deps) {
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
     if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial
       || spec.dimensionGate || spec.underworldShrine || spec.underworldCampaign
+      || spec.underworldConduit || spec.underworldWaystone || spec.underworldTablet || spec.underworldLock
       || (dimension === 'underworld' && Math.abs(aim.x) <= 3 && aim.y === worldgen.SEA_LEVEL)) {
       state.player.mining = null;
       return;
@@ -2586,7 +2587,8 @@ function makeGame(canvas, deps) {
     input.left = input.right = input.jump = input.down = false;
     const rows = ['The Underworld · Return Gate at x 0, y ' + (worldgen.SEA_LEVEL - 1) + '.',
       'Each region has a surface refuge, a cave stronghold and a deep ruin. Challenge the guardians at the two lower seals.'];
-    const actions = [{ label: 'Boss campaign', run: openUnderworldCampaign }, { label: 'Town Hall', run: checkHousing }];
+    const actions = [{ label: 'Boss campaign', run: openUnderworldCampaign },
+      { label: 'Optional dungeons', run: openUnderworldDungeons }, { label: 'Town Hall', run: checkHousing }];
     for (const biome of worldgen.BIOMES) {
       const centers = [-2, -1, 0, 1, 2].map(band => band * worldgen.bandWidth);
       const center = centers.find(x => worldgen.biomeAt(seed, x).key === biome.key);
@@ -2621,6 +2623,10 @@ function makeGame(canvas, deps) {
 
   function startUnderworldCampaignFight(site) {
     const { encounter } = site;
+    if (encounter.side && !settlements.claimed.has('dungeon-open:' + encounter.key)) {
+      say('Attune the three conduits to unlock the arena', 3);
+      return true;
+    }
     const required = craft.bossPrerequisite(encounter.key, defeatedBosses);
     if (required) { say('Defeat ' + enemyModule.BY_KEY[required].name + ' first', 3); return true; }
     if (settlements.claimed.has('campaign-reward:' + encounter.key)) { say('Claim the trophy at the altar first', 3); return true; }
@@ -2635,19 +2641,105 @@ function makeGame(canvas, deps) {
 
   function useCampaignAltar(aim, item) {
     if (dimension !== 'underworld' || !aim.inReach || !tiles.tile(world.get(aim.x, aim.y)).underworldCampaign) return false;
-    const site = worldgen.campaignSiteAt(seed, aim.x, aim.y);
+    const site = worldgen.encounterSiteAt(seed, aim.x, aim.y);
     if (!site || aim.x !== site.x || aim.y !== site.floor - 1) return true;
     const { encounter } = site;
     const reward = 'campaign-reward:' + encounter.key;
     if (settlements.claimed.has(reward)) {
       if (townExchange([], enemyModule.BY_KEY[encounter.key].bossDrops)) {
         settlements.claimed.delete(reward);
-        say(encounter.index === tiles.UNDERWORLD_CAMPAIGN.length - 1 ? 'The Crown Below has fallen · Chapter 2 complete'
-          : 'Trophy recovered · Check the campaign journal for your next fight', 4);
+        if (encounter.side) settlements.claimed.add('dungeon-cleared:' + encounter.key);
+        say(encounter.side ? 'Dungeon trophy recovered · The waystone is now active'
+          : encounter.index === tiles.UNDERWORLD_CAMPAIGN.length - 1 ? 'The Crown Below has fallen · Chapter 2 complete'
+            : 'Trophy recovered · Check the campaign journal for your next fight', 4);
       }
     } else if (item?.key === encounter.summon && insidePortalTrial(site)) return startUnderworldCampaignFight(site);
     else say('Use ' + encounter.summonName + ' inside ' + encounter.structure, 3);
     return true;
+  }
+
+  function openUnderworldDungeons() {
+    const rows = ['Read the inscription at each entrance. Descend the rope shaft and attune the three conduits in the order the inscription describes.',
+      'Craft a summon at an Iron Anvil and use it in the unlocked arena. Recovering the trophy activates the dungeon waystone.'];
+    for (const encounter of tiles.UNDERWORLD_DUNGEONS) {
+      const site = worldgen.dungeonSite(seed, encounter);
+      const status = defeatedBosses.has(encounter.key) ? 'Defeated'
+        : settlements.claimed.has('dungeon-open:' + encounter.key) ? 'Arena open' : 'Arena locked';
+      rows.push(encounter.structure + ' · ' + encounter.name + ' · ' + status + ' · entrance x ' + site.x + ', y ' + site.entrance);
+      rows.push(encounter.summonName + ' · ' + recipeLine(encounter.summon));
+    }
+    ui.showTown('Underworld · Optional Dungeons', rows, [{ label: 'Underworld journal', run: openUnderworldJournal }]);
+  }
+
+  function useUnderworldDungeonFixture(aim) {
+    if (dimension !== 'underworld' || !aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.underworldConduit && !spec.underworldTablet && !spec.underworldWaystone && !spec.underworldLock) return false;
+    const site = worldgen.dungeonSiteAt(seed, aim.x, aim.y);
+    if (spec.underworldWaystone) {
+      openUnderworldWaystones(aim);
+      return true;
+    }
+    if (!site) return true;
+    const { encounter, conduits } = site;
+    if (spec.underworldTablet) {
+      input.left = input.right = input.jump = input.down = false;
+      ui.showTown(encounter.structure, [encounter.clue, 'From the upper gallery to the lower gallery: ' + encounter.conduits.join(', ') + '.',
+        encounter.summonName + ' · ' + recipeLine(encounter.summon)], []);
+      return true;
+    }
+    if (spec.underworldLock) { say('Three conduits control this lock', 2); return true; }
+    const index = conduits.findIndex(point => point.x === aim.x && point.y === aim.y);
+    const unlocked = 'dungeon-open:' + encounter.key;
+    if (index < 0 || settlements.claimed.has(unlocked)) return true;
+    const lit = tiles.idOf('underworld-conduit-lit');
+    const progress = conduits.filter(point => world.get(point.x, point.y) === lit).length;
+    if (world.get(aim.x, aim.y) === lit) { say(encounter.conduits[index] + ' is already attuned', 2); return true; }
+    if (index !== encounter.order[progress]) {
+      for (const point of conduits) world.set(point.x, point.y, tiles.idOf('underworld-conduit'));
+      say('The conduits reset. Read the entrance inscription.', 3);
+      return true;
+    }
+    world.set(aim.x, aim.y, lit);
+    if (progress + 1 === conduits.length) {
+      for (const dx of [-1, 0, 1]) world.set(site.x + dx, site.top, dx ? tiles.AIR : tiles.idOf('rope'));
+      settlements.claimed.add(unlocked);
+      say('The arena lock opens', 3);
+    } else say(encounter.conduits[index] + ' attuned · ' + (progress + 1) + '/' + conduits.length, 2);
+    sfx('use');
+    return true;
+  }
+
+  function openUnderworldWaystones(source) {
+    if (swarm.bossAlive() || activePortalTrial) { say('Waystones go dark during encounters', 2); return; }
+    const camp = { x: 5, y: worldgen.SEA_LEVEL - 1, name: 'Return Gate camp' };
+    const sites = tiles.UNDERWORLD_DUNGEONS.map(encounter => worldgen.dungeonSite(seed, encounter));
+    const unlocked = sites.filter(({ encounter }) => settlements.claimed.has('dungeon-cleared:' + encounter.key));
+    const destinations = [camp, ...unlocked.map(site => ({ ...site.waystone, name: site.encounter.structure }))];
+    if (!destinations.some(point => point.x === source.x && point.y === source.y)) {
+      say('Recover this dungeon’s trophy to awaken the waystone', 3);
+      return;
+    }
+    input.left = input.right = input.jump = input.down = false;
+    const actions = destinations.filter(point => point.x !== source.x || point.y !== source.y).map(destination => ({
+      label: 'Travel to ' + destination.name,
+      run() {
+        if (dimension !== 'underworld' || swarm.bossAlive() || activePortalTrial
+          || !physics.aimTile(state.player, source).inReach) return;
+        if (!tiles.tile(world.get(destination.x, destination.y)).underworldWaystone) return;
+        const landing = safePylonLanding(destination);
+        if (!landing) { say('Clear a landing beside the destination waystone', 3); return; }
+        releaseHook();
+        closeChest();
+        if (state.player.cart) physics.dismountMinecart(state.player);
+        Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
+        state.camera.x = landing.x;
+        state.camera.y = landing.y;
+        ui.closeTown();
+        say('Arrived at ' + destination.name, 2.5);
+      }
+    }));
+    ui.showTown('Underworld Waystones', [unlocked.length + '/' + sites.length + ' dungeon waystones active. Recover dungeon trophies to link more destinations.'], actions);
   }
 
   function useUnderworldShrine(aim) {
@@ -3724,7 +3816,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useDimensionGate(aim0, item) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useDimensionGate(aim0, item) || useUnderworldDungeonFixture(aim0) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -4050,7 +4142,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=underworld-campaign-1');
+      const worker = new Worker('workers/chunk.js?v=underworld-dungeons-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

@@ -909,6 +909,23 @@ const UNDERWORLD_CAMPAIGN = [
   summon: key + '-summon', trophy: key + '-trophy'
 }));
 
+const UNDERWORLD_DUNGEONS = [
+  ['sootbound-stag', 'Sootbound Stag', 'The Buried Kilns', 'Kiln Antler', 'guardian', 'golem', 'fan', 'rush',
+    ['Ash', 'Coal', 'Flame'], [0, 1, 2], 'Ash blankets coal, then coal feeds flame.'],
+  ['facet-hydra', 'Facet Hydra', 'The Inverted Mirrorworks', 'Facet Prism', 'scourge', 'worm', 'cross', 'orbit',
+    ['Lens', 'Mirror', 'Eye'], [2, 1, 0], 'Follow the reflection backward from eye to mirror to lens.'],
+  ['undertow-warden', 'Undertow Warden', 'The Sunken Sluice', 'Undertow Valve', 'sovereign', 'fish', 'starburst', 'sweep',
+    ['Intake', 'Overflow', 'Pump'], [0, 2, 1], 'Open the intake, prime the pump, then release the overflow.'],
+  ['furnace-mycelium', 'Furnace Mycelium', 'The Spore Crucible', 'Spore Coal', 'furnace', 'maw', 'cross', 'brood',
+    ['Bloom', 'Root', 'Spore'], [1, 0, 2], 'Wake the root. Let it flower. Scatter the spores.'],
+  ['bell-of-the-whiteout', 'Bell of the Whiteout', 'The Silent Belfry', 'Whiteout Chime', 'aurora', 'skeleton', 'fan', 'orbit',
+    ['Low Bell', 'High Bell', 'Middle Bell'], [1, 2, 0], 'The bells descend in pitch from highest to lowest.']
+].map(([key, name, structure, summonName, kind, body, barrage, tactic, conduits, order, clue], index) => ({
+  key, name, structure, summonName, kind, body, barrage, tactic, conduits, order, clue, index, side: true,
+  biome: UNDERWORLD_BIOMES[index].key, colour: UNDERWORLD_BIOMES[index].accent,
+  summon: key + '-summon', trophy: key + '-trophy'
+}));
+
 for (const [key, name] of [['underworld-gate', 'Underworld Gate'], ['underworld-return', 'Return Gate']]) {
   pushTile({ key, name, colour: '#c593ee', solid: false, opacity: 0, emit: 16, drops: null,
     fixture: 'underworld-gate', dimensionGate: true });
@@ -920,6 +937,18 @@ pushTile({ key: 'underworld-campaign-seal', name: 'Campaign Altar', colour: '#f5
   solid: false, opacity: 0, emit: 14, drops: null, fixture: 'wire-lamp', underworldCampaign: true });
 
 
+
+pushTile({ key: 'underworld-conduit', name: 'Dungeon Conduit', colour: '#759acb', solid: false,
+  opacity: 0, emit: 9, drops: null, fixture: 'wire-lamp', underworldConduit: true });
+pushTile({ key: 'underworld-conduit-lit', name: 'Attuned Dungeon Conduit', colour: '#f1ba70', solid: false,
+  opacity: 0, emit: 14, drops: null, fixture: 'wire-lamp', underworldConduit: true });
+pushTile({ key: 'underworld-waystone', name: 'Underworld Waystone', colour: '#77ddd0', solid: false,
+  opacity: 0, emit: 15, drops: null, fixture: 'underworld-gate', underworldWaystone: true });
+pushTile({ key: 'underworld-dungeon-tablet', name: 'Dungeon Inscription', colour: '#dfb894', solid: false,
+  opacity: 0, emit: 10, drops: null, fixture: 'wire-lamp', underworldTablet: true });
+
+pushTile({ key: 'underworld-dungeon-lock', name: 'Conduit Lock', colour: '#716087', solid: true,
+  opacity: 15, emit: 3, drops: null, underworldLock: true });
 
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
@@ -949,7 +978,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, UNDERWORLD_BIOMES, UNDERWORLD_CAMPAIGN, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, UNDERWORLD_BIOMES, UNDERWORLD_CAMPAIGN, UNDERWORLD_DUNGEONS, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

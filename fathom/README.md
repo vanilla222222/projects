@@ -206,6 +206,15 @@ interact with the altar afterward to collect the trophy. Each win unlocks the
 next boss. Each leg’s three trophies can be forged into a class accessory.
 The Crown Below is the final fight.
 
+#### Optional dungeons and waystones
+
+The Underworld journal lists five optional dungeons. Read each entrance
+inscription, descend the rope shaft, and solve the three-conduit lock to open
+the boss chamber. Each dungeon has a supply cache and a craftable, reusable
+boss summon. The five bosses have their own attack patterns and drop trophies
+that forge into exploration accessories. Collect the trophy at the altar to
+connect the dungeon’s waystone to the Return Gate camp and other cleared dungeons.
+
 #### Underworld fishing
 
 Each biome has a surface fish, a cave fish, and a local crate. Bigger pools
