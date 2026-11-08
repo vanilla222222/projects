@@ -1861,6 +1861,20 @@ for (const [key, name, design] of [
     need: [['ember-bloom-bar', 12], ['ember-bloom-relic', 12], ['brine-cooling-salt', 3]], station: 'ember-forge' });
 }
 
+ITEMS['exchange-core'] = { name: 'Molten Exchange Core', kind: 'loot', colour: '#f4a671' };
+ITEMS['quenchline-rod'] = { name: 'Quenchline Rod', kind: 'tool', colour: '#a5dacb', rod: true };
+for (const [base, key, name, upgrade] of [
+  ['slagbreak-halberd', 'slagbreak-quenchblade', 'Slagbreak Quenchblade', { damage: 472, reach: 5.8 }],
+  ['kilnshot-carbine', 'kilnshot-throughbore', 'Kilnshot Throughbore', { damage: 402, pierce: 3 }],
+  ['flashquench-scepter', 'flashquench-seal', 'Flashquench Seal', { damage: 445, mana: 8 }],
+  ['furnace-familiar', 'furnace-familiar-bound', 'Bound Furnace Familiar', { damage: 425, reach: 44 }],
+  ['slagbank-charge', 'slagbank-breaker', 'Slagbank Breaker', { damage: 479, blastRadius: 5.4 }]
+]) {
+  WEAPONS[key] = { ...WEAPONS[base], name, colour: '#e5ba8c', ...upgrade };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 },
+    need: [[base, 1], ['brine-cooling-salt', 3], ['ember-bloom-bar', 5]], station: 'exchange-quench-bench' });
+}
+
 ITEMS['tide-market-scrip'] = { name: 'Tide Market Scrip', kind: 'loot', colour: '#79c8c5' };
 ITEMS['lowwater-ledger'] = { name: 'Lowwater Survey Ledger', kind: 'loot', colour: '#e3c38a' };
 ITEMS['tideglass-rod'] = { name: 'Tideglass Rod', kind: 'tool', colour: '#83e0d4', rod: true };

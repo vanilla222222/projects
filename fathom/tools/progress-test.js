@@ -158,6 +158,9 @@ function climb() {
       gain('ember-forge');
       gain('brine-cooling-salt');
     }
+    if (was.has('ember-forge') && was.has('brine-cooling-salt') && was.has('undertow-warden-trophy')) {
+      gain('exchange-quench-bench');
+    }
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('railbreaker-whistle')) gain('railbreaker-drive');
     if (was.has('clockwork-heart')) gain('mechanist-core');

@@ -977,6 +977,11 @@ for (const spec of ENEMIES) {
   if (BOSS_SIGNATURES[spec.key]) spec.signature = BOSS_SIGNATURES[spec.key];
 }
 
+ENEMIES.push({ key: 'molten-exchange-keeper', name: 'The Exchange Keeper', kind: 'furnace', body: 'golem',
+  colour: '#e78e65', hp: 35600, damage: 182, weight: 0, w: 4.2, h: 3.7, emit: 11,
+  underworld: true, campaignBoss: true, boss: true, summonOnly: true, minion: 'ember-bloom-foe-4',
+  bossDrops: [['exchange-core', 1], ['ember-bloom-relic', 18], ['coin', 3200]] });
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -1317,6 +1322,9 @@ function makeSwarm(world, tiles, deps) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
     const railArmor = enemy.key === 'railbreaker' && enemy.railRunning && !enemy.recovering;
+    if (enemy.key === 'molten-exchange-keeper') {
+      amount = Math.max(1, Math.round(amount * (enemy.quenched > 0 ? 1.18 : 0.15)));
+    }
     if (enemy.signatureRecovery > 0) amount = Math.round(amount * 1.2);
     if (enemy.keeperGuard && Number.isFinite(attackerX)
       && (attackerX - enemy.x - enemy.width / 2) * enemy.keeperGuard > 0) {
@@ -1717,6 +1725,50 @@ function makeSwarm(world, tiles, deps) {
     return false;
   }
 
+  function quenchExchangeKeeper(enemy, index) {
+    if (enemy?.key !== 'molten-exchange-keeper' || enemy.dead || enemy.quenched > 0) return 'idle';
+    if (enemy.exchangeValve === index && enemy.exchangeValveTime > 0) return 'same';
+    if (enemy.exchangeValveTime > 0) {
+      enemy.exchangeValveTime = 0;
+      enemy.quenched = 5.5;
+      enemy.exchangeSweep = null;
+      return 'quenched';
+    }
+    enemy.exchangeValve = index;
+    enemy.exchangeValveTime = 9;
+    return 'primed';
+  }
+
+  function stepExchangePressure(enemy, dt) {
+    enemy.exchangeValveTime = Math.max(0, (enemy.exchangeValveTime || 0) - dt);
+    if (enemy.quenched > 0) {
+      enemy.quenched -= dt;
+      moveAxis(enemy, 0, Math.max(0, Math.min(12 * dt, (enemy.campaignArena?.bottom ?? enemy.y + enemy.height) - enemy.y - enemy.height)));
+      enemy.exchangeClock = 2;
+      enemy.encounterCue = 'Quenched · strike the exposed core';
+      return true;
+    }
+    enemy.encounterCue = enemy.exchangeValveTime > 0 ? 'Open the opposite valve' : 'Heat armor · open both quench valves';
+    if (!enemy.campaignArena) return false;
+    enemy.exchangeClock = (enemy.exchangeClock ?? 2) - dt;
+    const sweep = enemy.exchangeSweep;
+    if (sweep) {
+      sweep.time += dt;
+      if (sweep.time >= sweep.warning + sweep.duration) {
+        enemy.exchangeSweep = null;
+        enemy.exchangeClock = 2.7;
+      }
+    } else if (enemy.exchangeClock <= 0) {
+      const arena = enemy.campaignArena;
+      const late = enemy.hp <= enemy.maxHp / 2;
+      enemy.exchangeSweep = { left: arena.left + 1, right: arena.right - 1,
+        y: arena.bottom - (late && enemy.exchangeHigh ? 6 : 1.65), height: 1.65,
+        time: 0, warning: 1.1, duration: late ? 0.9 : 0.62 };
+      enemy.exchangeHigh = !enemy.exchangeHigh;
+    }
+    return false;
+  }
+
   function stepOne(enemy, player, dt) {
     const arch = ARCHETYPES[enemy.spec.kind];
     const toward = Math.sign(player.x - enemy.x) || 1;
@@ -1729,6 +1781,7 @@ function makeSwarm(world, tiles, deps) {
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
+      if (enemy.key === 'molten-exchange-keeper' && stepExchangePressure(enemy, dt)) return;
       if (enemy.key === 'dungeonkeeper' && stepKeeperGuard(enemy, player, dt)) return;
       if (enemy.key === 'ashguardian') stepAshVents(enemy, player, dt);
       if (enemy.key === 'granitecolossus') stepQuarryArmor(enemy, player, dt);
@@ -2237,6 +2290,9 @@ function makeSwarm(world, tiles, deps) {
   function touching(player) {
     for (const enemy of list) {
       if (enemy.dead || enemy.quarryOwner || enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) continue;
+      const steam = enemy.exchangeSweep;
+      if (steam && steam.time >= steam.warning && player.x + player.width > steam.left && player.x < steam.right
+        && player.y + player.height > steam.y && player.y < steam.y + steam.height) return enemy;
       if (prismHit(enemy, player) || glareHits(enemy.sunGlare, player) || millSweepHits(enemy, player)) return enemy;
       const pull = enemy.voidCollapse;
       if (pull?.active && Math.hypot(player.x + player.width / 2 - pull.x,
@@ -2266,7 +2322,7 @@ function makeSwarm(world, tiles, deps) {
   }
 
   return { list, step, trySpawn, summon, summonPractice, wakeMimic, bossAlive, touching, at, damage, contextAt,
-    poolFor, clear, candidatesIn,
+    poolFor, clear, candidatesIn, quenchExchangeKeeper,
     get count() { return list.length; } };
 }
 

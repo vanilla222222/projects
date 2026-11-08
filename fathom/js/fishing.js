@@ -38,6 +38,7 @@ const RODS = {
   'hellfire-rod': { name: 'Hellfire Rod', power: 2.1, lava: true },
   'tideglass-rod': { name: 'Tideglass Rod', power: 3.15 },
   'saltroot-rod': { name: 'Saltroot Rod', power: 2.65 },
+  'quenchline-rod': { name: 'Quenchline Rod', power: 3.45, lava: true },
   'kilnline-rod': { name: 'Kilnline Rod', power: 2.85, lava: true }
 };
 

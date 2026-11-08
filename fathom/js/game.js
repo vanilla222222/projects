@@ -267,7 +267,8 @@ function makeGame(canvas, deps) {
       if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
         defeatedBosses.add(target.key);
         settlements.claimed.add('campaign-reward:' + target.key);
-        say('Victory. Recover your trophy at the campaign altar.', 4);
+        say(target.key === 'molten-exchange-keeper' ? 'Recover the furnace core at the Keeper console.'
+          : 'Victory. Recover your trophy at the campaign altar.', 4);
       }
       if (activePortalTrial?.boss === target) activePortalTrial = null;
       return;
@@ -859,7 +860,7 @@ function makeGame(canvas, deps) {
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
     if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial
       || spec.dimensionGate || spec.underworldShrine || spec.underworldCampaign
-      || spec.underworldConduit || spec.underworldWaystone || spec.underworldTablet || spec.underworldLock || spec.brineQuest
+      || spec.underworldConduit || spec.underworldWaystone || spec.underworldTablet || spec.underworldLock || spec.brineQuest || spec.moltenExchange
       || (dimension === 'underworld' && Math.abs(aim.x) <= 3 && aim.y === worldgen.SEA_LEVEL)) {
       state.player.mining = null;
       return;
@@ -1190,7 +1191,7 @@ function makeGame(canvas, deps) {
       state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
         life: weapon.reach / speed, colour: weapon.colour, throwStyle: style, beat, returnSpeed: 49 * speedScale,
         bounces: weapon.signature === 'bank' ? 2 : 0, plant: weapon.signature === 'fuse' ? 'fuse' : null,
-        gravity: style === 'blast' ? 24 : 11, blastRadius: 4 * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
+        gravity: style === 'blast' ? 24 : 11, blastRadius: (weapon.blastRadius || 4) * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
         hits: style === 'pierce' || style === 'returning' ? new Set() : null,
         damage: Math.round(weapon.damage * (state.gear?.thrower || 1) * (spread ? 0.38 : 1)) });
     }
@@ -2200,6 +2201,35 @@ function makeGame(canvas, deps) {
     if (usableCharter(device) && settlements.town(device).region === 'ember-bloom') {
       actions.push({ label: 'Civic projects', run: () => openCivicProjects(device) },
         { label: 'Trade partnerships', run: () => openTradePartnerships(device) });
+      const staffedForge = () => usableCharter(device) && residentAt(device, 'kera')
+        && craft.stationsNear(world, tiles, device.x, device.y).has('ember-forge');
+      const ready = () => staffedForge() && townPylons().some(partner => settlements.town(partner)?.region === 'brine-depths'
+        && settlements.town(partner).rank >= 2 && townHomes(partner) >= 2 && residentAt(partner, 'marra')
+        && settlementModule.tradeRank(settlements.route(settlementModule.settlementKey(device),
+          settlementModule.settlementKey(partner))) >= 2);
+      const flags = settlements.claimed;
+      if (!flags.has('exchange-charter')) {
+        rows.push('Molten Exchange · Staff both towns with Kera and Marra, install an Ember Forge here, and reach route rank 2.');
+        if (ready()) actions.push({ label: 'Commission the Molten Exchange', run() {
+          if (!ready() || flags.has('exchange-charter')) return;
+          flags.add('exchange-charter');
+          openEmberTown(device);
+        } });
+      }
+      if (flags.has('exchange-charter')) {
+        const site = worldgen.moltenExchange(seed);
+        rows.push('Molten Exchange entrance · x ' + site.x + ', y ' + site.entrance + '. Bring 2 cooling salt and 3 Emberbloom bars.');
+        if (!flags.has('exchange-restored') && inventory.countOf('exchange-core')) {
+          actions.push({ label: 'Install the Exchange core', run() {
+            if (!staffedForge() || flags.has('exchange-restored')) return;
+            if (townExchange([['exchange-core', 1]], [['exchange-quench-bench', 1], ['tide-market-scrip', 6]])) {
+              flags.add('exchange-restored');
+              openEmberTown(device);
+            }
+          } });
+        }
+        if (flags.has('exchange-restored')) rows.push('Heat treatment is available at the Exchange Quench Bench. Marra’s lava tackle counter is open.');
+      }
     }
     ui.showTown('Emberbloom Forge Town', rows, actions);
   }
@@ -2867,6 +2897,14 @@ function makeGame(canvas, deps) {
             if (activeBrineMarket(device)) townExchange([['tide-market-scrip', cost]], [[key, count]]);
           } });
         }
+        if (flags.has('exchange-restored')) {
+          rows.push('Lava tackle counter · Trade a Kilnline Rod and 8 scrip for a Quenchline Rod.');
+          actions.push({ label: 'Upgrade to Quenchline Rod', run() {
+            if (activeBrineMarket(device)) townExchange([['kilnline-rod', 1], ['tide-market-scrip', 8]], [['quenchline-rod', 1]]);
+          } }, { label: 'Trade 6 scrip for an Emberbloom Crate', run() {
+            if (activeBrineMarket(device)) townExchange([['tide-market-scrip', 6]], [['ember-bloom-crate', 1]]);
+          } });
+        }
         if (!flags.has('lowwater-chart')) actions.push({ label: 'Take Marra’s Lowwater Survey', run() {
           if (!activeBrineMarket(device)) return;
           flags.add('lowwater-chart');
@@ -2883,6 +2921,82 @@ function makeGame(canvas, deps) {
       if (flags.has('lowwater-complete')) rows.push('Lowwater Survey complete · The Tideglass Rod improves water fishing power.');
     }
     ui.showTown('Tidekeeper’s Landing', rows, actions);
+  }
+
+  function useMoltenExchange(aim) {
+    if (dimension !== 'underworld' || !aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.moltenExchange) return false;
+    const site = worldgen.moltenExchange(seed);
+    const flags = settlements.claimed;
+    if (spec.key === 'exchange-sign') {
+      input.left = input.right = input.jump = input.down = false;
+      ui.showTown('Molten Exchange', ['Descend the shaft to the Slag Diverter on the left.',
+        'The diverter drains the crossing. Reach the Coolant Pump on the right and prime it with 2 Brine Cooling Salt and 3 Emberbloom bars.',
+        'At the Keeper console, summon the Keeper. Use both quench valves within nine seconds to expose its core.'], []);
+      return true;
+    }
+    if (!flags.has('exchange-charter')) { say('Commission the Exchange at Kera’s town first', 3); return true; }
+    if (spec.key === 'exchange-diverter') {
+      if (flags.has('exchange-diverted')) { say('Slag has already been diverted', 2); return true; }
+      const lava = tiles.idOf('lava');
+      let slag = 0;
+      for (let dx = 8; dx <= 17; dx += 1) {
+        const x = site.x + dx;
+        if (world.get(x, site.gallery) === lava) slag += world.getLevel(x, site.gallery);
+        world.set(x, site.gallery, tiles.idOf('ember-bloom-stone'));
+      }
+      for (const depth of [3, 2]) {
+        for (let dx = -27; dx <= -23 && slag > 0; dx += 1) {
+          const x = site.x + dx, y = site.gallery + depth;
+          const tile = world.get(x, y);
+          if (tile !== tiles.AIR && tile !== lava) continue;
+          const level = world.getLevel(x, y);
+          const amount = Math.min(slag, world.LEVEL_FULL - level);
+          if (amount > 0 && world.setLevel(x, y, level + amount, lava)) slag -= amount;
+        }
+      }
+      flags.add('exchange-diverted');
+      say('Slag diverted to the holding basin. Cross to the Coolant Pump.', 4);
+      return true;
+    }
+    if (spec.key === 'exchange-coolant') {
+      if (!flags.has('exchange-diverted')) { say('Redirect the slag before priming the coolant', 3); return true; }
+      if (flags.has('exchange-primed')) { say('The coolant circuit is primed', 2); return true; }
+      if (townExchange([['brine-cooling-salt', 2], ['ember-bloom-bar', 3]], [])) {
+        for (const dx of [-1, 0, 1]) world.set(site.shaft + dx, site.gallery, dx ? tiles.AIR : tiles.idOf('rope'));
+        flags.add('exchange-primed');
+        say('Coolant online. Descend the open bulkhead.', 4);
+      }
+      return true;
+    }
+    if (!flags.has('exchange-primed')) { say('Prime the Coolant Pump above', 3); return true; }
+    if (spec.key === 'exchange-quench') {
+      const index = site.valves.findIndex(valve => valve.x === aim.x && valve.y === aim.y);
+      const result = index < 0 ? 'idle' : swarm.quenchExchangeKeeper(activePortalTrial?.boss, index);
+      say({ idle: 'The valve needs an armored Keeper', same: 'Open the opposite valve',
+        primed: 'Coolant pressurized · reach the opposite valve in nine seconds', quenched: 'Core exposed' }[result], 3);
+      return true;
+    }
+    if (spec.key !== 'exchange-altar') return true;
+    const key = 'molten-exchange-keeper';
+    const reward = 'campaign-reward:' + key;
+    if (flags.has(reward)) {
+      const drops = enemyModule.BY_KEY[key].bossDrops.filter(([item]) => item !== 'exchange-core'
+        || !flags.has('exchange-restored') && !inventory.countOf('exchange-core'));
+      if (townExchange([], drops)) {
+        flags.delete(reward);
+        say('Bring the Exchange Core to Kera’s forge town', 4);
+      }
+      return true;
+    }
+    if (swarm.bossAlive() || activePortalTrial || expedition || !insidePortalTrial(site)) return true;
+    const boss = swarm.summon(key, state.player, { ...site, top: site.top + 1 });
+    if (!boss) { say('Move away from the console and try again', 2); return true; }
+    activePortalTrial = { site, boss };
+    say('The Exchange Keeper wakes · quench its armor', 4);
+    sfx('roar');
+    return true;
   }
 
   function useBrineFixture(aim) {
@@ -4088,7 +4202,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useDimensionGate(aim0, item) || useBrineFixture(aim0) || useUnderworldDungeonFixture(aim0) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useDimensionGate(aim0, item) || useMoltenExchange(aim0) || useBrineFixture(aim0) || useUnderworldDungeonFixture(aim0) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -4414,7 +4528,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=settlement-network-2');
+      const worker = new Worker('workers/chunk.js?v=molten-exchange-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
