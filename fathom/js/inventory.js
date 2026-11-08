@@ -124,14 +124,17 @@ function makeInventory(spec) {
     }
   }
 
-  function countOf(key) {
+  function countOf(key, range) {
     if (key === 'coin' && sections.coins) return coinBalance();
     let n = 0;
-    for (const slot of slots) if (slot && slot.key === key) n += slot.count;
+    for (let i = range?.from ?? 0; i < (range?.to ?? slots.length); i += 1) {
+      const slot = slots[i];
+      if (slot && slot.key === key) n += slot.count;
+    }
     return n;
   }
 
-  function take(key, count) {
+  function take(key, count, range) {
     if (key === 'coin' && sections.coins) {
       const total = coinBalance();
       const moved = Math.min(total, count);
@@ -139,7 +142,7 @@ function makeInventory(spec) {
       return moved;
     }
     let left = count;
-    for (let i = slots.length - 1; i >= 0 && left > 0; i -= 1) {
+    for (let i = (range?.to ?? slots.length) - 1; i >= (range?.from ?? 0) && left > 0; i -= 1) {
       const slot = slots[i];
       if (!slot || slot.key !== key) continue;
       const moved = Math.min(slot.count, left);
