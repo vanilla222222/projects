@@ -548,7 +548,7 @@ process.exit(failures ? 1 : 0);
     for (const entry of drops) {
       const key = Array.isArray(entry) ? entry[0] : entry;
       assert.ok(recipeInputs.has(key) || directUses.has(key) || craft.WEAPONS[key] || craft.ACCESSORIES[key]
-        || craft.ITEMS[key]?.use || craft.ITEMS[key]?.critter, key + ' has no use');
+        || craft.ITEMS[key]?.use || craft.ITEMS[key]?.critter || craft.ITEMS[key]?.portalComponent, key + ' has no use');
     }
   }
   craft.registerEnemyBanners(enemyModule.ENEMIES);

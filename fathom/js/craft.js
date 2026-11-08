@@ -1846,6 +1846,13 @@ function earnedEnemyBanners(spec, defeated, caught, bossCleared) {
   return Math.floor((spec.passive ? caught : defeated) / (spec.passive ? 25 : 50));
 }
 
+for (const trial of CRAFT_TILES.PORTAL_TRIALS) {
+  const activator = trial.reward === 'portal-activator';
+  ITEMS[trial.reward] = { name: activator ? 'Portal Activator' : trial.name + ' Fragment',
+    kind: 'loot', colour: trial.colour, portalComponent: true,
+    text: 'Keep this for the first subworld portal.' };
+}
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;

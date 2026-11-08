@@ -2323,6 +2323,39 @@ function hardmodeTileAt(seed, x, y, id) {
   return vein > 0.55 ? idOf('prismstone') : id;
 }
 
+const WORLD_PORTAL_TRIALS = typeof require === 'function' ? require('./tiles.js').PORTAL_TRIALS : PORTAL_TRIALS;
+
+function portalTrialSites(seed) {
+  const direction = unit(seed, 0, 0, 6199) < 0.5 ? -1 : 1;
+  return WORLD_PORTAL_TRIALS.map((trial, index) => {
+    const x = direction * (index % 2 ? -1 : 1)
+      * (1320 + index * 185 + Math.floor(unit(seed, index, 0, 6201) * 90));
+    const y = SEA_LEVEL + trial.altitude;
+    const width = 20 + index % 4;
+    return { ...trial, x, y, left: x - width, right: x + width, top: y - 18 - index % 4, bottom: y + 1, style: index % 3 };
+  });
+}
+
+function portalTrialTile(site, x, y) {
+  const dx = x - site.x;
+  const edge = Math.min(x - site.left, site.right - x);
+  const floor = y - site.y;
+  if (floor >= 0) return idOf(site.material);
+  if (dx === 0 && floor === -1) return idOf('portal-trial-seal');
+  if ((dx === -12 || dx === 12) && floor === -4) return idOf('lantern');
+  if (edge === 0 && (floor < -5 || floor > -2)) return idOf(site.material);
+  const roof = site.top + (site.style === 0 ? Math.floor(Math.abs(dx) / 5) : site.style === 1 ? edge % 3 : 0);
+  if (y === roof) return idOf(site.material);
+  if (site.style === 0 && Math.abs(dx) >= 8 && Math.abs(dx) <= 14 && floor === -7) return idOf('oakplatform');
+  if (site.style === 1 && Math.abs(dx) >= 5 && Math.abs(dx) <= 9 && floor === -10) return idOf('oakplatform');
+  if (site.style === 2 && (dx <= -11 || dx >= 11) && floor === -5) return idOf('oakplatform');
+  return AIR;
+}
+
+function portalTrialWall(site) {
+  return wallIdOf(site.layer === 'void' ? 'void-wall' : 'dungeon-wall');
+}
+
 function generateChunk(seed, cx, cy) {
   // Sixteen bits per tile, not eight. Six wood species with a full furniture set each
   // had the registry at 151 of a possible 255, and beds alone would have added 48 more;
@@ -2360,7 +2393,7 @@ function generateChunk(seed, cx, cy) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
-    CHUNK, WORLD_SETTINGS, WORLD_PRESETS, normalizeWorldSettings, worldSettingValues, generationSeed, starterForestEdge, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
+    CHUNK, portalTrialSites, portalTrialTile, portalTrialWall, WORLD_SETTINGS, WORLD_PRESETS, normalizeWorldSettings, worldSettingValues, generationSeed, starterForestEdge, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, chapterArmoryAt, chapterArmories, MECHANIST_CACHES, MECHANIST_WEAPONS, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,

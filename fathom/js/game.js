@@ -55,6 +55,7 @@ function makeGame(canvas, deps) {
   let completedOrders = new Set();
   let settlements = settlementModule.makeSettlementLedger();
   let expedition = null;
+  let activePortalTrial = null;
   let defeatedBosses = new Set();
   let bestiary = Object.create(null);
   let enemyBanners = new Map();
@@ -255,6 +256,14 @@ function makeGame(canvas, deps) {
 
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
+    if (target.spec.portalTrial) {
+      if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
+        settlements.claimed.add('portal-win:' + target.spec.portalTrial);
+        say('Seal broken. Return to the Trial Seal to recover the portal component.', 5);
+      }
+      activePortalTrial = null;
+      return;
+    }
     if (!target.spec.boss && !target.spec.passive && !target.spec.specimen && !target.spec.summonOnly) {
       settlements.increment('hunt:' + townRegion(target.x, target.y));
       recordPatrol(target.x, target.y);
@@ -817,7 +826,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory) {
+    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial) {
       state.player.mining = null;
       return;
     }
@@ -1504,6 +1513,7 @@ function makeGame(canvas, deps) {
     state.player.vx = 0;
     state.player.vy = 0;
     stopExpedition();
+    activePortalTrial = null;
     if (swarm) swarm.clear();
     releaseHook();
     state.bobber = null;
@@ -2463,8 +2473,92 @@ function makeGame(canvas, deps) {
         + (settlements.claimed.has(key) ? ' · Complete' : ' · Reward ' + townItems(chapter.reward)));
       if (!settlements.claimed.has(key)) actions.push(campaignReward({ key, name: chapter.name }, chapter.reward, openCampaign));
     }
+    if (active < 0 || world.portalHunt) actions.push({ label: 'Chapter 2 · The Scattered Gate', run: openPortalHunt });
     if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
     ui.showTown('Campaign · From Deepwood to Astral', rows, actions);
+  }
+
+  function insidePortalTrial(site) {
+    const player = state.player;
+    return player.x >= site.left - 3 && player.x <= site.right + 3
+      && player.y >= site.top - 3 && player.y <= site.bottom + 3;
+  }
+
+  function openPortalHunt() {
+    input.left = input.right = input.jump = input.down = false;
+    const rows = ['The Astral Siege has scattered nine fragments and an activator across four layers.',
+      'Reach each structure, challenge its guardian at the Trial Seal, then return to the seal for its component.'];
+    const actions = [{ label: 'Chapter 1', run: openCampaign }];
+    if (!world.portalHunt) {
+      const milestones = campaignMilestones();
+      const ready = world.astral && settlementModule.CAMPAIGN.every(chapter =>
+        settlementModule.campaignChapterReady(chapter, defeatedBosses, milestones, craft.HARDMODE_TRIO));
+      if (ready) actions.push({ label: 'Begin Chapter 2', run() {
+        settlements.record('campaign-astral', 'chapter-two');
+        world.enablePortalHunt();
+        say('Ten Trial Seals have awakened', 4);
+        openPortalHunt();
+      } });
+      else rows.push('Complete Chapter 1 to awaken the Trial Seals.');
+      ui.showTown('Chapter 2 · The Scattered Gate', rows, actions);
+      return;
+    }
+    const sites = worldgen.portalTrialSites(seed);
+    const collected = site => settlements.claimed.has('portal-loot:' + site.id);
+    const fragments = sites.filter(site => site.reward !== 'portal-activator' && collected(site)).length;
+    const activator = sites.some(site => site.reward === 'portal-activator' && collected(site));
+    rows.push('Fragments ' + fragments + ' / 9 · Activator ' + (activator ? 'recovered' : 'missing'));
+    if (fragments === 9 && activator) rows.push('The Scattered Gate hunt is complete. Keep the components for the first subworld portal.');
+    for (const site of sites) {
+      const won = settlements.claimed.has('portal-win:' + site.id);
+      rows.push(site.name + ' · ' + townRegionName(site.layer) + ' · x ' + site.x + ', y ' + (site.y - 1)
+        + ' · ' + site.guardian + ' · ' + (collected(site) ? 'Recovered' : won ? 'Reward ready' : craft.nameOf(site.reward, tiles)));
+      if (!collected(site) && physics.aimTile(state.player, { x: site.x, y: site.y - 1 }).inReach) {
+        actions.push({ label: (won ? 'Recover component · ' : 'Challenge ') + (won ? site.name : site.guardian),
+          run: () => activatePortalTrial(site) });
+      }
+    }
+    ui.showTown('Chapter 2 · The Scattered Gate', rows, actions);
+  }
+
+  function activatePortalTrial(site) {
+    if (!world.portalHunt || !physics.aimTile(state.player, { x: site.x, y: site.y - 1 }).inReach) return;
+    const win = 'portal-win:' + site.id;
+    const loot = 'portal-loot:' + site.id;
+    if (settlements.claimed.has(loot)) { say('This Trial Seal has been emptied', 2); return; }
+    if (settlements.claimed.has(win)) {
+      if (townExchange([], [[site.reward, 1]])) {
+        settlements.claimed.add(loot);
+        say(craft.nameOf(site.reward, tiles) + ' recovered', 3);
+        openPortalHunt();
+      }
+      return;
+    }
+    if (swarm.bossAlive() || expedition || activePortalTrial) {
+      say('Finish the current encounter first', 2);
+      return;
+    }
+    const boss = swarm.summon(site.boss, state.player, site);
+    if (!boss) { say('Clear room beside the seal and try again', 3); return; }
+    activePortalTrial = { site, boss };
+    ui.closeTown();
+    say(site.guardian + ' awakens', 3);
+    sfx('roar');
+  }
+
+  function usePortalSeal(aim) {
+    if (!world.portalHunt || !aim.inReach || !tiles.tile(world.get(aim.x, aim.y)).portalTrial) return false;
+    const site = world.portalSiteAt(aim.x, aim.y);
+    if (site && aim.x === site.x && aim.y === site.y - 1) activatePortalTrial(site);
+    return true;
+  }
+
+  function stepPortalTrial() {
+    if (!activePortalTrial || insidePortalTrial(activePortalTrial.site)) return;
+    activePortalTrial.boss.dead = true;
+    activePortalTrial = null;
+    state.arrows = state.arrows.filter(arrow => !arrow.hostile);
+    say('The Trial Seal resets when you leave the arena', 3);
   }
 
   function openCampaignHunts() {
@@ -3459,7 +3553,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -3471,6 +3565,10 @@ function makeGame(canvas, deps) {
     // A rod casts rather than places, and casting again pulls the line in.
     if (castLine(item)) return;
     // Something used rather than placed is used wherever you are standing.
+    if (craft.ITEMS[item.key]?.portalComponent) {
+      say('Keep this component for the first subworld portal', 2.5);
+      return;
+    }
     if (useConsumable(item)) return;
     const aim = physics.aimTile(state.player, pointer);
     if (!aim.inReach) return;
@@ -3682,6 +3780,7 @@ function makeGame(canvas, deps) {
     state.player.flight = gear.flight ? gear.flight + gear.flightBonus : 0;
 
     if (swarm) {
+      stepPortalTrial();
       swarm.step(state.player, dt, state.dayPhase, eventKey());
       stepExpedition();
       const hit = swarm.touching(state.player);
@@ -3780,7 +3879,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=enemy-banners-1');
+      const worker = new Worker('workers/chunk.js?v=portal-trials-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -4182,6 +4281,7 @@ function makeGame(canvas, deps) {
     completedOrders = new Set(worldRecord.completedOrders || []);
     settlements = settlementModule.makeSettlementLedger(worldRecord.settlements);
     expedition = null;
+    activePortalTrial = null;
     state.expeditionStatus = '';
     defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
     for (const key of worldRecord.defeatedBosses || []) {
