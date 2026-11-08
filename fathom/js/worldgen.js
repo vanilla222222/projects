@@ -1431,7 +1431,79 @@ function archiveTile(site, x, y) {
   return AIR;
 }
 
+const cachedRunawayMine = cacheStructure(seed => {
+  const side = unit(seed, 928, 57) < 0.5 ? -1 : 1;
+  for (let distance = 2650; distance < 5200; distance += 93) {
+    for (const direction of [side, -side]) {
+      const x = distance * direction;
+      if (![-43, 0, 43].every(dx => surfaceHeight(seed, x + dx) < SEA_LEVEL - 9)) continue;
+      const y = columnOf(seed, x).legacyHeight + 140;
+      const slot = Math.floor(x / STRUCTURE_SPACING);
+      if ([slot - 1, slot, slot + 1].some(index => {
+        const chest = cachedStructureChest(seed, index);
+        return chest && Math.abs(chest.x - x) <= 44 && chest.y >= y - 1 && chest.y <= y + 46;
+      })) continue;
+      return { x, y, mouth: surfaceHeight(seed, x - 35) };
+    }
+  }
+  return null;
+});
+
+function runawayMineLayout(seed) { return cachedRunawayMine(seed, 0); }
+
+function runawayMineAt(seed, x, y) {
+  if (Math.abs(x) < 2607 || Math.abs(x) > 5243 || y < SKY_H || y > SEA_LEVEL + 192) return null;
+  const site = runawayMineLayout(seed);
+  return site && Math.abs(x - site.x) <= 43 && y >= site.y && y <= site.y + 46 ? site : null;
+}
+
+const RUNAWAY_BRIDGE_GAPS = [-29, -28, -27];
+
+function runawayMineTile(site, x, y) {
+  const dx = x - site.x, dy = y - site.y;
+  const stone = idOf('runaway-masonry');
+  if (Math.abs(dx) === 43 || dy === 0 || dy === 46) return stone;
+  if (dy <= 13 && (dx === -20 || dx === 3)) {
+    if (dy >= 6 && dy <= 10) return idOf(dx === -20 ? 'runaway-repair-gate' : 'runaway-junction-gate');
+    return stone;
+  }
+  if (dy === 11 && (dx < 8 || dx > 10)) return stone;
+  if (dx === 9 && dy >= 9 && dy <= 24) return idOf('rope');
+  if (dy === 10 && dx >= -39 && dx <= 8) {
+    if (RUNAWAY_BRIDGE_GAPS.includes(dx)) return AIR;
+    if (dx === -10) return idOf('rail-junction');
+    return idOf('minecart-rail');
+  }
+  if (dx >= -9 && dx <= 0 && dy === 10 - Math.min(3, dx + 10, 1 - dx)) return idOf('minecart-rail');
+  if (dx === -39 && dy === 9) return idOf('runaway-exit');
+
+  if (dy < 25) {
+    if (dx === 12 && dy === 24) return idOf('wire-switch');
+    if (dy === 23 && dx === 20) return idOf('runaway-inlet');
+    if (dy === 23 && dx === 24) return idOf('runaway-outlet');
+    if (dy === 22 && dx === 20) return idOf('water');
+    if ((dy === 21 && (dx === 20 || dx === 24))
+      || (dy >= 22 && dy <= 23 && [19, 21, 23, 25].includes(dx))) return stone;
+  }
+  if (dy === 25) return dx >= 12 && dx <= 14 ? idOf('runaway-floodgate') : stone;
+  if (dx === 13 && dy >= 26 && dy <= 41) return idOf('rope');
+  if (dy === 45 && Math.abs(dx) <= 38) {
+    if (Math.abs(dx) === 38) return idOf('stop-rail');
+    if (Math.abs(dx) === 29) return idOf('rail-junction');
+    if (Math.abs(dx) === 35) return idOf('brake-rail');
+    return idOf('minecart-rail');
+  }
+  if (Math.abs(dx) < 29 && dy === 45 - Math.min(5, 29 - Math.abs(dx))) return idOf('minecart-rail');
+  return AIR;
+}
+
 function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
+  const mine = runawayMineAt(seed, x, y);
+  if (mine) return runawayMineTile(mine, x, y);
+  if (Math.abs(x) >= 2607 && Math.abs(x) <= 5243 && y === column.height) {
+    const entry = runawayMineLayout(seed);
+    if (entry && x === entry.x - 35 && y === entry.mouth) return idOf('runaway-entry');
+  }
   const archive = archiveAt(seed, x, y);
   if (archive) return archiveTile(archive, x, y);
   const dungeon = dungeonAt(seed, x, y);
@@ -1945,6 +2017,7 @@ function decorate(write, seed, x, yFrom, yTo) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
+  if (runawayMineAt(seed, x, y)) return wallIdOf('brickwall');
   if (archiveAt(seed, x, y)) return wallIdOf('dungeon-wall');
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) return y < dungeon.y ? 0 : wallIdOf('dungeon-wall');
@@ -2020,7 +2093,7 @@ function baseLevelAt(seed, x, y) {
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
-  if (spec.solid || archiveAt(seed, x, y) || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
+  if (spec.solid || runawayMineAt(seed, x, y) || archiveAt(seed, x, y) || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
   return submergedVoid(seed, x, y, column) ? 255 : 0;
@@ -2086,7 +2159,7 @@ function generateChunk(seed, cx, cy) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= CHUNK || ly < 0 || ly >= CHUNK) return;
-    if (archiveAt(seed, wx, wy) || dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
+    if (runawayMineAt(seed, wx, wy) || archiveAt(seed, wx, wy) || dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
     tiles[ly * CHUNK + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
@@ -2106,7 +2179,7 @@ const EXPORTS_worldgen = {
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
-    archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
+    runawayMineLayout, runawayMineAt, RUNAWAY_BRIDGE_GAPS, archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, localCave, longCaveLayout, longCaveAt, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,

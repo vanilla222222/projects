@@ -262,6 +262,8 @@ for (const s of SURVEY_SEEDS) {
     for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 300); y += 1) {
       if (gen.baseTileAt(s, x, y) !== WATER) continue;
       waterCells += 1;
+      const mine = gen.runawayMineAt(s, x, y);
+      if (mine && x === mine.x + 20 && y === mine.y + 22) continue;
       const ossuary = gen.dungeonAt(s, x, y);
       if (ossuary && x === ossuary.x + 18 && y === ossuary.y + 72) continue;
       check(y >= gen.SEA_LEVEL, 'water above sea level at ' + x + ',' + y);

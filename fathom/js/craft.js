@@ -268,6 +268,11 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'railbreaker-drive': { name: 'Railbreaker Drive', kind: 'loot', colour: '#d4a478' },
+  'railbreaker-whistle': { name: 'Railbreaker Whistle', kind: 'use', colour: '#c29177',
+    use: { summon: 'railbreaker', runawayMine: true }, text: 'Use below the flooded spur in the Runaway Mine' },
+  'cargo-cart': { name: 'Cargo Cart', kind: 'loot', colour: '#a6a2b0',
+    text: 'Use on rail, then use again to open your cargo hold.' },
   'archivist-core': { name: 'Archivist Core', kind: 'loot', colour: '#95d3d9' },
   'tide-seal': { name: 'Tide Seal', kind: 'use', colour: '#83bfd3',
     use: { summon: 'drownedarchivist', archive: true }, text: 'Use below the Tidal Archive floodgate' },
@@ -863,6 +868,10 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'railbreaker-whistle', kind: 'use', count: 1 },
+    need: [['iron-bar', 6], ['wire-spool', 8], ['emberite-bar', 2]], station: 'anvil' },
+  { out: { key: 'cargo-cart', kind: 'loot', count: 1 },
+    need: [['minecart', 1], ['iron-bar', 6], ['#wood', 10]], station: 'railworks-bench' },
   { out: { key: 'tide-seal', kind: 'use', count: 1 },
     need: [['shell', 12], ['mythril-bar', 5], ['storm-crystal', 4]], station: 'optics-bench' },
   { out: { key: 'lens-sigil', kind: 'use', count: 1 },
@@ -1460,7 +1469,7 @@ const BOSS_CHAPTERS = [
   ['kingslime', 'briarwarden', 'windmillwarden', 'mirebrood'],
   ['hollloweye', 'dungeonkeeper', 'thunderbird', 'desertscourge', 'rimehorn', 'pinemaw', 'orchidqueen',
     'reedking', 'claybehemoth', 'sunmane', 'cragbreaker', 'breakwatercrab'],
-  ['furnacewarden', 'rootcrown', 'aurorawraith', 'winterroot', 'amberroot', 'fenwidow',
+  ['furnacewarden', 'railbreaker', 'rootcrown', 'aurorawraith', 'winterroot', 'amberroot', 'fenwidow',
     'granitecolossus', 'cairnshade', 'ochredrake', 'sunscarab', 'buriedstandard',
     'sporecrown', 'bloodcrest', 'reefleviathan', 'saltmarrow'],
   ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],

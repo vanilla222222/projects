@@ -713,6 +713,26 @@ defineMulti('rail-cache', 'Abandoned Rail Supply Cache', 2, 2, () => ({
   solid: false, opacity: 6, colour: '#a77f60', toughness: 65, chest: 'rail-cache', drops: 'ironchest'
 }));
 
+pushTile({ key: 'powered-rail', name: 'Powered Rail', colour: '#edc881', rail: 'powered',
+  platform: true, solid: false, opacity: 4, emit: 4, toughness: 50, hardness: 0.25 });
+for (const [key, name, mine, solid, fixture, circuit] of [
+  ['runaway-masonry', 'Runaway Mine Masonry', 'shell', true],
+  ['runaway-entry', 'Runaway Mine Lift', 'entry', true, 'actuator-block'],
+  ['runaway-exit', 'Mine Return Lift', 'exit', false, 'wire-timer'],
+  ['runaway-repair-gate', 'Bridge Gate', 'repair', true, 'actuator-block'],
+  ['runaway-junction-gate', 'Junction Gate', 'junction', true, 'actuator-block'],
+  ['runaway-floodgate', 'Flooded Spur Gate', 'flood', true, 'actuator-block', 'mine-floodgate'],
+  ['runaway-inlet', 'Spur Inlet', 'pump', true, 'inlet-pump', 'inlet'],
+  ['runaway-outlet', 'Spur Outlet', 'pump', true, 'outlet-pump', 'outlet']
+]) pushTile({ key, name, mine, solid, fixture, circuit, colour: '#9d7761', drops: null,
+  masonry: fixture ? undefined : 'brick', opacity: solid ? 55 : 4, emit: fixture ? 5 : 0 });
+
+workshopFixture('railworks-bench', 'Railworks Bench', '#9b9eac', 'heavy-workbench',
+  [['railbreaker-drive', 1], ['iron-bar', 8], ['wire-spool', 6]], 'heavy-workbench',
+  { station: 'railworks-bench', emit: 4 });
+WORKSHOP_PLANS.push({ out: { key: 'powered-rail', kind: 'block', count: 8 },
+  need: [['minecart-rail', 8], ['gold-bar', 2], ['wire-spool', 4]], station: 'railworks-bench' });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {

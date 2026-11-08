@@ -120,6 +120,7 @@ const ARCHETYPES = {
     chargeEvery: 3.8, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.82, spawnEvery: 5,
     minion: 'chalksentry', minions: 2, enrageAt: 0.47, enrageSpeed: 1.27,
     enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 },
+  railbreaker: { gravity: 0, boss: true, flies: true, speed: 6 },
   starwyvern: { gravity: 0, boss: true, flies: true, speed: 9.4, hoverAbove: 4.4, drift: 8,
     chargeEvery: 4.1, windUp: 1.1, chargeSpeed: 31, chargeFor: 0.82, enrageAt: 0.5,
     enrageSpeed: 1.24, enrageCharge: 0.72, enrageWindUp: 0.67, followUp: 0.45 },
@@ -688,6 +689,9 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'railbreaker', name: 'Railbreaker', kind: 'railbreaker', body: 'golem', hp: 3600,
+    damage: 55, weight: 0, w: 4.3, h: 3.2, colour: '#c1876d', boss: true, summonOnly: true,
+    emit: 5, drops: [['coin', 650]], bossDrops: ['railbreaker-drive'] },
   { key: 'drownedarchivist', name: 'Drowned Archivist', kind: 'archon', body: 'jelly', hp: 40800,
     damage: 176, weight: 0, w: 5.6, h: 4.9, colour: '#86c9d7', boss: true, summonOnly: true,
     emit: 9, barrage: 'starburst', drops: [['coin', 7600]], bossDrops: ['archivist-core'] },
@@ -833,6 +837,7 @@ function makeEnemy(spec, x, y) {
 // Gait speed per archetype: how much animation one tile of travel buys, and how much is
 // added per second regardless.
 const GAIT = {
+  railbreaker: { perTile: 0.9, perSecond: 5 },
   starwyvern: { perTile: 1.3, perSecond: 6.2 },
   glasscolossus: { perTile: 1.5, perSecond: 1.4 },
   coilserpent: { perTile: 1.2, perSecond: 3.8 },
@@ -1066,7 +1071,9 @@ function makeSwarm(world, tiles, deps) {
   function damage(enemy, amount) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
-    enemy.hp -= shielded ? 0 : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
+    const railArmor = enemy.key === 'railbreaker' && enemy.railRunning && !enemy.recovering;
+    enemy.hp -= shielded ? 0 : railArmor ? Math.max(1, Math.round(amount * 0.25))
+      : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
     enemy.provoked = true;
     if (enemy.hp <= 0) enemy.dead = true;
@@ -1085,7 +1092,8 @@ function makeSwarm(world, tiles, deps) {
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
       if (enemy.key === 'lenscustodian') enemy.shielded = !!deps.lensLit && !deps.lensLit();
-      if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
+      if (enemy.key === 'railbreaker') stepRailbreaker(enemy, player, dt);
+      else if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
       else if (arch.flies && !(enemy.spec.barrage === 'foundry' && enemy.beams)) stepHoverBoss(enemy, arch, player, dt, toward);
       else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);
       if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
@@ -1265,6 +1273,30 @@ function makeSwarm(world, tiles, deps) {
 
   // A boss that flies, hovers out of reach, and charges in a straight line it chooses
   // before it starts and cannot change afterwards.
+  function stepRailbreaker(enemy, player, dt) {
+    const site = worldgen.runawayMineAt?.(world.seed, enemy.x, enemy.y)
+      || worldgen.runawayMineAt?.(world.seed, player.x, player.y);
+    enemy.railY ??= site ? site.y + 45 : enemy.y + enemy.height;
+    enemy.railRunning = true;
+    enemy.enraged = enemy.hp <= enemy.maxHp / 2;
+    enemy.y = enemy.railY - enemy.height;
+    const period = enemy.enraged ? 3.6 : 4.6;
+    const warning = enemy.enraged ? 0.75 : 1.15;
+    const cycle = enemy.timer % period;
+    if (cycle < warning) {
+      enemy.facing = Math.sign(player.x - enemy.x) || enemy.facing;
+      enemy.beams = { live: false, range: 22, angles: [enemy.facing > 0 ? 0 : Math.PI], colour: '#e8ad78' };
+      enemy.recovering = false;
+    } else if (cycle < warning + 1) {
+      enemy.beams = null;
+      moveAxis(enemy, enemy.facing * (enemy.enraged ? 28 : 23) * dt, 0);
+      enemy.recovering = false;
+    } else {
+      enemy.beams = null;
+      enemy.recovering = true;
+    }
+  }
+
   function stepHardmodeBarrage(enemy, player, dt) {
     const pattern = enemy.spec.barrage;
     const enraged = enemy.hp <= enemy.maxHp / 2;

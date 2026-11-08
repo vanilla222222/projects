@@ -55,13 +55,15 @@ check(longName.name.length <= 24, 'a 200-character name was not bounded');
 // ---- separation ----
 p.saveCharacter(alice.id, { inventory: [{ key: 'gold', kind: 'block', count: 12 }],
   stats: { health: 80, maxHealth: 120, mana: 20, maxMana: 40 },
-  bestiary: { canopyjay: { defeated: 0, caught: 2 } } });
+  bestiary: { canopyjay: { defeated: 0, caught: 2 } },
+  cargoItems: [{ key: 'iron', count: 25, kind: 'block' }] });
 p.saveWorld(home.id, { world: { seed: home.seed, edits: { '0:6': [[3, 0]] } } });
 
 const aliceIn = p.loadCharacter(alice.id);
 check(aliceIn.inventory[0].count === 12, 'the character did not keep its inventory');
 check(aliceIn.stats.maxHealth === 120, 'the character did not keep its stats');
 check(aliceIn.bestiary.canopyjay.caught === 2, 'the character did not keep its Bestiary');
+check(aliceIn.cargoItems[0].count === 25, 'the character did not keep its cargo hold');
 
 // The same character entering a different world still has everything.
 const afterOtherWorld = p.loadCharacter(alice.id);

@@ -789,7 +789,7 @@ function makeRenderer(canvas, deps) {
       const base = sy + h - size * 0.17;
       ctx.fillStyle = '#302b39';
       ctx.fillRect(left, base - size * 0.4, w * 1.88, size * 0.42);
-      ctx.fillStyle = '#8793aa';
+      ctx.fillStyle = p.cart.cargo ? '#bd9369' : '#8793aa';
       ctx.fillRect(left - size * 0.03, base - size * 0.36, w * 1.96, size * 0.1);
       ctx.fillStyle = '#626980';
       ctx.fillRect(left + size * 0.06, base - size * 0.23, w * 1.7, size * 0.12);

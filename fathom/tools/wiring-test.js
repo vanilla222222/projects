@@ -251,4 +251,41 @@ function testWorld() {
   assert.equal(world.getLevel(vx, vy - 1), 200, 'closing the valve did not conserve water');
 }
 
+{
+  const world = chunks.makeWorld(20260105, worldgen);
+  const site = worldgen.runawayMineLayout(world.seed);
+  const { x, y } = site;
+  assert.equal(tiles.tile(world.get(x - 35, site.mouth)).mine, 'entry');
+  for (const dx of worldgen.RUNAWAY_BRIDGE_GAPS) {
+    assert.equal(world.get(x + dx, y + 10), tiles.AIR);
+    assert.ok(tiles.isSolid(world.get(x + dx, y + 11)), 'repair gap has no support');
+  }
+  assert.equal(tiles.tile(world.get(x - 10, y + 10)).rail, 'upper');
+  const circuit = wiring.makeWiring(world, tiles, {
+    puzzle: (point, kind) => {
+      assert.equal(kind, 'mine-floodgate');
+      assert.equal(world.getLevel(x + 20, y + 22), 0);
+      world.set(point.x, point.y, tiles.idOf('rope'));
+    }
+  });
+  for (let dx = 12; dx <= 24; dx += 1) circuit.add(x + dx, y + 24);
+  for (const dx of [20, 24]) circuit.add(x + dx, y + 23);
+  circuit.add(x + 13, y + 25);
+  assert.equal(circuit.pulseAll(x + 12, y + 24, 0), 16);
+  assert.equal(world.getLevel(x + 24, y + 22), world.LEVEL_FULL);
+  assert.equal(tiles.tile(world.get(x + 13, y + 25)).climb, true);
+  const swarm = enemy.makeSwarm(world, tiles, { worldgen });
+  const player = { x: x + 4, y: y + 43, width: 0.8, height: 1.7 };
+  const boss = swarm.summon('railbreaker', player, { left: x - 42, right: x + 43, top: y + 29, bottom: y + 45 });
+  assert.ok(boss);
+  swarm.step(player, 1 / 60, 0.5);
+  const hp = boss.hp;
+  swarm.damage(boss, 100);
+  assert.equal(boss.hp, hp - 25);
+  for (let step = 0; step < 150; step += 1) swarm.step(player, 1 / 60, 0.5);
+  assert.equal(boss.recovering, true);
+  swarm.damage(boss, 100);
+  assert.equal(boss.hp, hp - 125);
+}
+
 console.log('Wiring checks passed across propagation, pumps, timers, cooldowns, persistence and the Ossuary');
