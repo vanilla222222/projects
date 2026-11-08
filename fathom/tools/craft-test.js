@@ -235,7 +235,7 @@ for (const [station, items] of Object.entries(groups)) {
 // an accessory tied to an enemy that does not exist is an item nobody can ever have.
 {
   const enemies = require('../js/enemy.js');
-  const byClass = { melee: [], ranged: [], magic: [], summoner: [] };
+  const byClass = { melee: [], ranged: [], magic: [], summoner: [], thrower: [] };
   for (const [key, w] of Object.entries(craft.WEAPONS)) {
     const cls = craft.classOf(w);
     ok(!!byClass[cls], key + ' has the unknown class ' + cls);
@@ -252,6 +252,10 @@ for (const [station, items] of Object.entries(groups)) {
     if (cls === 'ranged') {
       ok(!!craft.AMMO[w.ammo], key + ' fires ' + w.ammo + ', which is not ammunition');
       ok(w.reach > 10, key + ' is ranged and has an arm\'s reach');
+    }
+    if (cls === 'thrower') {
+      ok(['returning', 'fan', 'blast', 'pierce'].includes(w.throwStyle), key + ' has no throwing style');
+      ok(produced.has(key), key + ' cannot be crafted');
     }
     if (cls === 'summoner') {
       ok(['strike', 'twin', 'ward', 'chain', 'burst'].includes(w.summon), key + ' has no spirit attack');

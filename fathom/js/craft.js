@@ -570,7 +570,7 @@ const EFFECT_FIELDS = {
   defense: 'add',
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
-  melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul',
+  melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul', thrower: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
@@ -773,9 +773,15 @@ function describe(key, tilesModule) {
   const weapon = WEAPONS[key];
   if (weapon) {
     const cls = classOf(weapon);
-    lines.push(cls === 'summoner' ? 'Summoner weapon' : cls === 'magic' ? 'Magic weapon'
+    lines.push(cls === 'thrower' ? 'Thrower weapon' : cls === 'summoner' ? 'Summoner weapon' : cls === 'magic' ? 'Magic weapon'
       : (cls === 'ranged' ? 'Ranged weapon' : 'Melee weapon'));
     lines.push(weapon.damage + ' damage');
+    if (weapon.throwStyle) lines.push('Reusable · no ammunition', {
+      returning: 'Returns to you and can hit again on the way back',
+      fan: 'Throws three blades in a fan',
+      blast: 'Bursts on impact without damaging terrain',
+      pierce: 'Javelin pierces up to three enemies'
+    }[weapon.throwStyle]);
     if (weapon.summon) lines.push('Click to call a spirit. It fights while this focus is held.',
       'Spirit attack · ' + weapon.summon);
     if (weapon.scatter) lines.push('Fires five close-range pellets for one bullet');
@@ -932,6 +938,7 @@ for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
 // off the weapon rather than stored on it, so a new weapon cannot forget to declare one.
 function classOf(weapon) {
   if (!weapon) return 'melee';
+  if (weapon.throwStyle) return 'thrower';
   if (weapon.summon) return 'summoner';
   if (weapon.magic) return 'magic';
   if (weapon.ranged) return 'ranged';
@@ -1497,6 +1504,37 @@ for (const [key, name, family, colour, bonus, trait, ingredient] of [
   ITEMS[key] = { name, kind: 'ammo', colour };
   AMMO[key] = { family, colour, bonus, speed: family === 'bullet' ? 1.75 : family === 'bolt' ? 1.45 : 1.12, ...trait };
   RECIPES.push({ out: { key, kind: 'ammo', count: 24 }, need: [[family, 24], [ingredient, 1]], station: 'anvil' });
+}
+
+const THROWER_LADDER = [
+  ['oak-boomerang', 'Oak Boomerang', '#wood', 12, 0.52, 15, '#c99158', 'returning'],
+  ['tin-knives', 'Tin Knives', 'tin-bar', 16, 0.37, 19, '#b6b4a2', 'fan'],
+  ['iron-javelin', 'Iron Javelin', 'iron-bar', 34, 0.47, 24, '#bfc8cf', 'pierce'],
+  ['gold-chakram', 'Gold Chakram', 'gold-bar', 49, 0.42, 25, '#f1bd61', 'returning'],
+  ['cobalt-darts', 'Cobalt Darts', 'cobalt-bar', 64, 0.33, 27, '#67a7e5', 'fan'],
+  ['emberite-flask', 'Emberite Flask', 'emberite-bar', 104, 0.57, 25, '#f17a49', 'blast'],
+  ['void-disc', 'Void Disc', 'void-crystal', 105, 0.43, 31, '#ae84e7', 'returning'],
+  ['aetherite-javelin', 'Aetherite Javelin', 'aetherite-bar', 137, 0.41, 36, '#8ddbc9', 'pierce'],
+  ['palladium-knives', 'Palladium Knives', 'palladium-bar', 145, 0.32, 33, '#f3b882', 'fan'],
+  ['mythril-charge', 'Mythril Charge', 'mythril-bar', 218, 0.47, 34, '#86e0bb', 'blast'],
+  ['adamantite-disc', 'Adamantite Disc', 'adamantite-bar', 199, 0.35, 37, '#e77b82', 'returning'],
+  ['lunarium-javelin', 'Lunarium Javelin', 'lunarium-bar', 265, 0.36, 42, '#b5c8f2', 'pierce'],
+  ['solarium-flask', 'Solarium Flask', 'solarium-bar', 307, 0.40, 39, '#ffce72', 'blast'],
+  ['eventide-stars', 'Eventide Stars', 'eventide-bar', 286, 0.29, 43, '#d9aff3', 'fan']
+];
+for (const [key, name, material, damage, useTime, reach, colour, throwStyle] of THROWER_LADDER) {
+  WEAPONS[key] = { name, damage, useTime, reach, colour, throwStyle };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 }, need: [[material, material === '#wood' ? 12 : 9]],
+    station: material === '#wood' ? 'workbench' : 'anvil' });
+}
+
+for (const [key, name, material, bonus] of [
+  ['throwers-wrap', 'Thrower’s Wrap', 'iron-bar', 10],
+  ['cinder-bandolier', 'Cinder Bandolier', 'emberite-bar', 14],
+  ['astral-bracer', 'Astral Bracer', 'eventide-bar', 16]
+]) {
+  ACCESSORIES[key] = { name, colour: '#d9ac79', text: 'Throwing damage +' + bonus + '%', thrower: 1 + bonus / 100 };
+  RECIPES.push({ out: { key, kind: 'accessory', count: 1 }, need: [[material, 5], ['rope', 6]], station: 'anvil' });
 }
 
 function stationsNear(world, tiles, px, py) {
