@@ -698,7 +698,7 @@ function railCacheFits(seed, cave) {
     const long = longCaveAt(seed, x, y);
     const track = long?.rail ? Math.round(long.centre) + 2 : null;
     if (column.biome.drowned || y < column.height + 18 || archiveAt(seed, x, y)
-      || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)
+      || dungeonAt(seed, x, y) || chapterArmoryAt(seed, x, y) || biomeSiteAt(seed, x, y)
       || chestTileAt(seed, x, y) !== null || structureTileAt(seed, x, y) !== null
       || (track !== null && (y === track || y === track + 1))) {
       cave.cacheFits = false;
@@ -1109,6 +1109,73 @@ function dungeonAt(seed, x, y) {
   return dy >= -8 && dy <= 145 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
 }
 
+const ARMORY_DATA = typeof require === 'function' ? require('./tiles.js') : FATHOM.tiles;
+const ARMORY_ROOM_HEIGHT = 18;
+const ARMORY_ROOMS = 4;
+const cachedChapterArmory = cacheStructure((seed, index) => {
+  const chapter = ARMORY_DATA.ARMORY_CHAPTERS[index];
+  let x = chapter.anchor;
+  let y = columnOf(seed, x).height;
+  // Choose a dry approach when possible, with a pier as the fallback.
+  for (let offset = 12; y >= SEA_LEVEL - 1 && offset <= 120; offset += 12) {
+    const candidate = chapter.anchor + Math.sign(chapter.anchor) * offset;
+    const height = columnOf(seed, candidate).height;
+    if (height < y) { x = candidate; y = height; }
+  }
+  return { ...chapter, x, y: Math.min(y, SEA_LEVEL - 2) };
+});
+
+function chapterArmories(seed) {
+  return ARMORY_DATA.ARMORY_CHAPTERS.map(chapter => cachedChapterArmory(seed, chapter.index));
+}
+
+function chapterArmoryAt(seed, x, y) {
+  if (Math.abs(x) < 5620 || Math.abs(x) > 7240 || y < SKY_H || y > SEA_LEVEL + 73) return null;
+  const siteIndex = Math.floor((Math.abs(x) - 5620) / 360) * 2 + Number(x < 0);
+  if (!ARMORY_DATA.ARMORY_CHAPTERS[siteIndex]) return null;
+  const site = cachedChapterArmory(seed, siteIndex);
+  return Math.abs(x - site.x) <= 29 && y >= site.y - 4 && y <= site.y + ARMORY_ROOM_HEIGHT * ARMORY_ROOMS
+    ? site : null;
+}
+
+function chapterArmoryTile(site, x, y) {
+  const dx = x - site.x;
+  const dy = y - site.y;
+  const brick = idOf(site.key + '-brick');
+  if (dy < 0) {
+    if (Math.abs(dx) > 4) return null;
+    return Math.abs(dx) === 4 ? brick : AIR;
+  }
+  if (dy === 0) return Math.abs(dx) <= 1 ? idOf('chapter-armory-seal') : brick;
+  if (Math.abs(dx) === 29 || dy === ARMORY_ROOM_HEIGHT * ARMORY_ROOMS) return brick;
+  const room = Math.floor(dy / ARMORY_ROOM_HEIGHT);
+  const row = dy % ARMORY_ROOM_HEIGHT;
+  const upperShaft = room === 0 ? 0 : (room % 2 ? 20 : -20);
+  const lowerShaft = room % 2 ? -20 : 20;
+  if (row === 0) return dx === upperShaft ? idOf('rope') : brick;
+  if (dx === upperShaft || dx === lowerShaft) return idOf('rope');
+  const cacheX = room % 2 ? 14 : -15;
+  if (dx >= cacheX && dx < cacheX + 2 && row >= ARMORY_ROOM_HEIGHT - 2) {
+    return cellOf('chapter-armory-cache', dx - cacheX, row - ARMORY_ROOM_HEIGHT + 2).id;
+  }
+  if (row === 9 && Math.abs(dx) <= 5 + (site.index % 4)) return idOf('oakplatform');
+  if (row === ARMORY_ROOM_HEIGHT - 1 && room > 0 && Math.abs(dx) >= 7 && Math.abs(dx) <= 9) {
+    return idOf(site.index % 2 ? 'glacier-spikes' : 'ashvault-spikes');
+  }
+  return AIR;
+}
+
+function chapterArmoryLoot(site, x, y) {
+  const row = y - site.y + 2;
+  const room = row / ARMORY_ROOM_HEIGHT - 1;
+  if (!Number.isInteger(room) || room < 0 || room >= ARMORY_ROOMS
+    || x !== site.x + (room % 2 ? 14 : -15)) return null;
+  return Object.entries(ARMORY_DATA.ARMORY_FORMS).flatMap(([style, forms]) => [
+    { key: site.key + '-' + forms[room], kind: 'tool', count: 1 },
+    { key: site.key + '-' + style + '-' + ARMORY_DATA.ARMORY_PIECE_KEYS[room], kind: 'armor', count: 1 }
+  ]);
+}
+
 function dungeonTile(site, x, y) {
   const dx = x - site.x;
   const dy = y - site.y;
@@ -1203,6 +1270,8 @@ function lensVaultTile(dx, dy, bulkhead) {
 }
 
 function baseContainerAt(seed, x, y) {
+  const armory = chapterArmoryAt(seed, x, y);
+  if (armory) return chapterArmoryLoot(armory, x, y);
   const rail = railCaveTile(seed, x, y, columnOf(seed, x));
   const part = rail !== null ? tile(rail).part : null;
   if (part?.of === 'rail-cache' && part.dx === 0 && part.dy === 0 && baseTileAt(seed, x, y) === rail) {
@@ -1575,6 +1644,11 @@ function runawayMineTile(site, x, y) {
 }
 
 function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
+  const armory = chapterArmoryAt(seed, x, y);
+  if (armory) {
+    const tileId = chapterArmoryTile(armory, x, y);
+    if (tileId !== null) return tileId;
+  }
   const mine = runawayMineAt(seed, x, y);
   if (mine) return runawayMineTile(mine, x, y);
   if (Math.abs(x) >= 2607 && Math.abs(x) <= 5243 && y === column.height) {
@@ -2126,6 +2200,8 @@ function decorate(write, seed, x, yFrom, yTo) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
+  const armory = chapterArmoryAt(seed, x, y);
+  if (armory && y >= armory.y) return wallIdOf('dungeon-wall');
   if (runawayMineAt(seed, x, y)) return wallIdOf('brickwall');
   if (archiveAt(seed, x, y)) return wallIdOf('dungeon-wall');
   const dungeon = dungeonAt(seed, x, y);
@@ -2202,7 +2278,7 @@ function baseLevelAt(seed, x, y) {
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
-  if (spec.solid || runawayMineAt(seed, x, y) || archiveAt(seed, x, y) || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
+  if (spec.solid || runawayMineAt(seed, x, y) || archiveAt(seed, x, y) || dungeonAt(seed, x, y) || chapterArmoryAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
   return submergedVoid(seed, x, y, column) ? 255 : 0;
@@ -2269,7 +2345,7 @@ function generateChunk(seed, cx, cy) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= CHUNK || ly < 0 || ly >= CHUNK) return;
-    if (runawayMineAt(seed, wx, wy) || archiveAt(seed, wx, wy) || dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
+    if (runawayMineAt(seed, wx, wy) || archiveAt(seed, wx, wy) || dungeonAt(seed, wx, wy) || chapterArmoryAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
     tiles[ly * CHUNK + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
@@ -2285,7 +2361,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, WORLD_SETTINGS, WORLD_PRESETS, normalizeWorldSettings, worldSettingValues, generationSeed, starterForestEdge, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, MECHANIST_CACHES, MECHANIST_WEAPONS, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, chapterArmoryAt, chapterArmories, MECHANIST_CACHES, MECHANIST_WEAPONS, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,

@@ -753,6 +753,26 @@ for (const specimen of WILDLIFE_SPECIMENS) {
   });
 }
 
+const ARMORY_ENEMIES = typeof require === 'function' ? require('./tiles.js').ARMORY_CHAPTERS : ARMORY_CHAPTERS;
+const ARMORY_BODIES = ['slime', 'eye', 'skeleton', 'demon', 'maw', 'bat', 'golem', 'bird', 'imp', 'cloud'];
+for (const chapter of ARMORY_ENEMIES) {
+  const airborne = chapter.layers.includes('space') || chapter.index % 3 === 1;
+  const body = ARMORY_BODIES[chapter.index];
+  const common = { colour: chapter.colour, body, requiresBoss: chapter.boss, w: 1.3, h: 1.4 };
+  ENEMIES.push({
+    ...common, key: chapter.key + '-roamer', name: chapter.material + (airborne ? ' Drifter' : ' Marauder'),
+    kind: airborne ? 'flyer' : 'walker', layers: chapter.layers, hp: chapter.hp,
+    damage: Math.round(8 + chapter.defense * 1.45), weight: 0.65,
+    day: !chapter.layers.includes('surface'), drops: [['coin', 8 + chapter.index * 12]],
+    armoryLootChance: 0.18
+  }, {
+    ...common, key: chapter.key + '-warden', name: chapter.material + ' Armory Warden',
+    kind: airborne ? 'flyer' : 'walker', armory: chapter.key, hp: Math.round(chapter.hp * 1.3),
+    damage: Math.round(10 + chapter.defense * 1.6), weight: 1,
+    drops: [['coin', 15 + chapter.index * 16]], armoryLootChance: 0.24
+  });
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -768,6 +788,8 @@ function wildlifeVariant(spec, roll) {
 
 function matches(spec, ctx) {
   if (spec.summonOnly || spec.hiddenSpawn || (spec.wyvernsUnlocked && !ctx.wyvernsUnlocked)) return false;
+  if (spec.requiresBoss && !ctx.bossDefeated?.(spec.requiresBoss)) return false;
+  if ((spec.armory || null) !== (ctx.armory || null) || ctx.armoryLocked) return false;
   // An event enemy exists only during its event, and an event does not suppress the
   // ordinary roster: a blood moon is the usual night with worse things added to it.
   if (Boolean(spec.dungeon) !== Boolean(ctx.dungeon)) return false;
@@ -928,7 +950,12 @@ function makeSwarm(world, tiles, deps) {
     const site = worldgen.dungeonAt?.(world.seed, Math.floor(x), Math.floor(y));
     const dungeon = !!site && y > site.y && !!deps.dungeonOpen?.();
     const lowerOssuary = dungeon && y > site.y + 58 && !!world.hardmode;
+    const armory = worldgen.chapterArmoryAt?.(world.seed, Math.floor(x), Math.floor(y));
+    const insideArmory = armory && y > armory.y;
     return { biome, layer, wet, day, dungeon, lowerOssuary,
+      armory: insideArmory ? armory.key : null,
+      armoryLocked: insideArmory && !deps.bossDefeated?.(armory.boss),
+      bossDefeated: deps.bossDefeated,
       foundry: layer === 'space' && !!deps.wyvernsUnlocked?.() && !!worldgen.foundryAt?.(world.seed, x, y),
       wyvernsUnlocked: layer === 'space' && !!deps.wyvernsUnlocked?.(), event: event || null };
   }
@@ -1031,11 +1058,11 @@ function makeSwarm(world, tiles, deps) {
     if (list.length >= Math.max(4, Math.round((event ? EVENT_ALIVE : MAX_ALIVE) * activity))) return null;
     const habitat = contextAt(player.x, player.y, dayPhase, event);
     const inOssuary = habitat.dungeon;
-    const surface = habitat.layer === 'surface' && !event;
+    const surface = habitat.layer === 'surface' && !event && !habitat.armory;
     if (surface && list.filter(enemy => !enemy.spec.specimen).length >= 4
       && list.filter(enemy => enemy.spec.specimen).length >= 5) return null;
-    const spawnMin = inOssuary || habitat.foundry ? 12 : SPAWN_MIN;
-    const spawnMax = inOssuary || habitat.foundry ? 27 : SPAWN_MAX;
+    const spawnMin = inOssuary || habitat.foundry || habitat.armory ? 12 : SPAWN_MIN;
+    const spawnMax = inOssuary || habitat.foundry || habitat.armory ? 27 : SPAWN_MAX;
     // A few columns per attempt, so one unlucky column does not cost a whole tick.
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const side = rng() < 0.5 ? -1 : 1;

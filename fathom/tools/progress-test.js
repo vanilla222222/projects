@@ -229,8 +229,23 @@ for (const key of Object.keys(craft.WEAPONS)) {
   if (w.drop || cacheLoot || armoryLoot) continue;                      // dropped things are not climbed to
   ok(ladder.held.has(key), 'the weapon ' + key + ' is unreachable');
 }
+const chapterLoot = new Set();
+for (const seed of [17, 42, 20260105]) {
+  for (const site of worldgen.chapterArmories(seed)) {
+    for (let room = 0; room < 4; room += 1) {
+      const x = site.x + (room % 2 ? 14 : -15);
+      const y = site.y + 18 * (room + 1) - 2;
+      const cache = worldgen.baseContainerAt(seed, x, y);
+      ok(cache?.length === 6, site.name + ' has no full armory cache in room ' + room);
+      for (const item of cache || []) {
+        ok(craft.kindOf(item.key) === item.kind, item.key + ' has the wrong cache kind');
+        if (seed === 20260105) chapterLoot.add(item.key);
+      }
+    }
+  }
+}
 for (const key of Object.keys(craft.ARMOUR)) {
-  ok(ladder.held.has(key), 'the armour ' + key + ' is unreachable');
+  ok(ladder.held.has(key) || chapterLoot.has(key), 'the armour ' + key + ' is unreachable');
 }
 for (const key of Object.keys(craft.ACCESSORIES)) {
   if (craft.ACCESSORIES[key].drop) continue;
