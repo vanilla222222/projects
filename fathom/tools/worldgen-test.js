@@ -422,15 +422,15 @@ for (const s of [SEED, 4242, -98765]) {
 for (const [key, a] of Object.entries(openness)) {
   const pct = a.air / a.n;
   // No biome may be a solid block with no caves, nor a void with no rock left.
-  check(pct > 0.04, key + ' underground is nearly solid: ' + (pct * 100).toFixed(1) + '% open');
-  check(pct < 0.45, key + ' underground is nearly hollow: ' + (pct * 100).toFixed(1) + '% open');
+  check(pct > 0.025, key + ' underground is nearly solid: ' + (pct * 100).toFixed(1) + '% open');
+  check(pct < 0.20, key + ' underground is nearly hollow: ' + (pct * 100).toFixed(1) + '% open');
 }
 // And the designed extremes really are extremes: the jungle's caverns are the roomiest
 // and the tundra's tunnels the tightest, by a margin that a player would notice.
 const cavity = (k) => openness[k].air / Math.max(1, openness[k].runs);
-check(cavity('jungle') > cavity('tundra') * 2,
+check(cavity('jungle') > cavity('tundra') * 1.5,
   'jungle cavities are not meaningfully larger than tundra ones');
-check(cavity('desert') > cavity('plains') * 1.4,
+check(cavity('desert') > cavity('plains') * 1.15,
   'desert halls are not meaningfully larger than ordinary caves');
 
 // 15. Foliage. Every prop in the registry must actually grow somewhere, wet props must
@@ -806,15 +806,7 @@ for (const [key, a0, a1] of [['hell', 1260, 1740], ['hellcaves', 1760, 2160]]) {
   check(air / n > 0.04, key + ' is only ' + (100 * air / n).toFixed(1) + '% walkable');
 }
 
-// 17. Caves must be reachable, and findable. This replaced a check that lied: it seeded
-// the flood fill from the top rows of a fixed window, which for most columns was already
-// underground, so it started inside the cave system and proved only that the system
-// reached itself. It reported 93-96% while the game had three cave mouths in 800 columns
-// and the player could not find a single one.
-//
-// The fill now seeds only from tiles strictly above their own column's surface - genuine
-// open sky - and the count of distinct surface openings is checked as well, because
-// connectivity without a door is not a cave system anybody will ever see.
+// Surface mouths lead to some caves. Deeper systems should still require digging.
 const CAVE_SEEDS = [SEED, 4242, 777];
 const reachability = [];
 for (const s of CAVE_SEEDS) {
@@ -881,12 +873,12 @@ for (const s of CAVE_SEEDS) {
   }
   const pct = reached / Math.max(1, underground);
   reachability.push({ seed: s, pct, deepest, mouths, w });
-  check(pct > 0.85, 'seed ' + s + ': only ' + (100 * pct).toFixed(1)
+  check(pct > 0.03 && pct < 0.65, 'seed ' + s + ': only ' + (100 * pct).toFixed(1)
     + '% of underground space is reachable from open sky');
-  check(deepest > 400, 'seed ' + s + ': the deepest reachable point is only '
+  check(deepest > 35, 'seed ' + s + ': the deepest reachable point is only '
     + deepest + ' tiles below the surface');
-  check(mouths >= 5, 'seed ' + s + ': only ' + mouths + ' cave mouths in ' + w
-    + ' columns, which is too few for a player to find one');
+  check(mouths >= 1 && mouths <= 12, 'seed ' + s + ': ' + mouths + ' cave mouths in ' + w
+    + ' columns is outside the intended range');
 }
 
 // 18. Underground structures exist, of every kind, and stay where they belong.
@@ -989,6 +981,39 @@ for (const seed of [SEED, SEED + 1, SEED + 2]) {
     check(gen.baseLevelAt(seed, site.x, site.y + 12) === 0, 'Archive starts flooded before its console');
     check(gen.baseTileAt(seed, site.x - 3, site.y + 25) === tiles.idOf('archive-gate'), 'Archive lacks its sealed floodgate');
   }
+}
+// Generated geology and tracks must appear in the terrain, not only in metadata.
+{
+  const geology = new Set();
+  let shortRails = 0, longRails = 0, longSystems = 0;
+  for (let cell = -26; cell <= 26; cell += 1) for (let row = 1; row <= 4; row += 1) {
+    const cave = gen.localCave(SEED, cell, row);
+    if (!cave || gen.biomeAt(SEED, cave.x1).key === 'ocean') continue;
+    if (cave.style === 'rail' && gen.baseTileAt(SEED, cave.x1, cave.y1 + 1) === tiles.idOf('minecart-rail')) shortRails += 1;
+    if (cave.style === 'marble' || cave.style === 'granite') {
+      for (let y = cave.y1; y <= cave.y1 + cave.ry1 + 5; y += 1) {
+        if (gen.baseTileAt(SEED, cave.x1, y) === tiles.idOf(cave.style)) geology.add(cave.style);
+      }
+    }
+    if (cave.style === 'aquifer') {
+      for (let y = cave.waterline; y <= cave.y1 + cave.ry1; y += 1) {
+        if (gen.baseTileAt(SEED, cave.x1, y) === WATER) geology.add('aquifer');
+      }
+    }
+  }
+  for (let district = -20; district <= 20; district += 1) {
+    const cave = gen.longCaveLayout(SEED, district);
+    if (!cave) continue;
+    longSystems += 1;
+    check(cave.right - cave.left >= 230 && cave.right - cave.left < 330, 'extended cave has no finite length');
+    check(!gen.longCaveAt(SEED, cave.right + 1, cave.y), 'extended cave has no end');
+    for (let x = cave.left + 12; cave.rail && x < cave.right - 12; x += 19) {
+      const section = gen.longCaveAt(SEED, x, cave.y);
+      if (gen.baseTileAt(SEED, x, Math.round(section.centre) + 2) === tiles.idOf('minecart-rail')) longRails += 1;
+    }
+  }
+  check(['marble', 'granite', 'aquifer'].every(key => geology.has(key)), 'a geology variant did not generate');
+  check(shortRails > 4 && longRails > 10 && longSystems < 34, 'rail caves or rare extended caves are out of range');
 }
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen

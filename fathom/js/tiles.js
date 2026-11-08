@@ -694,6 +694,13 @@ pushTile({ key: 'powered-valve-open', name: 'Open Powered Valve', colour: '#80b1
   valve: true, circuitPair: 'powered-valve', powered: true, solid: false, opacity: 4,
   toughness: 55, hardness: 0.25, drops: 'powered-valve' });
 
+pushTile({ key: 'marble', name: 'Marble', colour: '#c1c7ca', solid: true, opacity: 55,
+  hardness: 1.4, toughness: 110, grain: 0.12 });
+pushTile({ key: 'cave-spire', name: 'Mineral Spire', colour: '#9ab5bc', fixture: 'cave-spire',
+  solid: false, opacity: 4, toughness: 35, hardness: 0.3 });
+pushTile({ key: 'minecart-rail', name: 'Minecart Rail', colour: '#a79ba0', solid: false,
+  platform: true, rail: true, opacity: 3, hardness: 0.25, toughness: 45 });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
