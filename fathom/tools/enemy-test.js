@@ -722,6 +722,84 @@ for (const layer of worldgen.LAYERS) {
   }
 }
 
+{
+  function fight(key, terrain) {
+    const player = { x: 14, y: 32, width: 1, height: 2 };
+    const swarm = makeSwarm(terrain, tiles, { worldgen, random: () => 0.5 });
+    const boss = enemyModule.makeEnemy(enemyModule.BY_KEY[key], 7, 31);
+    swarm.list.push(boss);
+    return { player, swarm, boss, step: () => swarm.step(player, 1 / 60, 0.5) };
+  }
+  {
+    const terrain = makeTestWorld(50);
+    const base = terrain.get;
+    let cover = false;
+    terrain.get = (x, y) => cover && x === 12 && y >= 28 && y < 38 ? tiles.idOf('stone') : base(x, y);
+    const { player, swarm, boss, step } = fight('sunmane', terrain);
+    boss.timer = 4.5;
+    step();
+    ok(boss.sunGlare && swarm.touching(player) !== boss, 'Sunmane glare is active during its warning');
+    boss.timer = 6.1;
+    step();
+    ok(swarm.touching(player) === boss, 'Sunmane glare missed a player in line of sight');
+    cover = true;
+    ok(swarm.touching(player) !== boss, 'Sunmane glare ignored solid cover');
+  }
+  {
+    const { player, swarm, boss, step } = fight('windmillwarden', makeTestWorld(50));
+    boss.timer = 4.9;
+    step();
+    const sweep = boss.millSweep;
+    const point = radius => ({
+      x: boss.x + boss.width / 2 + Math.cos(sweep.angle) * radius - player.width / 2,
+      y: boss.y + boss.height / 2 + Math.sin(sweep.angle) * radius - player.height / 2,
+      width: player.width, height: player.height
+    });
+    ok(sweep.active && swarm.touching(point(6)) === boss, 'Windmill blades did not hit within their sweep');
+    ok(swarm.touching(point(sweep.radius + 2)) !== boss, 'Windmill blades hit beyond their range');
+    const angle = sweep.angle;
+    step();
+    ok(boss.millSweep.angle !== angle, 'Windmill blades did not rotate');
+    boss.hp /= 3;
+    step();
+    ok(boss.millSweep.blades === 4, 'Windmill Warden did not deploy the extra blade');
+  }
+  {
+    const { swarm, boss, step } = fight('mirage-regent', makeTestWorld(50));
+    boss.campaignArena = { left: 0, right: 30, top: 10, bottom: 46 };
+    boss.timer = 4.3;
+    step();
+    ok(boss.mirages?.length === 2, 'the Regent failed to create two false targets');
+    for (const image of boss.mirages || []) {
+      ok(swarm.at(image.x + 0.5, image.y + 0.5) !== boss, 'a false Regent redirected a hit to the real one');
+    }
+    ok(swarm.at(boss.x + 0.5, boss.y + 0.5) === boss, 'the real Regent stopped being targetable');
+    boss.timer = 5.4;
+    step();
+    const y = boss.y;
+    boss.timer = 6.0;
+    step();
+    ok(boss.mirageAim && boss.y > y, 'the true Regent did not dive along its marked line');
+  }
+  {
+    const terrain = makeTestWorld(60);
+    const base = terrain.get;
+    let flooded = false;
+    terrain.get = (x, y) => flooded && y >= 33 && y < 59 ? tiles.idOf('water') : base(x, y);
+    const { boss, step } = fight('reefleviathan', terrain);
+    boss.reefClock = 0;
+    step();
+    ok(!boss.reefBreach, 'the Leviathan submerged through dry terrain');
+    flooded = true;
+    boss.reefClock = 0;
+    step();
+    const y = boss.y;
+    ok(boss.reefBreach?.time === 0, 'the Leviathan did not mark its breach in deep water');
+    for (let i = 0; i < 62; i += 1) step();
+    ok(boss.y < y - 2, 'the Leviathan did not rise out of the marked water column');
+  }
+}
+
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);
 

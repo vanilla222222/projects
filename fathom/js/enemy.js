@@ -913,9 +913,7 @@ const BOSS_SIGNATURES = {
   reedking: ['Reedwater Ambush', 'crossfire', 'pockets', 7.1],
   cragbreaker: ['Crag Split', 'crest', 'aisles', 7.5],
   claybehemoth: ['Clay Mortars', 'arc', 'bounce', 7.4],
-  sunmane: ['Sundial Teeth', 'dial', 'crest', 6.9],
   pinemaw: ['Needle Fall', 'aisles', 'hedge', 8.1],
-  windmillwarden: ['Millwheel Gust', 'wheel', 'dial', 7.8],
   sporecrown: ['Spore Bloom', 'ring', 'arc', 7.5],
   hollowroot: ['Undercut Roots', 'pockets', 'hedge', 7.8],
   veinwarden: ['Blood Lattice', 'lattice', 'ring', 7.2],
@@ -940,7 +938,6 @@ const BOSS_SIGNATURES = {
   desertscourge: ['Buried Dune', 'pockets', 'squeeze', 7.4],
   aurorawraith: ['Aurora Curtain', 'aisles', 'ring', 6.8],
   bloodcrest: ['Crimson Dive', 'dial', 'arc', 7.6],
-  reefleviathan: ['Riptide Breach', 'crossfire', 'hedge', 7.0],
   abyssaleye: ['Blackwater Aperture', 'wheel', 'crossfire', 7.1],
   'trial-comet-observatory': ['Comet Shower', 'roof', 'ring', 7.4],
   'trial-broken-dock': ['Cargo Rail Rupture', 'fault', 'aisles', 7.3],
@@ -955,7 +952,6 @@ const BOSS_SIGNATURES = {
   'charcoal-hart': ['Antler Break', 'crest', 'hedge', 7.0],
   'rootglass-weaver': ['Spindle Web', 'lattice', 'pockets', 7.1],
   'slag-caravan': ['Toll Road Blockade', 'sides', 'fault', 7.4],
-  'mirage-regent': ['False Sun Eclipse', 'dial', 'wheel', 7.2],
   'quartz-maw': ['Quartz Shards', 'pockets', 'lattice', 7.5],
   'silica-admiral': ['Broadside Orders', 'sides', 'crossfire', 6.8],
   'lantern-jaw': ['Lantern Lure', 'ring', 'pockets', 7.3],
@@ -1584,6 +1580,143 @@ function makeSwarm(world, tiles, deps) {
     return true;
   }
 
+  function stepSunmaneGlare(enemy, player) {
+    const cycle = enemy.timer % 9.4;
+    if (cycle < 4.4 || cycle >= 7.8) {
+      enemy.sunGlare = null;
+      enemy.encounterCue = null;
+      return false;
+    }
+    const late = enemy.hp <= enemy.maxHp / 2;
+    const glare = enemy.sunGlare ||= { x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height * 0.35,
+      radius: late ? 14 : 11 };
+    glare.active = cycle >= 6;
+    enemy.encounterCue = glare.active ? 'Solar glare · stay behind cover' : 'Solar glare building · find solid cover';
+    if (late) enemy.enraged = true;
+    return true;
+  }
+
+  function glareHits(glare, player) {
+    if (!glare?.active) return false;
+    const dx = player.x + player.width / 2 - glare.x;
+    const dy = player.y + player.height / 2 - glare.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance > glare.radius) return false;
+    const steps = Math.ceil(distance * 4);
+    for (let n = 1; n < steps; n += 1) {
+      if (solid(glare.x + dx * n / steps, glare.y + dy * n / steps)) return false;
+    }
+    return true;
+  }
+
+  function stepMillSweep(enemy) {
+    const cycle = enemy.timer % 8.6;
+    if (cycle < 3.6 || cycle >= 7.1) {
+      enemy.millSweep = null;
+      enemy.encounterCue = null;
+      return false;
+    }
+    const late = enemy.hp <= enemy.maxHp / 2;
+    const active = cycle >= 4.75;
+    const direction = Math.floor(enemy.timer / 8.6) % 2 ? -1 : 1;
+    enemy.millSweep = { active, angle: direction * (0.52 + Math.max(0, cycle - 4.75) * (late ? 2.05 : 1.42)),
+      blades: late ? 4 : 3, hub: 3.25, radius: late ? 10.5 : 8.5 };
+    enemy.encounterCue = active ? 'Mill blades · inside the hub or outside the sweep'
+      : 'Mill blades opening · choose your distance';
+    return true;
+  }
+
+  function millSweepHits(enemy, player) {
+    const sweep = enemy.millSweep;
+    if (!sweep?.active) return false;
+    const dx = player.x + player.width / 2 - enemy.x - enemy.width / 2;
+    const dy = player.y + player.height / 2 - enemy.y - enemy.height / 2;
+    for (let index = 0; index < sweep.blades; index += 1) {
+      const angle = sweep.angle + index * Math.PI * 2 / sweep.blades;
+      const along = dx * Math.cos(angle) + dy * Math.sin(angle);
+      const across = dx * Math.sin(angle) - dy * Math.cos(angle);
+      if (along >= sweep.hub && along <= sweep.radius && Math.abs(across) < 0.72) return true;
+    }
+    return false;
+  }
+
+  function stepMirage(enemy, player, dt) {
+    const cycle = enemy.timer % 9;
+    if (cycle < 4.2 || cycle >= 7.35) {
+      enemy.mirages = null;
+      enemy.mirageAim = null;
+      enemy.encounterCue = null;
+      return false;
+    }
+    if (!enemy.mirages) {
+      const late = enemy.hp <= enemy.maxHp / 2;
+      const arena = enemy.campaignArena;
+      const originX = player.x + player.width / 2 - enemy.width / 2;
+      const placements = (late ? [-12, -6, 0, 6, 12] : [-8, 0, 8]).map((dx, index) => ({
+        x: originX + dx, y: player.y - 4.2 - (index % 2) * 1.2
+      })).filter(({ x, y }) => (!arena || x >= arena.left + 1 && x + enemy.width <= arena.right - 1
+        && y >= arena.top + 1 && y + enemy.height <= arena.bottom) && !overlaps(enemy, x, y));
+      if (placements.length < 2) return false;
+      const realIndex = Math.floor(rng() * placements.length);
+      const real = placements.splice(realIndex, 1)[0];
+      Object.assign(enemy, real, { vx: 0, vy: 0 });
+      enemy.mirages = placements;
+    }
+    if (cycle >= 5.25 && !enemy.mirageAim) {
+      const dx = player.x + player.width / 2 - enemy.x - enemy.width / 2;
+      const dy = player.y + player.height / 2 - enemy.y - enemy.height / 2;
+      const distance = Math.hypot(dx, dy) || 1;
+      enemy.mirageAim = { x: dx / distance, y: dy / distance };
+    }
+    if (cycle >= 5.9 && cycle < 6.5 && enemy.mirageAim) {
+      const speed = enemy.hp <= enemy.maxHp / 2 ? 20 : 15;
+      const arena = enemy.campaignArena;
+      const dx = enemy.mirageAim.x * speed * dt, dy = enemy.mirageAim.y * speed * dt;
+      moveAxis(enemy, arena ? Math.max(arena.left + 1 - enemy.x, Math.min(arena.right - enemy.width - enemy.x, dx)) : dx, 0);
+      moveAxis(enemy, 0, arena ? Math.max(arena.top + 1 - enemy.y, Math.min(arena.bottom - enemy.height - enemy.y, dy)) : dy);
+    }
+    enemy.encounterCue = enemy.mirageAim && cycle < 6.5 ? 'The real Regent is diving'
+      : 'False suns · strike the Regent marked by a gold halo';
+    return true;
+  }
+
+  function stepReefBreach(enemy, player, dt) {
+    const breach = enemy.reefBreach;
+    if (breach) {
+      breach.time += dt;
+      if (breach.time < 0.85) {
+        enemy.encounterCue = 'Foam rising · leave the breach lane';
+        return true;
+      }
+      if (breach.time < 1.6) {
+        moveAxis(enemy, 0, -(breach.late ? 21 : 17) * dt);
+        enemy.encounterCue = 'Breaching';
+        return true;
+      }
+      enemy.reefBreach = null;
+      enemy.reefClock = breach.late ? 3.2 : 4.6;
+      enemy.encounterCue = null;
+      return false;
+    }
+    enemy.reefClock = (enemy.reefClock ?? 2.8) - dt;
+    if (enemy.reefClock > 0) return false;
+    const x = player.x + player.width / 2 - enemy.width / 2;
+    // A real water column is required. On dry land the Leviathan uses its normal lunges.
+    const middle = x + enemy.width / 2;
+    for (let depth = 4; depth <= 10; depth += 1) {
+      const y = player.y + depth;
+      if (liquidAt(middle, y + enemy.height / 2) !== tiles.idOf('water') || overlaps(enemy, x, y)) continue;
+      enemy.x = x;
+      enemy.y = y;
+      enemy.reefBreach = { x: middle, top: y - 12, bottom: y + enemy.height, time: 0,
+        late: enemy.hp <= enemy.maxHp / 2 };
+      enemy.encounterCue = 'Foam rising · leave the breach lane';
+      return true;
+    }
+    enemy.reefClock = 0.9;
+    return false;
+  }
+
   function stepOne(enemy, player, dt) {
     const arch = ARCHETYPES[enemy.spec.kind];
     const toward = Math.sign(player.x - enemy.x) || 1;
@@ -1601,6 +1734,10 @@ function makeSwarm(world, tiles, deps) {
       if (enemy.key === 'granitecolossus') stepQuarryArmor(enemy, player, dt);
       if (enemy.key === 'rimehorn' && stepRimehornCharge(enemy, player, dt)) return;
       if (enemy.key === 'voidsovereign' && stepVoidCollapse(enemy, player, dt)) return;
+      if (enemy.key === 'sunmane' && stepSunmaneGlare(enemy, player)) return;
+      if (enemy.key === 'windmillwarden' && stepMillSweep(enemy)) return;
+      if (enemy.key === 'mirage-regent' && stepMirage(enemy, player, dt)) return;
+      if (enemy.key === 'reefleviathan' && stepReefBreach(enemy, player, dt)) return;
       if (enemy.spec.signature && stepBossSignature(enemy, player, dt)) return;
       if (enemy.key === 'lenscustodian') enemy.shielded = !!deps.lensLit && !deps.lensLit();
       if (enemy.key === 'railbreaker') stepRailbreaker(enemy, player, dt);
@@ -2100,7 +2237,7 @@ function makeSwarm(world, tiles, deps) {
   function touching(player) {
     for (const enemy of list) {
       if (enemy.dead || enemy.quarryOwner || enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) continue;
-      if (prismHit(enemy, player)) return enemy;
+      if (prismHit(enemy, player) || glareHits(enemy.sunGlare, player) || millSweepHits(enemy, player)) return enemy;
       const pull = enemy.voidCollapse;
       if (pull?.active && Math.hypot(player.x + player.width / 2 - pull.x,
         player.y + player.height / 2 - pull.y) < pull.core) return enemy;

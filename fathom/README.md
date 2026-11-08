@@ -289,7 +289,10 @@ the floodgate, and the dungeon side bosses, use their own tells.
 The Ossuary Keeper blocks attacks from the side its shield faces. The
 Ashvault Guardian ignites delayed vents that keep burning. Destroy the
 Granite Colossus’s keystones to shatter its armor. Jump Rimehorn’s charge
-and stay outside the Void Sovereign’s gravity well.
+and stay outside the Void Sovereign’s gravity well. Use terrain to block
+Sunmane’s glare. The Windmill Warden’s blades leave a safe gap near the hub.
+Spot the true Mirage Regent by its halo, and watch for foam when the Reef
+Leviathan prepares to breach through water.
 
 ### Signature attacks
 
