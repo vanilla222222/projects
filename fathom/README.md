@@ -178,6 +178,17 @@ withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
 
+### Tinker’s Workshop
+
+At a Work Bench, craft the Tinker’s Workshop from 14 wood, 6 iron bars and
+4 glass. Place it and open crafting nearby. Put the two ingredients in your
+backpack or hotbar before combining them. The result carries both sets of
+effects in one accessory slot, and equipped accessories are left alone.
+
+Start with combinations such as Swift Boots and a Cloud Charm for Cloudstep
+Boots. The Workshop also combines class accessories and utility gear from
+Trail through Eventide.
+
 ### Thrower
 
 Craft an Oak Boomerang at a Work Bench to start. Thrower weapons are reusable

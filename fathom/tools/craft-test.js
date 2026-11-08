@@ -32,7 +32,7 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
   'dirt', 'clay', 'ice', 'basalt', 'slate', 'brick', 'mud', 'blight', 'flesh', 'sandstone',
   'saltcrust', 'ash', 'brimstone', 'cinderstone', 'skystone', 'starrock', 'voidstone', 'prismstone',
-  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...craft.dropOnly().map(drop => drop.key), ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
@@ -123,13 +123,13 @@ for (const w of tiles.WOODS) {
 
 // Workshop recipes must have one owner and a reachable station chain.
 {
-  const expected = { 'heavy-workbench': 601, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136 };
-  const workshop = craft.RECIPES.filter(r => expected[r.station] || r.out.key === 'heavy-workbench');
+  const expected = { 'heavy-workbench': 601, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136, 'tinkers-workshop': 96 };
+  const workshop = craft.RECIPES.filter(r => expected[r.station] || ['heavy-workbench', 'tinkers-workshop'].includes(r.out.key));
   ok(new Set(workshop.map(r => r.out.key)).size === workshop.length, 'duplicate workshop output');
   for (const [station, count] of Object.entries(expected)) {
     ok(workshop.filter(r => r.station === station).length === count, station + ' catalog is incomplete');
   }
-  const stations = ['heavy-workbench', 'sawmill', 'alchemy-table', 'cauldron', 'loom'];
+  const stations = ['heavy-workbench', 'sawmill', 'alchemy-table', 'cauldron', 'loom', 'tinkers-workshop'];
   for (const key of stations) {
     const tile = tiles.BY_KEY[key];
     const build = workshop.find(r => r.out.key === key);
@@ -476,4 +476,22 @@ rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
   assert.equal(craft.RECIPES.filter(recipe => keys.includes(recipe.out.key)).length, 86);
   assert.ok(craft.equipEffects([], ['utility-eventide-traveler']).flightBonus > 0);
   assert.ok(craft.equipEffects([], ['utility-trail-pathfinder']).speed > 1);
+}
+
+{
+  const assert = require('node:assert/strict');
+  const inventory = require('../js/inventory').makeInventory();
+  const recipe = craft.RECIPES.find(entry => entry.out.key === 'cloudstep-boots');
+  assert.equal(recipe.station, 'tinkers-workshop');
+  inventory.add({ key: 'swift-boots', kind: 'accessory' }, 1, 'accessory');
+  inventory.add({ key: 'cloud-charm', kind: 'accessory' }, 1, 'main');
+  assert.equal(craft.craft(inventory, recipe), false);
+  inventory.add({ key: 'swift-boots', kind: 'accessory' }, 1, 'main');
+  assert.equal(craft.available(inventory, new Set(['workbench'])).includes(recipe), false);
+  assert.equal(craft.available(inventory, new Set(['tinkers-workshop'])).includes(recipe), true);
+  assert.equal(craft.craft(inventory, recipe), true);
+  assert.equal(inventory.slots[inventory.section('accessory').from].key, 'swift-boots');
+  assert.equal(inventory.countOf('cloud-charm'), 0);
+  assert.equal(inventory.countOf('cloudstep-boots'), 1);
+  assert.deepEqual(craft.equipEffects([], ['cloudstep-boots']), craft.equipEffects([], ['swift-boots', 'cloud-charm']));
 }

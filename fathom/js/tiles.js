@@ -802,6 +802,10 @@ defineMulti('chapter-armory-cache', 'Armory Cache', 2, 2, () => ({
   chest: 'chapter-armory-cache', drops: null, chapterArmory: true
 }));
 
+// Append new fixtures so saved tile IDs keep their existing meaning.
+workshopFixture('tinkers-workshop', 'Tinker’s Workshop', '#b58eae', 'tinkers-workshop',
+  [['#wood', 14], ['iron-bar', 6], ['glass', 4]], 'workbench', { station: 'tinkers-workshop', emit: 3 });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 

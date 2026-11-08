@@ -848,6 +848,7 @@ function describe(key, tilesModule) {
   if (acc) {
     lines.push('Accessory');
     if (acc.text) lines.push(acc.text);
+    if (acc.effectLines) lines.push(...acc.effectLines);
     if (acc.flight) lines.push(acc.flight + 's of flight per takeoff');
     if (acc.drop) lines.push('Only dropped, never made');
     return { name: nameOf(key, tilesModule), kind, lines };
@@ -1686,6 +1687,59 @@ for (const [tier, [stage, colour, material, reagent, station, enemies]] of GENER
   }
 }
 
+// Use the same stacking rules as equipment. Fusion retains the inputs' effects
+// while occupying one slot, and uses actual accessories as recipe ingredients.
+function addTinkerRecipe(key, name, first, second, colour) {
+  const combined = baseEffects();
+  applyEffect(combined, ACCESSORIES[first]);
+  applyEffect(combined, ACCESSORIES[second]);
+  delete combined.bonus;
+  const effectLines = [first, second].flatMap(part => {
+    const accessory = ACCESSORIES[part];
+    return accessory.effectLines || (accessory.text ? [accessory.text] : []);
+  });
+  ACCESSORIES[key] = { name, colour, effectLines, ...combined };
+  RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
+    need: [[first, 1], [second, 1]], station: 'tinkers-workshop' });
+}
+
+const TINKER_UTILITY_PAIRS = [
+  ['wayfarers-treads', 'Wayfarer’s Treads', 'pathfinder', 'softfall'],
+  ['quarry-harness', 'Quarry Harness', 'mason', 'salvage'],
+  ['field-medic', 'Field Medic’s Kit', 'mender', 'bulwark'],
+  ['divers-beacon', 'Diver’s Beacon', 'deepwater', 'lamplighter'],
+  ['forge-treads', 'Forge Treads', 'cinderwalk', 'pathfinder'],
+  ['spelunkers-kit', 'Spelunker’s Kit', 'lamplighter', 'mason'],
+  ['surveyors-harness', 'Surveyor’s Harness', 'traveler', 'softfall'],
+  ['rescue-satchel', 'Rescue Satchel', 'deepwater', 'mender']
+];
+for (const [stage, colour] of GENERAL_ACCESSORY_STAGES) {
+  const tier = stage.toLowerCase();
+  for (const [key, name, first, second] of TINKER_UTILITY_PAIRS) {
+    addTinkerRecipe('tinker-' + tier + '-' + key, stage + ' ' + name,
+      'utility-' + tier + '-' + first, 'utility-' + tier + '-' + second, colour);
+  }
+}
+
+for (const [key, name, first, second, colour] of [
+  ['cloudstep-boots', 'Cloudstep Boots', 'swift-boots', 'cloud-charm', '#bac7eb'],
+  ['deep-diver-kit', 'Deep Diver Kit', 'diving-gear', 'tidewick', '#79c7d5'],
+  ['delvers-lantern', 'Delver’s Lantern', 'miners-charm', 'lantern-charm', '#ebce84'],
+  ['ashwalk-harness', 'Ashwalk Harness', 'obsidian-charm', 'feather-fall', '#c1949d'],
+  ['vanguard-clasp', 'Vanguard Clasp', 'brawler-band', 'iron-grip', '#d2957c'],
+  ['wardens-hand', 'Warden’s Hand', 'vault-grip', 'warden-pauldrons', '#eeb184'],
+  ['hunters-sight', 'Hunter’s Sight', 'quiver', 'feather-sight', '#aacc94'],
+  ['astral-marksman-kit', 'Astral Marksman Kit', 'prismatic-quiver', 'wyvern-sight', '#d3b8ea'],
+  ['arcane-bloom', 'Arcane Bloom', 'mana-flower', 'arcane-band', '#b39ce4'],
+  ['regents-focus', 'Regent’s Focus', 'regent-prism', 'rift-splinter', '#e5b4ef'],
+  ['spirit-keeper-idol', 'Spirit Keeper Idol', 'spirit-thread', 'batwing-idol', '#b7abc8'],
+  ['astral-spirit-bell', 'Astral Spirit Bell', 'sovereign-idol', 'wyvern-bell', '#c9b2e8'],
+  ['hunters-bandolier', 'Hunter’s Bandolier', 'throwers-wrap', 'chitin-sling', '#d9a36d'],
+  ['foundry-bombardier-kit', 'Foundry Bombardier Kit', 'regent-fuse', 'foundry-gyroscope', '#ecad8c'],
+  ['starweave-flight-kit', 'Starweave Flight Kit', 'starweave-wings', 'utility-eventide-traveler', '#dbc5f5'],
+  ['explorers-mantle', 'Explorer’s Mantle', 'cloudstep-boots', 'delvers-lantern', '#c8c2ab']
+]) addTinkerRecipe(key, name, first, second, colour);
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;
@@ -1740,9 +1794,9 @@ function heldOf(inventory, key) {
 
 // Spend an ingredient, drawing from whichever tag members are present. Returns what it
 // actually took, so a refund can put back exactly that.
-function spend(inventory, key, count) {
+function spend(inventory, key, count, range) {
   if (key[0] !== '#') {
-    inventory.take(key, count);
+    inventory.take(key, count, range);
     return [[key, count]];
   }
   const taken = [];
@@ -1759,8 +1813,15 @@ function spend(inventory, key, count) {
   return taken;
 }
 
+function tinkerIngredientRange(inventory, recipe) {
+  if (recipe.station !== 'tinkers-workshop' || !inventory.sections?.main) return undefined;
+  return { from: inventory.sections.hotbar?.from ?? inventory.sections.main.from, to: inventory.sections.main.to };
+}
+
 function canAfford(inventory, recipe) {
-  return recipe.need.every(([key, count]) => heldOf(inventory, key) >= count);
+  const range = tinkerIngredientRange(inventory, recipe);
+  return recipe.need.every(([key, count]) =>
+    (range ? inventory.countOf(key, range) : heldOf(inventory, key)) >= count);
 }
 
 // Terraria shows a recipe only once you hold all of it, so the list never advertises what
@@ -1782,8 +1843,9 @@ function craft(inventory, recipe) {
   // Take the cost first; if the result will not fit, put back exactly what was taken,
   // which for a tag means the same species it came from rather than an arbitrary one.
   const taken = [];
+  const range = tinkerIngredientRange(inventory, recipe);
   for (const [key, count] of recipe.need) {
-    for (const entry of spend(inventory, key, count)) taken.push(entry);
+    for (const entry of spend(inventory, key, count, range)) taken.push(entry);
   }
   const left = inventory.add({ key: recipe.out.key, kind: recipe.out.kind }, recipe.out.count);
   if (left > 0) {
