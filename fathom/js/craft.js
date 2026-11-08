@@ -268,6 +268,15 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'colossus-core': { name: 'Colossus Core', kind: 'loot', colour: '#91d9d7' },
+  'serpent-core': { name: 'Serpent Core', kind: 'loot', colour: '#d5a26a' },
+  'zenith-core': { name: 'Zenith Core', kind: 'loot', colour: '#c596e8' },
+  'glass-effigy': { name: 'Glass Effigy', kind: 'use', colour: '#91d9d7',
+    use: { summon: 'glasscolossus' }, text: 'Summon the Glass Colossus on open ground' },
+  'induction-coil': { name: 'Induction Coil', kind: 'use', colour: '#d5a26a',
+    use: { summon: 'coilserpent' }, text: 'Summon the Coil Serpent in a wide arena' },
+  'zenith-beacon': { name: 'Zenith Beacon', kind: 'use', colour: '#c596e8',
+    use: { summon: 'zenithengine' }, text: 'Summon the Zenith Engine with room overhead' },
   'mechanist-core': { name: 'Mechanist Core', kind: 'loot', colour: '#be99ec' },
   'mechanist-key': { name: 'Mechanist Armory Key', kind: 'loot', colour: '#a4b8ef' },
   'clockwork-heart': { name: 'Clockwork Heart', kind: 'use', colour: '#c185d4',
@@ -391,6 +400,8 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'triune-emblem': { name: 'Triune Emblem', colour: '#d6b9e8',
+    text: 'Defence +9 and all weapon damage +10%', effect: { defense: 9, melee: 1.1, ranged: 1.1, magic: 1.1 } },
   'beach-clasp': { name: 'Shore Clasp', colour: '#a9b89e', text: 'Move 8% faster and pick up items from farther away', speed: 1.08, pickup: 1.4 },
   'breakwater-band': { name: 'Breakwater Band', colour: '#c68d66', text: 'Defence +5 and breath lasts twice as long', defense: 5, breathMul: 2 },
   'saltmarrow-charm': { name: 'Saltmarrow Charm', colour: '#a5b8ae', text: 'Health regenerates 25% faster and take 20% less fall damage', regen: 1.25, fallMul: 0.8 },
@@ -592,6 +603,11 @@ const WEAPONS = {
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
   'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
   'aether-sabre': { name: 'Aether Sabre', damage: 118, useTime: 0.20, reach: 4.4 },
+  'shatter-maul': { name: 'Shatter Maul', damage: 232, useTime: 0.34, reach: 4.7, cleave: true, colour: '#91d9d7' },
+  'induction-repeater': { name: 'Induction Repeater', damage: 178, useTime: 0.21, reach: 65, ranged: true,
+    ammo: 'bullet', pierce: true, colour: '#d5a26a' },
+  'zenith-focus': { name: 'Zenith Focus', damage: 192, useTime: 0.29, reach: 50, magic: true,
+    mana: 17, spell: 'ward', bolt: '#c596e8' },
   'relay-cleaver': { name: 'Relay Cleaver', damage: 196, useTime: 0.28, reach: 4.6, cleave: true, colour: '#d694e0' },
   'coil-carbine': { name: 'Coil Carbine', damage: 159, useTime: 0.23, reach: 64, ranged: true, ammo: 'bullet', pierce: true, colour: '#8ebbe7' },
   'lattice-scepter': { name: 'Lattice Scepter', damage: 173, useTime: 0.28, reach: 48,
@@ -821,6 +837,18 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  ...[
+    ['glass-effigy', 'ray-crystal'], ['induction-coil', 'storm-crystal'], ['zenith-beacon', 'ward-crystal']
+  ].map(([key, crystal]) => ({ out: { key, kind: 'use', count: 1 },
+    need: [['adamantite-bar', 3], ['mythril-bar', 2], ['palladium-bar', 2], [crystal, 3]], station: 'anvil' })),
+  { out: { key: 'shatter-maul', kind: 'tool', count: 1 },
+    need: [['colossus-core', 1], ['adamantite-bar', 8]], station: 'anvil' },
+  { out: { key: 'induction-repeater', kind: 'tool', count: 1 },
+    need: [['serpent-core', 1], ['adamantite-bar', 8]], station: 'anvil' },
+  { out: { key: 'zenith-focus', kind: 'tool', count: 1 },
+    need: [['zenith-core', 1], ['adamantite-bar', 8]], station: 'anvil' },
+  { out: { key: 'triune-emblem', kind: 'accessory', count: 1 },
+    need: [['colossus-core', 1], ['serpent-core', 1], ['zenith-core', 1]], station: 'anvil' },
   { out: { key: 'clockwork-heart', kind: 'use', count: 1 },
     need: [['palladium-bar', 3], ['wire-spool', 10], ['bone', 8]], station: 'heavy-workbench' },
   { out: { key: 'bone-toll', kind: 'use', count: 1 }, need: [['bone', 8], ['iron-bar', 3]], station: 'anvil' },
@@ -1363,6 +1391,8 @@ function nameOf(key, tiles) {
 // forgotten there, which broke the game at runtime while every test passed.
 // Each chapter's optional fights unlock after its main fight. They never gate the
 // next chapter. Keep the journal and summon checks on the same order.
+const HARDMODE_TRIO = ['glasscolossus', 'coilserpent', 'zenithengine'];
+
 const BOSS_CHAPTERS = [
   ['kingslime', 'briarwarden', 'windmillwarden', 'mirebrood'],
   ['hollloweye', 'dungeonkeeper', 'thunderbird', 'desertscourge', 'rimehorn', 'pinemaw', 'orchidqueen',
@@ -1373,7 +1403,7 @@ const BOSS_CHAPTERS = [
   ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],
   ['voidsovereign'],
   ['riftarchon'],
-  ['prismsentinel', 'ossuarymechanist']
+  ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO]
 ];
 
 const BOSS_PREREQUISITES = new Map();
@@ -1399,7 +1429,7 @@ function restoreBossProgress(saved) {
   return defeated;
 }
 
-const EXPORTS_craft = { RECIPES, ITEMS, BOSS_CHAPTERS, bossPrerequisite, restoreBossProgress, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
+const EXPORTS_craft = { RECIPES, ITEMS, BOSS_CHAPTERS, HARDMODE_TRIO, bossPrerequisite, restoreBossProgress, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
     classOf, dropOnly, AMMO, bestAmmo, grappleOf, describe,

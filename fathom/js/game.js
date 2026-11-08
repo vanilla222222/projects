@@ -210,7 +210,7 @@ function makeGame(canvas, deps) {
       for (const entry of target.spec.bossDrops) {
         const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
         const x = target.x + target.width / 2;
-        const buried = (target.key === 'desertscourge' || target.key === 'reefleviathan') && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
+        const buried = enemyModule.ARCHETYPES[target.spec.kind].burrows && tiles.isSolid(world.get(Math.floor(x), Math.floor(target.y)));
         dropItem(buried ? state.player.x : x, buried ? state.player.y : target.y, key, craft.kindOf(key), count);
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
@@ -954,8 +954,17 @@ function makeGame(canvas, deps) {
       for (let s2 = 0; s2 < steps && !hit; s2 += 1) {
         a.x += (a.vx * dt) / steps;
         a.y += (a.vy * dt) / steps;
-        if (tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) hit = true;
-        else if (a.trap && pointHitsPlayer(a.x, a.y)) {
+        const solid = tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)));
+        if (solid && !a.escapeTerrain) hit = true;
+        else if (a.hostile) {
+          if (!solid) {
+            a.escapeTerrain = false;
+            if (pointHitsPlayer(a.x, a.y)) {
+              if (statsModule.damage(stats, a.damage) > 0) lastHurt = a.hostile;
+              hit = true;
+            }
+          }
+        } else if (a.trap && pointHitsPlayer(a.x, a.y)) {
           if (statsModule.damage(stats, a.damage) > 0) lastHurt = 'a dart trap';
           hit = true;
         } else if (swarm) {
@@ -1341,6 +1350,8 @@ function makeGame(canvas, deps) {
     if (world.hardmode) rows.push('Hardmode Ossuary · Defeat the Keeper and use the seal at the bottom of the original galleries.');
     if (defeatedBosses.has('ossuarymechanist')) rows.push('Signal Bench · Build one from the Mechanist Core for colored wire and logic relays.');
     if (defeatedBosses.has('dungeonkeeper')) rows.push('Ossuary · Find the switch for the Mechanist Cache in the first gallery.');
+    if (world.hardmode) rows.push('Hardmode trio · ' + craft.HARDMODE_TRIO.filter(key => defeatedBosses.has(key)).length
+      + ' / 3 defeated · Fight in any order. All three cores craft the Triune Emblem.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1364,7 +1375,8 @@ function makeGame(canvas, deps) {
         const required = craft.bossPrerequisite(boss, defeatedBosses);
         const done = defeatedBosses.has(boss);
         const status = done ? 'Defeated' : required ? 'Locked until ' + enemyModule.BY_KEY[required].name : 'Unlocked';
-        rows.push((boss === main ? 'Main' : 'Optional') + ' · ' + enemyModule.BY_KEY[boss].name + ' · ' + status);
+        const role = craft.HARDMODE_TRIO.includes(boss) ? 'Hardmode main' : boss === main ? 'Main' : 'Optional';
+        rows.push(role + ' · ' + enemyModule.BY_KEY[boss].name + ' · ' + status);
         if (!done) rows.push(item.name + ' · ' + recipeLine(summon) + ' · ' + (mainHints[boss] || item.text));
       }
     }
@@ -1661,6 +1673,19 @@ function makeGame(canvas, deps) {
   function playerOccupiesTile(x, y) {
     const p = state.player;
     return x + 1 > p.x && x < p.x + p.width && y + 1 > p.y && y < p.y + p.height;
+  }
+
+  function fireBossBarrage(boss, shot) {
+    const wave = shot.pattern === 'shatter';
+    const speed = wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
+    const inside = tiles.isSolid(world.get(Math.floor(shot.x), Math.floor(shot.y)));
+    for (const angle of shot.angles) {
+      state.arrows.push({ x: shot.x, y: shot.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        life: wave ? 17 / speed : 23 / speed, gravity: 0, damage: shot.enraged ? 109 : 96,
+        colour: boss.spec.colour, hostile: boss.spec.name,
+        escapeTerrain: shot.pattern === 'cross' && inside });
+    }
+    sfxAt(wave ? 'hit' : 'cast', shot.x, shot.y);
   }
 
   function fireMechanismDart(point, direction = 1) {
@@ -2091,7 +2116,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=mechanist-1');
+      const worker = new Worker('workers/chunk.js?v=hardmode-trio-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2392,7 +2417,9 @@ function makeGame(canvas, deps) {
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
-    swarm = enemyModule.makeSwarm(world, tiles, { worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper') });
+    swarm = enemyModule.makeSwarm(world, tiles, {
+      worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage
+    });
     wiring = deps.wiring.makeWiring(world, tiles, {
       door: point => useDoor(point),
       occupied: playerOccupiesTile,

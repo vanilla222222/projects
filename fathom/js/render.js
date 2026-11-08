@@ -560,12 +560,13 @@ function makeRenderer(canvas, deps) {
       if (enemy.beams) {
         ctx.save();
         ctx.lineWidth = size * (enemy.beams.live ? 0.34 : 0.075);
-        ctx.strokeStyle = enemy.beams.live ? '#f9dafa' : '#b898d0';
+        ctx.strokeStyle = enemy.beams.colour || (enemy.beams.live ? '#f9dafa' : '#b898d0');
+        const beamY = enemy.beams.origin === 'feet' ? sy + h - size * 0.35 : sy + h / 2;
         for (const angle of enemy.beams.angles) {
           ctx.beginPath();
-          ctx.moveTo(sx + w / 2, sy + h / 2);
+          ctx.moveTo(sx + w / 2, beamY);
           ctx.lineTo(sx + w / 2 + Math.cos(angle) * enemy.beams.range * size,
-            sy + h / 2 + Math.sin(angle) * enemy.beams.range * size);
+            beamY + Math.sin(angle) * enemy.beams.range * size);
           ctx.stroke();
         }
         ctx.restore();

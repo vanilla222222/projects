@@ -117,6 +117,14 @@ const ARCHETYPES = {
     chargeEvery: 3.8, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.82, spawnEvery: 5,
     minion: 'chalksentry', minions: 2, enrageAt: 0.47, enrageSpeed: 1.27,
     enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 },
+  glasscolossus: { gravity: 50, maxFall: 42, hop: 11.5, hopEvery: 1.7, speed: 6.5, air: 0.64,
+    boss: true, teleportAfter: 3.4, teleportRange: 30, spawnEvery: 7, minions: 0, shrinkTo: 0.72 },
+  coilserpent: { gravity: 0, boss: true, flies: true, burrows: true, speed: 7.2, hoverAbove: -3, drift: 5,
+    chargeEvery: 4.3, windUp: 0.95, chargeSpeed: 24, chargeFor: 0.83, enrageAt: 0.5,
+    enrageSpeed: 1.25, enrageCharge: 0.73, enrageWindUp: 0.65 },
+  zenithengine: { gravity: 0, boss: true, flies: true, speed: 5.7, hoverAbove: 7, drift: 7,
+    chargeEvery: 5.8, windUp: 1.2, chargeSpeed: 20, chargeFor: 0.6, enrageAt: 0.5,
+    enrageSpeed: 1.17, enrageCharge: 0.75, enrageWindUp: 0.7 },
   prism: { gravity: 0, boss: true, flies: true, speed: 5.5,
     enrageAt: 0.5, minion: 'deepreefeye', spawnEvery: 5.6, minions: 2 }
 
@@ -674,6 +682,15 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'glasscolossus', name: 'Glass Colossus', kind: 'glasscolossus', body: 'golem', hp: 18500,
+    damage: 126, weight: 0, w: 5.4, h: 5.6, colour: '#91d9d7', boss: true, summonOnly: true,
+    barrage: 'shatter', emit: 8, drops: [['coin', 3300]], bossDrops: [['colossus-core', 2]] },
+  { key: 'coilserpent', name: 'Coil Serpent', kind: 'coilserpent', body: 'worm', hp: 21400,
+    damage: 126, weight: 0, w: 7, h: 3.4, colour: '#d5a26a', boss: true, summonOnly: true,
+    barrage: 'cross', emit: 7, drops: [['coin', 3300]], bossDrops: [['serpent-core', 2]] },
+  { key: 'zenithengine', name: 'Zenith Engine', kind: 'zenithengine', body: 'bird', hp: 20200,
+    damage: 126, weight: 0, w: 6, h: 4.1, colour: '#c596e8', boss: true, summonOnly: true,
+    barrage: 'fan', emit: 9, drops: [['coin', 3300]], bossDrops: [['zenith-core', 2]] },
   { key: 'prismsentinel', name: 'Prism Sentinel', kind: 'prism', body: 'golem', hp: 12800,
     damage: 95, weight: 0, w: 4.7, h: 4.6, colour: '#d6a6ed', boss: true, summonOnly: true,
     emit: 10, drops: [['coin', 2600]], bossDrops: ['prism-heart'] },
@@ -760,6 +777,9 @@ function makeEnemy(spec, x, y) {
 // Gait speed per archetype: how much animation one tile of travel buys, and how much is
 // added per second regardless.
 const GAIT = {
+  glasscolossus: { perTile: 1.5, perSecond: 1.4 },
+  coilserpent: { perTile: 1.2, perSecond: 3.8 },
+  zenithengine: { perTile: 0.5, perSecond: 9.2 },
   prism: { perTile: 0.4, perSecond: 8 },
   // A slime's wobble runs whether or not it is going anywhere, which is the whole
   // character of the thing: it sits there quivering.
@@ -970,7 +990,8 @@ function makeSwarm(world, tiles, deps) {
   }
 
   function damage(enemy, amount) {
-    enemy.hp -= amount;
+    const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
+    enemy.hp -= plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
     if (enemy.hp <= 0) enemy.dead = true;
     return enemy.dead;
@@ -989,7 +1010,8 @@ function makeSwarm(world, tiles, deps) {
     if (arch.boss) {
       if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
       else if (arch.flies) stepHoverBoss(enemy, arch, player, dt, toward);
-      else stepBoss(enemy, arch, player, dt, toward);
+      else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);
+      if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
       return;
     }
 
@@ -1152,6 +1174,36 @@ function makeSwarm(world, tiles, deps) {
 
   // A boss that flies, hovers out of reach, and charges in a straight line it chooses
   // before it starts and cannot change afterwards.
+  function stepHardmodeBarrage(enemy, player, dt) {
+    const pattern = enemy.spec.barrage;
+    const enraged = enemy.hp <= enemy.maxHp / 2;
+    if (pattern === 'shatter') enemy.enraged = enraged;
+    const cooldown = enraged ? 2.75 : 4.1;
+    const elapsed = (enemy.barrageTime || 0) + dt;
+    if (elapsed < cooldown || (pattern === 'shatter' && !enemy.beams && !enemy.onGround)) {
+      enemy.barrageTime = Math.min(elapsed, cooldown);
+      return;
+    }
+    const x = enemy.x + enemy.width / 2;
+    const y = pattern === 'shatter' ? enemy.y + enemy.height - 0.35 : enemy.y + enemy.height / 2;
+    if (!enemy.beams) {
+      const aim = Math.atan2(player.y + player.height / 2 - y, player.x + player.width / 2 - x);
+      const fan = enraged ? [-0.66, -0.44, -0.22, 0, 0.22, 0.44, 0.66] : [-0.48, -0.24, 0, 0.24, 0.48];
+      const angles = pattern === 'shatter' ? [0, Math.PI]
+        : pattern === 'cross' ? [aim - 0.25, aim + 0.25, aim - 1.12, aim + 1.12] : fan.map(offset => aim + offset);
+      enemy.beams = { live: false, range: pattern === 'shatter' ? 17 : 23, angles, origin: pattern === 'shatter' ? 'feet' : null,
+        colour: enemy.spec.colour };
+    }
+    const warning = enraged ? 0.62 : 0.9;
+    if (elapsed < cooldown + warning) {
+      enemy.barrageTime = elapsed;
+      return;
+    }
+    deps.bossBarrage?.(enemy, { x, y, angles: enemy.beams.angles, pattern, enraged });
+    enemy.beams = null;
+    enemy.barrageTime = 0;
+  }
+
   function stepPrismBoss(enemy, arch, player, dt, toward) {
     enemy.enraged = enemy.hp / enemy.maxHp <= arch.enrageAt;
     if (!enemy.enraged) bossMinions(enemy, arch, dt);
@@ -1258,13 +1310,12 @@ function makeSwarm(world, tiles, deps) {
   // The first row in a column range where this body would stand on solid ground. Used
   // for the teleport, which must not land the king inside the rock.
   function findFloor(x, y0, y1, body) {
-    for (let y = y0; y <= y1; y += 1) {
+    for (let floorY = Math.ceil(y0 + body.height); floorY <= Math.floor(y1 + body.height); floorY += 1) {
+      const y = floorY - body.height;
       if (overlaps(body, x, y)) continue;
-      let floor = false;
       for (let dx = 0; dx < Math.ceil(body.width); dx += 1) {
-        if (solid(x + dx, y + body.height + 0.1)) floor = true;
+        if (solid(x + dx, floorY)) return y;
       }
-      if (floor) return y;
     }
     return null;
   }

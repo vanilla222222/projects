@@ -405,6 +405,37 @@ ok(victim.dead, 'a killed enemy is not marked dead');
   }
 }
 
+// The three Hardmode fights send different telegraphed volleys through the same combat hook.
+{
+  const player = { x: 200, y: FLOOR - 2, width: 0.8, height: 1.8 };
+  const arena = makeTestWorld(FLOOR);
+  const flat = { biomeAt: () => ({ key: 'forest' }), layerAt: () => ({ key: 'surface' }) };
+  for (const [key, pattern, count] of [
+    ['glasscolossus', 'shatter', 2], ['coilserpent', 'cross', 4], ['zenithengine', 'fan', 5]
+  ]) {
+    const volleys = [];
+    const swarm = enemyModule.makeSwarm(arena, tiles, { worldgen: flat, bossBarrage: (_, shot) => volleys.push(shot) });
+    const boss = swarm.summon(key, player);
+    ok(!!boss, key + ' cannot be summoned for the barrage check');
+    if (!boss) continue;
+    let warned = false;
+    for (let frame = 0; frame < 1200 && !volleys.length; frame += 1) {
+      swarm.step(player, 1 / 60, 0.5);
+      warned ||= !!boss.beams && !boss.beams.live;
+    }
+    ok(warned && volleys[0]?.pattern === pattern && volleys[0].angles.length === count,
+      key + ' failed to telegraph its signature attack');
+    if (key === 'glasscolossus') {
+      const hp = boss.hp;
+      swarm.damage(boss, 100);
+      ok(boss.hp === hp - 74, 'Colossus armor failed to reduce damage');
+      boss.beams = { live: false };
+      swarm.damage(boss, 100);
+      ok(boss.hp === hp - 174, 'Colossus armor did not open during its windup');
+    }
+  }
+}
+
 // --- 6c. the charge is a charge ------------------------------------------------------------------
 // The Hollow Eye's whole fight is that it commits to a line before it starts and cannot
 // steer afterwards. If it tracked the player mid-charge there would be nothing to dodge.
