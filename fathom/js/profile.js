@@ -8,6 +8,7 @@
 // nothing, and both evils can simply exist somewhere out along the x axis.
 
 const INDEX_CHARACTERS = 'fathom.characters';
+const PROFILE_WORLDGEN = typeof require === 'function' ? require('./worldgen.js') : FATHOM.worldgen;
 const INDEX_WORLDS = 'fathom.worlds';
 const RECORD_CHARACTER = 'fathom.character.';
 const RECORD_WORLD = 'fathom.world.';
@@ -103,11 +104,12 @@ function makeProfiles(storage) {
     const id = newId('w', new Set(index.map((e) => e.id)));
     const seed = parseSeed(opts.seed);
     const name = String(opts.name || 'Fathom').slice(0, 24).trim() || 'Fathom';
+    const settings = PROFILE_WORLDGEN.normalizeWorldSettings(opts.settings);
     const entry = { id, name, seed, created: Date.now(), playedSeconds: 0 };
     index.push(entry);
     writeJSON(INDEX_WORLDS, index);
-    writeJSON(RECORD_WORLD + id, { format: FORMAT, id, seed, name, world: null, dayPhase: 0.12, spawn: null });
-    return entry;
+    writeJSON(RECORD_WORLD + id, { format: FORMAT, id, seed, name, settings, world: null, dayPhase: 0.12, spawn: null });
+    return { ...entry, settings };
   }
 
   function loadCharacter(id) {
@@ -138,12 +140,19 @@ function makeProfiles(storage) {
     const existing = loadWorld(id);
     if (!existing) return false;
     const merged = { ...existing, ...payload, format: FORMAT, id, seed: existing.seed };
+    if (payload.settings) {
+      const original = PROFILE_WORLDGEN.normalizeWorldSettings(existing.settings);
+      merged.settings = PROFILE_WORLDGEN.normalizeWorldSettings({ ...original, ...payload.settings });
+      for (const field of PROFILE_WORLDGEN.WORLD_SETTINGS) {
+        if (field.generation) merged.settings[field.key] = original[field.key];
+      }
+    }
     if (!writeJSON(RECORD_WORLD + id, merged)) return false;
     const index = listWorlds();
     const entry = index.find((e) => e.id === id);
     if (entry) {
       if (payload.playedSeconds !== undefined) entry.playedSeconds = payload.playedSeconds;
-      entry.lastPlayed = Date.now();
+      if (!payload.settings) entry.lastPlayed = Date.now();
       writeJSON(INDEX_WORLDS, index);
     }
     return true;

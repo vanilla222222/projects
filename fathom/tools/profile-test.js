@@ -115,4 +115,13 @@ const indexRaw = store.getItem('fathom.worlds');
 check(indexRaw.length < 400, 'the world index carries the edit diff; it is ' + indexRaw.length + ' bytes');
 check(p.loadWorld(w.id).world.edits['0:0'].length === 500, 'the world record lost its edits');
 
+const tailored = p.createWorld({ name: 'Tailored', seed: 'same seed',
+  settings: { relief: 'rugged', enemies: 'quiet', weather: 'invalid' } });
+check(p.loadWorld(tailored.id).settings.relief === 'rugged', 'custom terrain choices were not saved');
+check(p.loadWorld(tailored.id).settings.weather === 'normal', 'invalid world settings did not default');
+p.saveWorld(tailored.id, { settings: { relief: 'gentle', enemies: 'busy', day: 'slow' } });
+const tailoredRules = p.loadWorld(tailored.id).settings;
+check(tailoredRules.relief === 'rugged', 'gameplay edits changed the world terrain settings');
+check(tailoredRules.enemies === 'busy' && tailoredRules.day === 'slow', 'gameplay settings did not persist');
+
 console.log('Profiles: ' + checks + ' checks passed across seeds, creation, separation and durability');

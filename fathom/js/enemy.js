@@ -893,8 +893,10 @@ const EVENT_ALIVE = 9;
 function makeSwarm(world, tiles, deps) {
   const { worldgen, random } = deps;
   const rng = random || Math.random;
+  const activity = deps.enemyActivity || 1;
+  const spawnEvery = SPAWN_EVERY / activity;
   const list = [];
-  let cooldown = SPAWN_EVERY;
+  let cooldown = spawnEvery;
 
   function solid(x, y) {
     return tiles.isSolid(world.get(Math.floor(x), Math.floor(y)));
@@ -973,6 +975,12 @@ function makeSwarm(world, tiles, deps) {
     if (!spec || !spec.boss) return null;
     if (list.some(e => e.boss)) return null;        // one at a time
     const arch = ARCHETYPES[spec.kind];
+    const createBoss = (x, y) => {
+      const boss = makeEnemy(spec, x, y);
+      boss.hp = boss.maxHp = Math.round(spec.hp * (deps.bossHealth || 1));
+      list.push(boss);
+      return boss;
+    };
     for (const side of [1, -1]) {
       for (let away = 7; away < 26; away += 1) {
         const x = Math.floor(player.x + side * away);
@@ -983,15 +991,11 @@ function makeSwarm(world, tiles, deps) {
           const y = arena ? Math.max(arena.top, Math.min(above, arena.bottom - spec.h)) : above;
           if (arena && (x < arena.left || x + spec.w > arena.right)) continue;
           if (!arch.burrows && overlaps(probe, x, y)) continue;
-          const boss = makeEnemy(spec, x, y);
-          list.push(boss);
-          return boss;
+          return createBoss(x, y);
         }
         const y = findFloor(x, Math.floor(player.y) - 14, Math.floor(player.y) + 10, probe);
         if (y === null) continue;
-        const boss = makeEnemy(spec, x, y);
-        list.push(boss);
-        return boss;
+        return createBoss(x, y);
       }
     }
     return null;
@@ -1024,7 +1028,7 @@ function makeSwarm(world, tiles, deps) {
     // A boss and its minions do not count against the ordinary cap, and nothing
     // ordinary spawns while one is alive: the fight is the fight.
     if (list.some(e => e.boss)) return null;
-    if (list.length >= (event ? EVENT_ALIVE : MAX_ALIVE)) return null;
+    if (list.length >= Math.max(4, Math.round((event ? EVENT_ALIVE : MAX_ALIVE) * activity))) return null;
     const habitat = contextAt(player.x, player.y, dayPhase, event);
     const inOssuary = habitat.dungeon;
     const surface = habitat.layer === 'surface' && !event;
@@ -1520,7 +1524,7 @@ function makeSwarm(world, tiles, deps) {
     if (cooldown <= 0) {
       // A blood moon is not merely a different roster: it is more of everything, which
       // is what makes it a reason to be indoors rather than a change of scenery.
-      cooldown = event ? SPAWN_EVERY * 0.45 : SPAWN_EVERY;
+      cooldown = event ? spawnEvery * 0.45 : spawnEvery;
       trySpawn(player, dayPhase, event);
     }
     for (let i = list.length - 1; i >= 0; i -= 1) {

@@ -127,4 +127,23 @@ for (const spec of tiles.WALLS) {
   }
 }
 
+{
+  check(gen.generationSeed(SEED, { day: 'slow' }) === SEED, 'gameplay options affected terrain identity');
+  const scarce = gen.generationSeed(SEED, { structures: 'scarce', longCaves: 'off', ores: 'lean', forest: 'small' });
+  const rich = gen.generationSeed(SEED, { structures: 'more', longCaves: 'many', ores: 'rich', forest: 'large' });
+  let scarceStructures = 0, richStructures = 0, scarceOres = 0, richOres = 0;
+  for (let i = -80; i < 80; i += 1) {
+    scarceStructures += Boolean(gen.structureAt(scarce, i));
+    richStructures += Boolean(gen.structureAt(rich, i));
+    check(!gen.longCaveLayout(scarce, i), 'disabled long cave generated');
+    for (let y = 80; y < 850; y += 11) {
+      scarceOres += Boolean(gen.oreAt(scarce, i * 3, y, y - 20));
+      richOres += Boolean(gen.oreAt(rich, i * 3, y, y - 20));
+    }
+  }
+  check(richStructures > scarceStructures && richOres > scarceOres, 'resource or structure settings had no effect');
+  check(gen.starterForestEdge(scarce) < gen.starterForestEdge(rich), 'starting forest width did not change');
+  check(makeWorld(rich, gen).serialize().seed === SEED, 'custom world did not serialize a portable numeric seed');
+}
+
 console.log('World: ' + checks + ' checks passed across both layers, the edit diff and the safe-wall rule');

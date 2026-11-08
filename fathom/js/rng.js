@@ -14,7 +14,8 @@ function hash32(a) {
 }
 
 function hash2(seed, x, y, salt) {
-  let h = hash32(seed ^ 0x9e3779b9);
+  const number = typeof seed === 'object' && seed !== null ? seed.number : seed;
+  let h = hash32(number ^ 0x9e3779b9);
   h = hash32(h ^ Math.imul(x | 0, 0x85ebca6b));
   h = hash32(h ^ Math.imul(y | 0, 0xc2b2ae35));
   h = hash32(h ^ Math.imul((salt | 0) + 1, 0x165667b1));
