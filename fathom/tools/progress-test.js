@@ -135,6 +135,9 @@ function climb() {
     };
     // The Warden is a combat gate. The ladder only assumes victory once its summon
     // is reachable and the player can mine the ore used for its rewards.
+    for (const [summon, core] of [
+      ['glass-effigy', 'colossus-core'], ['induction-coil', 'serpent-core'], ['zenith-beacon', 'zenith-core']
+    ]) if (was.has(summon)) gain(core);
     if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');

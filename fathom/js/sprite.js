@@ -1108,6 +1108,29 @@ function paintCreatureInlay(ctx, g, body, c) {
   }
 }
 
+function paintHardmodeMachine(ctx, g, c) {
+  const alloy = spriteShade(c.colour, -0.42);
+  const glow = spriteShade(c.colour, 0.5);
+  if (c.key === 'glasscolossus') {
+    for (const x of c.enraged ? [-0.19, 0.19] : [-0.28, -0.12, 0.12, 0.28]) {
+      poly(ctx, g, [x - 0.09, -0.67, x - 0.02, -0.96, x + 0.06, -0.71, x + 0.08, -0.54], alloy);
+      poly(ctx, g, [x - 0.04, -0.69, x - 0.02, -0.9, x + 0.03, -0.65], glow);
+    }
+  } else if (c.key === 'coilserpent') {
+    for (const x of [-0.32, -0.19, -0.06, 0.07]) {
+      const y = -0.45 + Math.sin((c.anim || 0) + x * 12) * 0.13;
+      rect(ctx, g, x, y - 0.09, 0.045, 0.18, alloy);
+      dot(ctx, g, x + 0.02, y - 0.01, 0.04, glow);
+    }
+  } else if (c.key === 'zenithengine') {
+    for (const x of [-0.26, 0.18]) {
+      poly(ctx, g, [x - 0.07, -0.47, x + 0.05, -0.54, x + 0.1, -0.43, x + 0.05, -0.32, x - 0.07, -0.35], alloy);
+      rect(ctx, g, x - 0.05, -0.43, 0.13, 0.06, glow);
+      if (c.enraged) poly(ctx, g, [x - 0.05, -0.36, x + 0.06, -0.36, x + 0.01, -0.19], glow);
+    }
+  }
+}
+
 function drawCreature(ctx, box, body, c) {
   const plan = BODIES[body] || BODIES.slime;
   const g = geometry(box);
@@ -1119,6 +1142,7 @@ function drawCreature(ctx, box, body, c) {
   }
   plan(ctx, g, c);
   paintCreatureInlay(ctx, g, body, c);
+  if (['glasscolossus', 'coilserpent', 'zenithengine'].includes(c.key)) paintHardmodeMachine(ctx, g, c);
   ctx.restore();
 }
 
