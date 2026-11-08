@@ -286,6 +286,12 @@ BODIES.skull = function (ctx, g, c) {
     dot(ctx, g, x, -0.63, 0.06, '#d3f6ff');
   }
   dot(ctx, g, 0, -0.48, 0.07, '#182235');
+  if (c.key === 'trial-slag-chapel') {
+    rect(ctx, g, -0.27, -0.98, 0.54, 0.12, '#542b3c');
+    rect(ctx, g, -0.21, -1.05, 0.09, 0.15, '#f2ae68');
+    rect(ctx, g, 0.12, -1.05, 0.09, 0.15, '#f2ae68');
+    dot(ctx, g, 0, -0.9, 0.08, '#fff0a6');
+  }
   if (c.key === 'ossuary-skull') {
     rect(ctx, g, -0.19, -0.91, 0.38, 0.045, '#53768b');
     dot(ctx, g, 0, -0.87, 0.12, '#e2bd6e');
