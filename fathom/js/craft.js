@@ -1628,6 +1628,64 @@ for (const [key, name, source, colour, effect, text] of EXPEDITION_ACCESSORIES) 
   if (!drop) RECIPES.push({ out: { key, kind: 'accessory', count: 1 }, need: source, station: 'anvil' });
 }
 
+// Each route keeps a distinct utility tradeoff as its materials advance.
+const GENERAL_ACCESSORY_STAGES = [
+  ['Trail', '#c59f71', 'leather', 'gel', 'workbench', ['zombie', 'greenslime']],
+  ['Copper', '#d3926a', 'copper-bar', 'feather', 'anvil', ['vulture', 'antlion']],
+  ['Iron', '#aeb9c1', 'iron-bar', 'bone', 'anvil', ['skeleton', 'giantworm']],
+  ['Gold', '#e9c474', 'gold-bar', 'chitin', 'anvil', ['rockgolem', 'hornet']],
+  ['Cobalt', '#82bde8', 'cobalt-bar', 'leather', 'anvil', ['salamander', 'giantbat']],
+  ['Ember', '#ea916d', 'emberite-bar', 'cinder', 'anvil', ['hellbat', 'magmacrawler']],
+  ['Void', '#b39ce8', 'void-crystal', 'stardust', 'anvil', ['voidstalker', 'voidshade']],
+  ['Aether', '#8edbc9', 'aetherite-bar', 'feather', 'anvil', []],
+  ['Adamant', '#e99099', 'adamantite-bar', 'stardust', 'anvil', []],
+  ['Eventide', '#ddbcf2', 'eventide-bar', 'wyvern-essence', 'anvil', []]
+];
+
+const GENERAL_ACCESSORY_ROUTES = [
+  ['pathfinder', 'Pathfinder Boots', (speed, n) => [{ speed: 1 + speed, fallMul: 1 - n / 2 },
+    'Movement speed +' + percent(speed) + '% and fall damage −' + percent(n / 2) + '%']],
+  ['mason', 'Mason’s Grip', (speed, n) => [{ power: 1 + n, swing: 1 - speed / 2 },
+    'Mining power +' + percent(n) + '% and swing interval −' + percent(speed / 2) + '%']],
+  ['bulwark', 'Bulwark Clasp', (speed, n, tier) => [{ defense: 2 + tier, speed: 0.97 },
+    'Defence +' + (2 + tier) + ' and movement speed −3%']],
+  ['mender', 'Mender’s Sash', (speed, n) => [{ regen: 1 + n * 1.5, pickup: 1 + speed / 2 },
+    'Regeneration +' + percent(n * 1.5) + '% and pickup range +' + percent(speed / 2) + '%']],
+  ['deepwater', 'Deepwater Locket', (speed, n) => [{ breathMul: 1.2 + n * 2, glow: 2 },
+    'Breath lasts ' + percent(0.2 + n * 2) + '% longer and emits light']],
+  ['cinderwalk', 'Cinderwalk Soles', (speed, n) => [{ lavaDamage: 1 - n, speed: 1 + speed / 3 },
+    'Lava damage −' + percent(n) + '% and movement speed +' + percent(speed / 3) + '%']],
+  ['lamplighter', 'Lamplighter Lens', (speed, n, tier) => [{ glow: 4 + tier, pickup: 1 + n },
+    'Emits light and pickup range +' + percent(n) + '%']],
+  ['softfall', 'Softfall Harness', (speed, n) => [{ fallMul: 1 - n * 1.8, defense: 1 },
+    'Fall damage −' + percent(n * 1.8) + '% and defence +1']],
+  ['salvage', 'Salvage Satchel', (speed, n) => [{ pickup: 1 + n * 2, power: 1 + speed / 2 },
+    'Pickup range +' + percent(n * 2) + '% and mining power +' + percent(speed / 2) + '%']],
+  ['traveler', 'Traveler’s Knot', (speed, n, tier) => {
+    if (tier < 7) return [{ breathMul: 1.1 + n, fallMul: 1 - n / 2, defense: 1 },
+      'Breath lasts ' + percent(0.1 + n) + '% longer, fall damage −' + percent(n / 2) + '% and defence +1'];
+    const flightBonus = 0.2 + (tier - 7) * 0.1;
+    return [{ flightBonus, fallMul: 1 - n / 2 },
+      'Wing flight +' + flightBonus.toFixed(1) + 's and fall damage −' + percent(n / 2) + '%'];
+  }]
+];
+
+function percent(value) { return Math.round(value * 100); }
+
+for (const [tier, [stage, colour, material, reagent, station, enemies]] of GENERAL_ACCESSORY_STAGES.entries()) {
+  const speed = (4 + tier) / 100;
+  const utility = (8 + tier * 2) / 100;
+  const dropSlots = [tier % 10, (tier + 4) % 10];
+  for (const [route, [key, name, build]] of GENERAL_ACCESSORY_ROUTES.entries()) {
+    const id = 'utility-' + stage.toLowerCase() + '-' + key;
+    const [effect, text] = build(speed, utility, tier);
+    const drop = enemies[dropSlots.indexOf(route)];
+    ACCESSORIES[id] = { name: stage + ' ' + name, colour, text, ...effect, ...(drop ? { drop } : {}) };
+    if (!drop) RECIPES.push({ out: { key: id, kind: 'accessory', count: 1 },
+      need: [[material, 3 + route % 3], [reagent, 4 + route % 4]], station });
+  }
+}
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;

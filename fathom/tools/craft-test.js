@@ -466,3 +466,14 @@ rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
   assert.equal(craft.equipEffects([], ['batwing-idol']).spiritInterval, 0.92);
   assert.equal(craft.equipEffects([], ['imp-fuse']).throwBlast, 1.16);
 }
+
+{
+  const assert = require('node:assert/strict');
+  const keys = Object.keys(craft.ACCESSORIES).filter(key => key.startsWith('utility-'));
+  assert.equal(keys.length, 100);
+  const drops = craft.dropOnly().filter(entry => keys.includes(entry.key));
+  assert.equal(drops.length, 14);
+  assert.equal(craft.RECIPES.filter(recipe => keys.includes(recipe.out.key)).length, 86);
+  assert.ok(craft.equipEffects([], ['utility-eventide-traveler']).flightBonus > 0);
+  assert.ok(craft.equipEffects([], ['utility-trail-pathfinder']).speed > 1);
+}
