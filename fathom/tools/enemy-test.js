@@ -431,7 +431,11 @@ ok(victim.dead, 'a killed enemy is not marked dead');
     const changed = boss.width < beforeW * 0.9 || (!!boss.enraged && !beforeEnraged);
     ok(changed, spec.key + ' fights exactly the same at 20% health as at full');
 
-    // And killing it ends the fight.
+    // And killing it ends the fight. The Keeper's valves remove its armor.
+    if (spec.key === 'molten-exchange-keeper') {
+      swarm.quenchExchangeKeeper(boss, 0);
+      swarm.quenchExchangeKeeper(boss, 1);
+    }
     swarm.damage(boss, boss.maxHp);
     ok(boss.dead, spec.key + ' survived its own health being spent');
     swarm.step(player, 1 / 60, 0.5);

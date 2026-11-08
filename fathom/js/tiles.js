@@ -963,6 +963,19 @@ pushTile({ key: 'kilnsmith-cell', name: 'Kilnsmith’s Cell', colour: '#e9976e',
 pushTile({ key: 'ember-forge', name: 'Banked Ember Forge', colour: '#da8662', solid: false,
   opacity: 5, emit: 14, hardness: 0.4, toughness: 120, fixture: 'heavy-workbench', station: 'ember-forge' });
 
+for (const [key, name, colour, solid] of [
+  ['exchange-sign', 'Molten Exchange Inscription', '#f3c393', false],
+  ['exchange-diverter', 'Slag Diverter', '#eb9161', false],
+  ['exchange-coolant', 'Coolant Pump', '#83ccc4', false],
+  ['exchange-bulkhead', 'Furnace Bulkhead', '#815455', true],
+  ['exchange-quench', 'Arena Quench Valve', '#87e3cb', false],
+  ['exchange-altar', 'Furnace Keeper Console', '#eca66d', false]
+]) pushTile({ key, name, colour, solid, opacity: solid ? 24 : 0, emit: 10, drops: null,
+  fixture: solid ? 'actuator-block' : 'wire-lamp', moltenExchange: true });
+
+pushTile({ key: 'exchange-quench-bench', name: 'Exchange Quench Bench', colour: '#ae9e87', solid: false,
+  opacity: 4, emit: 9, hardness: 0.45, toughness: 115, fixture: 'heavy-workbench', station: 'exchange-quench-bench' });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 

@@ -198,7 +198,61 @@ function makeUnderworldGenerator(overworld) {
     return AIR;
   }
 
+  const exchangeOffset = bandWidth * 3 + 145;
+
+  function moltenExchange(seed) {
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const x = direction * exchangeOffset;
+    const floor = surface + 220;
+    const gallery = floor - 28;
+    return { x, entrance: surfaceHeight(seed, x), gallery, floor, bottom: floor,
+      left: x - 20, right: x + 20, top: floor - 20, shaft: x - 15,
+      diverter: { x: x - 27, y: gallery - 1 }, coolant: { x: x + 26, y: gallery - 1 },
+      console: { x, y: floor - 1 },
+      valves: [{ x: x - 14, y: floor - 1 }, { x: x + 14, y: floor - 1 }] };
+  }
+
+  function exchangeTile(seed, x, y) {
+    if (Math.abs(Math.abs(x) - exchangeOffset) > 33 || y < surface - 40 || y > surface + 220) return undefined;
+    const site = moltenExchange(seed);
+    const dx = x - site.x;
+    if (Math.abs(dx) > 33 || y < site.entrance - 3) return undefined;
+    const stone = idOf('ember-bloom-stone');
+    const rope = idOf('rope');
+    if (y < site.gallery - 10) {
+      if (y === site.entrance - 1 && dx === 3) return idOf('exchange-sign');
+      if (y === site.entrance && Math.abs(dx) >= 2 && Math.abs(dx) <= 4) return stone;
+      if (Math.abs(dx) <= 1) return dx === 0 && y >= site.entrance ? rope : AIR;
+      if (Math.abs(dx) <= 3 && y >= site.entrance) return stone;
+      return undefined;
+    }
+    if (y <= site.gallery) {
+      if (Math.abs(dx) === 33 || y === site.gallery - 10 && Math.abs(dx) > 1) return stone;
+      if (y === site.gallery && Math.abs(x - site.shaft) <= 1) return idOf('exchange-bulkhead');
+      if (y === site.gallery && dx >= 8 && dx <= 17) return lava;
+      if (y === site.gallery) return stone;
+      if (x === site.diverter.x && y === site.diverter.y) return idOf('exchange-diverter');
+      if (x === site.coolant.x && y === site.coolant.y) return idOf('exchange-coolant');
+      if (Math.abs(dx) === 23 && y === site.gallery - 4) return idOf('lantern');
+      return AIR;
+    }
+    if (y <= site.gallery + 4 && dx >= -28 && dx <= -22) {
+      return dx > -28 && dx < -22 && y >= site.gallery + 2 && y <= site.gallery + 3 ? AIR : stone;
+    }
+    if (y === site.gallery + 1 && dx >= 8 && dx <= 17) return stone;
+    if (y <= site.top && Math.abs(x - site.shaft) <= 1) return x === site.shaft ? rope : AIR;
+    if (y < site.top || x < site.left || x > site.right) return undefined;
+    if (y === site.floor || y === site.top || x === site.left || x === site.right) return stone;
+    if (x === site.x && y === site.floor - 1) return idOf('exchange-altar');
+    if (site.valves.some(valve => x === valve.x && y === valve.y)) return idOf('exchange-quench');
+    if (x === site.shaft && y < site.floor - 2) return rope;
+    if (Math.abs(dx) === 17 && y === site.floor - 4) return idOf('lantern');
+    return AIR;
+  }
+
   function baseTileAt(seed, x, y) {
+    const exchange = exchangeTile(seed, x, y);
+    if (exchange !== undefined) return exchange;
     if (Math.abs(x) <= 11 && y >= surface - 5 && y <= surface) {
       if (y === surface) return idOf('ashwood-stone');
       if (x === 0 && y === surface - 1) return returnGate;
@@ -291,7 +345,7 @@ function makeUnderworldGenerator(overworld) {
 
   const absent = () => null;
   return { ...overworld, realm: 'underworld', BIOMES: biomes, layerAt, biomeAt, surfaceHeight,
-    campaignSiteAt, campaignSite, dungeonSiteAt, dungeonSite, tidalRuin,
+    campaignSiteAt, campaignSite, dungeonSiteAt, dungeonSite, tidalRuin, moltenExchange,
     encounterSiteAt(seed, x, y) {
       const dungeon = dungeonSiteAt(seed, x, y);
       return dungeon && y >= dungeon.top ? dungeon : campaignSiteAt(seed, x, y);

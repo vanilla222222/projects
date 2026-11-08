@@ -172,3 +172,33 @@ assert.ok(fishing.RODS['tideglass-rod'].power > fishing.RODS['saltroot-rod'].pow
 
 const crucible = underworld.dungeonSite(seed, dungeons.find(encounter => encounter.key === 'furnace-mycelium'));
 assert.equal(underworld.baseTileAt(seed, crucible.x - 12, crucible.floor - 1), tiles.idOf('kilnsmith-cell'));
+
+for (let i = 1; i <= 8; i += 1) {
+  const genSeed = overworld.generationSeed(i);
+  const site = underworld.moltenExchange(genSeed);
+  const realm = makeWorld(genSeed, underworld);
+  assert.equal(underworld.biomeAt(genSeed, site.x).key, 'ember-bloom');
+  assert.equal(realm.get(site.x + 3, site.entrance - 1), tiles.idOf('exchange-sign'));
+  assert.equal(realm.get(site.x, site.entrance), tiles.idOf('rope'));
+  assert.equal(realm.get(site.x + 8, site.gallery), tiles.idOf('lava'));
+  assert.equal(realm.get(site.shaft, site.gallery), tiles.idOf('exchange-bulkhead'));
+  assert.equal(realm.get(site.shaft, site.top), tiles.idOf('rope'));
+  for (const valve of site.valves) assert.equal(realm.get(valve.x, valve.y), tiles.idOf('exchange-quench'));
+  const swarm = enemy.makeSwarm(realm, tiles, { worldgen: underworld });
+  const player = { x: site.x - 1, y: site.floor - 2, width: 0.8, height: 1.8 };
+  const boss = swarm.summon('molten-exchange-keeper', player, { ...site, top: site.top + 1 });
+  assert.ok(boss);
+  swarm.damage(boss, 100);
+  assert.equal(boss.maxHp - boss.hp, 15);
+  assert.equal(swarm.quenchExchangeKeeper(boss, 0), 'primed');
+  assert.equal(swarm.quenchExchangeKeeper(boss, 0), 'same');
+  assert.equal(swarm.quenchExchangeKeeper(boss, 1), 'quenched');
+  swarm.damage(boss, 100);
+  assert.equal(boss.maxHp - boss.hp, 133);
+  for (let step = 0; step < 570; step += 1) swarm.step(player, 1 / 60, 0.5);
+  assert.ok(boss.quenched <= 0);
+  assert.ok(boss.exchangeSweep || boss.exchangeClock > 0);
+}
+assert.ok(fishing.RODS['quenchline-rod'].lava);
+assert.ok(fishing.RODS['quenchline-rod'].power > fishing.RODS['kilnline-rod'].power);
+assert.equal(craft.RECIPES.filter(recipe => recipe.station === 'exchange-quench-bench').length, 5);

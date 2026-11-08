@@ -235,6 +235,19 @@ Forge. A shipment from Brine Depths supplies Brine Cooling Salt, which the
 forge uses for five class weapons. An established route can import more
 salt and unlock stock from both towns.
 
+#### The Molten Exchange
+
+Staff the Emberbloom forge with Kera and Tidekeeper’s Landing with Marra,
+then reach rank 2 on their shared trade route. Commission the Exchange at
+Kera’s charter. Divert the molten crossing, prime the pump with cooling salt
+and bars, and descend into the Keeper’s chamber. Open both valves within nine
+seconds to expose its core. The Keeper alternates low and high steam bursts
+once hurt.
+
+Install the recovered core with Kera to unlock the Exchange Quench Bench,
+which upgrades all five forge weapons. Marra’s counter trades scrip for
+Emberbloom Crates and upgrades the Kilnline Rod into a Quenchline Rod.
+
 #### Tidekeeper’s Landing
 
 Defeat the Undertow Warden in the Sunken Sluice and open Marra’s cell.

@@ -586,6 +586,12 @@ function makeRenderer(canvas, deps) {
         ctx.fillStyle = '#aee2ff65';
         ctx.fillRect(enemy.facing > 0 ? sx + w : sx - size * 13, sy + h - size * 0.25, size * 13, size * 0.25);
       }
+      if (enemy.exchangeSweep) {
+        const sweep = enemy.exchangeSweep;
+        ctx.fillStyle = sweep.time < sweep.warning ? '#ffbc7455' : '#ffdfadbc';
+        ctx.fillRect((sweep.left - x0) * size - offsetX, (sweep.y - y0) * size - offsetY,
+          (sweep.right - sweep.left) * size, sweep.height * size);
+      }
       if (enemy.sunGlare) {
         const glare = enemy.sunGlare;
         ctx.fillStyle = glare.active ? '#ffb23a35' : '#ffcb7717';
