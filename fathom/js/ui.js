@@ -870,6 +870,7 @@ function makeUI(root, deps) {
     if (gear.melee !== 1) lines.push('Melee ' + Math.round(gear.melee * 100) + '%');
     if (gear.ranged !== 1) lines.push('Ranged ' + Math.round(gear.ranged * 100) + '%');
     if (gear.magic !== 1) lines.push('Magic ' + Math.round(gear.magic * 100) + '%');
+    if (gear.summoner !== 1) lines.push('Summoner ' + Math.round(gear.summoner * 100) + '%');
     if (gear.manaCost !== 1) lines.push('Mana cost ' + Math.round(gear.manaCost * 100) + '%');
     if (gear.manaRegen !== 1) lines.push('Mana returns ' + Math.round(gear.manaRegen * 100) + '%');
     if (gear.arrowSpeed !== 1) lines.push('Arrows ' + Math.round(gear.arrowSpeed * 100) + '%');
