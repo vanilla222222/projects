@@ -630,6 +630,98 @@ for (const layer of worldgen.LAYERS) {
   }
 }
 
+{
+  const player = { x: 14, y: 38, width: 1, height: 2, vx: 0, vy: 0 };
+  function encounter(key) {
+    const swarm = makeSwarm(makeTestWorld(40), tiles, { worldgen });
+    const boss = enemyModule.makeEnemy(enemyModule.BY_KEY[key], 7, 35);
+    swarm.list.push(boss);
+    return { swarm, boss, step: () => swarm.step(player, 1 / 60, 0.5) };
+  }
+  {
+    const { swarm, boss, step } = encounter('dungeonkeeper');
+    boss.timer = 2.6;
+    step();
+    const health = boss.hp;
+    swarm.damage(boss, 100, player.x);
+    ok(health - boss.hp === 22, 'the Ossuary Keeper failed to block the front hit');
+    swarm.damage(boss, 100, boss.x - 1);
+    ok(health - boss.hp === 122, 'the Ossuary Keeper blocked a flank hit');
+    boss.hp = boss.maxHp * 0.4;
+    boss.timer = 3.5;
+    const start = boss.x;
+    step();
+    ok(boss.x > start, 'the Ossuary Keeper did not advance behind the late shield');
+  }
+  {
+    const { swarm, boss, step } = encounter('ashguardian');
+    boss.ventClock = 0;
+    step();
+    const vent = boss.ashVents[0];
+    ok(!!vent && swarm.touching(player) !== boss, 'an Ashvault vent damaged the player during the warning');
+    vent.time = vent.warning;
+    ok(swarm.touching(player) === boss, 'an active vent did not burn the player');
+    vent.time = vent.warning + vent.duration;
+    step();
+    ok(swarm.touching(player) !== boss, 'an expired Ashvault vent still dealt damage');
+    boss.hp = boss.maxHp * 0.4;
+    boss.ventClock = 0;
+    step();
+    ok(boss.ashVents.length === 2 && boss.ashVents[0].warning !== boss.ashVents[1].warning,
+      'the late Ashvault vents did not stagger');
+  }
+  {
+    const { swarm, boss, step } = encounter('granitecolossus');
+    boss.quarryTime = 0;
+    step();
+    const nodes = boss.quarryNodes;
+    ok(nodes?.length === 2, 'the Granite Colossus failed to raise two keystones');
+    const health = boss.hp;
+    swarm.damage(boss, 100);
+    ok(health - boss.hp === 25, 'the keystones failed to protect the Granite Colossus');
+    for (const node of nodes) {
+      ok(swarm.at(node.x + 0.5, node.y + 0.5) === node, 'a quarry keystone is not targetable');
+      swarm.damage(node, node.hp);
+    }
+    step();
+    swarm.damage(boss, 100);
+    ok(health - boss.hp === 180, 'shattering the keystones did not expose the Colossus');
+    boss.hp = boss.maxHp * 0.4;
+    boss.quarryTime = 0;
+    step();
+    ok(boss.quarryNodes?.length === 3, 'the Granite Colossus did not add its high keystone');
+    swarm.damage(boss, boss.maxHp * 10);
+    step();
+    ok(!swarm.list.some(enemy => enemy.quarryOwner), 'keystones persisted after their boss died');
+  }
+  {
+    const { boss, step } = encounter('rimehorn');
+    boss.rimeClock = 0;
+    boss.onGround = true;
+    boss.y = 40 - boss.height;
+    step();
+    ok(boss.rimeWindup > 0, 'Rimehorn skipped the charge warning');
+    const x = boss.x;
+    for (let i = 0; i < 75; i += 1) step();
+    ok(boss.x > x + 3, 'Rimehorn did not charge in the marked direction');
+  }
+  {
+    const { swarm, boss, step } = encounter('voidsovereign');
+    boss.timer = 4.2;
+    step();
+    ok(boss.voidCollapse && !boss.voidCollapse.active && player.vx === 0,
+      'the Sovereign pulled the player during the warning');
+    boss.timer = 5.5;
+    step();
+    ok(boss.voidCollapse.active && player.vx < 0, 'the Sovereign’s well did not pull toward the core');
+    const { x, y } = boss.voidCollapse;
+    ok(swarm.touching({ x, y, width: 0.6, height: 1 }) === boss, 'the gravity core did not deal contact damage');
+    boss.timer = 7.25;
+    step();
+    ok(!boss.voidCollapse, 'the Sovereign’s gravity well did not collapse');
+  }
+}
+
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);
 
