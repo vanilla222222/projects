@@ -293,5 +293,17 @@ checks += 3;
   checks += 13;
 }
 
+{
+  const world = { get: (x, y) => y !== 20 ? tiles.AIR
+    : tiles.idOf(x < 18 ? 'powered-rail' : 'minecart-rail') };
+  const rider = physics.makePlayer(0, 0);
+  assert.ok(physics.mountMinecart(rider, world, tiles, 0, 20));
+  for (let i = 0; i < 85; i += 1) physics.step(rider, world, tiles, { right: true }, 1 / 120);
+  assert.ok(rider.cart.speed > 30, 'powered rails did not boost the cart');
+  while (rider.cart.x < 19) physics.step(rider, world, tiles, { right: true }, 1 / 120);
+  assert.ok(rider.cart.speed > 22, 'boost disappeared immediately after leaving powered rails');
+  checks += 3;
+}
+
 console.log('Physics: ' + checks + ' invariants held over ' + steps.toLocaleString()
   + ' simulated steps across six columns; 0 ended inside a solid tile');

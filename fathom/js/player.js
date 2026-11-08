@@ -181,10 +181,15 @@ function stepMinecart(player, world, tiles, input, dt) {
   }
   const direction = Number(Boolean(input.right)) - Number(Boolean(input.left));
   if (rail === 'stop' && !direction) cart.stopReady = true;
-  const limit = rail === 'brake' ? 4 : 22;
+  const limit = rail === 'brake' ? 4 : 34;
   if (rail === 'stop' && !cart.stopReady) cart.speed = 0;
   else if (input.down) cart.speed *= Math.pow(0.78, dt * 60);
-  else if (direction) cart.speed += direction * 30 * dt;
+  else if (direction) {
+    if (rail === 'powered' || direction * cart.speed < 22) {
+      cart.speed += direction * (rail === 'powered' ? 54 : 30) * dt;
+      if (rail !== 'powered') cart.speed = Math.max(-22, Math.min(22, cart.speed));
+    } else cart.speed = direction * Math.max(22, Math.abs(cart.speed) - 12 * dt);
+  }
   else cart.speed *= Math.pow(0.994, dt * 60);
   cart.speed = Math.max(-limit, Math.min(limit, cart.speed));
 

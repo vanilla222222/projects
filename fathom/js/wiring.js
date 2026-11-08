@@ -85,7 +85,7 @@ function makeWiring(world, tiles, hooks = {}) {
         if (next.solid !== spec.solid) hooks.liquid?.(point.x, point.y);
       } else if (spec.circuit === 'inlet') inlets.push(point);
       else if (spec.circuit === 'outlet') outlets.push(point);
-      else if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(spec.circuit)) continue;
+      else if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate', 'mine-floodgate'].includes(spec.circuit)) continue;
       else if (spec.circuit === 'trap' || spec.circuit === 'arena-trap' || spec.statueEnemy) {
         if ((cooldowns.get(key) || 0) > time) continue;
         const activated = spec.statueEnemy
@@ -97,7 +97,7 @@ function makeWiring(world, tiles, hooks = {}) {
     for (let i = 0; i < Math.min(inlets.length, outlets.length); i += 1) pump(inlets[i], outlets[i]);
     for (const point of queue) {
       const circuit = tiles.tile(world.get(point.x, point.y)).circuit;
-      if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(circuit)) hooks.puzzle?.(point, circuit);
+      if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate', 'mine-floodgate'].includes(circuit)) hooks.puzzle?.(point, circuit);
     }
     for (const point of outputs) pulse(point.x, point.y, time, 'copper');
     return queue.length;

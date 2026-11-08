@@ -634,7 +634,8 @@ function makeUI(root, deps) {
     // The chest panel: present only while a chest is open, which is why it is built
     // once and hidden rather than created and destroyed on every use.
     els.chestPanel = el('div', 'panel chest-panel', els.screen);
-    el('h2', null, els.chestPanel).textContent = 'Chest';
+    els.chestTitle = el('h2', null, els.chestPanel);
+    els.chestTitle.textContent = 'Chest';
     els.chestGrid = el('div', 'grid chest-grid', els.chestPanel);
     els.chestSlots = [];
     for (let i = 0; i < CHEST_SLOTS; i += 1) {
@@ -1005,7 +1006,11 @@ function makeUI(root, deps) {
     set onSelectHotbar(fn) { onSelectHotbar = fn; },
     openShop(who, purse) { shop = { who, coins: purse.coins, discount: purse.discount || 1 }; },
     closeShop() { shop = null; },
-    openChest(box) { chest = box; craftSignature = null; },
+    openChest(box) {
+      chest = box;
+      els.chestTitle.textContent = box.cargo ? 'Cargo Hold' : 'Chest';
+      craftSignature = null;
+    },
     closeChest() { chest = null; },
     get chest() { return chest; },
     CHEST_SLOTS };

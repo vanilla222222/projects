@@ -32,6 +32,8 @@ function makeGame(canvas, deps) {
   let wiring = null;
   let lensSite = null;
   let archiveSite = null;
+  let mineSite = null;
+  let cargoItems = [];
   let archiveFlooded = false;
   let liquidSensors = new Map();
   let wetSensors = new Set();
@@ -231,6 +233,8 @@ function makeGame(canvas, deps) {
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
         say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
+      } else if (target.key === 'railbreaker') {
+        say('Railbreaker Drive recovered · Build a Railworks Bench for cargo carts and powered rails.', 6);
       } else if (target.key === 'drownedarchivist') {
         setArchiveArenaWater(false);
         say('Archivist Core recovered · Build a Hydraulic Bench at an Optics Bench.', 6);
@@ -291,6 +295,15 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
+      if (use.runawayMine) {
+        const site = worldgen.runawayMineAt(seed, state.player.x, state.player.y);
+        if (!site || state.player.y < site.y + 37 || state.player.y >= site.y + 46
+          || tiles.tile(world.get(site.x + 13, site.y + 25)).mine === 'flood') {
+          say('Use the whistle in the rail arena below the flooded spur', 2.5);
+          return true;
+        }
+        arena = { left: site.x - 42, right: site.x + 43, top: site.y + 29, bottom: site.y + 45 };
       }
       if (use.archive) {
         const site = worldgen.archiveAt(seed, state.player.x, state.player.y);
@@ -744,7 +757,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault || spec.archive) {
+    if (spec.foundry || spec.vault || spec.archive || spec.mine) {
       state.player.mining = null;
       return;
     }
@@ -1218,6 +1231,7 @@ function makeGame(canvas, deps) {
       closeChest();
       return true;
     }
+    if (openChest) closeChest();
     const items = (world.getContainer(origin.x, origin.y) || []).map(it => ({ ...it }));
     while (items.length < ui.CHEST_SLOTS) items.push(null);
     openChest = { x: origin.x, y: origin.y, items: items.slice(0, ui.CHEST_SLOTS) };
@@ -1231,7 +1245,8 @@ function makeGame(canvas, deps) {
     if (!openChest) return;
     // Write back only what is actually there, so an emptied chest saves as an empty
     // list rather than twenty nulls.
-    world.setContainer(openChest.x, openChest.y, openChest.items.filter(Boolean));
+    if (openChest.cargo) cargoItems = openChest.items.filter(Boolean);
+    else world.setContainer(openChest.x, openChest.y, openChest.items.filter(Boolean));
     openChest = null;
     ui.closeChest();
   }
@@ -1241,7 +1256,7 @@ function makeGame(canvas, deps) {
     if (toChest) {
       // Stow whatever is selected in the hotbar into the first free chest slot.
       const held = selectedItem();
-      if (!held) return;
+      if (!held || (openChest.cargo && held.key === 'cargo-cart')) return;
       let slot = openChest.items.findIndex(it => it && it.key === held.key
         && it.count < inventoryModule.STACK_MAX);
       if (slot < 0) slot = openChest.items.findIndex(it => !it);
@@ -1249,7 +1264,7 @@ function makeGame(canvas, deps) {
         say('Chest is full', 1.0);
         return;
       }
-      const moving = held.count;
+      const moving = Math.min(held.count, inventoryModule.STACK_MAX - (openChest.items[slot]?.count || 0));
       if (openChest.items[slot]) openChest.items[slot].count += moving;
       else openChest.items[slot] = { key: held.key, kind: held.kind, count: moving };
       inventory.take(held.key, moving);
@@ -1446,6 +1461,9 @@ function makeGame(canvas, deps) {
     }
     if (defeatedBosses.has('foundrywarden')) rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
     rows.push('Minecarts · Craft at an Anvil. Repair abandoned rail gaps or lay your own route.');
+    if (mineSite && defeatedBosses.has('furnacewarden')) {
+      rows.push('Runaway Mine · Optional lift at x ' + (mineSite.x - 35) + ', y ' + mineSite.mouth + '. Bring three rails.');
+    }
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1464,7 +1482,8 @@ function makeGame(canvas, deps) {
       starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.',
       foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.',
       lenscustodian: 'After the Mechanist and Starfall Warden, enter the Lens Vault and power its shield sensor.',
-      drownedarchivist: 'After the Lens Custodian, open the Tidal Archive floodgate and summon the Archivist below.'
+      drownedarchivist: 'After the Lens Custodian, open the Tidal Archive floodgate and summon the Archivist below.',
+      railbreaker: 'Repair the bridge, switch the junction, and drain the spur to reach the rail arena.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1824,6 +1843,15 @@ function makeGame(canvas, deps) {
   }
 
   function openOssuaryCircuit(point, circuit) {
+    if (circuit === 'mine-floodgate') {
+      const site = worldgen.runawayMineAt(seed, point.x, point.y);
+      if (!site || !defeatedBosses.has('furnacewarden') || world.getLevel(site.x + 20, site.y + 22) > 0) return;
+      for (let dx = 12; dx <= 14; dx += 1) {
+        world.set(site.x + dx, site.y + 25, dx === 13 ? tiles.idOf('rope') : tiles.AIR);
+      }
+      say('Spur drained · Railbreaker arena unlocked', 2.5);
+      return;
+    }
     const site = worldgen.dungeonAt(seed, point.x, point.y);
     if (!site || !defeatedBosses.has('dungeonkeeper')) return;
     if (circuit === 'lens-gate') {
@@ -2118,15 +2146,61 @@ function makeGame(canvas, deps) {
     return true;
   }
 
+  function useMineDevice(aim, spec) {
+    if (!mineSite) return false;
+    const { x, y } = mineSite;
+    if (spec.mine === 'entry') {
+      if (!defeatedBosses.has('furnacewarden')) say('Defeat the Furnace Warden to power the lift', 2);
+      else {
+        archiveLift(x - 37, y + 8);
+        say('Runaway Mine · Repair the missing bridge rails', 2.5);
+      }
+    } else if (spec.mine === 'exit') {
+      archiveLift(x - 35, mineSite.mouth - 2);
+      say('Mine lift returned to the surface', 2);
+    } else if (spec.mine === 'repair' || spec.mine === 'junction') {
+      const repair = spec.mine === 'repair';
+      const ready = repair
+        ? worldgen.RUNAWAY_BRIDGE_GAPS.every(dx => tiles.tile(world.get(x + dx, y + 10)).rail)
+        : tiles.tile(world.get(x - 10, y + 10)).rail === 'lower';
+      if (!ready) say(repair ? 'Replace the three missing bridge rails' : 'Set the junction to the lower track', 2);
+      else {
+        const gateX = x + (repair ? -20 : 3);
+        for (let dy = 6; dy <= 10; dy += 1) {
+          world.set(gateX, y + dy, dy === 10 ? tiles.idOf('minecart-rail') : tiles.AIR);
+        }
+        say(repair ? 'Bridge route opened' : 'Spur route opened', 2);
+      }
+    } else if (spec.mine === 'flood') say('Use the spur pump switch to open the floodgate', 2);
+    else return false;
+    return true;
+  }
+
+  function openCargoHold() {
+    if (openChest) closeChest();
+    const items = cargoItems.map(item => ({ ...item }));
+    while (items.length < ui.CHEST_SLOTS) items.push(null);
+    openChest = { cargo: true, items: items.slice(0, ui.CHEST_SLOTS) };
+    ui.openChest(openChest);
+    ui.setOpen(true);
+  }
+
   function useRail(aim, item) {
+    const cargo = item?.key === 'cargo-cart';
+    if (cargo && state.player.cart?.cargo) {
+      openCargoHold();
+      return true;
+    }
     if (!aim.inReach) return false;
     const spec = tiles.tile(world.get(aim.x, aim.y));
-    if (item?.key === 'minecart') {
+    if (spec.mine && useMineDevice(aim, spec)) return true;
+    if (item?.key === 'minecart' || cargo) {
       if (state.player.cart) {
         physics.dismountMinecart(state.player);
         return true;
       }
       if (physics.mountMinecart(state.player, world, tiles, aim.x, aim.y)) {
+        state.player.cart.cargo = cargo;
         releaseHook();
         say('Move to drive · Down to brake · Jump to exit', 2.5);
         sfx('use');
@@ -2310,7 +2384,7 @@ function makeGame(canvas, deps) {
     if (openChest) {
       const dx = openChest.x - state.player.x;
       const dy = openChest.y - state.player.y;
-      if (!ui.isOpen || Math.hypot(dx, dy) > physics.REACH + 3) closeChest();
+      if (!ui.isOpen || (openChest.cargo ? !state.player.cart?.cargo : Math.hypot(dx, dy) > physics.REACH + 3)) closeChest();
     }
     if (talking && !ui.isOpen) { talking = null; ui.closeShop(); }
 
@@ -2457,7 +2531,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=minecarts-1');
+      const worker = new Worker('workers/chunk.js?v=runaway-mine-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2733,6 +2807,7 @@ function makeGame(canvas, deps) {
         mana: stats.mana, maxMana: stats.maxMana },
       colours: state.colours,
       bestiary,
+      cargoItems: openChest?.cargo ? openChest.items.filter(Boolean) : cargoItems,
       progress: state.progress,
       playedSeconds: carriedCharacterSeconds + elapsed
     });
@@ -2742,6 +2817,7 @@ function makeGame(canvas, deps) {
       lowerOssuaryWiring: true,
       lensVaultWiring: true,
       archiveWiring: true,
+      runawayMineWiring: true,
       archiveFlooded,
       liquidSensors: [...liquidSensors.values()],
       wetSensors: [...wetSensors],
@@ -2776,6 +2852,7 @@ function makeGame(canvas, deps) {
     worldId = choice.world.id;
     const characterRecord = profiles.loadCharacter(characterId) || {};
     bestiary = Object.assign(Object.create(null), characterRecord.bestiary || {});
+    cargoItems = characterRecord.cargoItems || [];
     const worldRecord = profiles.loadWorld(worldId) || {};
     seed = choice.world.seed;
 
@@ -2804,6 +2881,7 @@ function makeGame(canvas, deps) {
     const ossuary = worldgen.dungeonLayout(seed);
     lensSite = ossuary;
     archiveSite = worldgen.archiveLayout(seed);
+    mineSite = worldgen.runawayMineLayout(seed);
     archiveFlooded = !!worldRecord.archiveFlooded;
     liquidSensors = new Map((worldRecord.liquidSensors || []).map(point => [point.x + ':' + point.y, point]));
     wetSensors = new Set(worldRecord.wetSensors || []);
@@ -2825,6 +2903,11 @@ function makeGame(canvas, deps) {
     if (archiveSite && !worldRecord.archiveWiring) {
       for (let dy = 7; dy <= 9; dy += 1) wiring.add(archiveSite.x + 12, archiveSite.y + dy);
       for (let dx = 13; dx <= 14; dx += 1) wiring.add(archiveSite.x + dx, archiveSite.y + 7);
+    }
+    if (mineSite && !worldRecord.runawayMineWiring) {
+      for (let dx = 12; dx <= 24; dx += 1) wiring.add(mineSite.x + dx, mineSite.y + 24);
+      for (const dx of [20, 24]) wiring.add(mineSite.x + dx, mineSite.y + 23);
+      wiring.add(mineSite.x + 13, mineSite.y + 25);
     }
     if (lensSite && !worldRecord.lensVaultWiring) deps.wiring.seedLensWiring(wiring, lensSite);
     mechanistPhase = -1;
