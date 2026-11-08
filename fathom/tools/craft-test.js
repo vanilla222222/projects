@@ -495,3 +495,15 @@ rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
   assert.equal(inventory.countOf('cloudstep-boots'), 1);
   assert.deepEqual(craft.equipEffects([], ['cloudstep-boots']), craft.equipEffects([], ['swift-boots', 'cloud-charm']));
 }
+
+{
+  const assert = require('node:assert/strict');
+  const signatures = new Set(Object.values(craft.WEAPONS).map(weapon => weapon.signature).filter(Boolean));
+  assert.equal(signatures.size, 11);
+  for (const [key, weapon] of Object.entries(craft.WEAPONS)) {
+    if (!weapon.signature) continue;
+    assert.ok(craft.describe(key, tiles).lines.every(line => typeof line === 'string' && line.length > 0));
+  }
+  assert.equal(craft.WEAPONS['tin-handcannon'].signature, 'ricochet');
+  assert.equal(craft.WEAPONS['mythril-charge'].signature, 'fuse');
+}

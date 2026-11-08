@@ -1032,16 +1032,18 @@ function makeGame(canvas, deps) {
     const dy = pointer.y - cy;
     const speed = 42 * kind.speed * (gear.arrowSpeed || 1);
     const heading = Math.atan2(dy, dx);
-    const spreads = weapon.scatter
+    const spreads = weapon.signature === 'burst' ? [0, -0.025, 0.025] : weapon.scatter
       ? [-1, -0.5, 0, 0.5, 1].map(fraction => fraction * weapon.scatter)
       : weapon.volley ? [-0.14, 0, 0.14] : [0];
     const hitLimit = Math.max(Number(weapon.pierce === true ? 3 : weapon.pierce) || 1, kind.pierce || 1);
-    for (const spread of spreads) {
-      const scale = weapon.scatter ? 0.42 : spread ? 0.32 : 1;
+    for (const [index, spread] of spreads.entries()) {
+      const burst = weapon.signature === 'burst';
+      const scale = burst ? 0.44 : weapon.scatter ? 0.42 : spread ? 0.32 : 1;
       state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * speed, vy: Math.sin(heading + spread) * speed,
         damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1) * scale),
         life: weapon.reach / speed, colour: kind.colour,
         gravity: kind.family === 'bullet' ? 0 : kind.family === 'bolt' ? 9 : 26,
+        delay: burst ? index * 0.055 : 0, bounces: weapon.signature === 'ricochet' ? 2 : 0,
         burns: kind.burns, shove: kind.shove, hits: hitLimit > 1 ? new Set() : null, hitLimit });
     }
     return true;
@@ -1061,11 +1063,16 @@ function makeGame(canvas, deps) {
     const cy = state.player.y + state.player.height * 0.4;
     const dx = pointer.x - cx;
     const dy = pointer.y - cy;
-    const len = Math.hypot(dx, dy) || 1;
-    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * 34, vy: (dy / len) * 34,
-      damage: Math.round(weapon.damage * (gear.magic || 1)),
-      life: weapon.spell ? weapon.reach / 34 : 1.8, colour: weapon.bolt, gravity: 0, magic: true, spell: weapon.spell,
-      hits: weapon.spell === 'pierce' ? new Set() : null });
+    const heading = Math.atan2(dy, dx);
+    const rune = weapon.signature === 'rune';
+    for (const spread of weapon.signature === 'spellfan' ? [-0.21, 0, 0.21] : [0]) {
+      state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * 34, vy: Math.sin(heading + spread) * 34,
+        damage: Math.round(weapon.damage * (gear.magic || 1) * (spread ? 0.46 : 1)),
+        life: weapon.spell || weapon.signature ? weapon.reach / 34 : 1.8,
+        colour: weapon.bolt, gravity: 0, magic: true, spell: weapon.spell,
+        seeker: weapon.signature === 'seeker', plant: rune ? 'rune' : null,
+        blastRadius: rune ? 4.5 : 0, hits: weapon.spell === 'pierce' ? new Set() : null });
+    }
     if (weapon.spell === 'ward') state.wardUntil = state.time + 4;
     spawnParticles(cx, cy, weapon.bolt, 4);
     sfx('cast');
@@ -1092,6 +1099,7 @@ function makeGame(canvas, deps) {
     for (const spread of style === 'fan' ? [-0.18, 0, 0.18] : [0]) {
       state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
         life: weapon.reach / speed, colour: weapon.colour, throwStyle: style, returnSpeed: 49 * speedScale,
+        bounces: weapon.signature === 'bank' ? 2 : 0, plant: weapon.signature === 'fuse' ? 'fuse' : null,
         gravity: style === 'blast' ? 24 : 11, blastRadius: 4 * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
         hits: style === 'pierce' || style === 'returning' ? new Set() : null,
         damage: Math.round(weapon.damage * (state.gear?.thrower || 1) * (spread ? 0.38 : 1)) });
@@ -1105,15 +1113,47 @@ function makeGame(canvas, deps) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
       const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
       if (Math.hypot(a.x - x, a.y - y) <= a.blastRadius && spiritLine(a.x, a.y, x, y)) {
-        projectileHit(enemy, Math.round(a.damage * 0.7));
+        projectileHit(enemy, Math.round(a.damage * (a.armed ? 1 : 0.7)));
       }
     }
+  }
+
+  function combatTarget(enemy) {
+    return !enemy.dead && !enemy.spec.passive && !enemy.spec.specimen;
+  }
+
+  function steerShot(shot, dt) {
+    let nearest = null, distance = 10;
+    for (const enemy of swarm.list) {
+      if (!combatTarget(enemy)) continue;
+      const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
+      const d = Math.hypot(x - shot.x, y - shot.y);
+      if (d >= distance || !spiritLine(shot.x, shot.y, x, y)) continue;
+      nearest = Math.atan2(y - shot.y, x - shot.x);
+      distance = d;
+    }
+    if (nearest === null) return;
+    const heading = Math.atan2(shot.vy, shot.vx);
+    const difference = Math.atan2(Math.sin(nearest - heading), Math.cos(nearest - heading));
+    const angle = heading + Math.max(-4 * dt, Math.min(4 * dt, difference));
+    const speed = Math.hypot(shot.vx, shot.vy);
+    shot.vx = Math.cos(angle) * speed;
+    shot.vy = Math.sin(angle) * speed;
   }
 
   function updateArrows(dt) {
     for (let i = state.arrows.length - 1; i >= 0; i -= 1) {
       const a = state.arrows[i];
+      if (a.delay > 0) { a.delay -= dt; continue; }
       a.life -= dt;
+      if (a.armed) {
+        const trigger = a.armed === 'rune' && a.life < 1.65 && swarm.list.some(enemy =>
+          combatTarget(enemy) && Math.hypot(enemy.x + enemy.width / 2 - a.x, enemy.y + enemy.height / 2 - a.y) < 2.6
+          && spiritLine(a.x, a.y, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2));
+        if (trigger || a.life <= 0) { burstThrow(a); state.arrows.splice(i, 1); }
+        continue;
+      }
+      if (a.seeker) steerShot(a, dt);
       if (a.returning) {
         const dx = state.player.x + state.player.width / 2 - a.x;
         const dy = state.player.y + state.player.height * 0.4 - a.y;
@@ -1126,10 +1166,23 @@ function makeGame(canvas, deps) {
       const steps = Math.ceil(Math.hypot(a.vx, a.vy) * dt / 0.3) || 1;
       let hit = false;
       for (let s2 = 0; s2 < steps && !hit; s2 += 1) {
+        const previousX = a.x, previousY = a.y;
         a.x += (a.vx * dt) / steps;
         a.y += (a.vy * dt) / steps;
         const solid = tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)));
-        if (solid && !a.escapeTerrain && !a.returning) hit = true;
+        if (solid && a.bounces > 0) {
+          const horizontal = tiles.isSolid(world.get(Math.floor(a.x), Math.floor(previousY)));
+          const vertical = tiles.isSolid(world.get(Math.floor(previousX), Math.floor(a.y)));
+          if (horizontal || !vertical) a.vx *= -0.86;
+          if (vertical || !horizontal) a.vy *= -0.86;
+          a.x = previousX;
+          a.y = previousY;
+          a.bounces -= 1;
+          spawnParticles(a.x, a.y, a.colour, 4);
+        } else if (solid && !a.escapeTerrain && !a.returning) {
+          a.x = previousX; a.y = previousY;
+          hit = true;
+        }
         else if (a.hostile) {
           if (!solid) {
             a.escapeTerrain = false;
@@ -1147,6 +1200,7 @@ function makeGame(canvas, deps) {
             a.hits?.add(target);
             hit = !a.hits || a.hits.size >= (a.hitLimit || 3);
             spawnParticles(a.x, a.y, target.spec.colour, 5);
+            if (a.plant) { hit = true; continue; }
             projectileHit(target, a.damage);
             if (a.shove && !target.dead && !target.boss) target.vx += Math.sign(a.vx) * a.shove;
             if (a.burns) {
@@ -1169,17 +1223,18 @@ function makeGame(canvas, deps) {
         }
       }
       if (hit || a.life <= 0) {
-        if (a.throwStyle === 'returning' && !a.returning) {
-          if (hit) { a.x -= a.vx * dt / steps; a.y -= a.vy * dt / steps; }
+        if (a.plant) {
+          a.armed = a.plant;
+          a.plant = null;
+          a.life = a.armed === 'rune' ? 1.8 : 0.42;
+          a.vx = a.vy = 0;
+        } else if (a.throwStyle === 'returning' && !a.returning) {
           a.returning = true;
           a.gravity = 0;
           a.life = 2;
           a.hits.clear();
         } else {
           if (a.throwStyle === 'blast') {
-            if (hit && tiles.isSolid(world.get(Math.floor(a.x), Math.floor(a.y)))) {
-              a.x -= a.vx * dt / steps; a.y -= a.vy * dt / steps;
-            }
             burstThrow(a);
           }
           state.arrows.splice(i, 1);
@@ -1192,6 +1247,7 @@ function makeGame(canvas, deps) {
   // does not also happen in the same frame.
   let boundFocus = null;
   let nextSpiritStrike = 0;
+  let spiritMark = null;
 
   function spiritLine(x, y, tx, ty) {
     const steps = Math.ceil(Math.hypot(tx - x, ty - y) * 2);
@@ -1211,15 +1267,18 @@ function makeGame(canvas, deps) {
     }
     const x = player.x + player.width / 2 + Math.cos(state.time * 4) * 0.8;
     const y = player.y + 0.3 + Math.sin(state.time * 4) * 0.25;
-    state.spirit = { x, y, colour: weapon.colour };
+    const mark = spiritMark && spiritMark.until > state.time && combatTarget(spiritMark.target) ? spiritMark.target : null;
+    state.spirit = { x, y, colour: weapon.colour, mark };
     if (state.time < nextSpiritStrike) return;
     nextSpiritStrike = state.time + weapon.useTime * Math.max(0.6, state.gear?.spiritInterval || 1);
-    let target = null, distance = weapon.reach + (state.gear?.spiritReach || 0);
+    const range = weapon.reach + (state.gear?.spiritReach || 0);
+    let target = null, distance = range;
     for (const enemy of swarm.list) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
       const ex = enemy.x + enemy.width / 2, ey = enemy.y + enemy.height / 2;
       const d = Math.hypot(ex - x, ey - y);
-      if (d > distance || !spiritLine(x, y, ex, ey)) continue;
+      if (d > (enemy === mark ? range : distance) || !spiritLine(x, y, ex, ey)) continue;
+      if (enemy === mark) { target = enemy; break; }
       distance = d;
       target = enemy;
     }
@@ -1241,6 +1300,23 @@ function makeGame(canvas, deps) {
     }
   }
 
+  function aimedMeleeTarget(weapon, x, y) {
+    const heading = Math.atan2(pointer.y - y, pointer.x - x);
+    const width = weapon.signature === 'lunge' ? 0.34 : 1.0;
+    let target = null, closest = Infinity;
+    for (const enemy of swarm.list) {
+      if (!combatTarget(enemy)) continue;
+      const ex = enemy.x + enemy.width / 2, ey = enemy.y + enemy.height / 2;
+      const dx = ex - x, dy = ey - y;
+      const distance = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx) - heading;
+      if (distance >= closest || Math.cos(angle) < Math.cos(width) || !spiritLine(x, y, ex, ey)) continue;
+      closest = distance;
+      target = enemy;
+    }
+    return target;
+  }
+
   function attack() {
     if (swingCooldown > 0) return false;
     const item = selectedItem();
@@ -1254,8 +1330,11 @@ function makeGame(canvas, deps) {
     if (weapon?.summon) {
       if (boundFocus !== item.key) {
         boundFocus = item.key;
+        spiritMark = null;
         say(weapon.name + ' called', 2);
       }
+      const target = swarm.at(pointer.x, pointer.y);
+      if (target && combatTarget(target)) spiritMark = { target, until: state.time + 3 };
       return true;
     }
     // A bow or a staff does not need something under the cursor: it fires where you
@@ -1271,14 +1350,30 @@ function makeGame(canvas, deps) {
     }
     if (!swarm) return false;
     const reach = weapon ? weapon.reach + (state.gear?.meleeReach || 0) : 2.2;
-    const target = swarm.at(pointer.x, pointer.y);
-    if (!target) return false;
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height / 2;
+    const signature = weapon?.signature;
+    if (signature === 'wave') {
+      const angle = Math.atan2(pointer.y - cy, pointer.x - cx);
+      state.arrows.push({ x: cx, y: cy, vx: Math.cos(angle) * 27, vy: Math.sin(angle) * 27,
+        damage: Math.round(weapon.damage * (state.gear?.melee || 1) * 0.82), life: 0.36,
+        colour: weapon.colour || '#efad82', gravity: 0, shockwave: true, hits: new Set(), hitLimit: 4 });
+      swingCooldown = swingTotal = weapon.useTime * (state.gear?.swing || 1);
+      sfx('swing');
+      return true;
+    }
+    const target = swarm.at(pointer.x, pointer.y) || (signature ? aimedMeleeTarget(weapon, cx, cy) : null);
+    if (!target) {
+      if (signature !== 'guard') return false;
+      state.wardUntil = Math.max(state.wardUntil || 0, state.time + weapon.useTime * 0.55);
+      swingCooldown = swingTotal = weapon.useTime * (state.gear?.swing || 1);
+      sfx('swing');
+      return true;
+    }
     const ex = Math.max(target.x, Math.min(cx, target.x + target.width));
     const ey = Math.max(target.y, Math.min(cy, target.y + target.height));
-    if (Math.hypot(ex - cx, ey - cy) > reach + (target.boss && weapon ? 2.5 : 1.5)) return false;
-    if (target.boss && !spiritLine(cx, cy, ex, ey)) return false;
+    if (Math.hypot(ex - cx, ey - cy) > reach + (target.boss && weapon ? 2.5 : 1.5) + (signature === 'lunge' ? 1.5 : 0)) return false;
+    if ((target.boss || signature) && !spiritLine(cx, cy, ex, ey)) return false;
 
     // A pickaxe will do, badly. That is the argument for making a sword.
     let hit = 3;
@@ -1296,12 +1391,28 @@ function makeGame(canvas, deps) {
     sfx('swing');
     sfxAt('hit', target.x, target.y);
     swingTotal = cooldown;
+    if (signature === 'guard') state.wardUntil = Math.max(state.wardUntil || 0, state.time + cooldown * 0.55);
+    if (signature === 'lunge') {
+      state.player.vx += Math.sign(pointer.x - cx) * 7;
+      const dx = pointer.x - cx, dy = pointer.y - cy;
+      const length = Math.hypot(dx, dy) || 1;
+      for (const other of swarm.list) {
+        if (other === target || !combatTarget(other)) continue;
+        const ox = other.x + other.width / 2 - cx, oy = other.y + other.height / 2 - cy;
+        const along = (ox * dx + oy * dy) / length;
+        const across = Math.abs(ox * dy - oy * dx) / length;
+        if (along > 0 && along < reach + 1.5 && across < 1.1 && spiritLine(cx, cy, cx + ox, cy + oy)) {
+          projectileHit(other, Math.round(hit * 0.55));
+        }
+      }
+    }
     target.vx += Math.sign(target.x - cx) * 6 * (weapon?.knockback || 1);
     target.vy -= 3;
     spawnParticles(target.x, target.y, target.spec.colour, 5);
-    if (weapon?.cleave) {
+    if (weapon?.cleave || signature === 'sweep') {
       for (const other of swarm.list.slice()) {
-        if (other === target || Math.hypot(other.x - target.x, other.y - target.y) > 3) continue;
+        if (other === target || !combatTarget(other) || Math.hypot(other.x - target.x, other.y - target.y) > 3
+          || !spiritLine(cx, cy, other.x + other.width / 2, other.y + other.height / 2)) continue;
         projectileHit(other, Math.round(hit * 0.55));
       }
     }
@@ -1333,6 +1444,7 @@ function makeGame(canvas, deps) {
   function respawnPlayer() {
     state.wardUntil = 0;
     boundFocus = null;
+    spiritMark = null;
     state.spirit = null;
     state.progress.deaths += 1;
     statsModule.respawn(stats);
