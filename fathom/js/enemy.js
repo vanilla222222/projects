@@ -819,6 +819,92 @@ for (const encounter of [...ENEMY_UNDERWORLD_CAMPAIGN, ...ENEMY_UNDERWORLD_DUNGE
     bossDrops: [[trophy, 1], [biome + '-relic', 6 + index % 3 * 3], ['coin', 1400 + index * 110]] });
 }
 
+// Each habitat gets a charger, a ranged hunter and a plated threat.
+const SURFACE_THREATS = [
+  ['forest', '#8da56d', 'leather', 43, 11, 'kingslime', ['Bramble Lynx', 'Thorn Lantern', 'Barkplate Stag']],
+  ['plains', '#c7ae68', 'feather', 40, 10, 'kingslime', ['Prairie Pouncer', 'Wind Reed Harrier', 'Wheatback Ram']],
+  ['taiga', '#7ba79f', 'leather', 55, 13, 'hollloweye', ['Needle Lynx', 'Pinecone Shrike', 'Resinback Boar']],
+  ['tundra', '#a5c8e2', 'leather', 66, 16, 'hollloweye', ['Drift Hound', 'Hail Lantern', 'Permafrost Muskox']],
+  ['highlands', '#a3a1ab', 'feather', 60, 15, 'hollloweye', ['Scree Goat', 'Cliff Kite', 'Slateback Bison']],
+  ['marsh', '#8aa669', 'gel', 50, 13, 'hollloweye', ['Peat Skipper', 'Reedspit Toad', 'Bogplate Snapper']],
+  ['savanna', '#d5a76a', 'leather', 54, 14, 'hollloweye', ['Thornveld Jackal', 'Sunspit Gecko', 'Drygrass Rhino']],
+  ['jungle', '#65b78b', 'stinger', 68, 17, 'hollloweye', ['Canopy Prowler', 'Orchid Dartwing', 'Ironleaf Scarab']],
+  ['badlands', '#c78065', 'chitin', 62, 16, 'hollloweye', ['Ravine Runner', 'Clay Quill', 'Redplate Scuttler']],
+  ['desert', '#e1b476', 'chitin', 63, 16, 'hollloweye', ['Saltflat Viper', 'Dune Needlewing', 'Sunbaked Bulwark']],
+  ['beach', '#86b7b8', 'shell', 51, 13, 'hollloweye', ['Breaker Skitter', 'Spray Gull', 'Shingleback Crab']],
+  ['ocean', '#649ebc', 'shell', 65, 17, 'hollloweye', ['Riptide Barracuda', 'Needle Shoalfish', 'Barnacle Ray']],
+  ['blight', '#a28bb6', 'glowmoss', 85, 20, 'dungeonkeeper', ['Blight Prowler', 'Rot Lantern', 'Sporeplate Hulk']],
+  ['crimson', '#c77883', 'bone', 85, 20, 'dungeonkeeper', ['Vein Hound', 'Marrow Spitter', 'Clotplate Giant']],
+  ['hallow', '#c6a5ee', 'crystal', 420, 43, 'glasscolossus', ['Halo Courser', 'Prism Midge', 'Opal Bulwark']]
+];
+const STRATUM_THREATS = [
+  ['caves', '#a695bf', 'chitin', 75, 17, 'dungeonkeeper', ['Tunnel Prowler', 'Glowcap Skulker', 'Stalactite Crustback']],
+  ['deep', '#7e92aa', 'bone', 140, 25, 'furnacewarden', ['Faultline Crawler', 'Echo Lamprey', 'Basalt Custodian']],
+  ['hell', '#e59165', 'cinder', 225, 34, 'furnacewarden', ['Cinderlung Jackal', 'Kiln Spitter', 'Slagplate Behemoth']],
+  ['hellcaves', '#d66b65', 'cinder', 310, 41, 'ashguardian', ['Sulfur Grazer', 'Ashmouth Imp', 'Foundry Shellback']],
+  ['trench', '#78829d', 'chitin', 390, 50, 'ashguardian', ['Chasm Talon', 'Trench Widow', 'Obsidian Paladin']],
+  ['void', '#a487d4', 'stardust', 570, 64, 'voidsovereign', ['Null Pouncer', 'Gravestar Wisp', 'Umbra Carapace']],
+  ['sky', '#a4c7e8', 'feather', 175, 30, 'riftarchon', ['Gale Falcon', 'Thunder Dartwing', 'Stormplate Roc']],
+  ['space', '#8eafe3', 'stardust', 920, 81, 'starwyvern', ['Orbit Raker', 'Comet Lancer', 'Meteor Carapace']]
+];
+const UNDERWORLD_THREATS = [
+  [['Sootbrush Cat', 'Charcoal Spitter', 'Ashplate Elk'], ['Coal Tunneler', 'Emberseed Moth', 'Charwood Sentinel'],
+    ['Cremation Crawler', 'Cinderheart Wisp', 'Pyreplate Goliath']],
+  [['Dune Shardskipper', 'Prism Needlewing', 'Glassthorn Ram'], ['Splintermaw', 'Mirror Spindle', 'Fused Sand Golem'],
+    ['Quartz Burrower', 'Shatterlight Eye', 'Sun Glass Colossus']],
+  [['Saltroot Skitter', 'Brine Needlefish', 'Pearlshield Crab'], ['Sluice Lurker', 'Lantern Leech', 'Saltplate Crawler'],
+    ['Blackbrine Eel', 'Drowned Flare', 'Abyssal Shellback']],
+  [['Petal Prowler', 'Pollen Dartwing', 'Flamebark Beetle'], ['Magma Borer', 'Spore Bellower', 'Bloomplate Husk'],
+    ['Crucible Viper', 'Kilnspore Eye', 'Heartwood Colossus']],
+  [['Rimecoat Lynx', 'Frost Needlewing', 'Gloomplate Ram'], ['Icevein Crawler', 'Sleet Wisp', 'Rimeglass Scarab'],
+    ['Whiteout Stalker', 'Cryptfire Shade', 'Black Ice Titan']]
+];
+
+function addHabitatThreats({ biome, layer, colour, material, hp, damage, gate, names, underworld = false }) {
+  const high = layer === 'space' || layer === 'sky';
+  const deep = !high && layer !== 'surface';
+  const specialForms = layer === 'surface' && ({
+    beach: [['crawler', 'crab'], ['flyer', 'bird'], ['walker', 'crab']],
+    marsh: [['slime', 'slime'], ['walker', 'lizard'], ['walker', 'beetle']],
+    desert: [['crawler', 'lizard'], ['flyer', 'bat'], ['walker', 'golem']],
+    hallow: [['walker', 'lizard'], ['flyer', 'cloud'], ['crawler', 'beetle']],
+    crimson: [['walker', 'lizard'], ['flyer', 'maw'], ['walker', 'skeleton']],
+    blight: [['crawler', 'spider'], ['flyer', 'cloud'], ['walker', 'golem']]
+  })[biome];
+  const forms = specialForms || (high ? [['flyer', 'bird'], ['flyer', 'eye'], ['flyer', 'jelly']]
+    : deep ? [['crawler', 'spider'], ['flyer', 'bat'], ['walker', 'golem']]
+      : [['walker', 'lizard'], ['flyer', 'bird'], ['walker', 'beetle']]);
+  for (const [index, name] of names.entries()) {
+    const wet = biome === 'ocean' || (biome === 'brine-depths' && index === (layer === 'deep' ? 0 : 1));
+    const [kind, body] = wet ? ['swimmer', 'fish'] : forms[index];
+    const tactic = ['rush', 'shot', 'guard'][index];
+    const advanced = layer === 'space' || layer === 'void' || (underworld && deep);
+    const count = underworld ? 2 + (layer === 'surface' ? 0 : 1) : 1 + Number(index === 2);
+    ENEMIES.push({
+      key: 'field-' + name.toLowerCase().replace(/[^a-z]+/g, '-'), name, kind, body, colour, underworld,
+      fieldThreat: tactic, fieldAdvanced: advanced, layers: [layer], biomes: biome ? [biome] : undefined, wet,
+      requiresBoss: index === 2 ? gate : undefined,
+      hp: Math.round(hp * [0.84, 1, 1.65][index]), damage: Math.round(damage * [1.08, 0.90, 1.18][index]),
+      w: [1.25, 1.05, 1.85][index], h: [1.15, 1.15, 1.8][index], weight: [5, 4, 3][index],
+      drops: [[material, count], ['coin', Math.max(4, Math.round(hp / 13))]]
+    });
+  }
+}
+
+for (const [biome, colour, material, hp, damage, gate, names] of SURFACE_THREATS) {
+  addHabitatThreats({ biome, layer: 'surface', colour, material, hp, damage, gate, names });
+}
+for (const [layer, colour, material, hp, damage, gate, names] of STRATUM_THREATS) {
+  addHabitatThreats({ layer, colour, material, hp, damage, gate, names });
+}
+for (const [index, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
+  for (const [depth, layer] of ['surface', 'caves', 'deep'].entries()) {
+    addHabitatThreats({ biome: biome.key, layer, colour: biome.accent, material: biome.key + '-relic',
+      hp: 1820 + index * 240 + depth * 670, damage: 118 + index * 8 + depth * 16,
+      gate: ENEMY_UNDERWORLD_CAMPAIGN[index * 3].key, names: UNDERWORLD_THREATS[index][depth], underworld: true });
+  }
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -1148,7 +1234,7 @@ function makeSwarm(world, tiles, deps) {
       const enemy = makeEnemy(variant, x, y);
       enemy.homeX = x;
       enemy.homeY = y;
-      if (variant.body === 'bird' && here.biome === 'forest' && here.layer === 'surface') enemy.neutral = true;
+      if (!variant.fieldThreat && variant.body === 'bird' && here.biome === 'forest' && here.layer === 'surface') enemy.neutral = true;
       list.push(enemy);
       return enemy;
     }
@@ -1159,7 +1245,7 @@ function makeSwarm(world, tiles, deps) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
     const railArmor = enemy.key === 'railbreaker' && enemy.railRunning && !enemy.recovering;
-    enemy.hp -= shielded ? 0 : railArmor ? Math.max(1, Math.round(amount * 0.25))
+    enemy.hp -= shielded ? 0 : enemy.fieldGuard ? Math.max(1, Math.round(amount * 0.42)) : railArmor ? Math.max(1, Math.round(amount * 0.25))
       : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
     enemy.provoked = true;
@@ -1168,11 +1254,56 @@ function makeSwarm(world, tiles, deps) {
   }
 
   // --- behaviour -------------------------------------------------------------------------
+  function stepFieldAttack(enemy, arch, player, dt) {
+    const tactic = enemy.spec.fieldThreat;
+    const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
+    const dx = player.x + player.width / 2 - x, dy = player.y + player.height / 2 - y;
+    const distance = Math.hypot(dx, dy);
+    if (tactic === 'guard') {
+      enemy.fieldGuard = distance < 12 && enemy.timer % 4.1 < 1.75;
+      enemy.shielded = enemy.fieldGuard;
+      return false;
+    }
+    if (enemy.fieldDash > 0) {
+      enemy.fieldDash -= dt;
+      const step = (enemy.spec.fieldAdvanced ? 17 : 13) * dt;
+      moveAxis(enemy, Math.cos(enemy.fieldAim) * step, 0);
+      if (enemy.spec.kind === 'flyer' || enemy.spec.wet) moveAxis(enemy, 0, Math.sin(enemy.fieldAim) * step);
+      else {
+        enemy.vy = Math.min(arch.maxFall, enemy.vy + arch.gravity * dt);
+        enemy.onGround = false;
+        moveAxis(enemy, 0, enemy.vy * dt);
+      }
+      return true;
+    }
+    enemy.fieldCooldown = (enemy.fieldCooldown ?? 0.8) - dt;
+    if (enemy.beams) {
+      if (enemy.fieldCooldown > 0) return false;
+      const { angles, range } = enemy.beams;
+      enemy.beams = null;
+      enemy.fieldCooldown = tactic === 'shot' ? 3.65 : 2.8;
+      if (tactic === 'shot') deps.bossBarrage?.(enemy, { x, y, angles, pattern: 'field', range });
+      else enemy.fieldDash = 0.34;
+      return false;
+    }
+    const range = tactic === 'shot' ? 11 : 5;
+    if (enemy.fieldCooldown <= 0 && distance >= 1.6 && distance <= range && !solid(x, y)) {
+      enemy.fieldAim = tactic === 'rush' && !enemy.spec.wet && enemy.spec.kind !== 'flyer'
+        ? (dx >= 0 ? 0 : Math.PI) : Math.atan2(dy, dx);
+      const angles = tactic === 'shot' && enemy.spec.fieldAdvanced
+        ? [-0.22, 0, 0.22].map(offset => enemy.fieldAim + offset) : [enemy.fieldAim];
+      enemy.beams = { live: false, range, angles, colour: enemy.spec.colour };
+      enemy.fieldCooldown = tactic === 'shot' ? 0.6 : 0.38;
+    }
+    return false;
+  }
+
   function stepOne(enemy, player, dt) {
     const arch = ARCHETYPES[enemy.spec.kind];
     const toward = Math.sign(player.x - enemy.x) || 1;
     enemy.timer += dt;
     if (enemy.hurt > 0) enemy.hurt = Math.max(0, enemy.hurt - dt);
+    if (enemy.spec.fieldThreat && stepFieldAttack(enemy, arch, player, dt)) return;
 
     // Bosses first, before any of the archetype branches below. The flying boss has
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it

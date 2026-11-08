@@ -234,6 +234,15 @@ catches require a lava-rated rod. Craft the Saltroot Rod for water or upgrade
 a Hellfire Rod into the Kilnline Rod for lava. Cook the ten local fish into
 stews at a Cauldron.
 
+### Field enemies
+
+Each Overworld surface biome (including the Hallow) and each other vertical
+layer has a set of three field enemies. Every Underworld biome has its own
+set at the surface, in caves, and in deep caverns. Chargers telegraph a
+lunge, ranged hunters mark their shot, and boss-gated plated enemies cycle
+between a shield and an opening. Deeper hunters can fire a spread. All
+114 enemies have banners and drop materials used by existing recipes.
+
 ### Progression
 
 Start with tin tools and work through copper, iron, silver, gold, cobalt, and emberite.

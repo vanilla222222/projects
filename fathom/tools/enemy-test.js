@@ -535,6 +535,64 @@ for (const layer of worldgen.LAYERS) {
   console.log('  ' + layer.key.padEnd(10) + own.length + '  ' + own.map(e => e.name).join(', '));
 }
 
+{
+  const threats = ENEMIES.filter(spec => spec.fieldThreat);
+  const habitats = new Map();
+  for (const spec of threats) {
+    const key = [spec.underworld ? 'underworld' : 'overworld', spec.layers[0], spec.biomes?.[0] || '*'].join(':');
+    if (!habitats.has(key)) habitats.set(key, []);
+    habitats.get(key).push(spec);
+  }
+  const inputs = new Set(craft.RECIPES.flatMap(recipe => recipe.need.map(([key]) => key)));
+  craft.registerEnemyBanners(threats);
+  const verify = key => {
+    const roster = habitats.get(key) || [];
+    ok(roster.length === 3 && new Set(roster.map(spec => spec.fieldThreat)).size === 3,
+      key + ' does not have all three field threats');
+    ok(roster.every(spec => (spec.fieldThreat === 'guard') === Boolean(spec.requiresBoss)
+      && (!spec.requiresBoss || enemyModule.BY_KEY[spec.requiresBoss]?.boss)), key + ' has an invalid progression gate');
+    ok(roster.every(spec => spec.drops.every(([item]) => item === 'coin' || inputs.has(item))), key + ' drops unusable materials');
+    ok(roster.every(spec => craft.ITEMS['banner-' + spec.key]?.banner === spec.key), key + ' lacks banners');
+  };
+  ok(threats.length === 114 && habitats.size === 38, 'the new roster has incorrect coverage');
+  for (const { key } of [...worldgen.BIOMES, worldgen.HALLOW_BIOME]) verify('overworld:surface:' + key);
+  for (const { key } of worldgen.LAYERS) if (key !== 'surface') verify('overworld:' + key + ':*');
+  for (const biome of tiles.UNDERWORLD_BIOMES) {
+    for (const layer of ['surface', 'caves', 'deep']) verify('underworld:' + layer + ':' + biome.key);
+  }
+  const player = { x: 7, y: 37, width: 1, height: 2 };
+  const shots = [];
+  const swarm = makeSwarm(makeTestWorld(40), tiles, { worldgen, bossBarrage: (_, shot) => shots.push(shot) });
+  const shooter = enemyModule.makeEnemy(enemyModule.BY_KEY['field-comet-lancer'], 0, 37);
+  swarm.list.push(shooter);
+  let telegraphed = false;
+  for (let i = 0; i < 100; i += 1) {
+    swarm.step(player, 1 / 60, 0.5);
+    telegraphed ||= shooter.beams?.live === false && shooter.beams.angles.length === 3;
+  }
+  ok(telegraphed && shots.length === 1 && shots[0].pattern === 'field' && shots[0].angles.length === 3,
+    'advanced field shooter did not telegraph and fire its spread');
+  const runner = enemyModule.makeEnemy(enemyModule.BY_KEY['field-bramble-lynx'], 3, 38.8);
+  swarm.list.push(runner);
+  let charged = false;
+  for (let i = 0; i < 120; i += 1) {
+    swarm.step(player, 1 / 60, 0.5);
+    charged ||= runner.fieldDash > 0;
+  }
+  ok(charged, 'field charger did not execute its dash');
+  const guard = enemyModule.makeEnemy(enemyModule.BY_KEY['field-ashplate-elk'], 3, 38);
+  swarm.list.push(guard);
+  swarm.step(player, 1 / 60, 0.5);
+  const initialHP = guard.hp;
+  swarm.damage(guard, 100);
+  ok(initialHP - guard.hp === 42, 'guard did not reduce damage while shielded');
+  guard.timer = 2;
+  swarm.step(player, 1 / 60, 0.5);
+  const exposedHP = guard.hp;
+  swarm.damage(guard, 100);
+  ok(exposedHP - guard.hp === 100, 'guard kept its damage reduction during its opening');
+}
+
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);
 

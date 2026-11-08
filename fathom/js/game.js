@@ -3468,11 +3468,13 @@ function makeGame(canvas, deps) {
       say(archiveFlooded ? 'The Archivist floods the arena' : 'The Archivist drains the arena', 1.5);
     }
     const wave = shot.pattern === 'shatter';
-    const speed = wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
+    const fieldShot = shot.pattern === 'field';
+    const speed = fieldShot ? 14 : wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
     const inside = tiles.isSolid(world.get(Math.floor(shot.x), Math.floor(shot.y)));
     for (const angle of shot.angles) {
       state.arrows.push({ x: shot.x, y: shot.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-        life: wave ? 17 / speed : 23 / speed, gravity: 0, damage: shot.enraged ? 109 : 96,
+        life: (fieldShot ? shot.range : wave ? 17 : 23) / speed, gravity: 0,
+        damage: fieldShot ? boss.spec.damage : shot.enraged ? 109 : 96,
         colour: boss.spec.colour, hostile: boss.spec.name,
         escapeTerrain: shot.pattern === 'cross' && inside });
     }
