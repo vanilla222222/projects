@@ -31,7 +31,7 @@ const WORLD_SETTINGS = [
   { key: 'bossHealth', label: 'Boss health', help: 'Scales health for newly summoned bosses.',
     options: [['low', 'Reduced', 0.78], ['normal', 'Standard', 1], ['high', 'Enduring', 1.35]] },
   { key: 'day', label: 'Day cycle', help: 'Length of one full day and night.',
-    options: [['fast', '5 minutes', 300], ['normal', '10 minutes', 600], ['slow', '20 minutes', 1200]] },
+    options: [['fast', '12 minutes', 720], ['normal', '24 minutes', 1440], ['slow', '48 minutes', 2880]] },
   { key: 'bloodMoon', label: 'Blood moons', help: 'Controls how often blood moons can start.',
     options: [['off', 'Off', 0], ['normal', 'Standard', 0.14], ['often', 'Frequent', 0.28]] },
   { key: 'weather', label: 'Weather', help: 'Toggles rain and other weather effects.',

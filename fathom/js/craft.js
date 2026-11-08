@@ -570,7 +570,7 @@ const EFFECT_FIELDS = {
   defense: 'add',
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
-  melee: 'mul', ranged: 'mul', magic: 'mul',
+  melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
@@ -709,7 +709,7 @@ for (const metal of HARDMODE_METALS) {
     useTime: 0.18, reach: 60, ranged: true, ammo: 'arrow' };
   WEAPONS[metal.key + '-rifle'] = { name: metal.name + ' Rifle', damage: metal.damage - 18,
     useTime: 0.22, reach: 62, ranged: true, ammo: 'bullet', colour: metal.colour };
-  if (metal.spell) WEAPONS[metal.key + '-staff'] = { name: metal.name + ' Staff',
+  WEAPONS[metal.key + '-staff'] = { name: metal.name + ' Staff',
     damage: metal.damage - 32, useTime: 0.28, reach: 56, magic: true,
     mana: 18, spell: metal.spell, bolt: metal.colour };
 }
@@ -770,9 +770,12 @@ function describe(key, tilesModule) {
   const weapon = WEAPONS[key];
   if (weapon) {
     const cls = classOf(weapon);
-    lines.push(cls === 'magic' ? 'Magic weapon'
+    lines.push(cls === 'summoner' ? 'Summoner weapon' : cls === 'magic' ? 'Magic weapon'
       : (cls === 'ranged' ? 'Ranged weapon' : 'Melee weapon'));
     lines.push(weapon.damage + ' damage');
+    if (weapon.summon) lines.push('Click to call a spirit. It fights while this focus is held.',
+      'Spirit attack · ' + weapon.summon);
+    if (weapon.volley) lines.push('Fires a three-shot fan for one round of ammo');
     lines.push(weapon.useTime.toFixed(2) + 's per swing');
     if (cls === 'melee') lines.push(weapon.reach.toFixed(1) + ' tiles of reach');
     else lines.push(weapon.reach + ' tiles of range');
@@ -917,6 +920,7 @@ for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
 // off the weapon rather than stored on it, so a new weapon cannot forget to declare one.
 function classOf(weapon) {
   if (!weapon) return 'melee';
+  if (weapon.summon) return 'summoner';
   if (weapon.magic) return 'magic';
   if (weapon.ranged) return 'ranged';
   return 'melee';
@@ -1073,7 +1077,7 @@ for (const metal of HARDMODE_METALS) {
   const bar = metal.key + '-bar';
   RECIPES.push({ out: { key: bar, kind: 'bar', count: 1 }, need: [[metal.key, 3]], station: 'furnace' });
   const jobs = ['pick', 'axe', 'hammer', 'sword', 'bow', 'rifle'];
-  if (metal.spell) jobs.push('staff');
+  jobs.push('staff');
   for (const job of jobs) {
     RECIPES.push({ out: { key: metal.key + '-' + job, kind: 'tool', count: 1 },
       need: [[bar, job === 'rifle' ? 11 : 8], ['#wood', 4]], station: 'anvil' });
@@ -1386,6 +1390,48 @@ for (const [fish, quality] of [
 
 // Which stations are in reach. Scanning the box is cheap enough to do every frame, and
 // doing it that way means a station the player mines out stops counting immediately.
+const SUMMON_FOCI = [
+  ['Twig', '#wood', 10, 18, 0.78, 12, '#a3cb73', 'strike'],
+  ['Iron', 'iron-bar', 8, 32, 0.66, 14, '#b1b6bf', 'twin'],
+  ['Gold', 'gold-bar', 9, 49, 0.59, 16, '#f9ca6d', 'ward'],
+  ['Cobalt', 'cobalt-bar', 10, 69, 0.52, 17, '#69aff2', 'chain'],
+  ['Emberite', 'emberite-bar', 11, 91, 0.48, 18, '#ff8a60', 'burst'],
+  ['Void', 'void-crystal', 10, 107, 0.43, 19, '#ae84e7', 'twin'],
+  ['Aetherite', 'aetherite-bar', 11, 123, 0.41, 20, '#b5dfff', 'ward'],
+  ['Palladium', 'palladium-bar', 10, 148, 0.39, 21, '#f8b27a', 'chain'],
+  ['Mythril', 'mythril-bar', 10, 176, 0.38, 22, '#75d7ac', 'burst'],
+  ['Adamantite', 'adamantite-bar', 10, 208, 0.36, 23, '#ea777a', 'twin'],
+  ['Lunarium', 'lunarium-bar', 10, 242, 0.35, 24, '#b9c4f3', 'ward'],
+  ['Solarium', 'solarium-bar', 10, 267, 0.34, 25, '#ffd07a', 'burst'],
+  ['Eventide', 'eventide-bar', 10, 300, 0.33, 26, '#d4aaf2', 'chain']
+];
+for (const [name, material, count, damage, useTime, reach, colour, summon] of SUMMON_FOCI) {
+  const key = name.toLowerCase() + '-spirit-focus';
+  WEAPONS[key] = { name: name + ' Spirit Focus', damage, useTime, reach, colour, summon };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 }, need: [[material, count]], station: material === '#wood' ? 'workbench' : 'anvil' });
+}
+
+for (const [key, name, material, damage, mana, colour, spell] of [
+  ['spark-wand', 'Spark Wand', '#wood', 11, 2, '#f1bb73', null],
+  ['cobalt-conduit', 'Cobalt Conduit', 'cobalt-bar', 56, 6, '#77baff', 'chain'],
+  ['aetherite-wand', 'Aetherite Wand', 'aetherite-bar', 105, 8, '#c2eaff', 'pierce']
+]) {
+  WEAPONS[key] = { name, damage, mana, spell, magic: true, reach: 36, useTime: 0.32, bolt: colour };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 }, need: [[material, 9]], station: material === '#wood' ? 'workbench' : 'anvil' });
+}
+
+for (const [key, name, material, power] of [
+  ['spirit-thread', 'Spirit Thread', 'iron-bar', 1.10],
+  ['warden-binding', 'Warden Binding', 'furnace-core', 1.14],
+  ['astral-binding', 'Astral Binding', 'eventide-bar', 1.16]
+]) {
+  ACCESSORIES[key] = { name, colour: '#c6b4f4', text: 'Spirit damage +' + Math.round((power - 1) * 100) + '%', summoner: power };
+  RECIPES.push({ out: { key, kind: 'accessory', count: 1 }, need: [[material, material === 'furnace-core' ? 1 : 5]], station: 'anvil' });
+}
+
+for (const key of ['meteor-bow', 'emberite-bow', 'solarium-bow']) WEAPONS[key].volley = true;
+for (const key of ['meteor-sword', 'emberite-sword', 'solarium-sword']) WEAPONS[key].cleave = true;
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;

@@ -110,6 +110,23 @@ function settlementKey(device) {
   return device.x + ':' + device.y;
 }
 
+// A coordinate-based rotation keeps neighbouring towns on independent schedules.
+function settlementDaily(device, region, day) {
+  const role = settlementRole(region);
+  const offset = ((device.x * 31 + device.y * 17 + day) % 3 + 3) % 3;
+  const [key, count] = role.stock[offset];
+  const reward = [[key, Math.max(1, Math.ceil(count / 3))], ['coin', 160 + offset * 40]];
+  if (offset < 2) {
+    const supply = role.supplies[offset];
+    return { name: offset === 0 ? 'Stock the Supply Counter' : 'Replenish the Storehouse',
+      needs: [[supply[0], Math.ceil(supply[1] / 2)]], reward };
+  }
+  const job = settlementJob(region);
+  if (job === 'fish') return { name: 'Bring in the Day’s Catch', key: 'daily-fish:' + region, goal: 3, reward };
+  if (job === 'specimen') return { name: 'Wildlife Rounds', key: 'daily-specimen:' + region, goal: 2, reward };
+  return { name: 'Patrol the Region', key: 'hunt:' + region, goal: 4, reward };
+}
+
 function makeSettlementLedger(saved = {}) {
   const towns = new Map(saved.towns || []);
   const collections = new Map((saved.collections || []).map(([key, values]) => [key, new Set(values)]));
@@ -172,7 +189,7 @@ function makeSettlementLedger(saved = {}) {
       claimed: [...claimed], records: [...records], prizes: [...prizes], tallies: [...tallies] }; } };
 }
 
-const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey,
+const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey, settlementDaily,
   QUESTLINES: SETTLEMENT_QUESTLINES, JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_settlement;
 else if (typeof FATHOM !== 'undefined') FATHOM.settlement = EXPORTS_settlement;
