@@ -907,13 +907,9 @@ for (const [index, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
 
 // A move is a telegraphed formation. The second move replaces the first at half health.
 const BOSS_SIGNATURES = {
-  dungeonkeeper: ['Ossuary Procession', 'sides', 'aisles', 7.2],
-  ashguardian: ['Furnace Fault', 'fault', 'crossfire', 6.8],
-  granitecolossus: ['Quarry Collapse', 'roof', 'squeeze', 7.6],
   kingslime: ['Crown Splash', 'bounce', 'crest', 8.4],
   briarwarden: ['Briar Cordon', 'hedge', 'sides', 7.7],
   mirebrood: ['Bog Eruption', 'pockets', 'fault', 7.3],
-  rimehorn: ['Rime Avalanche', 'squeeze', 'roof', 7.9],
   reedking: ['Reedwater Ambush', 'crossfire', 'pockets', 7.1],
   cragbreaker: ['Crag Split', 'crest', 'aisles', 7.5],
   claybehemoth: ['Clay Mortars', 'arc', 'bounce', 7.4],
@@ -938,7 +934,6 @@ const BOSS_SIGNATURES = {
   'underworld-crown': ['Decree of the Last Divide', 'squeeze', 'lattice', 6.4],
   ossuarymechanist: ['Gearbox Misfire', 'lattice', 'wheel', 7.2],
   furnacewarden: ['Overpressure', 'fault', 'crest', 7.6],
-  voidsovereign: ['Event Horizon', 'ring', 'squeeze', 6.8],
   riftarchon: ['Rift Shear', 'lattice', 'aisles', 7.0],
   rootcrown: ['Canopy Snare', 'hedge', 'roof', 7.8],
   thunderbird: ['Lightning Perch', 'roof', 'dial', 7.0],
@@ -1322,12 +1317,17 @@ function makeSwarm(world, tiles, deps) {
     return null;
   }
 
-  function damage(enemy, amount) {
+  function damage(enemy, amount, attackerX) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
     const railArmor = enemy.key === 'railbreaker' && enemy.railRunning && !enemy.recovering;
-    if (enemy.signatureRecovery > 0) amount = Math.round(amount * (enemy.key === 'granitecolossus' ? 1.55 : 1.2));
-    else if (enemy.key === 'granitecolossus' && enemy.signatureAttack) amount = Math.max(1, Math.round(amount * 0.5));
+    if (enemy.signatureRecovery > 0) amount = Math.round(amount * 1.2);
+    if (enemy.keeperGuard && Number.isFinite(attackerX)
+      && (attackerX - enemy.x - enemy.width / 2) * enemy.keeperGuard > 0) {
+      amount = Math.max(1, Math.round(amount * 0.22));
+    }
+    if (enemy.quarryNodes?.some(node => !node.dead)) amount = Math.max(1, Math.round(amount * 0.25));
+    if (enemy.quarryExposed > 0) amount = Math.round(amount * 1.55);
     enemy.hp -= shielded ? 0 : enemy.fieldGuard ? Math.max(1, Math.round(amount * 0.42)) : railArmor ? Math.max(1, Math.round(amount * 0.25))
       : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
@@ -1457,17 +1457,150 @@ function makeSwarm(world, tiles, deps) {
     return true;
   }
 
+  function stepKeeperGuard(enemy, player, dt) {
+    const cycle = enemy.timer % 6.4;
+    if (cycle < 2.5 || cycle > 4.4) {
+      enemy.keeperGuard = 0;
+      enemy.encounterCue = null;
+      return false;
+    }
+    // Lock facing when the shield comes up. The player can cross behind it.
+    enemy.keeperGuard ||= Math.sign(player.x - enemy.x - enemy.width / 2) || 1;
+    enemy.encounterCue = 'Shield raised · flank the Keeper';
+    enemy.facing = enemy.keeperGuard;
+    enemy.enraged = enemy.hp <= enemy.maxHp / 2;
+    if (enemy.enraged && cycle > 3.4) {
+      moveAxis(enemy, enemy.keeperGuard * 7 * dt, 0);
+      enemy.encounterCue = 'Shield advance · stay behind';
+    }
+    return true;
+  }
+
+  function stepAshVents(enemy, player, dt) {
+    enemy.ashVents ||= [];
+    for (const vent of enemy.ashVents) vent.time += dt;
+    enemy.ashVents = enemy.ashVents.filter(vent => vent.time < vent.warning + vent.duration);
+    enemy.ventClock = (enemy.ventClock ?? 2.8) - dt;
+    if (enemy.ventClock <= 0 && Math.hypot(enemy.x - player.x, enemy.y - player.y) < 22) {
+      const late = enemy.hp <= enemy.maxHp / 2;
+      const x = player.x + player.width / 2;
+      const y = player.y + player.height - 3.4;
+      enemy.ashVents.push({ x, y, width: 2.1, height: 4, time: 0, warning: 0.95, duration: 2.2 });
+      if (late) {
+        const side = x >= enemy.x + enemy.width / 2 ? 1 : -1;
+        enemy.ashVents.push({ x: x + side * 3.8, y, width: 2.1, height: 4, time: 0, warning: 1.5, duration: 2.2 });
+      }
+      enemy.ventClock = late ? 4.0 : 5.4;
+    }
+    enemy.encounterCue = enemy.ashVents.length ? 'Furnace vents · keep moving' : null;
+  }
+
+  function stepQuarryArmor(enemy, player, dt) {
+    enemy.quarryExposed = Math.max(0, (enemy.quarryExposed || 0) - dt);
+    if (enemy.quarryNodes) {
+      enemy.quarryTime -= dt;
+      if (enemy.quarryNodes.every(node => node.dead)) {
+        enemy.quarryNodes = null;
+        enemy.quarryExposed = 3.4;
+        enemy.quarryTime = 9;
+      } else if (enemy.quarryTime <= 0) {
+        for (const node of enemy.quarryNodes) node.dead = true;
+        enemy.quarryNodes = null;
+        enemy.quarryTime = 3.6;
+      }
+    } else {
+      enemy.quarryTime = (enemy.quarryTime ?? 3.1) - dt;
+      if (enemy.quarryTime <= 0 && Math.hypot(enemy.x - player.x, enemy.y - player.y) < 18) {
+        const late = enemy.hp <= enemy.maxHp / 2;
+        const positions = late ? [-5, 0, 5] : [-4, 4];
+        const nodes = [];
+        for (const dx of positions) {
+          const x = player.x + dx, y = player.y - 0.2 - (dx === 0 ? 2.2 : 0);
+          const node = makeEnemy({ key: 'quarry-keystone', name: 'Quarry Keystone', kind: 'walker', body: 'eye',
+            hp: Math.round(enemy.maxHp * 0.065), damage: 0, w: 1.05, h: 1.1, colour: '#d6ab77' }, x, y);
+          if (overlaps(node, x, y)) continue;
+          node.practice = true;
+          node.quarryOwner = enemy;
+          nodes.push(node);
+          list.push(node);
+        }
+        if (nodes.length) enemy.quarryNodes = nodes;
+        enemy.quarryTime = nodes.length ? 9 : 1.1;
+      }
+    }
+    enemy.encounterCue = enemy.quarryNodes ? 'Stone armor · break the keystones'
+      : enemy.quarryExposed > 0 ? 'Armor shattered' : null;
+  }
+
+  function stepRimehornCharge(enemy, player, dt) {
+    enemy.rimeClock = (enemy.rimeClock ?? 3.3) - dt;
+    if (enemy.rimeWindup > 0) {
+      enemy.rimeWindup -= dt;
+      if (enemy.rimeWindup <= 0) enemy.rimeDash = enemy.hp <= enemy.maxHp / 2 ? 0.94 : 0.72;
+      return true;
+    }
+    if (enemy.rimeDash > 0) {
+      enemy.rimeDash -= dt;
+      const before = enemy.x;
+      moveAxis(enemy, enemy.facing * 19 * dt, 0);
+      if (enemy.x === before || enemy.rimeDash <= 0) {
+        enemy.rimeDash = 0;
+        enemy.rimeClock = enemy.hp <= enemy.maxHp / 2 ? 3.2 : 4.7;
+        enemy.encounterCue = null;
+      }
+      return true;
+    }
+    if (enemy.rimeClock <= 0 && enemy.onGround && Math.abs(enemy.x - player.x) < 18) {
+      enemy.facing = Math.sign(player.x - enemy.x - enemy.width / 2) || 1;
+      enemy.rimeWindup = 0.85;
+      enemy.encounterCue = 'Stampede · jump over the charge';
+      return true;
+    }
+    return false;
+  }
+
+  function stepVoidCollapse(enemy, player, dt) {
+    const cycle = enemy.timer % 9;
+    if (cycle < 4.1 || cycle >= 7.2) {
+      enemy.voidCollapse = null;
+      enemy.encounterCue = null;
+      return false;
+    }
+    const late = enemy.hp <= enemy.maxHp / 2;
+    const pull = enemy.voidCollapse ||= {
+      x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height / 2,
+      radius: late ? 16 : 12, core: late ? 3.2 : 2.3
+    };
+    pull.active = cycle >= 5.4;
+    enemy.enraged = late;
+    enemy.encounterCue = pull.active ? 'Gravity well · fight the pull' : 'Collapse forming · get clear';
+    const dx = pull.x - player.x - player.width / 2, dy = pull.y - player.y - player.height / 2;
+    const distance = Math.hypot(dx, dy);
+    if (pull.active && distance > 0.2 && distance < pull.radius) {
+      const force = (late ? 26 : 19) * (1 - distance / (pull.radius * 1.6));
+      player.vx = (player.vx || 0) + dx / distance * force * dt;
+      player.vy = (player.vy || 0) + dy / distance * force * dt;
+    }
+    return true;
+  }
+
   function stepOne(enemy, player, dt) {
     const arch = ARCHETYPES[enemy.spec.kind];
     const toward = Math.sign(player.x - enemy.x) || 1;
     enemy.timer += dt;
     if (enemy.hurt > 0) enemy.hurt = Math.max(0, enemy.hurt - dt);
+    if (enemy.quarryOwner) { if (enemy.quarryOwner.dead) enemy.dead = true; return; }
     if (enemy.spec.fieldThreat && stepFieldAttack(enemy, arch, player, dt)) return;
 
     // Bosses first, before any of the archetype branches below. The flying boss has
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
+      if (enemy.key === 'dungeonkeeper' && stepKeeperGuard(enemy, player, dt)) return;
+      if (enemy.key === 'ashguardian') stepAshVents(enemy, player, dt);
+      if (enemy.key === 'granitecolossus') stepQuarryArmor(enemy, player, dt);
+      if (enemy.key === 'rimehorn' && stepRimehornCharge(enemy, player, dt)) return;
+      if (enemy.key === 'voidsovereign' && stepVoidCollapse(enemy, player, dt)) return;
       if (enemy.spec.signature && stepBossSignature(enemy, player, dt)) return;
       if (enemy.key === 'lenscustodian') enemy.shielded = !!deps.lensLit && !deps.lensLit();
       if (enemy.key === 'railbreaker') stepRailbreaker(enemy, player, dt);
@@ -1932,7 +2065,7 @@ function makeSwarm(world, tiles, deps) {
     }
     for (let i = list.length - 1; i >= 0; i -= 1) {
       const enemy = list[i];
-      if (enemy.dead) { list.splice(i, 1); continue; }
+      if (enemy.dead || enemy.quarryOwner?.dead) { list.splice(i, 1); continue; }
       // Anything the player has walked away from is forgotten rather than simulated.
       // A boss is not: it teleports to you instead, so running away is not a way out.
       if (!enemy.boss && Math.hypot(enemy.x - player.x, enemy.y - player.y) > DESPAWN) {
@@ -1966,8 +2099,14 @@ function makeSwarm(world, tiles, deps) {
 
   function touching(player) {
     for (const enemy of list) {
-      if (enemy.dead || enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) continue;
+      if (enemy.dead || enemy.quarryOwner || enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) continue;
       if (prismHit(enemy, player)) return enemy;
+      const pull = enemy.voidCollapse;
+      if (pull?.active && Math.hypot(player.x + player.width / 2 - pull.x,
+        player.y + player.height / 2 - pull.y) < pull.core) return enemy;
+      if (enemy.ashVents?.some(vent => vent.time >= vent.warning
+        && player.x + player.width > vent.x - vent.width / 2 && player.x < vent.x + vent.width / 2
+        && player.y + player.height > vent.y && player.y < vent.y + vent.height)) return enemy;
       if (enemy.x + enemy.width <= player.x) continue;
       if (enemy.x >= player.x + player.width) continue;
       if (enemy.y + enemy.height <= player.y) continue;

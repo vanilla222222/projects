@@ -541,6 +541,51 @@ function makeRenderer(canvas, deps) {
         ctx.ellipse(sx + w / 2, sy + h / 2, w * 0.61, h * 0.61, 0, 0, Math.PI * 2);
         ctx.stroke();
       }
+      if (enemy.keeperGuard) {
+        const shieldX = sx + (enemy.keeperGuard > 0 ? w * 0.9 : -size * 0.15);
+        ctx.fillStyle = '#e4c289';
+        ctx.fillRect(shieldX, sy + h * 0.12, size * 0.22, h * 0.73);
+        ctx.fillStyle = '#66514e';
+        ctx.fillRect(shieldX + size * 0.05, sy + h * 0.26, size * 0.1, h * 0.45);
+      }
+      if (enemy.quarryNodes) {
+        ctx.strokeStyle = '#d5ae78a8';
+        ctx.lineWidth = size * 0.09;
+        for (const node of enemy.quarryNodes) {
+          if (node.dead) continue;
+          ctx.beginPath();
+          ctx.moveTo(sx + w / 2, sy + h / 2);
+          ctx.lineTo((node.x + node.width / 2 - x0) * size - offsetX,
+            (node.y + node.height / 2 - y0) * size - offsetY);
+          ctx.stroke();
+        }
+      }
+      for (const vent of enemy.ashVents || []) {
+        const x = (vent.x - vent.width / 2 - x0) * size - offsetX;
+        const y = (vent.y - y0) * size - offsetY;
+        ctx.fillStyle = vent.time < vent.warning ? '#ffb56f45' : '#ff5d4fa8';
+        ctx.fillRect(x, y, vent.width * size, vent.height * size);
+        ctx.strokeStyle = '#ffa561';
+        ctx.strokeRect(x, y, vent.width * size, vent.height * size);
+      }
+      if (enemy.voidCollapse) {
+        const pull = enemy.voidCollapse;
+        const x = (pull.x - x0) * size - offsetX;
+        const y = (pull.y - y0) * size - offsetY;
+        ctx.strokeStyle = pull.active ? '#c17bff' : '#a08eca';
+        ctx.lineWidth = size * 0.12;
+        ctx.beginPath();
+        ctx.arc(x, y, pull.radius * size, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = pull.active ? '#ac53db88' : '#8b69b74d';
+        ctx.beginPath();
+        ctx.arc(x, y, pull.core * size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (enemy.rimeWindup > 0) {
+        ctx.fillStyle = '#aee2ff65';
+        ctx.fillRect(enemy.facing > 0 ? sx + w : sx - size * 13, sy + h - size * 0.25, size * 13, size * 0.25);
+      }
       if (enemy.signatureAttack) {
         ctx.save();
         ctx.strokeStyle = '#ffc38c';
@@ -627,7 +672,7 @@ function makeRenderer(canvas, deps) {
     ctx.fillStyle = '#efe7d6';
     ctx.font = '13px ui-monospace, monospace';
     ctx.textAlign = 'center';
-    const cue = boss.signatureAttack ? ' · ' + boss.signatureAttack.name : boss.signatureRecovery > 0 ? ' · Exposed' : '';
+    const cue = boss.encounterCue ? ' · ' + boss.encounterCue : boss.signatureAttack ? ' · ' + boss.signatureAttack.name : boss.signatureRecovery > 0 ? ' · Exposed' : '';
     ctx.fillText(boss.spec.name + '  ' + Math.ceil(boss.hp) + ' / ' + boss.maxHp + cue,
       canvas.width / 2, y + h + 16);
     ctx.textAlign = 'left';

@@ -286,6 +286,11 @@ with a different attack and follows with a second volley. Afterward it briefly
 takes extra damage. Encounters with dedicated mechanics, such as the siege,
 the floodgate, and the dungeon side bosses, use their own tells.
 
+The Ossuary Keeper blocks attacks from the side its shield faces. The
+Ashvault Guardian ignites delayed vents that keep burning. Destroy the
+Granite Colossus’s keystones to shatter its armor. Jump Rimehorn’s charge
+and stay outside the Void Sovereign’s gravity well.
+
 ### Signature attacks
 
 Each class has five starter weapons without an attack rhythm. Later weapons

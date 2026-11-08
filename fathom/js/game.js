@@ -1166,10 +1166,10 @@ function makeGame(canvas, deps) {
     return true;
   }
 
-  function projectileHit(target, damage, beat) {
+  function projectileHit(target, damage, beat, sourceX = state.player.x + state.player.width / 2) {
     if (target.dead) return;
     damage = applyCombatBeat(beat, target, damage);
-    if (!swarm.damage(target, bannerDamage(target, damage)) || target.practice) return;
+    if (!swarm.damage(target, bannerDamage(target, damage), sourceX) || target.practice) return;
     if (target.expedition) { target.expeditionDefeated = true; return; }
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
@@ -1291,7 +1291,9 @@ function makeGame(canvas, deps) {
             hit = !a.hits || a.hits.size >= (a.hitLimit || 3);
             spawnParticles(a.x, a.y, target.spec.colour, 5);
             if (a.plant) { hit = true; continue; }
-            projectileHit(target, a.damage, a.beat);
+            const center = target.x + target.width / 2;
+            const sourceX = Math.abs(a.vx) > 0.01 ? center - Math.sign(a.vx) : previousX;
+            projectileHit(target, a.damage, a.beat, sourceX);
             if (a.shove && !target.dead && !target.boss) target.vx += Math.sign(a.vx) * a.shove;
             if (a.burns) {
               for (const other of swarm.list) {
@@ -1507,7 +1509,7 @@ function makeGame(canvas, deps) {
       }
     }
     hit = applyCombatBeat(weapon && nextCombatBeat(weapon), target, hit);
-    if (swarm.damage(target, bannerDamage(target, hit)) && !target.practice) {
+    if (swarm.damage(target, bannerDamage(target, hit), cx) && !target.practice) {
       if (target.expedition) { target.expeditionDefeated = true; return true; }
       for (const [key, count] of target.spec.drops || []) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
