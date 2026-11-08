@@ -935,7 +935,115 @@ const WORKSHOP_PIXELS = {
   'star-statue': ['00033000','00033000','33333333','03344330','00333300','03300330','00022000','03333330']
 };
 
+const WORKSHOP_SILHOUETTES = {
+  'rocking-chair': '30 30 30 3c 14 24 24 7e',
+  settee: '00 7e 5a 5a ff 7e 42 42',
+  lectern: '00 3e 7e 3c 18 18 18 3c',
+  vanity: '18 3c 24 3c 18 7e 5a 42',
+  sideboard: '00 00 ff 7e 5a 7e 42 42',
+  'wine-rack': '7e 5a 66 5a 66 5a 7e 42',
+  'tool-rack': 'ff 81 a5 bd a5 89 81 ff',
+  shutter: '7e 42 7e 42 7e 42 7e 7e',
+  lattice: 'ff a5 c3 a5 a5 c3 a5 ff',
+  wheel: '3c 66 5a db db 5a 66 3c',
+  runner: '00 00 00 00 00 7e ff 7e',
+  valance: 'ff ff db 81 00 00 00 00',
+  drapes: 'ff ff e7 c3 e7 e7 e7 ff',
+  pennant: 'ff 7e 7c 78 70 60 40 00',
+  ottoman: '00 00 00 00 3c 7e 7e 42',
+  bolster: '00 00 00 00 00 7e ff 7e',
+  quilt: 'ff ff ff ff ff ff ff db',
+  parasol: '18 3c 7e ff 18 18 18 1c',
+  'bat-statue': '00 81 c3 ff 7e 3c 18 7e',
+  'spider-statue': '00 18 5a 3c ff 3c 5a 7e',
+  'zombie-statue': '18 3c 18 3f 1b 18 24 7e',
+  'mimic-statue': '00 3c 7e 7e 5a 7e 42 7e',
+  'demon-eye-statue': '00 3c 7e ff ff 7e 18 7e',
+  'skeleton-statue': '3c 24 3c 18 3c 18 24 7e',
+  'harpy-statue': '18 99 db 7e 3c 18 24 7e',
+  'worm-statue': '0c 1e 1e 18 30 60 7e 7e',
+  'lantern-skull-statue': '18 3c 7e 5a 7e 3c 18 7e',
+  'kingslime-statue': '24 3c 18 3c 7e ff ff 7e',
+  'dungeonkeeper-statue': '24 3c 24 3c 18 7e 5a 7e',
+  'prismsentinel-statue': '18 3c 5a bd 5a 3c 18 7e'
+};
+const GLYPH_ROWS = {
+  A:'0e11111f111111', B:'1e11111e11111e', C:'0e11101010110e', D:'1e11111111111e',
+  E:'1f10101e10101f', F:'1f10101e101010', G:'0e11101711110f', H:'1111111f111111',
+  I:'0e04040404040e', J:'0702020212120c', K:'11121418141211', L:'1010101010101f',
+  M:'111b1515111111', N:'11191915131311', O:'0e11111111110e', P:'1e11111e101010',
+  Q:'0e11111115120d', R:'1e11111e141211', S:'0f10100e01011e', T:'1f040404040404',
+  U:'1111111111110e', V:'11111111110a04', W:'11111115151b11', X:'11110a040a1111',
+  Y:'11110a04040404', Z:'1f01020408101f', 0:'0e11131519110e', 1:'040c040404040e',
+  2:'0e11010204081f', 3:'1e01010e01011e', 4:'02060a121f0202', 5:'1f10101e01011e',
+  6:'0610101e11110e', 7:'1f010204080808', 8:'0e11110e11110e', 9:'0e11110f01010c'
+};
+
+function paintGlyphStatue(ctx, spec, ox, oy) {
+  const rows = GLYPH_ROWS[spec.glyph].match(/../g);
+  ctx.fillStyle = shade(spec.colour, -0.45);
+  ctx.fillRect(ox + 1, oy + 14, 14, 2);
+  for (let y = 0; y < rows.length; y += 1) {
+    const bits = parseInt(rows[y], 16);
+    for (let x = 0; x < 5; x += 1) {
+      if (!(bits & (16 >> x))) continue;
+      ctx.fillStyle = shade(spec.colour, -0.35);
+      ctx.fillRect(ox + 4 + x * 2, oy + y * 2, 2, 2);
+      ctx.fillStyle = spec.colour;
+      ctx.fillRect(ox + 3 + x * 2, oy + y * 2, 2, 2);
+    }
+  }
+}
+
+function paintWorkshopSilhouette(ctx, spec, ox, oy) {
+  const rows = WORKSHOP_SILHOUETTES[spec.fixture].split(' ').map(row => parseInt(row, 16));
+  for (const [y, bits] of rows.entries()) {
+    for (let x = 0; x < 8; x += 1) {
+      const mask = 128 >> x;
+      if (!(bits & mask)) continue;
+      const top = !(rows[y - 1] & mask);
+      const edge = !(bits & (mask >> 1));
+      const woven = spec.fixture === 'quilt' && (Math.floor(x / 2) + Math.floor(y / 2)) % 2;
+      ctx.fillStyle = shade(spec.colour, top ? 0.25 : edge ? -0.3 : woven ? 0.17 : (x % 2 ? -0.11 : 0));
+      ctx.fillRect(ox + x * 2, oy + y * 2, 2, 2);
+    }
+  }
+}
+
+function paintMasonry(ctx, spec, variant, ox, oy) {
+  if (spec.masonry === 'brick') {
+    paintBrick(ctx, spec, variant, ox, oy);
+    return;
+  }
+  ctx.fillStyle = spec.colour;
+  ctx.fillRect(ox, oy, TILE, TILE);
+  ctx.fillStyle = shade(spec.colour, 0.22);
+  if (spec.masonry === 'pillar') {
+    for (const x of [2, 6, 10, 14]) ctx.fillRect(ox + x, oy, 1, 16);
+    ctx.fillStyle = shade(spec.colour, -0.28);
+    for (const x of [0, 4, 8, 12]) ctx.fillRect(ox + x, oy, 1, 16);
+  } else if (spec.masonry === 'paver') {
+    ctx.fillRect(ox, oy, 16, 1);
+    ctx.fillRect(ox, oy + 8, 16, 1);
+    ctx.fillRect(ox, oy, 1, 16);
+    ctx.fillRect(ox + 8, oy, 1, 16);
+    ctx.fillStyle = shade(spec.colour, -0.28);
+    ctx.fillRect(ox, oy + 7, 16, 1);
+    ctx.fillRect(ox, oy + 15, 16, 1);
+    ctx.fillRect(ox + 7, oy, 1, 16);
+    ctx.fillRect(ox + 15, oy, 1, 16);
+  } else {
+    ctx.fillRect(ox, oy, 16, 1);
+    ctx.fillRect(ox, oy, 1, 16);
+    ctx.fillStyle = shade(spec.colour, -0.24);
+    ctx.fillRect(ox, oy + 15, 16, 1);
+    ctx.fillRect(ox + 15, oy, 1, 16);
+  }
+}
+
 function paintWorkshopFixture(ctx, spec, ox, oy) {
+  if (spec.glyph) return paintGlyphStatue(ctx, spec, ox, oy);
+  if (WORKSHOP_SILHOUETTES[spec.fixture]) return paintWorkshopSilhouette(ctx, spec, ox, oy);
   const pixels = WORKSHOP_PIXELS[spec.fixture];
   const palette = [null, shade(spec.colour, -0.4), spec.colour, shade(spec.colour, 0.27),
     spec.emit ? '#ffd68a' : '#b6a69f'];
@@ -1038,6 +1146,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.climb) paintRope(ctx, spec, v, ox, oy);
       else if (spec.key === 'campfire') paintCampfire(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
+      else if (spec.masonry) paintMasonry(ctx, spec, v, ox, oy);
       else if (spec.fixture) paintWorkshopFixture(ctx, spec, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'

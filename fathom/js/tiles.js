@@ -424,7 +424,12 @@ const SAWMILL_FIXTURES = [
   ['shield-plaque', 'Shield Plaque', 5], ['figurehead', 'Figurehead', 7],
   ['birdhouse', 'Birdhouse', 5], ['display-stand', 'Display Stand', 6],
   ['rail', 'Decorative Rail', 4], ['coat-rack', 'Coat Rack', 5],
-  ['lantern-post', 'Lantern Post', 7], ['candelabra', 'Candelabra', 7]
+  ['lantern-post', 'Lantern Post', 7], ['candelabra', 'Candelabra', 7],
+  ['rocking-chair', 'Rocking Chair', 7, 'chair'], ['settee', 'Settee', 10, 'chair'],
+  ['lectern', 'Lectern', 7, 'table'], ['vanity', 'Vanity', 10, 'table'],
+  ['sideboard', 'Sideboard', 9, 'table'], ['wine-rack', 'Wine Rack', 8],
+  ['tool-rack', 'Tool Rack', 6], ['shutter', 'Shutter', 5],
+  ['lattice', 'Lattice Panel', 5], ['wheel', 'Decorative Wheel', 6]
 ];
 for (const wood of WOODS) {
   for (const [shape, name, cost, furniture] of SAWMILL_FIXTURES) {
@@ -446,13 +451,17 @@ const WORKSHOP_DYES = [
 const LOOM_FIXTURES = [
   ['rug', 'Rug', 3], ['curtain', 'Curtain', 3], ['banner', 'Banner', 2],
   ['cushion', 'Cushion', 2], ['tapestry', 'Tapestry', 4],
-  ['canopy', 'Canopy', 4], ['screen', 'Folding Screen', 3]
+  ['canopy', 'Canopy', 4], ['screen', 'Folding Screen', 3],
+  ['runner', 'Runner', 2], ['valance', 'Valance', 2],
+  ['drapes', 'Drapes', 4], ['pennant', 'Pennant', 2],
+  ['ottoman', 'Ottoman', 3, 'chair'], ['bolster', 'Bolster', 2],
+  ['quilt', 'Quilt Display', 4], ['parasol', 'Parasol', 4]
 ];
 for (const [key, name, colour] of WORKSHOP_DYES) {
-  for (const [shape, label, cost] of LOOM_FIXTURES) {
+  for (const [shape, label, cost, furniture] of LOOM_FIXTURES) {
     const need = [[key + '-fabric', cost]];
-    if (shape === 'screen' || shape === 'canopy') need.push(['#wood', 3]);
-    workshopFixture(key + '-' + shape, name + ' ' + label, colour, shape, need, 'loom');
+    if (['screen', 'canopy', 'ottoman', 'parasol'].includes(shape)) need.push(['#wood', 3]);
+    workshopFixture(key + '-' + shape, name + ' ' + label, colour, shape, need, 'loom', { furniture });
   }
 }
 
@@ -463,9 +472,19 @@ for (const [material, label, colour, ingredient] of [
 ]) {
   for (const [motif, name] of [
     ['owl', 'Owl'], ['serpent', 'Serpent'], ['knight', 'Knight'],
-    ['slime', 'Slime'], ['guardian', 'Guardian'], ['star', 'Star']
+    ['slime', 'Slime'], ['guardian', 'Guardian'], ['star', 'Star'],
+    ['bat', 'Bat'], ['spider', 'Spider'], ['zombie', 'Zombie'], ['mimic', 'Mimic'],
+    ['demon-eye', 'Demon Eye'], ['skeleton', 'Skeleton'], ['harpy', 'Harpy'], ['worm', 'Worm'],
+    ['lantern-skull', 'Lantern Skull'], ['kingslime', 'King Slime'],
+    ['dungeonkeeper', 'Ossuary Keeper'], ['prismsentinel', 'Prism Sentinel']
   ]) workshopFixture(material + '-' + motif + '-statue', label + ' ' + name + ' Statue', colour,
     motif + '-statue', material === 'stone' ? [['stone', 14]] : [[ingredient, material === 'gilt' ? 4 : 10], ['stone', 4]], 'heavy-workbench');
+}
+
+for (const glyph of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') {
+  const type = /[0-9]/.test(glyph) ? 'Number' : 'Letter';
+  workshopFixture('stone-glyph-' + glyph.toLowerCase(), type + ' ' + glyph + ' Statue',
+    '#b4b5c5', 'glyph-statue', [['stone', 6]], 'heavy-workbench', { glyph });
 }
 
 const WALL_BY_KEY = {};
@@ -473,6 +492,44 @@ for (const w of WOODS) {
   WALLS.push({ id: WALLS.length, key: w.key + 'back', name: w.name + ' Background',
     colour: shadeHex(w.colour, -0.45), opacity: 7, wood: w.key });
 }
+
+// Append variants so the numeric IDs already written to world saves stay stable.
+const MASONRY_SOURCES = [
+  'dirt', 'stone', 'clay', 'sand', 'snow', 'ice', 'granite', 'basalt', 'slate', 'brick',
+  'mud', 'peat', 'blight', 'flesh', 'redclay', 'sandstone', 'saltcrust', 'ash', 'brimstone',
+  'obsidian', 'cinderstone', 'skystone', 'starrock', 'glass', 'crystal', 'meteorite',
+  'voidstone', 'void-crystal', 'prismstone', 'ray-crystal', 'storm-crystal', 'ward-crystal',
+  'oakwood', 'pinewood', 'mahoganywood', 'acaciawood', 'shadewood', 'crimwood',
+  'copper', 'tin', 'iron', 'silver', 'gold', 'cobalt', 'emberite', 'aetherite',
+  'palladium', 'mythril', 'adamantite', 'amethyst', 'topaz', 'sapphire', 'emerald', 'ruby', 'diamond'
+];
+const masonryIngredients = new Map(TILES.map(spec => [spec.key, spec]));
+for (const source of MASONRY_SOURCES) {
+  const { name, colour } = masonryIngredients.get(source);
+  const polished = 'polished-' + source;
+  for (const [key, label, masonry, ingredient] of [
+    [polished, 'Polished ' + name, 'polished', source],
+    [source + '-masonry-brick', name + ' Masonry Brick', 'brick', polished],
+    [source + '-paving', name + ' Pavers', 'paver', polished],
+    [source + '-pillar', name + ' Pillar Block', 'pillar', polished]
+  ]) {
+    pushTile({ key, name: label, colour, masonry, solid: true, opacity: 55,
+      toughness: 85, hardness: 1, emit: 0 });
+    WORKSHOP_PLANS.push({ out: { key, kind: 'block', count: 4 },
+      need: [[ingredient, 4]], station: 'heavy-workbench' });
+  }
+  const wallKey = source + '-masonry-wall';
+  WALLS.push({ id: WALLS.length, key: wallKey, name: name + ' Masonry Wall',
+    colour: shadeHex(colour, -0.34), opacity: 7 });
+  WORKSHOP_PLANS.push({ out: { key: wallKey, kind: 'wall', count: 4 },
+    need: [[source + '-masonry-brick', 1]], station: 'heavy-workbench' });
+  for (const [shape, label, cost, furniture] of [
+    ['stool', 'Masonry Stool', 4, 'chair'], ['banquet-table', 'Masonry Table', 8, 'table'],
+    ['planter', 'Masonry Planter', 5], ['display-stand', 'Masonry Pedestal', 5]
+  ]) workshopFixture(source + '-masonry-' + shape, name + ' ' + label,
+    colour, shape, [[polished, cost]], 'heavy-workbench', { furniture });
+}
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
