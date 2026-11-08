@@ -173,6 +173,16 @@ Astral metal. The campaign recognizes prior world progress and gives each
 act a one-time reward. **Boss Side Quests** lists optional bosses, their
 unlock requirements, and summon recipes.
 
+### Chapter 2 · The Scattered Gate
+
+Finish Chapter 1, then select **Begin Chapter 2** in the Campaign. Ten trial
+structures awaken. The journal lists their coordinates and guardians.
+Search three in Space, three in Hell, three in the Void, and one in the Sky.
+
+Challenge each miniboss at its Trial Seal and return to the seal to claim
+its component. Nine structures give distinct fragments. Windlock Citadel
+holds the Portal Activator. Keep all ten components for the first subworld.
+
 ### Progression
 
 Start with tin tools and work through copper, iron, silver, gold, cobalt, and emberite.

@@ -810,6 +810,25 @@ workshopFixture('tinkers-workshop', 'Tinker’s Workshop', '#b58eae', 'tinkers-w
 pushTile({ key: 'enemy-banner', name: 'Enemy Banner', colour: '#b29a83', solid: false,
   opacity: 0, hardness: 0.1, toughness: 10, drops: null, enemyBanner: true });
 
+const PORTAL_TRIALS = [
+  ['comet-observatory', 'Comet Observatory', 'space', -880, 'Comet Watcher', 'hover', 'eye', 'fan', '#a5c9f1', 'starrock'],
+  ['broken-dock', 'Broken Orbital Dock', 'space', -1080, 'Dockbreaker', 'guardian', 'golem', 'cross', '#87bcad', 'foundry-alloy'],
+  ['starwell', 'The Starwell', 'space', -1320, 'Starwell Serpent', 'coilserpent', 'worm', 'starburst', '#d7abf0', 'starrock'],
+  ['cinder-bastion', 'Cinder Bastion', 'hell', 1310, 'Cinder Marshal', 'furnace', 'demon', 'fan', '#ed966f', 'brimstone'],
+  ['slag-chapel', 'Slag Chapel', 'hell', 1515, 'Slag Cantor', 'guardian', 'skull', 'shatter', '#e6ba80', 'obsidian'],
+  ['furnace-crypt', 'Furnace Crypt', 'hell', 1715, 'Crypt Incinerator', 'archon', 'imp', 'cross', '#eb735d', 'ashvault-brick'],
+  ['null-sanctum', 'Null Sanctum', 'void', 2960, 'Null Abbot', 'sovereign', 'bigeye', 'cross', '#b092e7', 'voidstone'],
+  ['hollow-spire', 'Hollow Spire', 'void', 3215, 'Hollow Castellan', 'guardian', 'golem', 'shatter', '#a0a3dc', 'voidstone'],
+  ['echo-prison', 'Echo Prison', 'void', 3510, 'Echo Jailer', 'archon', 'maw', 'starburst', '#db8fcb', 'voidstone'],
+  ['windlock-citadel', 'Windlock Citadel', 'sky', -490, 'Windlock Sentinel', 'thunderbird', 'bird', 'fan', '#b5d8c6', 'skystone']
+].map(([id, name, layer, altitude, guardian, kind, body, barrage, colour, material], index) => ({
+  id, name, layer, altitude, guardian, kind, body, barrage, colour, material,
+  boss: 'trial-' + id, reward: index === 9 ? 'portal-activator' : 'portal-fragment-' + id
+}));
+
+pushTile({ key: 'portal-trial-seal', name: 'Trial Seal', colour: '#d1afe9', solid: false,
+  opacity: 0, emit: 13, hardness: 10, toughness: 250, drops: null, fixture: 'wire-lamp', portalTrial: true });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 
@@ -838,7 +857,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

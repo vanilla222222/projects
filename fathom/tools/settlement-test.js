@@ -102,7 +102,7 @@ assert.equal(worldgen.worldSettingValues().day, 1440);
   const main = new Set(chapters.flatMap(chapter => chapter.trio ? craft.HARDMODE_TRIO : chapter.bosses || []));
   const side = Object.keys(settlement.CAMPAIGN_HUNTS);
   assert.equal(side.length, 35);
-  assert.deepEqual([...main, ...side].sort(), enemy.ENEMIES.filter(spec => spec.boss).map(spec => spec.key).sort());
+  assert.deepEqual([...main, ...side].sort(), enemy.ENEMIES.filter(spec => spec.boss && !spec.portalTrial).map(spec => spec.key).sort());
   for (const chapter of chapters) for (const [key] of chapter.reward) itemExists(key);
   const ready = (id, wins, flags) => settlement.campaignChapterReady(
     chapters.find(chapter => chapter.id === id), new Set(wins), new Set(flags), craft.HARDMODE_TRIO);
@@ -113,4 +113,32 @@ assert.equal(worldgen.worldSettingValues().day, 1440);
   assert.equal(ready('machines', ['starwyvern'], []), true);
   assert.equal(ready('astral', ['astralregent'], []), false);
   assert.equal(ready('astral', ['astralregent'], ['astral']), true);
+}
+
+{
+  const world = require('../js/chunks').makeWorld(41, worldgen);
+  const sites = worldgen.portalTrialSites(41);
+  assert.equal(sites.length, 10);
+  assert.deepEqual(sites.map(site => worldgen.layerAt(site.y).key).sort(),
+    ['hell', 'hell', 'hell', 'sky', 'space', 'space', 'space', 'void', 'void', 'void']);
+  assert.equal(new Set(sites.map(site => site.reward)).size, 10);
+  assert.equal(sites.filter(site => site.reward.startsWith('portal-fragment-')).length, 9);
+  assert.equal(sites.find(site => site.reward === 'portal-activator').layer, 'sky');
+  const first = sites[0];
+  const seal = tiles.idOf('portal-trial-seal');
+  assert.notEqual(world.get(first.x, first.y - 1), seal);
+  world.set(first.x + 1, first.y - 1, tiles.idOf('stone'));
+  assert.equal(world.enablePortalHunt(), true);
+  assert.equal(world.enablePortalHunt(), false);
+  for (const site of sites) {
+    assert.equal(world.get(site.x, site.y - 1), seal);
+    assert.equal(world.portalSiteAt(site.x, site.y - 1).id, site.id);
+    assert.equal(world.getLevel(site.x, site.y - 2), 0);
+    assert.equal(enemy.BY_KEY[site.boss].portalTrial, site.id);
+    assert.equal(craft.ITEMS[site.reward].portalComponent, true);
+  }
+  const restoredWorld = require('../js/chunks').makeWorld(41, worldgen);
+  restoredWorld.restore(JSON.parse(JSON.stringify(world.serialize())));
+  assert.equal(restoredWorld.get(first.x, first.y - 1), seal);
+  assert.equal(restoredWorld.get(first.x + 1, first.y - 1), tiles.idOf('stone'));
 }

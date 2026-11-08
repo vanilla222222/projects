@@ -61,6 +61,7 @@ function makeWorld(seed, generator) {
   let renderRevision = 0;
   let hardmode = false;
   let astral = false;
+  const portalRows = new Map();
   let protectedChunks = new Set();
   let liquidRevision = 0;
 
@@ -110,6 +111,29 @@ function makeWorld(seed, generator) {
     return true;
   }
 
+  function indexPortalSites() {
+    for (const site of generator.portalTrialSites(seed)) {
+      for (let cy = Math.floor(site.top / generator.CHUNK); cy <= Math.floor(site.bottom / generator.CHUNK); cy += 1) {
+        if (!portalRows.has(cy)) portalRows.set(cy, []);
+        portalRows.get(cy).push(site);
+      }
+    }
+  }
+
+  function enablePortalHunt() {
+    if (portalRows.size) return false;
+    indexPortalSites();
+    loaded.clear();
+    forgetMemo();
+    renderRevision += 1;
+    liquidRevision += 1;
+    return true;
+  }
+
+  function portalSiteAt(x, y) {
+    return portalRows.get(Math.floor(y / generator.CHUNK))?.find(site => x >= site.left && x <= site.right && y >= site.top && y <= site.bottom);
+  }
+
   function biomeAt(x, y) {
     const cx = Math.floor(x / generator.CHUNK), cy = Math.floor(y / generator.CHUNK);
     const altitude = generator.altitudeOf?.(y);
@@ -132,6 +156,18 @@ function makeWorld(seed, generator) {
       for (let index = 0; index < chunk.tiles.length; index += 1) {
         const x = cx * size + index % size, y = cy * size + Math.floor(index / size);
         chunk.tiles[index] = generator.astralTileAt(seed, x, y, chunk.tiles[index]);
+      }
+    }
+    const size = generator.CHUNK;
+    for (const site of portalRows.get(cy) || []) {
+      const left = Math.max(site.left, cx * size), right = Math.min(site.right, (cx + 1) * size - 1);
+      const top = Math.max(site.top, cy * size), bottom = Math.min(site.bottom, (cy + 1) * size - 1);
+      for (let y = top; y <= bottom; y += 1) {
+        for (let x = left; x <= right; x += 1) {
+          const index = (y - cy * size) * size + x - cx * size;
+          chunk.tiles[index] = generator.portalTrialTile(site, x, y);
+          chunk.walls[index] = generator.portalTrialWall(site);
+        }
       }
     }
     const diff = edits.get(key);
@@ -186,7 +222,8 @@ function makeWorld(seed, generator) {
       diff = new Map();
       wallEdits.set(key, diff);
     }
-    if (id === generator.baseWallAt(seed, x, y)) diff.delete(index);
+    const site = portalSiteAt(x, y);
+    if (id === (site ? generator.portalTrialWall(site) : generator.baseWallAt(seed, x, y))) diff.delete(index);
     else diff.set(index, id);
     if (diff.size === 0) wallEdits.delete(key);
     dirty.add(key);
@@ -213,6 +250,8 @@ function makeWorld(seed, generator) {
     let original = hardmodeApplies(cx, cy) && generator.hardmodeTileAt
       ? generator.hardmodeTileAt(seed, x, y, base) : base;
     if (astral && generator.astralTileAt) original = generator.astralTileAt(seed, x, y, original);
+    const site = portalSiteAt(x, y);
+    if (site) original = generator.portalTrialTile(site, x, y);
     if (id === original) diff.delete(index);
     else diff.set(index, id);
     if (diff.size === 0) edits.delete(key);
@@ -241,6 +280,7 @@ function makeWorld(seed, generator) {
       if (found !== undefined) return found;
     }
     if (generator.isLiquidId(id)) return LEVEL_FULL;
+    if (portalSiteAt(x, y)) return 0;
     return generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
   }
 
@@ -256,7 +296,7 @@ function makeWorld(seed, generator) {
     const index = ly * generator.CHUNK + lx;
     let slot = levels.get(key);
 
-    const base = generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
+    const base = !portalSiteAt(x, y) && generator.baseLevelAt ? generator.baseLevelAt(seed, x, y) : 0;
     liquidRevision += 1;
     if (amount === 0) {
       if (generator.isLiquidId(get(x, y))) set(x, y, 0);
@@ -410,7 +450,7 @@ function makeWorld(seed, generator) {
     // bytes become 384 characters instead of roughly 1,100.
     const seen = {};
     for (const [key, bits] of explored) seen[key] = packBits(bits);
-    return { seed: Number(seed), hardmode, astral, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
+    return { seed: Number(seed), hardmode, astral, portalHunt: portalRows.size > 0, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
       containers: boxes, explored: seen };
   }
 
@@ -418,6 +458,8 @@ function makeWorld(seed, generator) {
     renderRevision += 1;
     hardmode = !!saved.hardmode;
     astral = !!saved.astral;
+    portalRows.clear();
+    if (saved.portalHunt) indexPortalSites();
     protectedChunks = new Set(saved.protectedChunks || []);
     edits.clear();
     wallEdits.clear();
@@ -444,7 +486,7 @@ function makeWorld(seed, generator) {
     }
   }
 
-  return { seed, get, set, biomeAt, enableHardmode, enableAstral, get astral() { return astral; }, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
+  return { seed, get, set, biomeAt, enableHardmode, enableAstral, enablePortalHunt, portalSiteAt, get portalHunt() { return portalRows.size > 0; }, get astral() { return astral; }, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
     getContainer, setContainer, clearContainer, hasStoredContainer: (x, y) => containers.has(containerKey(x, y)),
     markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },

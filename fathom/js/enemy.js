@@ -773,6 +773,14 @@ for (const chapter of ARMORY_ENEMIES) {
   });
 }
 
+const ENEMY_PORTAL_TRIALS = typeof require === 'function' ? require('./tiles.js').PORTAL_TRIALS : PORTAL_TRIALS;
+for (const [index, trial] of ENEMY_PORTAL_TRIALS.entries()) {
+  ENEMIES.push({ key: trial.boss, name: trial.guardian, kind: trial.kind, body: trial.body, colour: trial.colour,
+    boss: true, portalTrial: trial.id, summonOnly: true, weight: 0, w: 3.4, h: 3.1,
+    hp: 11600 + index * 630, damage: 95 + index * 5, barrage: trial.barrage, emit: 7,
+    bossDrops: [trial.reward] });
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
