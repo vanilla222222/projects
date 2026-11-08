@@ -268,6 +268,9 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'archivist-core': { name: 'Archivist Core', kind: 'loot', colour: '#95d3d9' },
+  'tide-seal': { name: 'Tide Seal', kind: 'use', colour: '#83bfd3',
+    use: { summon: 'drownedarchivist', archive: true }, text: 'Use below the Tidal Archive floodgate' },
   'lens-vault-core': { name: 'Lens Vault Core', kind: 'loot', colour: '#b9dcf4' },
   'lens-sigil': { name: 'Lens Sigil', kind: 'use', colour: '#bdabed',
     use: { summon: 'lenscustodian', lensVault: true }, text: 'Use beyond the Lens Vault beam gate' },
@@ -860,6 +863,8 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'tide-seal', kind: 'use', count: 1 },
+    need: [['shell', 12], ['mythril-bar', 5], ['storm-crystal', 4]], station: 'optics-bench' },
   { out: { key: 'lens-sigil', kind: 'use', count: 1 },
     need: [['ward-crystal', 4], ['adamantite-bar', 4], ['wire-spool', 8]], station: 'signal-bench' },
   { out: { key: 'warden-igniter', kind: 'use', count: 1 },
@@ -1454,7 +1459,7 @@ const BOSS_CHAPTERS = [
   ['riftarchon'],
   ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO],
   ['starwyvern'],
-  ['foundrywarden', 'lenscustodian']
+  ['foundrywarden', 'lenscustodian', 'drownedarchivist']
 ];
 
 const BOSS_PREREQUISITES = new Map();
@@ -1466,6 +1471,7 @@ for (const [index, [main, ...optional]] of BOSS_CHAPTERS.entries()) {
 function bossPrerequisite(key, defeated) {
   const required = BOSS_PREREQUISITES.get(key);
   if (required && !defeated.has(required)) return required;
+  if (key === 'drownedarchivist' && !defeated.has('lenscustodian')) return 'lenscustodian';
   if (key === 'starwyvern') return HARDMODE_TRIO.find(boss => !defeated.has(boss)) || null;
   return null;
 }

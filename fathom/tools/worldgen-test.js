@@ -360,6 +360,17 @@ let shortRunShare = 0;
 }
 
 
+function nearbySignatureSite(x, biome) {
+  const start = Math.floor(x / gen.BIOME_SITE_SPACING);
+  for (let distance = 0; distance <= 220; distance += 1) {
+    for (const slot of [start - distance, start + distance]) {
+      const site = gen.biomeSitesForSlot(SEED, slot)?.[0];
+      if (site?.biome === biome) return site.x;
+    }
+  }
+  throw new Error('No generated signature site for ' + biome);
+}
+
 for (const seed of [SEED, 4242, -98765]) {
   for (let group = -3; group <= 3; group += 1) {
     const regions = Array.from({ length: 10 }, (_, i) => gen.regionalBiome(seed, group * 10 + i).key);
@@ -564,7 +575,7 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
-  for (const x of [-11028, -11135]) {
+  for (const x of [nearbySignatureSite(-11028, 'desert')]) {
     for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
       const site = gen.biomeSiteAt(SEED, x, y);
       if (site?.biome === 'desert') sites.set(site.name, site);
@@ -580,8 +591,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-1363, 'tundra');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -1363, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'tundra') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Tundra is missing a structure depth');
@@ -595,8 +607,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-11852, 'jungle');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -11852, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'jungle') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Jungle is missing a structure depth');
@@ -609,8 +622,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-12579, 'marsh');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -12579, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'marsh') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Mire is missing a structure depth');
@@ -623,8 +637,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-12859, 'highlands');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -12859, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'highlands') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Highlands are missing a structure depth');
@@ -638,8 +653,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-12165, 'badlands');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -12165, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'badlands') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Badlands are missing a structure depth');
@@ -652,8 +668,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-13794, 'savanna');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -13794, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'savanna') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Savanna is missing a structure depth');
@@ -667,8 +684,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-6154, 'taiga');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -6154, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'taiga') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Taiga is missing a structure depth');
@@ -682,8 +700,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-12294, 'plains');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -12294, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'plains') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Plains are missing a structure depth');
@@ -697,8 +716,9 @@ for (const seed of [SEED, 4242, -98765]) {
 
 for (const [biome, x] of [['blight', -10460], ['crimson', -9586], ['ocean', -13647]]) {
   const sites = new Map();
+  const anchor = nearbySignatureSite(x, biome);
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, x, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === biome) sites.set(site.layer, site);
   }
   check(sites.size === 3, biome + ' is missing a structure depth');
@@ -711,8 +731,9 @@ for (const [biome, x] of [['blight', -10460], ['crimson', -9586], ['ocean', -136
 
 {
   const sites = new Map();
+  const anchor = nearbySignatureSite(-10571, 'beach');
   for (let y = gen.SEA_LEVEL - 100; y < gen.SEA_LEVEL + 1170; y += 1) {
-    const site = gen.biomeSiteAt(SEED, -10571, y);
+    const site = gen.biomeSiteAt(SEED, anchor, y);
     if (site?.biome === 'beach') sites.set(site.name, site);
   }
   check(sites.size === 3, 'Shore is missing a structure depth');
@@ -953,6 +974,21 @@ for (const seed of [SEED, SEED + 1, SEED + 2]) {
     check(gen.baseTileAt(seed, site.x + right + 1, site.y + floor) === tiles.AIR, 'Foundry gap is blocked');
   }
   check(gen.baseTileAt(seed, site.x + 31, site.y - 9) === tiles.idOf('foundry-console'), 'Foundry shortcut console missing');
+}
+{
+  let ordinary = 0, signature = 0;
+  for (let slot = -400; slot < 400; slot += 1) {
+    if (gen.structureAt(SEED, slot)) ordinary += 1;
+    if (gen.biomeSitesForSlot(SEED, slot)) signature += 1;
+  }
+  check(ordinary < 520 && signature < 500, 'structure density exceeded its rarity budget');
+  for (const seed of [SEED, 1, 2, 3, 88]) {
+    const site = gen.archiveLayout(seed);
+    check(site && gen.biomeAt(seed, site.x).key === 'ocean', 'Archive is not beneath an ocean');
+    check(gen.baseTileAt(seed, site.x, site.y - 2) === tiles.idOf('archive-entry'), 'Archive lacks its airlock');
+    check(gen.baseLevelAt(seed, site.x, site.y + 12) === 0, 'Archive starts flooded before its console');
+    check(gen.baseTileAt(seed, site.x - 3, site.y + 25) === tiles.idOf('archive-gate'), 'Archive lacks its sealed floodgate');
+  }
 }
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen

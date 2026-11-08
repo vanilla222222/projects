@@ -31,6 +31,10 @@ function makeGame(canvas, deps) {
   let swarm = null;
   let wiring = null;
   let lensSite = null;
+  let archiveSite = null;
+  let archiveFlooded = false;
+  let liquidSensors = new Map();
+  let wetSensors = new Set();
   let opticSources = new Map();
   let opticTraces = [];
   let litSensors = new Set();
@@ -227,6 +231,9 @@ function makeGame(canvas, deps) {
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
         say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
+      } else if (target.key === 'drownedarchivist') {
+        setArchiveArenaWater(false);
+        say('Archivist Core recovered · Build a Hydraulic Bench at an Optics Bench.', 6);
       } else if (target.key === 'foundrywarden') {
         say('Foundry Prism recovered · Craft a Refraction Bench at a Heavy Workbench.', 6);
       } else if (target.key === 'starwyvern') {
@@ -284,6 +291,15 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
+      if (use.archive) {
+        const site = worldgen.archiveAt(seed, state.player.x, state.player.y);
+        if (!site || state.player.y < site.y + 44 || state.player.y >= site.y + 59
+          || tiles.tile(world.get(site.x - 3, site.y + 25)).archive === 'gate') {
+          say('Use the Tide Seal in the arena below the floodgate', 2.4);
+          return true;
+        }
+        arena = { left: site.x - 22, right: site.x + 23, top: site.y + 30, bottom: site.y + 59 };
       }
       if (use.lensVault) {
         const site = worldgen.dungeonAt(seed, state.player.x, state.player.y);
@@ -727,7 +743,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault) {
+    if (spec.foundry || spec.vault || spec.archive) {
       state.player.mining = null;
       return;
     }
@@ -839,6 +855,8 @@ function makeGame(canvas, deps) {
       else {
         wiring?.clearDevice(aim.x, aim.y);
         opticSources.delete(aim.x + ':' + aim.y);
+        liquidSensors.delete(aim.x + ':' + aim.y);
+        wetSensors.delete(aim.x + ':' + aim.y);
         world.set(aim.x, aim.y, tiles.AIR);
       }
       spawnParticles(aim.x, aim.y, spec.colour, 9);
@@ -1421,6 +1439,9 @@ function makeGame(canvas, deps) {
       rows.push('Space · Hunt wild wyverns. Craft Wyvern Wings or Starweave Wings at an Anvil.');
       rows.push('Starfall Foundry · x ' + (foundry.x - 30) + ', y ' + foundry.y + ' · Follow the landing pads east.');
     }
+    if (defeatedBosses.has('lenscustodian') && archiveSite) {
+      rows.push('Tidal Archive · Airlock beneath the ocean at x ' + archiveSite.x + ', y ' + (archiveSite.y - 2) + '.');
+    }
     if (defeatedBosses.has('foundrywarden')) rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
@@ -1439,7 +1460,8 @@ function makeGame(canvas, deps) {
       prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.',
       starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.',
       foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.',
-      lenscustodian: 'After the Mechanist and Starfall Warden, enter the Lens Vault and power its shield sensor.'
+      lenscustodian: 'After the Mechanist and Starfall Warden, enter the Lens Vault and power its shield sensor.',
+      drownedarchivist: 'After the Lens Custodian, open the Tidal Archive floodgate and summon the Archivist below.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1749,6 +1771,11 @@ function makeGame(canvas, deps) {
   }
 
   function fireBossBarrage(boss, shot) {
+    if (boss.key === 'drownedarchivist') {
+      setArchiveArenaWater(!archiveFlooded);
+      if (!archiveFlooded) shot.angles = [0, Math.PI, -0.32, Math.PI + 0.32];
+      say(archiveFlooded ? 'The Archivist floods the arena' : 'The Archivist drains the arena', 1.5);
+    }
     const wave = shot.pattern === 'shatter';
     const speed = wave ? 23 : shot.pattern === 'cross' ? 25 : 29;
     const inside = tiles.isSolid(world.get(Math.floor(shot.x), Math.floor(shot.y)));
@@ -1850,6 +1877,68 @@ function makeGame(canvas, deps) {
     say(side > 0 ? 'Dart volley from the right' : 'Dart volley from the left', 1.4);
   }
 
+  function fillArchiveRows(site, first, last, flooded) {
+    const water = tiles.idOf('water');
+    for (let dy = first; dy <= last; dy += 1) {
+      for (let dx = -22; dx <= 22; dx += 1) {
+        const x = site.x + dx, y = site.y + dy;
+        if (tiles.isSolid(world.get(x, y))) continue;
+        const next = flooded ? world.LEVEL_FULL : 0;
+        if (world.getLevel(x, y) !== next) world.setLevel(x, y, next, water);
+      }
+    }
+  }
+
+  function setArchiveArenaWater(flooded) {
+    if (!archiveSite || archiveFlooded === flooded) return;
+    fillArchiveRows(archiveSite, flooded ? 48 : 27, 58, flooded);
+    archiveFlooded = flooded;
+  }
+
+  function archiveLift(x, y) {
+    const player = state.player;
+    player.x = x;
+    player.y = y;
+    player.vx = player.vy = player.fell = 0;
+    releaseHook();
+    state.camera.x = x;
+    state.camera.y = y;
+  }
+
+  function useArchive(aim, spec) {
+    if (spec.archive === 'entry') {
+      if (!defeatedBosses.has('lenscustodian')) say('Defeat the Lens Custodian to unlock the airlock', 2.4);
+      else {
+        archiveLift(archiveSite.x - 17, archiveSite.y + 21);
+        say('Flood the gallery, then reach the balcony controls', 2.6);
+      }
+    } else if (spec.archive === 'fill') {
+      fillArchiveRows(archiveSite, 10, 24, true);
+      world.set(aim.x, aim.y, tiles.idOf('archive-filled'));
+      say('Gallery flooded · Swim to the balcony', 2);
+    } else if (spec.archive === 'drain') {
+      if (tiles.tile(world.get(archiveSite.x - 18, archiveSite.y + 24)).archive !== 'filled'
+        || !litSensors.has((archiveSite.x + 14) + ':' + (archiveSite.y + 8))) {
+        say('Flood the gallery and align the balcony mirror first', 2.4);
+      } else {
+        fillArchiveRows(archiveSite, 1, 24, false);
+        for (let dx = -4; dx <= -2; dx += 1) {
+          world.set(archiveSite.x + dx, archiveSite.y + 25, dx === -3 ? tiles.idOf('rope') : tiles.AIR);
+        }
+        say('Gallery drained · Lower floodgate open', 2.4);
+      }
+    } else if (spec.archive === 'exit') {
+      archiveLift(archiveSite.x, archiveSite.y - 5);
+      say('The airlock returned you to the seabed', 2);
+    } else if (spec.archive === 'return') {
+      archiveLift(archiveSite.x, worldgen.SEA_LEVEL - 2);
+      say('The lift returned you to the ocean surface', 2);
+    } else if (spec.archive === 'gate') say('The balcony console controls this floodgate', 2);
+    else if (spec.archive === 'filled') say('Use the balcony controls to drain the gallery', 2);
+    else return false;
+    return true;
+  }
+
   function lensSensorLit() {
     return !!lensSite && litSensors.has((lensSite.x - 10) + ':' + (lensSite.y + 141));
   }
@@ -1862,6 +1951,7 @@ function makeGame(canvas, deps) {
     if (lensSite && defeatedBosses.has('foundrywarden')) {
       sources.push({ x: lensSite.x + 2, y: lensSite.y + 114 }, { x: lensSite.x - 19, y: lensSite.y + 135 });
     }
+    if (archiveSite && defeatedBosses.has('lenscustodian')) sources.push({ x: archiveSite.x + 8, y: archiveSite.y + 7 });
     const traces = [];
     const sensors = new Set();
     for (const { x, y } of sources) {
@@ -1877,6 +1967,15 @@ function makeGame(canvas, deps) {
     for (const key of previouslyLit) {
       const [x, y] = key.split(':').map(Number);
       if (Math.abs(x - player.x) > 72 || Math.abs(y - player.y) > 42) litSensors.add(key);
+    }
+    for (const [key, { x, y }] of liquidSensors) {
+      if (Math.abs(x - player.x) > 72 || Math.abs(y - player.y) > 42) continue;
+      const wet = world.getLevel(x, y - 1) >= world.LEVEL_FULL / 2;
+      if (!wet) wetSensors.delete(key);
+      else if (!wetSensors.has(key)) {
+        wetSensors.add(key);
+        wiring.pulseAll(x, y, state.time);
+      }
     }
     for (const key of sensors) {
       if (previouslyLit.has(key)) continue;
@@ -1912,6 +2011,11 @@ function makeGame(canvas, deps) {
         }
         say('Lens Vault open · Pulse both colored switches to turn the mirror', 3);
       }
+      return true;
+    }
+    if (spec.archive && useArchive(aim, spec)) return true;
+    if (spec.liquidSensor) {
+      say(wetSensors.has(aim.x + ':' + aim.y) ? 'Liquid sensor wet' : 'Liquid sensor dry', 1.5);
       return true;
     }
     if (spec.optic) {
@@ -2069,6 +2173,7 @@ function makeGame(canvas, deps) {
     }
     world.set(aim.x, aim.y, spec.id);
     if (spec.optic === 'emitter') opticSources.set(aim.x + ':' + aim.y, { x: aim.x, y: aim.y });
+    if (spec.liquidSensor) liquidSensors.set(aim.x + ':' + aim.y, { x: aim.x, y: aim.y });
     inventory.take(item.key, 1);
     sfxAt('place', aim.x, aim.y);
     // Placing a block can displace or dam water just as surely as removing one.
@@ -2143,6 +2248,7 @@ function makeGame(canvas, deps) {
     wiring.step(state.time, plate ? { x: footX, y: footY } : null);
     stepMechanistArena();
     stepOptics();
+    if (archiveFlooded && swarm.bossAlive()?.key !== 'drownedarchivist') setArchiveArenaWater(false);
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
     statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving,
       (state.gear && state.gear.manaRegen) || 1);
@@ -2322,7 +2428,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=lens-vault-1');
+      const worker = new Worker('workers/chunk.js?v=tidal-archive-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2606,6 +2712,10 @@ function makeGame(canvas, deps) {
       wiring: wiring.serialize(),
       lowerOssuaryWiring: true,
       lensVaultWiring: true,
+      archiveWiring: true,
+      archiveFlooded,
+      liquidSensors: [...liquidSensors.values()],
+      wetSensors: [...wetSensors],
       opticSources: [...opticSources.values()],
       opticLit: [...litSensors],
       dayPhase: state.dayPhase,
@@ -2664,6 +2774,10 @@ function makeGame(canvas, deps) {
     });
     const ossuary = worldgen.dungeonLayout(seed);
     lensSite = ossuary;
+    archiveSite = worldgen.archiveLayout(seed);
+    archiveFlooded = !!worldRecord.archiveFlooded;
+    liquidSensors = new Map((worldRecord.liquidSensors || []).map(point => [point.x + ':' + point.y, point]));
+    wetSensors = new Set(worldRecord.wetSensors || []);
     opticSources = new Map((worldRecord.opticSources || []).map(point => [point.x + ':' + point.y, point]));
     opticTraces = [];
     litSensors = new Set(worldRecord.opticLit || []);
@@ -2678,6 +2792,10 @@ function makeGame(canvas, deps) {
       for (let dx = 4; dx <= 9; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73);
       for (let dx = 11; dx <= 21; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73);
       wiring.add(ossuary.x + 14, ossuary.y + 74);
+    }
+    if (archiveSite && !worldRecord.archiveWiring) {
+      for (let dy = 7; dy <= 9; dy += 1) wiring.add(archiveSite.x + 12, archiveSite.y + dy);
+      for (let dx = 13; dx <= 14; dx += 1) wiring.add(archiveSite.x + dx, archiveSite.y + 7);
     }
     if (lensSite && !worldRecord.lensVaultWiring) deps.wiring.seedLensWiring(wiring, lensSite);
     mechanistPhase = -1;

@@ -84,6 +84,7 @@ function makeLiquid(world, tiles, options) {
     const fromLevel = levelAt(fromX, fromY);
     const toLevel = levelAt(toX, toY);
     const kind = liquidIdAt(fromX, fromY);
+    if (kind && kind !== tiles.idOf('water') && tiles.tile(world.get(toX, toY)).valve) return 0;
     const other = liquidIdAt(toX, toY);
     if (other && kind && other !== kind) {
       return quench(fromX, fromY, toX, toY) ? 1 : 0;

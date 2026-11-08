@@ -671,6 +671,29 @@ WORKSHOP_PLANS.push(
     need: [['ward-crystal', 1], ['glass', 2], ['wire-spool', 3]], station: 'optics-bench' }
 );
 
+for (const [key, name, colour, archive, solid, fixture] of [
+  ['archive-stone', 'Archive Masonry', '#506a7a', 'shell', true],
+  ['archive-entry', 'Tidal Archive Airlock', '#84bbcb', 'entry', true, 'actuator-block'],
+  ['archive-exit', 'Archive Exit Airlock', '#84bbcb', 'exit', false, 'wire-timer'],
+  ['archive-return', 'Archive Return Lift', '#92c6bb', 'return', false, 'wire-timer'],
+  ['archive-fill', 'Archive Flood Console', '#65a9d0', 'fill', false, 'inlet-pump'],
+  ['archive-filled', 'Archive Flood Console', '#a8d5ec', 'filled', false, 'inlet-pump'],
+  ['archive-drain', 'Archive Drain Console', '#b2c4a5', 'drain', false, 'outlet-pump'],
+  ['archive-gate', 'Archive Floodgate', '#6aa6ac', 'gate', true, 'actuator-block']
+]) pushTile({ key, name, colour, archive, solid, fixture, masonry: fixture ? undefined : 'brick',
+  opacity: solid ? 55 : 4, emit: fixture ? 5 : 0, drops: null });
+
+workshopFixture('hydraulic-bench', 'Hydraulic Bench', '#80bdc9', 'cauldron',
+  [['archivist-core', 1], ['iron-bar', 6], ['wire-spool', 10]], 'optics-bench', { station: 'hydraulic-bench', emit: 6 });
+workshopFixture('liquid-sensor', 'Liquid Sensor', '#93cee7', 'optics',
+  [['glass', 3], ['wire-spool', 3], ['silver-bar', 1]], 'hydraulic-bench', { liquidSensor: true });
+workshopFixture('powered-valve', 'Powered Valve', '#80b1bc', 'actuator-block',
+  [['iron-bar', 3], ['wire-spool', 2]], 'hydraulic-bench',
+  { valve: true, circuitPair: 'powered-valve-open', solid: true, opacity: 50 });
+pushTile({ key: 'powered-valve-open', name: 'Open Powered Valve', colour: '#80b1bc', fixture: 'actuator-block',
+  valve: true, circuitPair: 'powered-valve', powered: true, solid: false, opacity: 4,
+  toughness: 55, hardness: 0.25, drops: 'powered-valve' });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
