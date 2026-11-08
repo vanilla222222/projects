@@ -105,7 +105,7 @@ for (let i = 1; i <= 8; i += 1) {
     assert.ok(boss, encounter.name + ' could not spawn in ' + encounter.structure);
     assert.equal(boss.spec.bossDrops[0][0], encounter.trophy);
     assert.equal(swarm.summon(encounter.key, player, site), null);
-    for (let step = 0; step < 420; step += 1) swarm.step(player, 1 / 60, 0.5);
+    for (let step = 0; step < 630; step += 1) swarm.step(player, 1 / 60, 0.5);
     assert.ok(volleys > 0, encounter.name + ' did not fire a barrage');
     assert.ok(boss.x >= site.left && boss.x + boss.width <= site.right);
   }

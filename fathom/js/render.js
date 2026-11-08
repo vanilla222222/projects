@@ -586,6 +586,58 @@ function makeRenderer(canvas, deps) {
         ctx.fillStyle = '#aee2ff65';
         ctx.fillRect(enemy.facing > 0 ? sx + w : sx - size * 13, sy + h - size * 0.25, size * 13, size * 0.25);
       }
+      if (enemy.sunGlare) {
+        const glare = enemy.sunGlare;
+        ctx.fillStyle = glare.active ? '#ffb23a35' : '#ffcb7717';
+        ctx.strokeStyle = glare.active ? '#ffba5e' : '#ffda85';
+        ctx.lineWidth = size * 0.10;
+        ctx.beginPath();
+        ctx.arc((glare.x - x0) * size - offsetX, (glare.y - y0) * size - offsetY,
+          glare.radius * size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      if (enemy.millSweep) {
+        const sweep = enemy.millSweep;
+        ctx.strokeStyle = sweep.active ? '#e6d4a9dc' : '#e6d4a95a';
+        ctx.lineWidth = size * (sweep.active ? 0.9 : 0.13);
+        for (let i = 0; i < sweep.blades; i += 1) {
+          const angle = sweep.angle + i * Math.PI * 2 / sweep.blades;
+          ctx.beginPath();
+          ctx.moveTo(sx + w / 2 + Math.cos(angle) * sweep.hub * size, sy + h / 2 + Math.sin(angle) * sweep.hub * size);
+          ctx.lineTo(sx + w / 2 + Math.cos(angle) * sweep.radius * size, sy + h / 2 + Math.sin(angle) * sweep.radius * size);
+          ctx.stroke();
+        }
+      }
+      if (enemy.mirages) {
+        for (const image of enemy.mirages) {
+          ctx.save();
+          ctx.globalAlpha *= 0.85;
+          sprite.drawCreature(ctx, {
+            x: (image.x - x0) * size - offsetX, y: (image.y - y0) * size - offsetY, w, h
+          }, enemy.spec.body, { colour: enemy.spec.colour, key: enemy.spec.key, anim: enemy.anim, facing: enemy.facing });
+          ctx.restore();
+        }
+        const aim = enemy.mirageAim;
+        if (aim && enemy.timer % 9 < 5.9) {
+          ctx.strokeStyle = '#ffdd85';
+          ctx.lineWidth = size * 0.11;
+          ctx.beginPath();
+          ctx.moveTo(sx + w / 2, sy + h / 2);
+          ctx.lineTo(sx + w / 2 + aim.x * 12 * size, sy + h / 2 + aim.y * 12 * size);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = '#ffdd85';
+        ctx.lineWidth = size * 0.12;
+        ctx.beginPath();
+        ctx.arc(sx + w / 2, sy - size * 0.32, size * 0.49, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (enemy.reefBreach && enemy.reefBreach.time < 0.85) {
+        const { x, top, bottom } = enemy.reefBreach;
+        ctx.fillStyle = '#a2e3df48';
+        ctx.fillRect((x - x0) * size - offsetX - w / 2, (top - y0) * size - offsetY, w, (bottom - top) * size);
+      }
       if (enemy.signatureAttack) {
         ctx.save();
         ctx.strokeStyle = '#ffc38c';
