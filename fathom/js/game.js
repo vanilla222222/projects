@@ -36,6 +36,7 @@ function makeGame(canvas, deps) {
   let townDevices = [];
   let completedOrders = new Set();
   let defeatedBosses = new Set();
+  let bestiary = Object.create(null);
   let storageItems = [];
   const PYLON_RADIUS = 45;
   const STORAGE_RADIUS = 24;
@@ -202,7 +203,13 @@ function makeGame(canvas, deps) {
   }
   const RARE_CHANCE = 0.055;
 
+  function recordWildlife(spec, field) {
+    const record = bestiary[spec.key] ||= { defeated: 0, caught: 0 };
+    if (field) record[field] += 1;
+  }
+
   function rareDrop(target) {
+    recordWildlife(target.spec, 'defeated');
     // A boss gives up everything it carries, every time. A fight you had to prepare for
     // should not then also be a lottery.
     if (target.spec.bossDrops) {
@@ -215,6 +222,8 @@ function makeGame(canvas, deps) {
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
         say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
+      } else if (target.key === 'foundrywarden') {
+        say('Foundry Prism recovered · Craft a Refraction Bench at a Heavy Workbench.', 6);
       } else if (target.key === 'starwyvern') {
         say('Wild wyverns now roam Space. Hunt them for essence to craft wings.', 6);
       } else say(target.spec.name + ' is dead', 3.4);
@@ -270,6 +279,15 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
+      if (use.foundry) {
+        const site = worldgen.foundryAt(seed, state.player.x, state.player.y);
+        if (!site || state.player.x < site.x + 31 || state.player.x > site.x + 61
+          || Math.abs(state.player.y - (site.y - 8)) > 9) {
+          say('Use the igniter on the far arena at Starfall Foundry', 2.4);
+          return true;
+        }
+        arena = { left: site.x + 29, right: site.x + 63, top: site.y - 31, bottom: site.y - 8 };
       }
       if (use.lowerOssuary) {
         const site = worldgen.dungeonAt(seed, Math.floor(state.player.x), Math.floor(state.player.y));
@@ -694,6 +712,10 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
+    if (spec.foundry) {
+      state.player.mining = null;
+      return;
+    }
     if (spec.circuit === 'puzzle-gate' || spec.chest === 'ossuary-workshop-cache') {
       state.player.mining = null;
       say('Find the switch for the Mechanist Cache', 1.6);
@@ -908,7 +930,8 @@ function makeGame(canvas, deps) {
       damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1)),
       life: kind.family === 'bullet' ? weapon.reach / speed : 2.6 * (gear.arrowSpeed || 1), colour: kind.colour,
       gravity: kind.family === 'bullet' ? 0 : 26,
-      burns: !!kind.burns, hits: weapon.pierce ? new Set() : null });
+      burns: !!kind.burns, hits: weapon.pierce ? new Set() : null,
+      hitLimit: Number(weapon.pierce) > 1 ? weapon.pierce : 3 });
     return true;
   }
 
@@ -973,7 +996,7 @@ function makeGame(canvas, deps) {
           const target = swarm.at(a.x, a.y);
           if (target && !a.hits?.has(target)) {
             a.hits?.add(target);
-            hit = !a.hits || a.hits.size >= 3;
+            hit = !a.hits || a.hits.size >= (a.hitLimit || 3);
             spawnParticles(a.x, a.y, target.spec.colour, 5);
             projectileHit(target, a.damage);
             if (a.spell === 'chain') {
@@ -996,6 +1019,7 @@ function makeGame(canvas, deps) {
   function attack() {
     if (swingCooldown > 0) return false;
     const item = selectedItem();
+    if (item?.key === 'critter-net') return true;
     const weapon = item ? craft.WEAPONS[item.key] : null;
     // A bow or a staff does not need something under the cursor: it fires where you
     // point. Both still cost their use time even when the shot fails, so spamming a
@@ -1032,7 +1056,7 @@ function makeGame(canvas, deps) {
     sfx('swing');
     sfxAt('hit', target.x, target.y);
     swingTotal = cooldown;
-    target.vx += Math.sign(target.x - cx) * 6;
+    target.vx += Math.sign(target.x - cx) * 6 * (weapon?.knockback || 1);
     target.vy -= 3;
     spawnParticles(target.x, target.y, target.spec.colour, 5);
     if (weapon?.cleave) {
@@ -1288,7 +1312,7 @@ function makeGame(canvas, deps) {
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
     const actions = [{ label: 'Progression Journal', run: openProgression },
-      { label: 'Town Contracts', run: openTownOrders }];
+      { label: 'Town Contracts', run: openTownOrders }, { label: 'Bestiary', run: openBestiary }];
     for (const spec of villagerModule.VILLAGERS) {
       const housed = village.list.some(v => v.key === spec.key);
       if (!housed && !available.has(spec.key)) {
@@ -1304,6 +1328,28 @@ function makeGame(canvas, deps) {
     }
     rows.push('Two occupied homes in range power a pylon. Shops discount prices in clusters of two or more.');
     ui.showTown('Town Hall', rows, actions);
+  }
+
+  function openBestiary() {
+    const known = enemyModule.ENEMIES.filter(spec => bestiary[spec.key]).sort((a, b) => a.name.localeCompare(b.name));
+    const summary = known.length + ' / ' + enemyModule.ENEMIES.length + ' creatures discovered';
+    ui.showTown('Bestiary', [], [], query => {
+      const rows = [summary];
+      for (const spec of known) {
+        const record = bestiary[spec.key];
+        const type = spec.boss ? 'Boss' : spec.specimen ? spec.specimen.rare || 'Critter' : 'Enemy';
+        const habitat = spec.foundry ? 'Starfall Foundry' : spec.dungeon ? 'Ossuary'
+          : [...(spec.biomes || []), ...(spec.layers || [])].join(', ') || 'Special encounter';
+        const drops = record.defeated > 0 ? [...(spec.drops || []), ...(spec.bossDrops || [])]
+          .map(entry => craft.nameOf(Array.isArray(entry) ? entry[0] : entry, tiles)).join(', ') : '';
+        const search = [spec.name, type, habitat, drops].join(' ').toLowerCase();
+        if (query && !search.includes(query)) continue;
+        rows.push(spec.name + ' · ' + type + ' · ' + habitat + ' · ' + record.defeated + ' defeated'
+          + (spec.specimen ? ' · ' + record.caught + ' caught' : '') + (drops ? ' · Drops: ' + drops : ''));
+      }
+      if (rows.length === 1) rows.push(query ? 'No discovered entries match.' : 'Encounter creatures or catch them with a net.');
+      return { rows, actions: [{ label: 'Back to Town Hall', run: checkHousing }] };
+    }, 'Search creatures and habitats');
   }
 
   function openProgression() {
@@ -1354,7 +1400,11 @@ function makeGame(canvas, deps) {
     if (defeatedBosses.has('dungeonkeeper')) rows.push('Ossuary · Find the switch for the Mechanist Cache in the first gallery.');
     if (world.hardmode) rows.push('Hardmode trio · ' + craft.HARDMODE_TRIO.filter(key => defeatedBosses.has(key)).length
       + ' / 3 defeated · Fight in any order. All three cores craft the Triune Emblem.');
-    if (defeatedBosses.has('starwyvern')) rows.push('Space · Hunt wild wyverns. Craft Wyvern Wings or Starweave Wings at an Anvil.');
+    if (defeatedBosses.has('starwyvern')) {
+      const foundry = worldgen.foundryLayout(seed);
+      rows.push('Space · Hunt wild wyverns. Craft Wyvern Wings or Starweave Wings at an Anvil.');
+      rows.push('Starfall Foundry · x ' + (foundry.x - 30) + ', y ' + foundry.y + ' · Follow the landing pads east.');
+    }
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1370,7 +1420,8 @@ function makeGame(canvas, deps) {
       voidsovereign: 'Mine Void Crystals with an Emberite Pickaxe.',
       riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.',
       prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.',
-      starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.'
+      starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.',
+      foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1811,10 +1862,72 @@ function makeGame(canvas, deps) {
     return false;
   }
 
+  function useWildlife(aim, item) {
+    if (item?.key === 'critter-net') {
+      if (!aim.inReach) return true;
+      const target = swarm.list.find(e => !e.dead && !e.practice && e.spec.specimen
+        && pointer.x >= e.x - 0.18 && pointer.x <= e.x + e.width + 0.18
+        && pointer.y >= e.y - 0.18 && pointer.y <= e.y + e.height + 0.18);
+      if (!target) {
+        say('Aim at a nearby critter', 1.2);
+        return true;
+      }
+      const px = state.player.x + state.player.width / 2;
+      const py = state.player.y + state.player.height * 0.4;
+      const steps = Math.ceil(Math.hypot(pointer.x - px, pointer.y - py) * 4);
+      for (let i = 1; i <= steps; i += 1) {
+        const x = Math.floor(px + (pointer.x - px) * i / steps);
+        const y = Math.floor(py + (pointer.y - py) * i / steps);
+        if (tiles.isSolid(world.get(x, y))) {
+          say('Something blocks your net', 1.2);
+          return true;
+        }
+      }
+      if (inventory.add({ key: 'critter-' + target.spec.specimen.key, kind: 'loot' }, 1)) {
+        say('No room to catch that critter', 1.4);
+        return true;
+      }
+      target.dead = true;
+      recordWildlife(target.spec, 'caught');
+      sfx('use');
+      say('Caught ' + target.spec.name, 2);
+      return true;
+    }
+    if (!aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    const specimen = craft.ITEMS[item?.key]?.critter;
+    if (spec.key === 'empty-terrarium' && specimen) {
+      world.set(aim.x, aim.y, tiles.idOf('terrarium-' + specimen));
+      inventory.take(item.key, 1);
+      say(craft.ITEMS[item.key].name + ' is now on display', 1.5);
+      return true;
+    }
+    return false;
+  }
+
+  function useFoundryShortcut(aim) {
+    if (tiles.tile(world.get(aim.x, aim.y)).key !== 'foundry-console') return false;
+    const site = worldgen.foundryAt(seed, aim.x, aim.y);
+    if (!site || !defeatedBosses.has('starwyvern')) {
+      say('Defeat the Star Wyvern to power this console', 2);
+      return true;
+    }
+    for (let i = 1; i < worldgen.FOUNDRY_PADS.length; i += 1) {
+      const [left, , floor] = worldgen.FOUNDRY_PADS[i];
+      for (let dx = worldgen.FOUNDRY_PADS[i - 1][1] + 1; dx < left; dx += 1) {
+        const x = site.x + dx, y = site.y + floor;
+        if (world.get(x, y) === tiles.AIR) world.set(x, y, tiles.idOf('oakplatform'));
+      }
+    }
+    say('Foundry skybridges deployed', 2.2);
+    return true;
+  }
+
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useCircuit(aim0, item)) return;
+    if (useWildlife(aim0, item) || useCircuit(aim0, item)) return;
+    if (aim0.inReach && useFoundryShortcut(aim0)) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;
@@ -2038,7 +2151,7 @@ function makeGame(canvas, deps) {
         if (dealt > 0) {
           // Knocked away from whatever hit you, so contact damage is not a death loop.
           const away = Math.sign(state.player.x - hit.x) || 1;
-          state.player.vx = away * 9;
+          state.player.vx = away * 9 * (hit.spec.push || 1);
           state.player.vy = -7;
           sfx('hurt');
           say(hit.spec.name + ' hit you for ' + dealt, 1.1);
@@ -2121,7 +2234,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=star-wyvern-1');
+      const worker = new Worker('workers/chunk.js?v=starfall-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2248,6 +2361,10 @@ function makeGame(canvas, deps) {
   }
 
   function syncUI() {
+    for (const target of swarm.list) {
+      if (!target.dead && !target.practice && !bestiary[target.key]
+        && Math.hypot(target.x - state.player.x, target.y - state.player.y) <= 14) recordWildlife(target.spec);
+    }
     // Refresh the open inventory frequently so nearby station changes appear promptly.
     state.stations = craft.stationsNear(world, tiles, state.player.x, state.player.y);
     const hour = ((state.dayPhase + 0.5) * 24) % 24;
@@ -2378,6 +2495,7 @@ function makeGame(canvas, deps) {
       stats: { health: stats.health, maxHealth: stats.maxHealth,
         mana: stats.mana, maxMana: stats.maxMana },
       colours: state.colours,
+      bestiary,
       progress: state.progress,
       playedSeconds: carriedCharacterSeconds + elapsed
     });
@@ -2413,6 +2531,7 @@ function makeGame(canvas, deps) {
     characterId = choice.character.id;
     worldId = choice.world.id;
     const characterRecord = profiles.loadCharacter(characterId) || {};
+    bestiary = Object.assign(Object.create(null), characterRecord.bestiary || {});
     const worldRecord = profiles.loadWorld(worldId) || {};
     seed = choice.world.seed;
 

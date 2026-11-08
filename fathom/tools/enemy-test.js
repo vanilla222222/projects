@@ -25,7 +25,7 @@ for (const spec of ENEMIES) {
   seenKeys.add(spec.key);
   ok(!!ARCHETYPES[spec.kind], spec.key + ' has unknown archetype ' + spec.kind);
   ok(spec.hp > 0, spec.key + ' has no health');
-  ok(spec.damage > 0, spec.key + ' does no damage');
+  ok(spec.passive ? spec.damage === 0 : spec.damage > 0, spec.key + ' does no damage');
   // A summoned boss is deliberately outside the spawn table: no weight, no layers, and
   // no pool anywhere may contain it. Everything else must be choosable.
   if (spec.summonOnly) {
@@ -87,7 +87,7 @@ for (const layer of ['caves', 'deep', 'hell', 'hellcaves', 'sky', 'space']) {
 for (const spec of ENEMIES) {
   const layer = (spec.layers || ['surface'])[0];
   const biome = (spec.biomes || ['plains'])[0];
-  const ctx = { biome, layer, dungeon: spec.dungeon, lowerOssuary: spec.lowerOssuary, wyvernsUnlocked: spec.wyvernsUnlocked, wet: !!spec.wet, day: spec.day === false ? false : true,
+  const ctx = { biome, layer, dungeon: spec.dungeon, lowerOssuary: spec.lowerOssuary, wyvernsUnlocked: spec.wyvernsUnlocked, foundry: spec.foundry, wet: !!spec.wet, day: spec.day === false ? false : true,
     event: spec.event || null };
   if (spec.summonOnly || spec.hiddenSpawn) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
@@ -125,6 +125,23 @@ for (const spec of ENEMIES) {
   ok(poolFor({ ...habitat, wyvernsUnlocked: true }).includes(wild), 'wild wyverns remain locked after victory');
   ok(!poolFor({ ...habitat, layer: 'sky', wyvernsUnlocked: true }).includes(wild), 'wild wyverns left Space');
   ok(wild.drops.some(([key, count]) => key === 'wyvern-essence' && count > 0), 'wild wyverns do not supply essence');
+}
+
+{
+  const base = ENEMIES.find(spec => spec.key === 'cave-moth');
+  const gold = enemyModule.wildlifeVariant(base, 0.003);
+  const crystal = enemyModule.wildlifeVariant(base, 0);
+  ok(gold.key === 'gold-cave-moth', 'gold roll did not produce a gold specimen');
+  ok(crystal.key === 'amethyst-cave-moth' && crystal.drops[0][0] === 'amethyst',
+    'crystal specimen does not match its gemstone');
+  ok(enemyModule.wildlifeVariant(base, 0.8) === base, 'common roll changed the specimen');
+  const swarm = enemyModule.makeSwarm(makeTestWorld(40), tiles, { worldgen });
+  const player = { x: 0, y: 30, width: 1, height: 2 };
+  const jay = enemyModule.makeEnemy(ENEMIES.find(spec => spec.key === 'canopyjay'), 0, 30);
+  swarm.list.push(jay);
+  ok(swarm.touching(player) === null, 'an unprovoked forest bird hurt the player');
+  swarm.damage(jay, 1);
+  ok(swarm.touching(player) === jay, 'a provoked forest bird did not defend itself');
 }
 
 // --- 4. spawning rules against a real world ---------------------------------------------

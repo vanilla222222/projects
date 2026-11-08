@@ -574,7 +574,7 @@ function makeRenderer(canvas, deps) {
       sprite.drawCreature(ctx, { x: sx, y: sy, w, h }, enemy.spec.body || 'slime', {
         colour: enemy.spec.colour,
         key: enemy.spec.key,
-        glow: enemy.spec.emit ? '#ffcf7a' : null,
+        glow: enemy.spec.specimen?.rare === 'crystal' ? enemy.spec.colour : enemy.spec.emit ? '#ffcf7a' : null,
         anim: enemy.anim || 0,
         enraged: !!enemy.enraged,
         windUp: enemy.windUp || 0,

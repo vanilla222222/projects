@@ -586,6 +586,59 @@ for (const [key, name, colour, logic] of [
 ]) workshopFixture(key, name, colour, 'wire-switch', [['wire-spool', 4], ['silver-bar', 2]],
   'signal-bench', { logic });
 
+const CRITTER_FAMILIES = [
+  ['canopyjay', 'Canopy Jay', 'bird', '#5d91a9', ['forest'], 'day'],
+  ['duskowl', 'Dusk Owl', 'bird', '#7e7194', ['forest'], 'night'],
+  ['briarhare', 'Briar Hare', 'lizard', '#9b7754', ['forest'], 'day'],
+  ['meadow-mouse', 'Meadow Mouse', 'lizard', '#c19d8c', ['forest', 'plains']],
+  ['red-squirrel', 'Red Squirrel', 'lizard', '#ca7c58', ['forest', 'taiga'], 'day'],
+  ['monarch', 'Monarch', 'wasp', '#e6a154', ['forest', 'plains', 'savanna'], 'day'],
+  ['moon-moth', 'Moon Moth', 'wasp', '#b0c4d8', ['forest', 'jungle'], 'night'],
+  ['firefly', 'Firefly', 'beetle', '#e6da7a', ['forest', 'marsh'], 'night'],
+  ['pond-frog', 'Pond Frog', 'lizard', '#78a96a', ['marsh', 'jungle', 'forest']],
+  ['sand-skink', 'Sand Skink', 'lizard', '#cfaa74', ['desert', 'badlands'], 'day'],
+  ['snowhare', 'Snow Hare', 'lizard', '#d4deeb', ['taiga', 'tundra'], 'day'],
+  ['shore-crab', 'Shore Crab', 'crab', '#ce806c', ['beach', 'ocean']],
+  ['cave-moth', 'Cave Moth', 'wasp', '#a899c0', null, null, 'amethyst'],
+  ['burrow-snail', 'Burrow Snail', 'beetle', '#bd9a61', null, null, 'topaz'],
+  ['frost-glider', 'Frost Glider', 'bird', '#89bdd8', null, null, 'sapphire'],
+  ['moss-gecko', 'Moss Gecko', 'lizard', '#80b58c', null, null, 'emerald'],
+  ['ember-cricket', 'Ember Cricket', 'beetle', '#c17f78', null, null, 'ruby'],
+  ['cavern-mouse', 'Cavern Mouse', 'lizard', '#b4b6ce', null, null, 'diamond']
+];
+const CRITTER_GEMS = {
+  amethyst: '#ba8ade', topaz: '#f4cb71', sapphire: '#80c1f3',
+  emerald: '#7cdda4', ruby: '#ee8290', diamond: '#b9f2f7'
+};
+const CRITTER_SPECIMENS = CRITTER_FAMILIES.flatMap(([key, name, body, colour, biomes, clock, gem]) => {
+  const base = { key, name, body, colour, biomes, clock, gem };
+  const variants = [base, { ...base, key: 'gold-' + key, name: 'Gold ' + name, colour: '#e9bf60', rare: 'gold' }];
+  if (gem) {
+    variants.push({ ...base, key: gem + '-' + key, name: gem[0].toUpperCase() + gem.slice(1) + ' ' + name,
+      colour: CRITTER_GEMS[gem], rare: 'crystal' });
+  }
+  return variants;
+});
+
+workshopFixture('empty-terrarium', 'Empty Terrarium', '#91b9b4', 'terrarium',
+  [['glass', 5], ['#wood', 2]], 'workbench');
+for (const specimen of CRITTER_SPECIMENS) {
+  pushTile({ key: 'terrarium-' + specimen.key, name: specimen.name + ' Terrarium', colour: specimen.colour,
+    fixture: 'terrarium', specimen, solid: false, opacity: 4, toughness: 35, hardness: 0.2,
+    emit: specimen.rare === 'crystal' ? 5 : specimen.key.endsWith('firefly') ? 3 : 0 });
+}
+
+for (const [key, name, colour, solid, emit] of [
+  ['foundry-alloy', 'Foundry Alloy', '#72678e', true, 0],
+  ['foundry-pad', 'Foundry Landing Pad', '#9d80bb', true, 5],
+  ['foundry-console', 'Foundry Shortcut Console', '#8ecad8', false, 8],
+  ['foundry-pylon', 'Foundry Power Pylon', '#a695e7', false, 10]
+]) pushTile({ key, name, colour, solid, opacity: solid ? 55 : 4, emit, drops: null,
+  masonry: solid ? 'brick' : undefined, fixture: solid ? undefined : 'wire-timer', foundry: true });
+workshopFixture('refraction-bench', 'Refraction Bench', '#a9b7ef', 'alchemy-table',
+  [['foundry-prism', 1], ['adamantite-bar', 6], ['glass', 8]], 'heavy-workbench',
+  { station: 'refraction-bench', emit: 8 });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
@@ -630,7 +683,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

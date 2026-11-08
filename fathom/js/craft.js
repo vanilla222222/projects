@@ -12,7 +12,7 @@ const CRAFT_TOOLS = (typeof require === 'function') ? require('./mining.js').TOO
 const CRAFT_WALLS = (typeof require === 'function')
   ? require('./tiles.js').WALL_BY_KEY : WALL_BY_KEY;
 const CRAFT_TILES = (typeof require === 'function')
-  ? require('./tiles.js') : { BY_KEY, TILES, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES };
+  ? require('./tiles.js') : { BY_KEY, TILES, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, CRITTER_SPECIMENS };
 // Resolved at call time rather than at load time. buffs.js is loaded after this file in
 // the browser, so naming `BUFFS` here would read a `const` before its declaration and
 // throw on load - which is the same trap the two lookups above are written around, and
@@ -268,6 +268,9 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'foundry-prism': { name: 'Foundry Prism', kind: 'loot', colour: '#bcb4ef' },
+  'warden-igniter': { name: 'Warden Igniter', kind: 'use', colour: '#e3a4ce',
+    use: { summon: 'foundrywarden', foundry: true }, text: 'Use on the Foundry arena beyond the landing pads' },
   'wyvern-essence': { name: 'Wyvern Essence', kind: 'loot', colour: '#a7dff6',
     text: 'Dropped by wild wyverns in Space. Used to craft wings.' },
   'starwyvern-plume': { name: 'Star Wyvern Plume', kind: 'loot', colour: '#c0b4ff' },
@@ -612,6 +615,12 @@ const WEAPONS = {
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
   'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
   'aether-sabre': { name: 'Aether Sabre', damage: 118, useTime: 0.20, reach: 4.4 },
+  'refracted-maul': { name: 'Repulsing Shatter Maul', damage: 221, useTime: 0.34, reach: 4.7,
+    cleave: true, knockback: 2.4, colour: '#b5a1ef' },
+  'refracted-repeater': { name: 'Piercing Induction Repeater', damage: 176, useTime: 0.21, reach: 68, ranged: true,
+    ammo: 'bullet', pierce: 5, colour: '#a9caf8' },
+  'refracted-focus': { name: 'Chaining Zenith Focus', damage: 189, useTime: 0.29, reach: 50, magic: true,
+    mana: 17, spell: 'chain', bolt: '#a6c3f0' },
   'shatter-maul': { name: 'Shatter Maul', damage: 232, useTime: 0.34, reach: 4.7, cleave: true, colour: '#91d9d7' },
   'induction-repeater': { name: 'Induction Repeater', damage: 178, useTime: 0.21, reach: 65, ranged: true,
     ammo: 'bullet', pierce: true, colour: '#d5a26a' },
@@ -725,7 +734,8 @@ function describe(key, tilesModule) {
     else lines.push(weapon.reach + ' tiles of range');
     if (weapon.mana) lines.push(weapon.mana + ' mana a shot');
     if (weapon.ammo) lines.push('Fires the best ' + weapon.ammo + ' you carry');
-    if (weapon.spell === 'pierce' || weapon.pierce) lines.push('Pierces up to three enemies');
+    if (weapon.spell === 'pierce' || weapon.pierce) lines.push('Pierces up to ' + (Number(weapon.pierce) > 1 ? weapon.pierce : 3) + ' enemies');
+    if (weapon.knockback) lines.push('Knockback ×' + weapon.knockback);
     if (weapon.cleave) lines.push('Also hits enemies within three tiles of the target');
     if (weapon.spell === 'chain') lines.push('Arcs to up to two nearby enemies');
     if (weapon.spell === 'ward') lines.push('Casting grants +14 defence for four seconds');
@@ -847,6 +857,14 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'warden-igniter', kind: 'use', count: 1 },
+    need: [['wyvern-essence', 6], ['adamantite-bar', 4], ['stardust', 5]], station: 'anvil' },
+  { out: { key: 'refracted-maul', kind: 'tool', count: 1 },
+    need: [['shatter-maul', 1], ['ward-crystal', 4]], station: 'refraction-bench' },
+  { out: { key: 'refracted-repeater', kind: 'tool', count: 1 },
+    need: [['induction-repeater', 1], ['ray-crystal', 4]], station: 'refraction-bench' },
+  { out: { key: 'refracted-focus', kind: 'tool', count: 1 },
+    need: [['zenith-focus', 1], ['storm-crystal', 4]], station: 'refraction-bench' },
   { out: { key: 'starcall-horn', kind: 'use', count: 1 },
     need: [['aetherite-bar', 5], ['stardust', 12], ['adamantite-bar', 4]], station: 'anvil' },
   { out: { key: 'wyvern-wings', kind: 'accessory', count: 1 },
@@ -1192,6 +1210,16 @@ for (const w of CRAFT_TILES.WOODS) {
 
 
 RECIPES.push(...CRAFT_TILES.WORKSHOP_PLANS);
+ITEMS['critter-net'] = { name: 'Critter Net', kind: 'loot', colour: '#bbd4b1',
+  text: 'Use on a nearby critter to catch it alive.' };
+RECIPES.push({ out: { key: 'critter-net', kind: 'loot', count: 1 },
+  need: [['#wood', 5], ['rope', 3]], station: 'workbench' });
+for (const specimen of CRAFT_TILES.CRITTER_SPECIMENS) {
+  ITEMS['critter-' + specimen.key] = { name: specimen.name, kind: 'loot', colour: specimen.colour,
+    critter: specimen.key, text: specimen.rare === 'crystal'
+      ? 'Crystal specimen · ' + specimen.gem + ' · Use on an empty terrarium.'
+      : 'Live specimen · Use on an empty terrarium.' };
+}
 ITEMS['wire-spool'] = { name: 'Copper Wire', kind: 'loot', colour: '#d28d5d',
   text: 'Hold to see circuits. Use on a tile to lay one segment.' };
 for (const [key, name, colour, wireChannel] of [
@@ -1420,7 +1448,8 @@ const BOSS_CHAPTERS = [
   ['voidsovereign'],
   ['riftarchon'],
   ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO],
-  ['starwyvern']
+  ['starwyvern'],
+  ['foundrywarden']
 ];
 
 const BOSS_PREREQUISITES = new Map();
