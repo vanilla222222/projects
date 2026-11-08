@@ -268,6 +268,9 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'lens-vault-core': { name: 'Lens Vault Core', kind: 'loot', colour: '#b9dcf4' },
+  'lens-sigil': { name: 'Lens Sigil', kind: 'use', colour: '#bdabed',
+    use: { summon: 'lenscustodian', lensVault: true }, text: 'Use beyond the Lens Vault beam gate' },
   'foundry-prism': { name: 'Foundry Prism', kind: 'loot', colour: '#bcb4ef' },
   'warden-igniter': { name: 'Warden Igniter', kind: 'use', colour: '#e3a4ce',
     use: { summon: 'foundrywarden', foundry: true }, text: 'Use on the Foundry arena beyond the landing pads' },
@@ -857,6 +860,8 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'lens-sigil', kind: 'use', count: 1 },
+    need: [['ward-crystal', 4], ['adamantite-bar', 4], ['wire-spool', 8]], station: 'signal-bench' },
   { out: { key: 'warden-igniter', kind: 'use', count: 1 },
     need: [['wyvern-essence', 6], ['adamantite-bar', 4], ['stardust', 5]], station: 'anvil' },
   { out: { key: 'refracted-maul', kind: 'tool', count: 1 },
@@ -1449,7 +1454,7 @@ const BOSS_CHAPTERS = [
   ['riftarchon'],
   ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO],
   ['starwyvern'],
-  ['foundrywarden']
+  ['foundrywarden', 'lenscustodian']
 ];
 
 const BOSS_PREREQUISITES = new Map();

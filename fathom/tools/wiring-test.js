@@ -193,4 +193,38 @@ function testWorld() {
   assert.equal(swarm.contextAt(x, y + 94, 0.1).lowerOssuary, true);
 }
 
+{
+  const world = chunks.makeWorld(20260105, worldgen);
+  const site = worldgen.dungeonLayout(world.seed);
+  const { x, y } = site;
+  const gates = [];
+  const circuit = wiring.makeWiring(world, tiles, { puzzle: (point, kind) => gates.push({ ...point, kind }) });
+  wiring.seedLensWiring(circuit, site);
+  const gallery = () => wiring.traceBeam(world, tiles, x + 2, y + 114).sensor;
+  assert.equal(tiles.tile(world.get(x + 14, y + 100)).circuit, 'lens-seal');
+  assert.deepEqual(gallery(), { x: x + 11, y: y + 110 });
+  circuit.pulseAll(x + 4, y + 120, 0);
+  assert.deepEqual(gallery(), { x: x + 11, y: y + 110 });
+  circuit.pulseAll(x + 15, y + 120, 1);
+  const sensor = gallery();
+  assert.deepEqual(sensor, { x: x + 11, y: y + 119 });
+  circuit.pulseAll(sensor.x, sensor.y, 1);
+  assert.equal(gates[0]?.kind, 'lens-gate');
+
+  const arenaSensor = () => wiring.traceBeam(world, tiles, x - 19, y + 135).sensor;
+  const swarm = enemy.makeSwarm(world, tiles, { worldgen, lensLit: () => !!arenaSensor() });
+  const boss = swarm.summon('lenscustodian', { x: x + 2, y: y + 143 },
+    { left: x - 23, right: x + 24, top: y + 123, bottom: y + 145 });
+  assert.ok(boss);
+  const hp = boss.hp;
+  swarm.damage(boss, 100);
+  assert.equal(boss.hp, hp, 'the Custodian should be shielded when its sensor is dark');
+  circuit.pulseAll(x - 14, y + 144, 2);
+  assert.deepEqual(arenaSensor(), { x: x - 10, y: y + 141 });
+  swarm.damage(boss, 100);
+  assert.equal(boss.hp, hp - 100, 'lighting the sensor should expose the Custodian');
+  world.set(x - 10, y + 138, tiles.idOf('stone'));
+  assert.equal(arenaSensor(), null, 'solid blocks should stop optical signals');
+}
+
 console.log('Wiring checks passed across propagation, pumps, timers, cooldowns, persistence and the Ossuary');

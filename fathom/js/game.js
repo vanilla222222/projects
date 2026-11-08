@@ -30,6 +30,11 @@ function makeGame(canvas, deps) {
   let liquid = null;
   let swarm = null;
   let wiring = null;
+  let lensSite = null;
+  let opticSources = new Map();
+  let opticTraces = [];
+  let litSensors = new Set();
+  let nextOpticScan = 0;
   let mechanistPhase = -1;
   let minimap = null;
   let village = null;
@@ -279,6 +284,16 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
+      if (use.lensVault) {
+        const site = worldgen.dungeonAt(seed, state.player.x, state.player.y);
+        if (!site || state.player.y < site.y + 131 || state.player.y >= site.y + 145
+          || !defeatedBosses.has('ossuarymechanist')
+          || tiles.tile(world.get(site.x + 11, site.y + 121)).circuit === 'lens-gate') {
+          say('Use the Lens Sigil in the arena beyond the beam gate', 2.4);
+          return true;
+        }
+        arena = { left: site.x - 23, right: site.x + 24, top: site.y + 123, bottom: site.y + 145 };
       }
       if (use.foundry) {
         const site = worldgen.foundryAt(seed, state.player.x, state.player.y);
@@ -712,7 +727,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry) {
+    if (spec.foundry || spec.vault) {
       state.player.mining = null;
       return;
     }
@@ -823,6 +838,7 @@ function makeGame(canvas, deps) {
       if (origin) breakMulti(origin);
       else {
         wiring?.clearDevice(aim.x, aim.y);
+        opticSources.delete(aim.x + ':' + aim.y);
         world.set(aim.x, aim.y, tiles.AIR);
       }
       spawnParticles(aim.x, aim.y, spec.colour, 9);
@@ -1405,6 +1421,7 @@ function makeGame(canvas, deps) {
       rows.push('Space · Hunt wild wyverns. Craft Wyvern Wings or Starweave Wings at an Anvil.');
       rows.push('Starfall Foundry · x ' + (foundry.x - 30) + ', y ' + foundry.y + ' · Follow the landing pads east.');
     }
+    if (defeatedBosses.has('foundrywarden')) rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
       .filter(([, item]) => item.use?.summon).map(([key, item]) => [item.use.summon, [key, item]]));
@@ -1421,7 +1438,8 @@ function makeGame(canvas, deps) {
       riftarchon: 'The Rift Core unlocks the pickaxe for sky-island ore.',
       prismsentinel: 'Fight in the sky. Victory unlocks the Hallow and three Hardmode ores.',
       starwyvern: 'Defeat all three Hardmode machines, then sound the horn above the sky islands in Space.',
-      foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.'
+      foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.',
+      lenscustodian: 'After the Mechanist and Starfall Warden, enter the Lens Vault and power its shield sensor.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1740,6 +1758,14 @@ function makeGame(canvas, deps) {
         colour: boss.spec.colour, hostile: boss.spec.name,
         escapeTerrain: shot.pattern === 'cross' && inside });
     }
+    if (boss.key === 'lenscustodian' && lensSite) {
+      const x = lensSite.x - 10, y = lensSite.y + 135;
+      if (tiles.tile(world.get(x, y)).optic === 'backslash') {
+        world.set(x, y, tiles.idOf('vault-mirror'));
+        stepOptics(true);
+        say('The Custodian reversed the mirror · Use the arena switch', 1.6);
+      }
+    }
     sfxAt(wave ? 'hit' : 'cast', shot.x, shot.y);
   }
 
@@ -1769,7 +1795,13 @@ function makeGame(canvas, deps) {
   function openOssuaryCircuit(point, circuit) {
     const site = worldgen.dungeonAt(seed, point.x, point.y);
     if (!site || !defeatedBosses.has('dungeonkeeper')) return;
-    if (circuit === 'puzzle-gate') {
+    if (circuit === 'lens-gate') {
+      if (!defeatedBosses.has('ossuarymechanist') || !defeatedBosses.has('foundrywarden')) return;
+      for (let dx = 9; dx <= 13; dx += 1) {
+        world.set(site.x + dx, site.y + 121, dx === 11 ? tiles.idOf('rope') : tiles.AIR);
+      }
+      say('Beam aligned · Lens Vault arena unlocked', 2.5);
+    } else if (circuit === 'puzzle-gate') {
       for (let y = site.y + 14; y <= site.y + 17; y += 1) world.set(point.x, y, tiles.AIR);
       say('The Mechanist Cache is open', 2.5);
     } else if (world.hardmode && circuit === 'relay-gate') {
@@ -1818,6 +1850,41 @@ function makeGame(canvas, deps) {
     say(side > 0 ? 'Dart volley from the right' : 'Dart volley from the left', 1.4);
   }
 
+  function lensSensorLit() {
+    return !!lensSite && litSensors.has((lensSite.x - 10) + ':' + (lensSite.y + 141));
+  }
+
+  function stepOptics(force = false) {
+    if (!force && state.time < nextOpticScan) return;
+    nextOpticScan = state.time + 0.12;
+    const player = state.player;
+    const sources = [...opticSources.values()];
+    if (lensSite && defeatedBosses.has('foundrywarden')) {
+      sources.push({ x: lensSite.x + 2, y: lensSite.y + 114 }, { x: lensSite.x - 19, y: lensSite.y + 135 });
+    }
+    const traces = [];
+    const sensors = new Set();
+    for (const { x, y } of sources) {
+      if (Math.abs(x - player.x) > 120 || Math.abs(y - player.y) > 90
+        || tiles.tile(world.get(x, y)).optic !== 'emitter') continue;
+      const trace = deps.wiring.traceBeam(world, tiles, x, y);
+      traces.push(trace.points);
+      if (trace.sensor) sensors.add(trace.sensor.x + ':' + trace.sensor.y);
+    }
+    const previouslyLit = litSensors;
+    opticTraces = traces;
+    litSensors = new Set(sensors);
+    for (const key of previouslyLit) {
+      const [x, y] = key.split(':').map(Number);
+      if (Math.abs(x - player.x) > 72 || Math.abs(y - player.y) > 42) litSensors.add(key);
+    }
+    for (const key of sensors) {
+      if (previouslyLit.has(key)) continue;
+      const [x, y] = key.split(':').map(Number);
+      wiring.pulseAll(x, y, state.time);
+    }
+  }
+
   function useCircuit(aim, item) {
     if (!wiring) return false;
     const channel = circuitChannel(item);
@@ -1836,6 +1903,25 @@ function makeGame(canvas, deps) {
     }
     if (!aim.inReach) return false;
     const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (spec.circuit === 'lens-seal') {
+      if (!lensSite || !defeatedBosses.has('ossuarymechanist') || !defeatedBosses.has('foundrywarden')) {
+        say('Defeat the Ossuary Mechanist and Starfall Warden to open this seal', 2.5);
+      } else {
+        for (let dx = 13; dx <= 15; dx += 1) {
+          world.set(lensSite.x + dx, lensSite.y + 100, dx === 14 ? tiles.idOf('rope') : tiles.AIR);
+        }
+        say('Lens Vault open · Pulse both colored switches to turn the mirror', 3);
+      }
+      return true;
+    }
+    if (spec.optic) {
+      if (spec.vault && spec.circuitPair) say('This mirror turns with a circuit pulse', 1.5);
+      else if (spec.circuitPair) {
+        world.set(aim.x, aim.y, tiles.idOf(spec.circuitPair));
+        stepOptics(true);
+      } else if (spec.optic === 'sensor') say(litSensors.has(aim.x + ':' + aim.y) ? 'Sensor lit' : 'Sensor dark', 1.5);
+      return true;
+    }
     if (spec.circuit === 'lower-seal') {
       openLowerOssuary(aim);
       return true;
@@ -1855,7 +1941,7 @@ function makeGame(canvas, deps) {
       else sfx('use');
       return true;
     }
-    if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(spec.circuit)) {
+    if (['puzzle-gate', 'relay-gate', 'drain-gate', 'lens-gate'].includes(spec.circuit)) {
       say('Follow the mechanism back to its switch', 2);
       return true;
     }
@@ -1976,12 +2062,13 @@ function makeGame(canvas, deps) {
       || tiles.isSolid(world.get(aim.x, aim.y - 1))
       || tiles.isSolid(world.get(aim.x, aim.y + 1));
     const againstWall = world.getWall(aim.x, aim.y) !== 0;
-    if (!againstBlock && !(spec.emit > 0 && againstWall)) return;
+    if (!againstBlock && !((spec.emit > 0 || spec.optic) && againstWall)) return;
     if (spec.townDevice) {
       if (!tiles.isSolid(world.get(aim.x, aim.y + 1))) { say('Place it on a floor', 1.4); return; }
       townDevices.push({ x: aim.x, y: aim.y, type: spec.townDevice });
     }
     world.set(aim.x, aim.y, spec.id);
+    if (spec.optic === 'emitter') opticSources.set(aim.x + ':' + aim.y, { x: aim.x, y: aim.y });
     inventory.take(item.key, 1);
     sfxAt('place', aim.x, aim.y);
     // Placing a block can displace or dam water just as surely as removing one.
@@ -2055,6 +2142,7 @@ function makeGame(canvas, deps) {
       && tiles.tile(world.get(footX, footY)).circuit === 'plate';
     wiring.step(state.time, plate ? { x: footX, y: footY } : null);
     stepMechanistArena();
+    stepOptics();
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
     statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving,
       (state.gear && state.gear.manaRegen) || 1);
@@ -2234,7 +2322,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=starfall-1');
+      const worker = new Worker('workers/chunk.js?v=lens-vault-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2330,6 +2418,20 @@ function makeGame(canvas, deps) {
     const sx = (aim.x - lastView.x0) * size - lastView.offsetX;
     const sy = (aim.y - lastView.y0) * size - lastView.offsetY;
     ctx.save();
+    if (opticTraces.length) {
+      ctx.strokeStyle = '#d5e9ffdb';
+      ctx.lineWidth = Math.max(1.5, size / 9);
+      for (const points of opticTraces) {
+        ctx.beginPath();
+        for (const [i, point] of points.entries()) {
+          const x = (point.x - lastView.x0 + 0.5) * size - lastView.offsetX;
+          const y = (point.y - lastView.y0 + 0.5) * size - lastView.offsetY;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
     const held = selectedItem();
     if (wiring?.size && (circuitChannel(held) || held?.key === 'wire-cutters')) {
       const line = Math.max(2, size / 10);
@@ -2503,6 +2605,9 @@ function makeGame(canvas, deps) {
       world: world.serialize(),
       wiring: wiring.serialize(),
       lowerOssuaryWiring: true,
+      lensVaultWiring: true,
+      opticSources: [...opticSources.values()],
+      opticLit: [...litSensors],
       dayPhase: state.dayPhase,
       spawn: state.spawn || null,
       nights: state.nights,
@@ -2543,7 +2648,7 @@ function makeGame(canvas, deps) {
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, {
       worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage,
-      wyvernsUnlocked: () => defeatedBosses.has('starwyvern')
+      wyvernsUnlocked: () => defeatedBosses.has('starwyvern'), lensLit: lensSensorLit
     });
     wiring = deps.wiring.makeWiring(world, tiles, {
       door: point => useDoor(point),
@@ -2558,6 +2663,11 @@ function makeGame(canvas, deps) {
       puzzle: openOssuaryCircuit
     });
     const ossuary = worldgen.dungeonLayout(seed);
+    lensSite = ossuary;
+    opticSources = new Map((worldRecord.opticSources || []).map(point => [point.x + ':' + point.y, point]));
+    opticTraces = [];
+    litSensors = new Set(worldRecord.opticLit || []);
+    nextOpticScan = 0;
     if (worldRecord.wiring) wiring.restore(worldRecord.wiring, state.time);
     else if (ossuary) {
       for (let dx = 5; dx <= 16; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 17);
@@ -2569,6 +2679,7 @@ function makeGame(canvas, deps) {
       for (let dx = 11; dx <= 21; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73);
       wiring.add(ossuary.x + 14, ossuary.y + 74);
     }
+    if (lensSite && !worldRecord.lensVaultWiring) deps.wiring.seedLensWiring(wiring, lensSite);
     mechanistPhase = -1;
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
       { tiles, worldgen });

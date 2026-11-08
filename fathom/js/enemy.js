@@ -688,6 +688,9 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'lenscustodian', name: 'Lens Custodian', kind: 'archon', body: 'golem', hp: 36500,
+    damage: 169, weight: 0, w: 5.3, h: 4.7, colour: '#c1a9ef', boss: true, summonOnly: true,
+    emit: 9, barrage: 'starburst', drops: [['coin', 6800]], bossDrops: ['lens-vault-core'] },
   { key: 'foundrywarden', name: 'Starfall Warden', kind: 'archon', body: 'golem', hp: 32800,
     damage: 162, weight: 0, w: 5.7, h: 4.9, colour: '#bd9dea', boss: true, summonOnly: true,
     emit: 10, barrage: 'foundry', minion: 'foundry-drone', drops: [['coin', 5800]], bossDrops: ['foundry-prism'] },
@@ -1059,7 +1062,8 @@ function makeSwarm(world, tiles, deps) {
 
   function damage(enemy, amount) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
-    enemy.hp -= plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
+    const shielded = enemy.key === 'lenscustodian' && deps.lensLit && !deps.lensLit();
+    enemy.hp -= shielded ? 0 : plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
     enemy.provoked = true;
     if (enemy.hp <= 0) enemy.dead = true;
@@ -1077,6 +1081,7 @@ function makeSwarm(world, tiles, deps) {
     // gravity 0, which the ordinary flyer branch claims, so a dispatch placed after it
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
+      if (enemy.key === 'lenscustodian') enemy.shielded = !!deps.lensLit && !deps.lensLit();
       if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
       else if (arch.flies && !(enemy.spec.barrage === 'foundry' && enemy.beams)) stepHoverBoss(enemy, arch, player, dt, toward);
       else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);

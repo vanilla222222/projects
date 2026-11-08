@@ -639,6 +639,38 @@ workshopFixture('refraction-bench', 'Refraction Bench', '#a9b7ef', 'alchemy-tabl
   [['foundry-prism', 1], ['adamantite-bar', 6], ['glass', 8]], 'heavy-workbench',
   { station: 'refraction-bench', emit: 8 });
 
+for (const [key, name, colour, optic, pair, protectedOptic] of [
+  ['beam-emitter', 'Beam Emitter', '#e8b888', 'emitter', 'beam-emitter-off', false],
+  ['beam-emitter-off', 'Beam Emitter', '#847b8b', 'off', 'beam-emitter', false],
+  ['beam-mirror', 'Beam Mirror', '#a5d9f0', 'slash', 'beam-mirror-turn', false],
+  ['beam-mirror-turn', 'Beam Mirror', '#a5d9f0', 'backslash', 'beam-mirror', false],
+  ['beam-sensor', 'Beam Sensor', '#a2e2c2', 'sensor', null, false],
+  ['vault-emitter', 'Vault Emitter', '#d9aaf4', 'emitter', null, true],
+  ['vault-mirror', 'Vault Mirror', '#c4a8eb', 'slash', 'vault-mirror-turn', true],
+  ['vault-mirror-turn', 'Vault Mirror', '#c4a8eb', 'backslash', 'vault-mirror', true],
+  ['vault-sensor', 'Vault Sensor', '#b1d5e9', 'sensor', null, true]
+]) pushTile({ key, name, colour, optic, circuitPair: pair, vault: protectedOptic,
+  fixture: 'optics', solid: false, opacity: 4, emit: optic === 'emitter' ? 6 : 0,
+  toughness: 45, hardness: 0.22, drops: protectedOptic ? null : key.endsWith('-off') ? 'beam-emitter'
+    : key.endsWith('-turn') ? 'beam-mirror' : key });
+
+for (const [key, name, circuit] of [
+  ['lens-vault-seal', 'Lens Vault Seal', 'lens-seal'],
+  ['lens-vault-gate', 'Lens Vault Gate', 'lens-gate']
+]) pushTile({ key, name, colour: '#a68bc7', circuit, vault: true, solid: true,
+  fixture: 'actuator-block', opacity: 55, drops: null });
+
+workshopFixture('optics-bench', 'Optics Bench', '#b4dce8', 'alchemy-table',
+  [['lens-vault-core', 1], ['glass', 8], ['wire-spool', 8]], 'signal-bench', { station: 'optics-bench', emit: 8 });
+WORKSHOP_PLANS.push(
+  { out: { key: 'beam-emitter', kind: 'block', count: 1 },
+    need: [['ray-crystal', 2], ['glass', 3], ['wire-spool', 3]], station: 'optics-bench' },
+  { out: { key: 'beam-mirror', kind: 'block', count: 2 },
+    need: [['silver-bar', 1], ['glass', 2]], station: 'optics-bench' },
+  { out: { key: 'beam-sensor', kind: 'block', count: 1 },
+    need: [['ward-crystal', 1], ['glass', 2], ['wire-spool', 3]], station: 'optics-bench' }
+);
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {

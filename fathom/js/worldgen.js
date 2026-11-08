@@ -969,11 +969,11 @@ const cachedOssuary = cacheStructure(seed => {
 function dungeonLayout(seed) { return cachedOssuary(seed, 0); }
 
 function dungeonAt(seed, x, y) {
-  if (Math.abs(x) < 816 || Math.abs(x) > 2224 || y > SEA_LEVEL + 100) return null;
+  if (Math.abs(x) < 816 || Math.abs(x) > 2224 || y > SEA_LEVEL + 145) return null;
   const site = dungeonLayout(seed);
   if (!site) return null;
   const dy = y - site.y;
-  return dy >= -8 && dy <= 100 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
+  return dy >= -8 && dy <= 145 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
 }
 
 function dungeonTile(site, x, y) {
@@ -1012,7 +1012,8 @@ const MECHANIST_WEAPONS = ['relay-cleaver', 'coil-carbine', 'lattice-scepter'];
 
 function lowerOssuaryTile(dx, dy) {
   const bulkhead = idOf('ossuary-bulkhead');
-  if (Math.abs(dx) === 24 || dy === 100) return bulkhead;
+  if (Math.abs(dx) === 24) return bulkhead;
+  if (dy >= 100) return lensVaultTile(dx, dy, bulkhead);
   if (dy === 58) return Math.abs(dx) <= 2 ? idOf('lower-ossuary-seal') : bulkhead;
 
   if (dy < 74) {
@@ -1041,6 +1042,30 @@ function lowerOssuaryTile(dx, dy) {
       if (dx === cx || dx === cx + 1) return cellOf('mechanist-armory', dx - cx, dy - 98).id;
     }
   }
+  return AIR;
+}
+
+function lensVaultTile(dx, dy, bulkhead) {
+  if (dy === 100) return dx >= 13 && dx <= 15 ? idOf('lens-vault-seal') : bulkhead;
+  if (dy === 145) return bulkhead;
+  if (dy < 121) {
+    if (dx === 14 && dy <= 112) return idOf('rope');
+    if (dx === 2 && dy === 114) return idOf('vault-emitter');
+    if (dx === 11 && dy === 114) return idOf('vault-mirror');
+    if (dx === 11 && (dy === 110 || dy === 119)) return idOf('vault-sensor');
+    if (dx === 8 && dy === 119) return idOf('and-relay');
+    if (dy === 120 && (dx === 4 || dx === 15)) return idOf('wire-switch');
+    if (dx === 18 && dy === 119) return idOf('ossuary-dart');
+    return AIR;
+  }
+  if (dy === 121) return dx >= 9 && dx <= 13 ? idOf('lens-vault-gate') : bulkhead;
+  if (dx === 11) return idOf('rope');
+  if (dx === -19 && dy === 135) return idOf('vault-emitter');
+  if (dx === -10 && dy === 135) return idOf('vault-mirror');
+  if (dx === -10 && dy === 141) return idOf('vault-sensor');
+  if (dx === -14 && dy === 144) return idOf('wire-switch');
+  if (dy === 136 && (dx === 4 || dx === 5 || dx === 6)) return idOf('oakplatform');
+  if (dy === 138 && (dx === -4 || dx === -3 || dx === -2)) return idOf('oakplatform');
   return AIR;
 }
 
