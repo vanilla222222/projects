@@ -8,6 +8,9 @@ function makeRenderer(canvas, deps) {
   const { tiles, texture, autotile, light, worldgen, noise, sprite } = deps;
   const screen = canvas.getContext('2d');
   let ctx = screen;
+  const actorCanvas = document.createElement('canvas');
+  const actors = actorCanvas.getContext('2d');
+  const ACTOR_PIXEL = 2;
   const lightCanvas = document.createElement('canvas');
   const lightCtx = lightCanvas.getContext('2d');
   const atlas = texture.bakeAtlas(document, tiles);
@@ -23,18 +26,18 @@ function makeRenderer(canvas, deps) {
 
   function skyColours(dayPhase) {
     const e = light.solarElevation(dayPhase);
-    if (e >= 0.3) return ['#5aa6e8', '#9fd0f2', '#cfe8fa'];
+    if (e >= 0.3) return ['#4276ac', '#78b1be', '#e6d69e'];
     if (e >= 0) {
       const t = e / 0.3;
       return [
-        texture.shade('#2d4a7a', 0.45 * t),
-        mixHex('#e07a4a', '#9fd0f2', t),
-        mixHex('#f3c58a', '#cfe8fa', t)
+        mixHex('#49375e', '#4276ac', t),
+        mixHex('#e07a4a', '#78b1be', t),
+        mixHex('#f3c58a', '#e6d69e', t)
       ];
     }
     if (e >= -0.25) {
       const t = -e / 0.25;
-      return [mixHex('#2d4a7a', '#0a1026', t), mixHex('#e07a4a', '#1c2545', t), mixHex('#f3c58a', '#2b3150', t)];
+      return [mixHex('#49375e', '#0a1026', t), mixHex('#e07a4a', '#1c2545', t), mixHex('#f3c58a', '#2b3150', t)];
     }
     return ['#060a18', '#0d1430', '#18203c'];
   }
@@ -45,50 +48,45 @@ function makeRenderer(canvas, deps) {
     const r = Math.round(((pa >> 16) & 255) * (1 - t) + ((pb >> 16) & 255) * t);
     const g = Math.round(((pa >> 8) & 255) * (1 - t) + ((pb >> 8) & 255) * t);
     const bl = Math.round((pa & 255) * (1 - t) + (pb & 255) * t);
-    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+    return '#' + ((r << 16) | (g << 8) | bl).toString(16).padStart(6, '0');
   }
 
-  // How far into space the camera is: 0 at and below the sky layer's floor, 1 once the
-  // camera is properly in vacuum. Used to black out the sky and hide the horizon, because
-  // a planetoid against a blue sky with mountains behind it reads as a hill, not a world.
-  // Drifting cloud banks, drawn as soft overlapping blobs. They move with the camera at
-  // a fraction of its speed and with time, so the sky is not a still photograph.
   const CLOUD_BANDS = [
-    { y: 0.12, scale: 0.0016, drift: 6, size: 96, alpha: 0.26, depth: 0.04 },
-    { y: 0.22, scale: 0.0026, drift: 11, size: 68, alpha: 0.3, depth: 0.07 },
-    { y: 0.32, scale: 0.0038, drift: 18, size: 46, alpha: 0.2, depth: 0.11 }
+    { y: 0.14, depth: 5, drift: 4, scale: 6 },
+    { y: 0.28, depth: 9, drift: 8, scale: 4 },
+    { y: 0.42, depth: 14, drift: 12, scale: 3 }
+  ];
+  const CLOUD_SHAPE = [
+    [[7, 3]],
+    [[5, 7]],
+    [[2, 11], [15, 3]],
+    [[1, 18]],
+    [[0, 20]],
+    [[2, 16]],
+    [[6, 8]]
   ];
 
   function drawClouds(state) {
-    const vacuum = spaceFactor(state);
-    if (vacuum >= 1) return;
-    const night = Math.max(0, -light.solarElevation(state.dayPhase));
-    const tint = night > 0.3 ? '235,238,250' : '255,253,246';
-    ctx.save();
-    ctx.globalAlpha = (1 - vacuum) * (night > 0.3 ? 0.5 : 1);
+    const night = light.solarElevation(state.dayPhase) < -0.16;
+    const wind = state.weather?.wind || 0;
     for (const band of CLOUD_BANDS) {
-      const gust = (state.weather && state.weather.wind) || 0;
-      const originX = state.camera.x * band.depth + state.time * (band.drift + gust * 26);
-      const baseY = canvas.height * band.y;
-      for (let px = -band.size; px <= canvas.width + band.size; px += band.size * 0.7) {
-        const wx = (originX + px) * band.scale;
-        const n = noise.fbm1(state.world.seed + 4201, wx, 131, 3, 2, 0.5);
-        // The threshold is what makes a sky of separate clouds rather than one overcast
-        // sheet: most of the field has to fall below it, or the puffs merge into fog.
-        if (n < 0.54) continue;
-        // Eased rather than linear: a linear ramp from the threshold makes every cloud
-        // nearly transparent, because the noise rarely reaches its own maximum.
-        const puff = Math.min(1, Math.pow((n - 0.54) / 0.18, 0.7));
-        const r = band.size * (0.35 + puff * 0.8);
-        const yy = baseY + Math.sin(wx * 3.1) * band.size * 0.3;
-        const g = ctx.createRadialGradient(px, yy, r * 0.2, px, yy, r);
-        g.addColorStop(0, 'rgba(' + tint + ',' + (band.alpha * puff).toFixed(3) + ')');
-        g.addColorStop(1, 'rgba(' + tint + ',0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(px - r, yy - r, r * 2, r * 2);
+      const span = band.scale * 64;
+      const scroll = state.camera.x * band.depth - state.time * (band.drift + wind * 12);
+      const first = Math.floor(scroll / span);
+      for (let cell = first - 1; cell <= first + canvas.width / span + 1; cell += 1) {
+        const n = noise.fbm1(state.world.seed + 4201, cell * 13 + band.depth, 31, 3, 2, 0.5);
+        if (n < 0.37) continue;
+        const px = Math.round((cell * span + n * span * 0.5 - scroll) / band.scale) * band.scale;
+        const py = Math.round((canvas.height * band.y + (n - 0.5) * 80) / band.scale) * band.scale;
+        for (const [row, runs] of CLOUD_SHAPE.entries()) {
+          ctx.fillStyle = night ? (row < 4 ? '#333a62' : '#282e50')
+            : (row < 4 ? '#e7e5ca' : '#a9c4be');
+          for (const [left, width] of runs) {
+            ctx.fillRect(px + left * band.scale, py + row * band.scale, width * band.scale, band.scale);
+          }
+        }
       }
     }
-    ctx.restore();
   }
 
   function spaceFactor(state) {
@@ -97,125 +95,97 @@ function makeRenderer(canvas, deps) {
     return Math.max(0, Math.min(1, (-alt - 300) / 450));
   }
 
+  // Scanlines of a stepped disc double as the sun, moon and their hard-edged halos.
+  function pixelDisc(cx, cy, radius, pixel, colour) {
+    const r = Math.max(1, Math.round(radius / pixel));
+    const x = Math.round(cx / pixel);
+    const y = Math.round(cy / pixel);
+    ctx.fillStyle = colour;
+    for (let row = -r; row <= r; row += 1) {
+      const half = Math.floor(Math.sqrt((r + 0.4) ** 2 - row ** 2));
+      ctx.fillRect((x - half) * pixel, (y + row) * pixel, (half * 2 + 1) * pixel, pixel);
+    }
+  }
+
   function drawSky(state) {
     const [top, mid, low] = skyColours(state.dayPhase);
-    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    // Five stops rather than three. A three-stop gradient over a whole screen is a flat
-    // wash: the extra stops are where the sky gets its depth, and the band just above the
-    // horizon is where most of the colour of a real sky actually lives.
-    g.addColorStop(0, top);
-    g.addColorStop(0.3, mixHex(top, mid, 0.55));
-    g.addColorStop(0.58, mid);
-    g.addColorStop(0.82, mixHex(mid, low, 0.7));
-    g.addColorStop(1, low);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // A haze band sitting on the horizon, brightest where the sun is.
-    const elev = light.solarElevation(state.dayPhase);
-    if (elev > -0.2) {
-      const haze = ctx.createLinearGradient(0, canvas.height * 0.52, 0, canvas.height * 0.92);
-      const strength = Math.max(0, Math.min(1, (elev + 0.2) / 0.6));
-      haze.addColorStop(0, 'rgba(255,255,255,0)');
-      haze.addColorStop(1, 'rgba(255,248,232,' + (0.16 * strength).toFixed(3) + ')');
-      ctx.fillStyle = haze;
-      ctx.fillRect(0, canvas.height * 0.52, canvas.width, canvas.height * 0.4);
-    }
-
-    drawClouds(state);
-
-    // In space the sky goes black whatever the hour.
     const vacuum = spaceFactor(state);
-    if (vacuum > 0) {
-      ctx.save();
-      ctx.globalAlpha = vacuum;
-      ctx.fillStyle = '#05060e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
+    const bandCount = 12;
+    for (let i = 0; i < bandCount; i += 1) {
+      const t = i / (bandCount - 1);
+      const colour = t < 0.5 ? mixHex(top, mid, t * 2) : mixHex(mid, low, t * 2 - 1);
+      const y = Math.floor(canvas.height * i / bandCount);
+      const bottom = Math.floor(canvas.height * (i + 1) / bandCount);
+      ctx.fillStyle = mixHex(colour, '#090b1c', vacuum);
+      ctx.fillRect(0, y, canvas.width, bottom - y);
+      if (i === 0 || vacuum > 0.8) continue;
+      // Offset pixels bridge adjacent shades along the edge of each sky band.
+      ctx.fillStyle = mixHex(i <= 5 ? mixHex(top, mid, Math.max(0, t * 2 - 0.13))
+        : mixHex(mid, low, Math.max(0, t * 2 - 1.13)), '#090b1c', vacuum);
+      for (let x = (i % 2) * 4; x < canvas.width; x += 8) ctx.fillRect(x, y, 4, 2);
     }
 
-    const night = Math.max(0, Math.max(-light.solarElevation(state.dayPhase), vacuum));
+    const night = Math.max(0, -light.solarElevation(state.dayPhase), vacuum);
     if (night > 0.02) {
       ctx.save();
-      ctx.globalAlpha = Math.min(1, night * 1.6);
-      for (const s of stars) {
-        const tw = 0.55 + 0.45 * Math.sin(state.time * 1.6 + s.twinkle);
-        ctx.globalAlpha = Math.min(1, night * 1.6) * tw;
-        ctx.fillStyle = '#eaf2ff';
-        ctx.beginPath();
-        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
-        ctx.fill();
+      ctx.fillStyle = '#f5dfb6';
+      for (const star of stars) {
+        const x = Math.round(star.x * canvas.width / 2) * 2;
+        const y = Math.round(star.y * canvas.height / 2) * 2;
+        ctx.globalAlpha = Math.min(1, night * 1.6) * (0.72 + 0.28 * Math.sin(state.time * 1.6 + star.twinkle));
+        ctx.fillRect(x, y, 2, 2);
+        if (star.r > 1.38) {
+          ctx.fillRect(x - 2, y, 6, 2);
+          ctx.fillRect(x, y - 2, 2, 6);
+        }
       }
       ctx.restore();
     }
 
     const angle = (state.dayPhase + 0.75) * Math.PI * 2;
-    const cx = canvas.width * 0.5 + Math.cos(angle) * canvas.width * 0.42;
-    const cy = canvas.height * 0.62 + Math.sin(angle) * canvas.height * 0.52;
-    const isSun = light.solarElevation(state.dayPhase) >= 0;
-    // A blood moon is bigger, red, and lights the whole sky rather than a disc of it.
-    // The event has to be visible from inside a house, which means it has to be in the
-    // sky and not only in the spawn table.
-    const bloody = !isSun && !!state.bloodMoon;
-    const r = isSun ? 30 : (bloody ? 34 : 22);
-    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * (bloody ? 7 : 4.5));
-    if (isSun) {
-      glow.addColorStop(0, 'rgba(255,246,214,0.95)');
-      glow.addColorStop(0.18, 'rgba(255,224,150,0.5)');
-    } else if (bloody) {
-      glow.addColorStop(0, 'rgba(255,120,110,0.95)');
-      glow.addColorStop(0.16, 'rgba(210,60,60,0.5)');
-      glow.addColorStop(0.5, 'rgba(150,30,36,0.18)');
-    } else {
-      glow.addColorStop(0, 'rgba(208,224,255,0.75)');
-      glow.addColorStop(0.18, 'rgba(170,196,240,0.3)');
+    const cx = canvas.width * (0.5 + Math.cos(angle) * 0.42);
+    const cy = canvas.height * (0.62 + Math.sin(angle) * 0.52);
+    const sun = light.solarElevation(state.dayPhase) >= 0;
+    const blood = !sun && state.bloodMoon;
+    const r = sun ? 30 : blood ? 34 : 22;
+    pixelDisc(cx, cy, r + 14, 4, sun ? '#fbd88c42' : blood ? '#ec575847' : '#a9a4da32');
+    pixelDisc(cx, cy, r, 2, sun ? '#ffe5a4' : blood ? '#ad394b' : '#a6a2c9');
+    pixelDisc(cx - 2, cy - 4, r - 5, 2, sun ? '#fff3c6' : blood ? '#eb6466' : '#e3d9e7');
+    if (!sun) {
+      pixelDisc(cx - 8, cy - 6, 4, 2, blood ? '#a93b51' : '#b5accd');
+      pixelDisc(cx + 8, cy + 2, 6, 2, blood ? '#c44a57' : '#bdb1ce');
     }
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * (bloody ? 7 : 4.5), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = isSun ? '#fffbe8' : (bloody ? '#e04a46' : '#dfe8ff');
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-    if (bloody) {
-      // A wash of red over the whole sky, so the night reads as wrong from anywhere
-      // with a window.
-      const wash = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      wash.addColorStop(0, 'rgba(120,16,22,0.34)');
-      wash.addColorStop(1, 'rgba(60,8,14,0.16)');
-      ctx.fillStyle = wash;
+    if (blood) {
+      ctx.fillStyle = '#761c3034';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (vacuum < 1) {
+      ctx.save();
+      ctx.globalAlpha = 1 - vacuum;
+      drawClouds(state);
+      ctx.restore();
     }
   }
 
   function drawParallax(state) {
-    // The horizon fades out as the camera climbs: there is nothing to see from space.
     const vacuum = spaceFactor(state);
     if (vacuum >= 1) return;
     ctx.save();
     ctx.globalAlpha = 1 - vacuum;
     const layers = [
-      { depth: 0.12, scale: 0.0045, amp: 70, base: 0.52, tint: 'rgba(120,150,180,0.40)' },
-      { depth: 0.24, scale: 0.0075, amp: 54, base: 0.62, tint: 'rgba(96,124,152,0.52)' },
-      { depth: 0.42, scale: 0.012, amp: 40, base: 0.72, tint: 'rgba(70,92,116,0.66)' }
+      { depth: 5, scale: 0.0045, amp: 96, base: 0.59, day: '#72949f', night: '#303859' },
+      { depth: 9, scale: 0.0075, amp: 74, base: 0.69, day: '#537981', night: '#242e49' },
+      { depth: 15, scale: 0.012, amp: 54, base: 0.78, day: '#355b61', night: '#192637' }
     ];
-    const night = Math.max(0, -light.solarElevation(state.dayPhase));
+    const night = Math.min(1, Math.max(0, -light.solarElevation(state.dayPhase) * 2.5));
     for (const layer of layers) {
-      ctx.beginPath();
-      ctx.moveTo(0, canvas.height);
-      const originX = state.camera.x * layer.depth;
-      for (let px = 0; px <= canvas.width; px += 4) {
-        const wx = (originX + px) * layer.scale;
-        const n = noise.fbm1(state.world.seed + 991, wx, 77, 4, 2, 0.5);
-        const y = canvas.height * layer.base - n * layer.amp;
-        ctx.lineTo(px, y);
+      const originX = Math.round(state.camera.x * layer.depth / 4) * 4;
+      ctx.fillStyle = mixHex(layer.day, layer.night, night);
+      for (let x = 0; x < canvas.width; x += 4) {
+        const n = noise.fbm1(state.world.seed + 991, (originX + x) * layer.scale, 77, 4, 2, 0.5);
+        const y = Math.round((canvas.height * layer.base - n * layer.amp) / 4) * 4;
+        ctx.fillRect(x, y, 4, canvas.height - y);
       }
-      ctx.lineTo(canvas.width, canvas.height);
-      ctx.closePath();
-      ctx.fillStyle = night > 0.2 ? 'rgba(26,34,54,0.72)' : layer.tint;
-      ctx.fill();
     }
     ctx.restore();
   }
@@ -279,7 +249,7 @@ function makeRenderer(canvas, deps) {
     return heights.get(x);
   }
 
-  function drawWalls(state, view, sample) {
+  function drawWalls(view, sample) {
     const { x0, y0, cols, rows, offsetX, offsetY, zoom } = view;
     const size = TILE * zoom;
     for (let ty = 0; ty < rows; ty += 1) {
@@ -292,19 +262,6 @@ function makeRenderer(canvas, deps) {
         ctx.fillStyle = spec.colour;
         ctx.fillRect(tx * size - offsetX, ty * size - offsetY, size + 1, size + 1);
       }
-    }
-    // A soft dark edge where wall meets open sky stops the boundary reading as a hard line.
-    for (let tx = 0; tx < cols; tx += 1) {
-      const wx = x0 + tx;
-      const surface = cachedSurface(state.world, wx);
-      const sy = (surface - y0) * size - offsetY;
-      if (sy < -size * 2 || sy > canvas.height + size) continue;
-      if (ctx.surfaceShade) { ctx.surfaceShade(tx * size - offsetX, sy - size * 2.5, size + 1, size * 4); continue; }
-      const g = ctx.createLinearGradient(0, sy - size * 2.5, 0, sy + size * 1.5);
-      g.addColorStop(0, 'rgba(0,0,0,0)');
-      g.addColorStop(1, 'rgba(0,0,0,0.42)');
-      ctx.fillStyle = g;
-      ctx.fillRect(tx * size - offsetX, sy - size * 2.5, size + 1, size * 4);
     }
   }
 
@@ -632,10 +589,7 @@ function makeRenderer(canvas, deps) {
     ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(x, y, w, h);
-    const g = ctx.createLinearGradient(x, y, x, y + h);
-    g.addColorStop(0, '#e2645c');
-    g.addColorStop(1, '#8e2a2a');
-    ctx.fillStyle = g;
+    ctx.fillStyle = '#bc4d57';
     ctx.fillRect(x, y, w * frac, h);
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.fillRect(x, y, w * frac, Math.max(1, h * 0.3));
@@ -740,15 +694,18 @@ function makeRenderer(canvas, deps) {
     const sx = (state.player.x + state.player.width / 2 - x0) * size - offsetX;
     const sy = (state.player.y + state.player.height / 2 - y0) * size - offsetY;
     const radius = glow * size;
-    const g = ctx.createRadialGradient(sx, sy, size * 0.3, sx, sy, radius);
-    g.addColorStop(0, torch ? 'rgba(255, 214, 146, 0.24)' : 'rgba(255, 221, 160, 0.55)');
-    g.addColorStop(0.5, torch ? 'rgba(255, 192, 111, 0.075)' : 'rgba(255, 200, 120, 0.22)');
-    g.addColorStop(1, 'rgba(255, 190, 110, 0)');
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = g;
-    ctx.fillRect(sx - radius, sy - radius, radius * 2, radius * 2);
+    pixelGlow(sx, sy, radius, [255, 206, 137], torch ? 0.18 : 0.38);
     ctx.restore();
+  }
+
+  function pixelGlow(x, y, radius, tint, strength) {
+    const pixel = Math.max(3, Math.round(radius / 12));
+    const rgb = 'rgba(' + tint.join(',') + ',';
+    pixelDisc(x, y, radius, pixel, rgb + strength * 0.13 + ')');
+    pixelDisc(x, y, radius * 0.66, pixel, rgb + strength * 0.25 + ')');
+    pixelDisc(x, y, radius * 0.33, pixel, rgb + strength * 0.42 + ')');
   }
 
   function drawBloom(state, view, sample) {
@@ -767,14 +724,8 @@ function makeRenderer(canvas, deps) {
         const cx = tx * size - offsetX + size / 2;
         const cy = ty * size - offsetY + size / 2;
         const radius = size * (flame ? 1.2 + emit * 0.16 : 0.8 + emit * 0.09);
-        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
         const flicker = 0.78 + 0.22 * Math.sin(state.time * 7 + (x0 + tx) * 1.7 + (y0 + ty) * 2.3);
-        g.addColorStop(0, 'rgba(' + tint.join(',') + ',' + ((flame ? 0.30 : 0.12) * flicker).toFixed(3) + ')');
-        g.addColorStop(1, 'rgba(' + tint.join(',') + ',0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.fill();
+        pixelGlow(cx, cy, radius, tint, (flame ? 0.22 : 0.10) * flicker);
       }
     }
     ctx.restore();
@@ -1157,27 +1108,31 @@ function makeRenderer(canvas, deps) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = deep ? 'rgba(28, 86, 140, 0.34)' : 'rgba(28, 86, 140, 0.16)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (deep) {
-      // A soft inward darkening, so submerged reads as submerged and not as a colour grade.
-      const grad = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.2,
-        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.62);
-      grad.addColorStop(0, 'rgba(10, 40, 70, 0)');
-      grad.addColorStop(1, 'rgba(6, 26, 48, 0.55)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
     ctx.restore();
   }
 
-  function drawVignette() {
-    const g = ctx.createRadialGradient(
-      canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.34,
-      canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.78);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.34)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Rasterize moving sprites on their own grid, leaving the atlas, HUD text and
+  // mouse-to-world coordinates at the normal display resolution.
+  function drawActors(state, view) {
+    const w = Math.ceil(canvas.width / ACTOR_PIXEL);
+    const h = Math.ceil(canvas.height / ACTOR_PIXEL);
+    if (actorCanvas.width !== w || actorCanvas.height !== h) {
+      actorCanvas.width = w;
+      actorCanvas.height = h;
+    }
+    actors.clearRect(0, 0, w, h);
+    actors.save();
+    actors.scale(1 / ACTOR_PIXEL, 1 / ACTOR_PIXEL);
+    ctx = actors;
+    try {
+      phase('enemies', () => drawEnemies(state, view));
+      phase('villagers', () => drawVillagers(state, view));
+      phase('player', () => drawPlayer(state, view));
+    } finally {
+      actors.restore();
+      ctx = screen;
+    }
+    screen.drawImage(actorCanvas, 0, 0, w * ACTOR_PIXEL, h * ACTOR_PIXEL);
   }
 
   // Per-pass timing, off by default and costing one boolean test when it is off. A
@@ -1212,6 +1167,7 @@ function makeRenderer(canvas, deps) {
   }
 
   function draw(state) {
+    screen.imageSmoothingEnabled = false;
     const zoom = state.camera.zoom;
     const size = TILE * zoom;
     const cols = Math.ceil(canvas.width / size) + 1;
@@ -1221,7 +1177,7 @@ function makeRenderer(canvas, deps) {
     const x0 = Math.floor(leftWorld);
     const y0 = Math.floor(topWorld);
     const view = { x0, y0, cols, rows, zoom,
-      offsetX: (leftWorld - x0) * size, offsetY: (topWorld - y0) * size };
+      offsetX: Math.round((leftWorld - x0) * size), offsetY: Math.round((topWorld - y0) * size) };
 
     phase('sky', () => drawSky(state));
     phase('parallax', () => drawParallax(state));
@@ -1235,7 +1191,7 @@ function makeRenderer(canvas, deps) {
     terrainQuads = 0;
     if (accelerated) ctx = terrain.painter;
     try {
-      phase('walls', () => drawWalls(state, view, sample));
+      phase('walls', () => drawWalls(view, sample));
       phase('tiles', () => drawTiles(state, view, sample));
     } finally { ctx = screen; }
     if (accelerated) phase('terrain GPU', () => {
@@ -1244,9 +1200,7 @@ function makeRenderer(canvas, deps) {
     });
     phase('water', () => drawLiquidDetail(state, view, sample));
     phase('drops', () => drawDrops(state, view));
-    phase('enemies', () => drawEnemies(state, view));
-    phase('villagers', () => drawVillagers(state, view));
-    phase('player', () => drawPlayer(state, view));
+    drawActors(state, view);
     phase('lighting', () => drawLighting(state, view));
     phase('carried', () => drawCarriedLight(state, view));
     phase('bloom', () => drawBloom(state, view, sample));
@@ -1257,7 +1211,6 @@ function makeRenderer(canvas, deps) {
     phase('particles', () => drawParticles(state, view));
     phase('weather', () => drawWeather(state, view));
     phase('underwater', () => drawUnderwater(state));
-    phase('vignette', () => drawVignette());
     phase('bossbar', () => drawBossBar(state));
     frames += 1;
     return view;

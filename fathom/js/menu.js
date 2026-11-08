@@ -38,10 +38,13 @@ function makeMenu(root, deps) {
 
   function avatar(colours, size) {
     const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
+    const pixels = Math.ceil(size / 2);
+    canvas.width = pixels;
+    canvas.height = pixels;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
     const ctx = canvas.getContext('2d');
-    sprite.drawPerson(ctx, { x: size * 0.08, y: size * 0.11, w: size * 0.84, h: size * 0.81 },
+    sprite.drawPerson(ctx, { x: pixels * 0.08, y: pixels * 0.11, w: pixels * 0.84, h: pixels * 0.81 },
       colours, { time: 0 });
     return canvas;
   }
