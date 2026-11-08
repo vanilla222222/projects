@@ -191,7 +191,12 @@ Trail through Eventide.
 
 ### Signature attacks
 
-Weapon tooltips describe special attacks. The Furnace Lance thrusts through
+Each class has five starter weapons without an attack rhythm. Later weapons
+cycle through their own three impact effects, listed in the tooltip. A burst
+or fan can trigger its effect once per attack. Look for the coloured accent
+on the projectile and the burst of matching particles when it connects.
+
+Weapon tooltips also describe special attacks. The Furnace Lance thrusts through
 a narrow line, the Ashblade wards its wielder during a swing, and the Shatter
 Maul sends a shockwave along the aim. The Tin Hand Cannon banks off terrain,
 while the Copper Pepperbox fires a timed three-round burst for one bullet.

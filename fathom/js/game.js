@@ -1015,6 +1015,43 @@ function makeGame(canvas, deps) {
 
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
   // it meets; spending the ammunition is what distinguishes it from a sword swing.
+  const combatRhythm = new Map();
+
+  function nextCombatBeat(weapon) {
+    if (!weapon.rhythm) return null;
+    const index = combatRhythm.get(weapon) || 0;
+    combatRhythm.set(weapon, (index + 1) % weapon.rhythm.length);
+    const name = weapon.rhythm[index];
+    return { name, colour: craft.COMBAT_BEATS[name][0], used: false };
+  }
+
+  function applyCombatBeat(beat, target, damage) {
+    if (!beat || beat.used || !combatTarget(target) || target.practice) return damage;
+    beat.used = true;
+    const name = beat.name;
+    const player = state.player;
+    const x = target.x + target.width / 2, y = target.y + target.height / 2;
+    spawnParticles(x, y, beat.colour, 9);
+    if (name === 'Break') return Math.round(damage * 1.22);
+    if (name === 'Recoil') player.vx -= Math.sign(x - player.x) * 5;
+    if (name === 'Launch' && !target.boss) target.vy -= 8;
+    if (name === 'Pull' && !target.boss) target.vx += Math.sign(player.x - x) * 9;
+    if (name === 'Frost') target.combatChill = Math.max(target.combatChill || 0, target.boss ? 0.18 : 0.65);
+    if (name === 'Mend') statsModule.heal(stats, Math.min(4, Math.max(1, Math.round(damage * 0.04))));
+    if (name === 'Ward') state.wardUntil = Math.max(state.wardUntil || 0, state.time + 0.28);
+    if (name === 'Focus') stats.mana = Math.min(stats.maxMana, stats.mana + 2);
+    if (name === 'Pulse' || name === 'Spark') {
+      const radius = name === 'Spark' ? 6 : 2.7;
+      const victims = swarm.list.filter(enemy => enemy !== target && combatTarget(enemy)
+        && Math.hypot(enemy.x + enemy.width / 2 - x, enemy.y + enemy.height / 2 - y) <= radius
+        && spiritLine(x, y, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2));
+      for (const enemy of victims.slice(0, name === 'Spark' ? 1 : 3)) {
+        projectileHit(enemy, Math.max(1, Math.round(damage * 0.3)));
+      }
+    }
+    return damage;
+  }
+
   function shoot(weapon) {
     const quiver = inventory.section('ammo');
     const preferred = inventory.slots.slice(quiver.from, quiver.to).map(slot => slot?.key);
@@ -1036,12 +1073,13 @@ function makeGame(canvas, deps) {
       ? [-1, -0.5, 0, 0.5, 1].map(fraction => fraction * weapon.scatter)
       : weapon.volley ? [-0.14, 0, 0.14] : [0];
     const hitLimit = Math.max(Number(weapon.pierce === true ? 3 : weapon.pierce) || 1, kind.pierce || 1);
+    const beat = nextCombatBeat(weapon);
     for (const [index, spread] of spreads.entries()) {
       const burst = weapon.signature === 'burst';
       const scale = burst ? 0.44 : weapon.scatter ? 0.42 : spread ? 0.32 : 1;
       state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * speed, vy: Math.sin(heading + spread) * speed,
         damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1) * scale),
-        life: weapon.reach / speed, colour: kind.colour,
+        life: weapon.reach / speed, colour: kind.colour, beat,
         gravity: kind.family === 'bullet' ? 0 : kind.family === 'bolt' ? 9 : 26,
         delay: burst ? index * 0.055 : 0, bounces: weapon.signature === 'ricochet' ? 2 : 0,
         burns: kind.burns, shove: kind.shove, hits: hitLimit > 1 ? new Set() : null, hitLimit });
@@ -1065,11 +1103,12 @@ function makeGame(canvas, deps) {
     const dy = pointer.y - cy;
     const heading = Math.atan2(dy, dx);
     const rune = weapon.signature === 'rune';
+    const beat = nextCombatBeat(weapon);
     for (const spread of weapon.signature === 'spellfan' ? [-0.21, 0, 0.21] : [0]) {
       state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * 34, vy: Math.sin(heading + spread) * 34,
         damage: Math.round(weapon.damage * (gear.magic || 1) * (spread ? 0.46 : 1)),
         life: weapon.spell || weapon.signature ? weapon.reach / 34 : 1.8,
-        colour: weapon.bolt, gravity: 0, magic: true, spell: weapon.spell,
+        colour: weapon.bolt, gravity: 0, magic: true, spell: weapon.spell, beat,
         seeker: weapon.signature === 'seeker', plant: rune ? 'rune' : null,
         blastRadius: rune ? 4.5 : 0, hits: weapon.spell === 'pierce' ? new Set() : null });
     }
@@ -1079,8 +1118,10 @@ function makeGame(canvas, deps) {
     return true;
   }
 
-  function projectileHit(target, damage) {
-    if (target.dead || !swarm.damage(target, damage) || target.practice) return;
+  function projectileHit(target, damage, beat) {
+    if (target.dead) return;
+    damage = applyCombatBeat(beat, target, damage);
+    if (!swarm.damage(target, damage) || target.practice) return;
     if (target.expedition) { target.expeditionDefeated = true; return; }
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
@@ -1096,9 +1137,10 @@ function makeGame(canvas, deps) {
     const style = weapon.throwStyle;
     const speedScale = state.gear?.throwSpeed || 1;
     const speed = (style === 'blast' ? 31 : style === 'pierce' ? 51 : 39) * speedScale;
+    const beat = nextCombatBeat(weapon);
     for (const spread of style === 'fan' ? [-0.18, 0, 0.18] : [0]) {
       state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
-        life: weapon.reach / speed, colour: weapon.colour, throwStyle: style, returnSpeed: 49 * speedScale,
+        life: weapon.reach / speed, colour: weapon.colour, throwStyle: style, beat, returnSpeed: 49 * speedScale,
         bounces: weapon.signature === 'bank' ? 2 : 0, plant: weapon.signature === 'fuse' ? 'fuse' : null,
         gravity: style === 'blast' ? 24 : 11, blastRadius: 4 * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
         hits: style === 'pierce' || style === 'returning' ? new Set() : null,
@@ -1113,7 +1155,7 @@ function makeGame(canvas, deps) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
       const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
       if (Math.hypot(a.x - x, a.y - y) <= a.blastRadius && spiritLine(a.x, a.y, x, y)) {
-        projectileHit(enemy, Math.round(a.damage * (a.armed ? 1 : 0.7)));
+        projectileHit(enemy, Math.round(a.damage * (a.armed ? 1 : 0.7)), a.beat);
       }
     }
   }
@@ -1201,7 +1243,7 @@ function makeGame(canvas, deps) {
             hit = !a.hits || a.hits.size >= (a.hitLimit || 3);
             spawnParticles(a.x, a.y, target.spec.colour, 5);
             if (a.plant) { hit = true; continue; }
-            projectileHit(target, a.damage);
+            projectileHit(target, a.damage, a.beat);
             if (a.shove && !target.dead && !target.boss) target.vx += Math.sign(a.vx) * a.shove;
             if (a.burns) {
               for (const other of swarm.list) {
@@ -1284,7 +1326,7 @@ function makeGame(canvas, deps) {
     }
     if (!target) return;
     const damage = Math.round(weapon.damage * (state.gear?.summoner || 1));
-    projectileHit(target, damage);
+    projectileHit(target, damage, nextCombatBeat(weapon));
     spawnParticles(target.x + target.width / 2, target.y + target.height / 2, weapon.colour, 6);
     if (weapon.summon === 'ward') state.wardUntil = Math.max(state.wardUntil || 0, state.time + 0.25);
     if (weapon.summon === 'twin') projectileHit(target, Math.round(damage * 0.28));
@@ -1357,7 +1399,7 @@ function makeGame(canvas, deps) {
       const angle = Math.atan2(pointer.y - cy, pointer.x - cx);
       state.arrows.push({ x: cx, y: cy, vx: Math.cos(angle) * 27, vy: Math.sin(angle) * 27,
         damage: Math.round(weapon.damage * (state.gear?.melee || 1) * 0.82), life: 0.36,
-        colour: weapon.colour || '#efad82', gravity: 0, shockwave: true, hits: new Set(), hitLimit: 4 });
+        colour: weapon.colour || '#efad82', gravity: 0, shockwave: true, beat: nextCombatBeat(weapon), hits: new Set(), hitLimit: 4 });
       swingCooldown = swingTotal = weapon.useTime * (state.gear?.swing || 1);
       sfx('swing');
       return true;
@@ -1416,6 +1458,7 @@ function makeGame(canvas, deps) {
         projectileHit(other, Math.round(hit * 0.55));
       }
     }
+    hit = applyCombatBeat(weapon && nextCombatBeat(weapon), target, hit);
     if (swarm.damage(target, hit) && !target.practice) {
       if (target.expedition) { target.expeditionDefeated = true; return true; }
       for (const [key, count] of target.spec.drops || []) {
@@ -1445,6 +1488,7 @@ function makeGame(canvas, deps) {
     state.wardUntil = 0;
     boundFocus = null;
     spiritMark = null;
+    combatRhythm.clear();
     state.spirit = null;
     state.progress.deaths += 1;
     statsModule.respawn(stats);
