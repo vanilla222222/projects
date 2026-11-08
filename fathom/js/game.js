@@ -1374,7 +1374,11 @@ function makeGame(canvas, deps) {
   function openTownShop(who) {
     const homes = village.nearbyHomes(who.home.x, who.home.y, PYLON_RADIUS);
     shopDiscount = homes >= 3 ? 0.85 : homes >= 2 ? 0.93 : 1;
-    ui.openShop(who, { coins: inventory.countOf('coin'), discount: shopDiscount });
+    const quest = ['guide', 'builder'].includes(who.key) ? () => {
+      ui.setOpen(false);
+      openRangerTrail();
+    } : null;
+    ui.openShop(who, { coins: inventory.countOf('coin'), discount: shopDiscount, quest });
   }
 
   function buyFrom(index) {
@@ -1429,7 +1433,8 @@ function makeGame(canvas, deps) {
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
     const actions = [{ label: 'Progression Journal', run: openProgression },
       { label: 'Town Contracts', run: openTownOrders }, { label: 'Bestiary', run: openBestiary },
-      { label: 'Field Journal', run: openFieldJournal }];
+      { label: 'Field Journal', run: openFieldJournal },
+      { label: 'A Road Through the Deepwood', run: openRangerTrail }];
     const pylon = nearestTown(x, y, device => physics.aimTile(state.player, device).inReach, 8);
     if (pylon) actions.push({ label: 'Local Settlement', run: () => openSettlement(pylon) });
     if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
@@ -1448,6 +1453,165 @@ function makeGame(canvas, deps) {
     }
     rows.push('Build a Town Pylon near two occupied homes to found a regional outpost and link other settlements.');
     ui.showTown('Town Hall', rows, actions);
+  }
+
+  const rangerRepairs = [['oakwood', 12], ['torch', 4], ['glass', 2]];
+  const rangerStock = [['oakwood', 40, 30], ['oakback', 60, 36], ['rope', 25, 55],
+    ['torch', 25, 45], ['town-pylon', 1, 340]];
+  const rangerPayout = [['storage-crafter', 1], ['minecart-rail', 24], ['coin', 300]];
+
+  function rangerCampFor(device) {
+    const spacing = worldgen.BIOME_SITE_SPACING;
+    const slot = Math.floor(device.x / spacing);
+    let closest = null;
+    for (const index of new Set([0, ...Array.from({ length: 15 }, (_, i) => slot + i - 7)])) {
+      const camp = worldgen.biomeSitesForSlot(seed, index)?.[0];
+      if (camp?.biome === 'forest' && (!closest || Math.abs(camp.x - device.x) < Math.abs(closest.x - device.x))) {
+        closest = camp;
+      }
+    }
+    return closest && { x: closest.x, y: closest.top + closest.height - 2 };
+  }
+
+  function rangerFixtures(camp) {
+    return [{ x: camp.x - 3, y: camp.y, key: 'lantern' }, { x: camp.x + 3, y: camp.y, key: 'oakbench' }];
+  }
+
+  function rangerCampIntact(camp) {
+    return rangerFixtures(camp).every(part => world.get(part.x, part.y) === tiles.idOf(part.key));
+  }
+
+  function rangerNextRegion(device) {
+    for (let distance = 128; distance <= 4096; distance += 64) {
+      for (const direction of [1, -1]) {
+        const x = device.x + direction * distance;
+        const region = worldgen.biomeAt(seed, x);
+        if (['forest', 'ocean'].includes(region.key) || worldgen.biomeAt(seed, x + direction * 24).key !== region.key) continue;
+        return { x, name: region.name };
+      }
+    }
+    return null;
+  }
+
+  function openRangerTrail() {
+    input.left = input.right = input.jump = input.down = false;
+    const trail = settlements.rangerTrail;
+    const player = state.player;
+    const x = Math.floor(player.x + player.width / 2), y = Math.floor(player.y + player.height / 2);
+    const rows = [];
+    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    const reach = point => physics.aimTile(player, point).inReach;
+    const pylon = nearestTown(x, y, device => reach(device) && townHomes(device) >= 2 &&
+      (settlements.town(device)?.region || townRegion(device.x, device.y)) === 'forest', 8);
+
+    if (!trail.started) {
+      rows.push('Guide · “Start with two furnished homes here in the Deepwood. Stand inside each room and press H to invite a resident. I’m available first, and the Builder moves in after ten smelted bars.”',
+        'Builder · “I’ll supply the first pylon and a little rope when both rooms are occupied.”');
+      if (townRegion(x, y) === 'forest' && village.nearbyHomes(x, y, PYLON_RADIUS) >= 2) {
+        actions.push({ label: 'Accept the Builder’s starter pylon', run() {
+          if (trail.started || village.nearbyHomes(x, y, PYLON_RADIUS) < 2 || !reach({ x, y })) return;
+          const reward = pylon ? [['rope', 15], ['torch', 12]] : [['town-pylon', 1], ['rope', 15], ['torch', 12]];
+          if (!townExchange([], reward)) return;
+          trail.started = true;
+          openRangerTrail();
+        } });
+      }
+    } else if (!trail.town) {
+      rows.push('Builder · “Put the pylon within 45 tiles of both homes. Use its supplies to found a Ranger Outpost.”',
+        'Return here beside the outpost pylon once it is founded. An existing Deepwood outpost also works.');
+      if (pylon && settlements.town(pylon)) {
+        actions.push({ label: 'Choose this Ranger Outpost', run() {
+          if (trail.town || !reach(pylon) || deviceAt(pylon.x, pylon.y) !== pylon || townHomes(pylon) < 2) return;
+          const camp = rangerCampFor(pylon);
+          if (!camp) { say('No Ranger Camp could be found', 2.5); return; }
+          trail.town = settlementModule.settlementKey(pylon);
+          trail.camp = camp;
+          openRangerTrail();
+        } });
+      }
+    } else {
+      const source = townPylons().find(device => settlementModule.settlementKey(device) === trail.town);
+      const camp = trail.camp;
+      const atCamp = Math.abs(x - camp.x) <= 8 && Math.abs(y - camp.y) <= 3;
+      const sourceActive = source && settlements.town(source)?.rank >= 2 && townHomes(source) >= 2;
+      rows.push('Ranger Camp · x ' + camp.x + ', y ' + camp.y);
+      if (!trail.restored || !rangerCampIntact(camp)) {
+        rows.push('Builder · “Relight the camp and install a timber supply counter. Bring ' + townItems(rangerRepairs) + '.”');
+        if (atCamp && reach(camp)) actions.push({ label: 'Restore the Ranger Camp', run() {
+          if (!reach(camp)) return;
+          const parts = rangerFixtures(camp);
+          if (parts.some(part => {
+            const id = world.get(part.x, part.y);
+            return id !== tiles.AIR && id !== tiles.idOf(part.key);
+          })) {
+            say('Clear the two fixture tiles three blocks to either side of the camp marker', 4);
+            return;
+          }
+          if (trail.restored && rangerCampIntact(camp)) return;
+          if (!townExchange(rangerRepairs, [])) return;
+          for (const part of parts) world.set(part.x, part.y, tiles.idOf(part.key));
+          trail.restored = true;
+          const site = worldgen.biomeSiteAt(seed, camp.x, camp.y);
+          if (site) settlements.record('survey', siteMark(site));
+          say('The Ranger Camp is lit. Its supply counter is open.', 4);
+          openRangerTrail();
+        } });
+      } else {
+        rows.push('Supply counter open · Use the timber bench under the camp roof.');
+        if (atCamp && reach(rangerFixtures(camp)[1])) actions.push({ label: 'Ranger Supply Counter', run: openRangerCounter });
+      }
+
+      if (trail.completed) rows.push('Guide · “Two towns, one trade road. The Deepwood has neighbours again.”');
+      else if (trail.deliveredTo) {
+        rows.push('Builder · “The first shipment arrived. Collect a storage terminal and rails to keep the route running.”');
+        if (sourceActive && reach(source)) actions.push({ label: 'Collect the trade road reward', run() {
+          if (trail.completed || !reach(source) || deviceAt(source.x, source.y) !== source || townHomes(source) < 2) return;
+          if (!townExchange([], rangerPayout)) return;
+          trail.completed = true;
+          openRangerTrail();
+        } });
+        else rows.push('Claim the reward at your original Deepwood charter pylon · ' + trail.town.replace(':', ', ') + '.');
+      } else if (trail.restored && !sourceActive) {
+        rows.push('Guide · “Return to your outpost and charter it from the pylon. Restoring the camp counts as its field assignment.”',
+          'Original Deepwood pylon · ' + trail.town.replace(':', ', '));
+      } else if (trail.restored) {
+        rows.push('Guide · “Use your second pylon to found and charter a town in a different region. Keep two occupied homes at each end.”',
+          'Builder · “Pack a shipment at your original Deepwood pylon and deliver it at the partner pylon.”');
+        const next = rangerNextRegion(source);
+        if (next) rows.push('Suggested second site · ' + next.name + ' around x ' + next.x + '.');
+        const partners = charterRegions();
+        if ([...partners].some(region => region !== 'forest')) rows.push('Trade route ready · Return to your original Deepwood pylon to pack a shipment.');
+      }
+    }
+    ui.showTown('A Road Through the Deepwood', rows, actions);
+  }
+
+  function openRangerCounter() {
+    const trail = settlements.rangerTrail;
+    if (!trail.restored || !rangerCampIntact(trail.camp)) return;
+    const bench = rangerFixtures(trail.camp)[1];
+    if (!physics.aimTile(state.player, bench).inReach) return;
+    input.left = input.right = input.jump = input.down = false;
+    const actions = rangerStock.map(([key, count, price]) => ({
+      label: 'Buy ' + townItems([[key, count]]) + ' · ' + price + ' coin',
+      run() {
+        if (rangerCampIntact(trail.camp) && physics.aimTile(state.player, bench).inReach) {
+          townExchange([['coin', price]], [[key, count]]);
+        }
+      }
+    }));
+    actions.push({ label: 'Deepwood questline', run: openRangerTrail });
+    ui.showTown('Ranger Supply Counter', ['The Builder keeps building supplies and spare pylons here.'], actions);
+  }
+
+  function useRangerCounter(aim) {
+    const trail = settlements.rangerTrail;
+    if (!trail.restored) return false;
+    const bench = rangerFixtures(trail.camp)[1];
+    if (aim.x !== bench.x || aim.y !== bench.y || world.get(bench.x, bench.y) !== tiles.idOf(bench.key)) return false;
+    if (rangerCampIntact(trail.camp)) openRangerCounter();
+    else say('Relight the camp from the Deepwood questline', 2.5);
+    return true;
   }
 
   function townRegion(x, y) {
@@ -1564,6 +1728,7 @@ function makeGame(canvas, deps) {
       'Supply counters and fieldwork need two valid homes. A district needs three.'];
     const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
       { label: 'Field Journal', run: openFieldJournal }];
+    if (region === 'forest') actions.push({ label: 'A Road Through the Deepwood', run: openRangerTrail });
     const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
       && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
     if (residents < 2) {
@@ -1591,7 +1756,10 @@ function makeGame(canvas, deps) {
             rows.push('Patrol · ' + local.kills + ' / 6 wild hostiles defeated.');
           }
         }
-        if (progress >= work.goal || local.kills >= 6) {
+        const restoredCamp = settlements.rangerTrail.restored
+          && settlements.rangerTrail.town === settlementModule.settlementKey(device);
+        if (restoredCamp) rows.push('The restored Ranger Camp completes this outpost’s field assignment.');
+        if (progress >= work.goal || local.kills >= 6 || restoredCamp) {
           actions.push({ label: 'Charter this town · receive a pylon and 250 coin', run() {
             if (!canUse() || local.rank !== 1) return;
             if (townExchange([], [['town-pylon', 1], ['coin', 250]])) {
@@ -1657,6 +1825,11 @@ function makeGame(canvas, deps) {
           if (!canUse() || settlements.shipment !== shipment) return;
           const [key, count] = role.stock[0];
           if (townExchange([], [['coin', 420], [key, count]])) {
+            const trail = settlements.rangerTrail;
+            if (trail.restored && !trail.deliveredTo && shipment.from === trail.town && local.region !== 'forest') {
+              trail.deliveredTo = shipment.to;
+              say('First Deepwood shipment delivered. Collect the reward at the original pylon.', 4);
+            }
             settlements.shipment = null;
             openSettlement(device);
           }
@@ -1685,7 +1858,8 @@ function makeGame(canvas, deps) {
     const rows = ['Collections track distinct catches, exhibits, dishes, mechanisms and sites in this world.',
       'Claims are available beside any active charter pylon.',
       'Charter regions · ' + ([...regions].map(townRegionName).join(', ') || 'None')];
-    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    const actions = [{ label: 'Town Hall', run: checkHousing },
+      { label: 'A Road Through the Deepwood', run: openRangerTrail }];
     if (site) {
       const id = siteMark(site);
       rows.push('Current landmark · ' + site.name);
@@ -2747,7 +2921,7 @@ function makeGame(canvas, deps) {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
     if (useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
-    if (aim0.inReach && useFoundryShortcut(aim0)) return;
+    if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
     if (aim0.inReach && useCrystal(aim0)) return;

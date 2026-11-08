@@ -125,8 +125,10 @@ function makeSettlementLedger(saved = {}) {
 
   return { town, found, record, mark, progress, charterRegions, finish, claimed, records, prizes,
     shipment: saved.shipment || null,
+    rangerTrail: { started: false, town: null, camp: null, restored: false, deliveredTo: null, completed: false,
+      ...saved.rangerTrail },
     count: key => collections.get(key)?.size || 0,
-    serialize() { return { shipment: this.shipment, towns: [...towns], collections: [...collections].map(([key, group]) => [key, [...group]]),
+    serialize() { return { shipment: this.shipment, rangerTrail: this.rangerTrail, towns: [...towns], collections: [...collections].map(([key, group]) => [key, [...group]]),
       claimed: [...claimed], records: [...records], prizes: [...prizes] }; } };
 }
 

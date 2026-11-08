@@ -178,6 +178,15 @@ withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
 
+### A Road Through the Deepwood
+
+Open the questline from Town Hall, the Field Journal, or the Guide and Builder
+shops. House two residents in the Deepwood to earn the first pylon. Found a
+Ranger Outpost, then follow the quest to restore the Ranger Camp’s lantern and
+timber supply counter. The restoration qualifies the outpost for a charter.
+Charter a second town in a different region and deliver a shipment from the
+original pylon to complete the trade road.
+
 ### Regional settlements
 
 Use a Town Pylon with two valid occupied homes nearby to found an outpost.

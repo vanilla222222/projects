@@ -892,6 +892,15 @@ function makeUI(root, deps) {
     els.shopPurse.textContent = shop.coins.toLocaleString() + ' copper value'
       + (discount ? ' · ' + discount + '% town discount' : '');
     els.shopList.textContent = '';
+    if (shop.quest) {
+      const row = el('button', 'craft-row', els.shopList);
+      el('span', 'craft-name', row).textContent = 'A Road Through the Deepwood';
+      row.addEventListener('click', ev => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        shop.quest();
+      });
+    }
     shop.who.spec.stock.forEach((entry, i) => {
       const row = el('button', 'craft-row', els.shopList);
       row.appendChild(iconFor({ key: entry.key, kind: craft.kindOf(entry.key) }, 30));
@@ -1005,7 +1014,7 @@ function makeUI(root, deps) {
     set onBuy(fn) { onBuy = fn; },
     set onHeal(fn) { onHeal = fn; },
     set onSelectHotbar(fn) { onSelectHotbar = fn; },
-    openShop(who, purse) { shop = { who, coins: purse.coins, discount: purse.discount || 1 }; },
+    openShop(who, purse) { shop = { who, coins: purse.coins, discount: purse.discount || 1, quest: purse.quest }; },
     closeShop() { shop = null; },
     openChest(box) {
       chest = box;

@@ -41,10 +41,15 @@ assert.deepEqual(ledger.finish(1, 84.2), { clears: 1, best: 85 });
 assert.deepEqual(ledger.finish(1, 88), { clears: 2, best: 85 });
 assert.deepEqual(ledger.finish(1, 71.3), { clears: 3, best: 72 });
 
+assert.equal(ledger.rangerTrail.started, false);
+Object.assign(ledger.rangerTrail, { started: true, town: '10:20', camp: { x: 50, y: 24 },
+  restored: true, deliveredTo: '410:20' });
 const stored = JSON.parse(JSON.stringify(ledger.serialize()));
 const restored = settlement.makeSettlementLedger(stored);
 assert.deepEqual(restored.serialize(), stored);
 assert.equal(restored.count('fish'), 2);
+assert.equal(restored.rangerTrail.deliveredTo, '410:20');
+assert.equal(restored.rangerTrail.completed, false);
 assert.equal(restored.town(devices[0]).kills, 6);
 assert.equal(restored.town(devices[2]).marks.length, 2);
 
