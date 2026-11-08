@@ -576,6 +576,14 @@ function paintWater(ctx, spec, variant, ox, oy) {
 // A platform: a deck with a lip, drawn only in the top third of the tile so the space
 // under it reads as space you can walk through, because you can.
 function paintPlatform(ctx, spec, variant, ox, oy) {
+  if (spec.rail) {
+    ctx.fillStyle = '#674b43';
+    for (const x of [2, 7, 12]) ctx.fillRect(ox + x, oy + 1, 2, 5);
+    ctx.fillStyle = '#b3adb5';
+    ctx.fillRect(ox, oy + 1, TILE, 1);
+    ctx.fillRect(ox, oy + 4, TILE, 1);
+    return;
+  }
   ctx.fillStyle = spec.colour;
   ctx.fillRect(ox, oy + 1, 16, 4);
   ctx.fillStyle = shade(spec.colour, 0.22);
@@ -895,6 +903,7 @@ function paintStation(ctx, spec, variant, ox, oy) {
 // Workshop fixtures share a palette grammar but each shape has its own silhouette.
 // 1 is shadow, 2 is the material, 3 is a highlight and 4 is a metal or flame accent.
 const WORKSHOP_PIXELS = {
+  'cave-spire': ['00000000','00030000','00032000','00332000','00332200','00332230','03322232','33222121'],
   'wire-switch': ['00000000','00004000','00044000','00440000','00330000','03333330','02222220','01111110'],
   'pressure-plate': ['00000000','00000000','00000000','00000000','00000000','00000000','03344330','22222222'],
   'wire-timer': ['00000000','00333300','03422430','03242430','03244430','03422430','00333300','00222200'],

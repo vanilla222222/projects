@@ -442,6 +442,15 @@ function buildColumn(seed, x) {
     const ceiling = SEA_LEVEL - BEACH_BAND - 8;
     if (h > ceiling) h += (ceiling - h) * home;
   }
+  const legacyHeight = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 900, Math.round(h)));
+  const inland = smooth(Math.max(0, Math.min(1, (SEA_LEVEL - BEACH_BAND - h) / 24)));
+  const massif = fbm1(seed, u * 0.00145, 83, 3, 2, 0.52) - 0.5;
+  const knolls = fbm1(seed, u * 0.017, 87, 2, 2, 0.45) - 0.5;
+  const terrace = smooth(Math.max(0, Math.min(1, (broad + 0.14) * 2.8))) - 0.35;
+  h += inland * (massif * (38 + ridgeWeight * 42 - flatWeight * 17)
+    + knolls * (14 + ridgeWeight * 10 - flatWeight * 8) - dryWeight * terrace * 18);
+  const dryCeiling = SEA_LEVEL - BEACH_BAND - 8;
+  if (home > 0 && h > dryCeiling) h += (dryCeiling - h) * home;
   h = Math.max(SKY_H + 24, Math.min(SEA_LEVEL + 900, Math.round(h)));
 
   // Identity. Sea and shore override climate; a blight overrides everything but the sea.
@@ -454,7 +463,7 @@ function buildColumn(seed, x) {
   }
   const terrainBiome = biome;
   if (x >= -START_FOREST_EDGE && x < START_FOREST_EDGE) biome = BY_BIOME.forest;
-  return { x, biome, terrainBiome, climate: CLIMATE_BIOMES[best], height: h, bias, land, cover,
+  return { x, biome, terrainBiome, climate: CLIMATE_BIOMES[best], height: h, legacyHeight, bias, land, cover,
     weights: choice.weights, choice };
 }
 
@@ -480,96 +489,146 @@ function surfaceHeight(seed, x) {
   return columnOf(seed, x).height;
 }
 
-// Caves are not one shape everywhere. Each profile tunes three things: how wide the
-// passages are, how readily they open into rooms, and how much the vertical ridged field
-// dominates, which is what turns a cave system into shafts or into chasms. This is where
-// an underground actually gets its character; the materials alone are just a palette.
+// The same room layout reads differently in sandstone, granite, and frozen ground.
 const CAVE_PROFILES = {
-  normal:  { scale: 0.028, rooms: 0.38, threshold: 0.605, vertical: 0, roomScale: 0.016 , bore: 1.0 },
-  // Tundra: tight, winding, little open space.
-  narrow:  { scale: 0.038, rooms: 0.22, threshold: 0.655, vertical: 0, roomScale: 0.02 , bore: 0.66 },
-  // Desert: broad flat halls carved along the bedding planes of the sandstone.
-  halls:   { scale: 0.019, rooms: 0.54, threshold: 0.565, vertical: -0.22, roomScale: 0.0105 , bore: 1.4 },
-  // Jungle: enormous chambers, the largest in the world.
-  caverns: { scale: 0.015, rooms: 0.6, threshold: 0.54, vertical: 0, roomScale: 0.009 , bore: 1.1 },
-  // Highlands and badlands: vertical shafts punched through the rock.
-  shafts:  { scale: 0.03, rooms: 0.24, threshold: 0.6, vertical: 0.42, roomScale: 0.018 , bore: 1.05 },
-  // The blights: narrow vertical chasms that run a long way down.
-  chasms:  { scale: 0.026, rooms: 0.2, threshold: 0.58, vertical: 0.66, roomScale: 0.017 , bore: 0.82 },
-  rooms:   { scale: 0.022, rooms: 0.52, threshold: 0.575, vertical: -0.1, roomScale: 0.013 , bore: 1.15 }
+  normal: { width: 1, height: 1, bore: 1 },
+  narrow: { width: 0.82, height: 0.61, bore: 0.72 },
+  halls: { width: 1.12, height: 1.43, bore: 1.12 },
+  caverns: { width: 1.12, height: 1.53, bore: 1.12 },
+  shafts: { width: 0.88, height: 1.17, bore: 0.9 },
+  chasms: { width: 0.86, height: 1.26, bore: 0.88 },
+  rooms: { width: 1.05, height: 1.12, bore: 0.94 },
+  volcanic: { width: 1.22, height: 1.8, bore: 1.15 }
 };
 
 function caveProfile(column) {
-  const key = ((column.terrainBiome || column.biome).cave) || (column.climate && column.climate.cave) || 'normal';
+  const key = (column.terrainBiome || column.biome).cave || column.climate?.cave || 'normal';
   return CAVE_PROFILES[key] || CAVE_PROFILES.normal;
 }
 
-// --- the tunnel network ------------------------------------------------------------
-// Noise alone makes pockets, not caves. Measured over three seeds, only 1% to 11% of the
-// open space underground could be reached from the sky without mining, in 300 to 460
-// separate sealed voids: the world was full of caverns nobody could ever walk into.
-//
-// The fix is a skeleton that is connected by construction rather than by luck. Long
-// horizontal galleries run at intervals of depth, each a sine-free wandering line that
-// continues forever in x. Vertical shafts wander down across many of those depths. A
-// shaft crosses every gallery it passes, so the two families form one network, and the
-// shafts that start at depth zero are its doors.
-//
-// Both are pure functions of (x, y), so like the sky islands they cannot disagree at a
-// chunk seam and need no stamping margin.
-// Leave more rock between the galleries while retaining the shafts that link them.
-const GALLERY_SPACING = 74;
-// Measured, not guessed. At 108 apart with 62% of them breaking the surface there was
-// one cave mouth every 160 to 267 tiles - two or three screens of walking between doors,
-// each only a few tiles wide and easily hidden behind a tree. Connectivity was already
-// 95%, but a cave you never find is a cave that is not there.
-const SHAFT_SPACING = 50;
+const CAVE_WIDTH = 112;
+const CAVE_DEPTH = 128;
+const LONG_CAVE_WIDTH = 480;
+const caveCache = new Array(2048);
+const longCaveCache = new Array(128);
 
-// A horizontal gallery near this depth, if any.
-function inGallery(seed, x, depth, bore) {
-  const band = Math.round(depth / GALLERY_SPACING);
-  for (let b = band - 1; b <= band + 1; b += 1) {
-    if (b < 1) continue;
-    const base = b * GALLERY_SPACING + (unit(seed, b, 0, 5201) - 0.5) * 38;
-    const wander = (fbm1(seed, x * 0.0042 + b * 37, 5203, 3, 2, 0.5) - 0.5) * 52;
-    const shape = fbm1(seed, x * 0.021 + b * 11, 5209, 2, 2, 0.5);
-    // Swell narrow corridors into chambers without severing their centerlines.
-    const chamber = Math.max(0, shape - 0.68) ** 2 * 42;
-    const radius = (2.35 + unit(seed, b, 0, 5207) * 3.15
-      + (shape - 0.5) * 3 + chamber) * bore;
-    if (Math.abs(depth - (base + wander + (shape - 0.5) * 7)) < radius) return true;
+function localCave(seed, cell, row) {
+  const index = (Math.imul(cell, 139) + row * 23) & 2047;
+  const saved = caveCache[index];
+  if (saved?.seed === seed && saved.cell === cell && saved.row === row) return saved.cave;
+  const random = salt => unit(seed, cell, row, salt);
+  let cave = null;
+  const origin = cell * CAVE_WIDTH;
+  const x1 = origin + 25 + Math.floor(random(5203) * 10);
+  const surface = surfaceHeight(seed, origin + 25 + Math.floor(unit(seed, cell, 0, 5203) * 10));
+  const top = surface + row * CAVE_DEPTH;
+  const volcanic = altitudeOf(top + 55) >= 1750 && altitudeOf(top + 55) < 2170;
+  if (row === 0 || random(5201) < (volcanic ? 0.95 : 0.77)) {
+    const x2 = origin + 72 + Math.floor(random(5207) * 12);
+    const profile = volcanic ? CAVE_PROFILES.volcanic : caveProfile(columnOf(seed, origin + CAVE_WIDTH / 2));
+    const entrance = row === 0 && surface < SEA_LEVEL - 5 && (cell === 0 || random(5209) < 0.52);
+    const styleRoll = random(5211);
+    const style = row === 0 || altitudeOf(top + 55) >= 1250 ? 'rock' : styleRoll < 0.13 ? 'marble'
+      : styleRoll < 0.26 ? 'granite' : styleRoll < 0.39 ? 'aquifer'
+        : styleRoll < 0.48 ? 'rail' : 'rock';
+    const y1 = top + (entrance ? 43 : 48) + Math.floor(random(5213) * 14);
+    const y2 = style === 'rail' ? y1 : y1 + Math.floor(random(5217) * 31) - 12;
+    cave = {
+      x1, x2, y1, y2, entrance, surface, style, phase: random(5219) * 6.28,
+      rx1: (13 + random(5221) * 6) * profile.width,
+      rx2: (12 + random(5223) * 8) * profile.width,
+      ry1: (7 + random(5227) * 5) * profile.height,
+      ry2: (8 + random(5229) * 5) * profile.height,
+      bore: (1.9 + random(5231) * 1.2) * profile.bore,
+      waterline: Math.min(y1, y2) + 3
+    };
   }
-  return false;
+  caveCache[index] = { seed, cell, row, cave };
+  return cave;
 }
 
-// A vertical shaft near this column, if any. Shafts whose top is depth 0 break the
-// surface, and those are what make the cave system findable without a pickaxe.
-function inShaft(seed, x, depth, bore) {
-  const slot = Math.round(x / SHAFT_SPACING);
-  for (let s = slot - 1; s <= slot + 1; s += 1) {
-    if (unit(seed, s, 0, 5301) > 0.82) continue;
-    // Most shafts break the surface. The cave system was already one connected mass in
-    // every seed measured - up to 120,000 tiles of it - but with doors every 480 tiles
-    // on average, two of three sample windows contained none at all, and a cave with no
-    // door is indistinguishable from no cave.
-    const top = unit(seed, s, 0, 5313) < 0.72 ? -3 : 30 + unit(seed, s, 0, 5317) * 180;
-    const bottom = 510 + unit(seed, s, 0, 5319) * 730;
-    if (depth < top || depth > bottom) continue;
-    const base = s * SHAFT_SPACING + (unit(seed, s, 0, 5303) - 0.5) * SHAFT_SPACING * 0.72;
-    const wander = (fbm1(seed, depth * 0.0062 + s * 23, 5307, 3, 2, 0.5) - 0.5) * 76;
-    const shape = fbm1(seed, depth * 0.03 + s * 5, 5323, 2, 2, 0.5);
-    const radius = (2.1 + unit(seed, s, 0, 5311) * 2.8
-      + (shape - 0.5) * 1.8 + Math.max(0, shape - 0.65) * 5) * bore;
-    // The mouth flares, so an entrance reads as an entrance rather than as a drilled hole.
-    // A funnel, not a flare. Widening the mouth made each entrance fifteen tiles across
-    // and the surface measured 21.9% open holes - a sieve rather than a landscape - so
-    // the shaft now pinches at the top and opens out below. That gives many more
-    // entrances for the same amount of missing ground, and a narrow opening leading
-    // into a widening throat reads far more like a cave than a crater does.
-    const throat = top < 0 && depth < 14 ? 0.4 + depth * 0.043 : 1;
-    if (Math.abs(x - (base + wander)) < radius * throat) return true;
+function longCaveLayout(seed, district) {
+  const index = district & 127;
+  const saved = longCaveCache[index];
+  if (saved?.seed === seed && saved.district === district) return saved.cave;
+  let cave = null;
+  if (unit(seed, district, 0, 5281) < 0.64) {
+    const left = district * LONG_CAVE_WIDTH + 40 + Math.floor(unit(seed, district, 0, 5283) * 40);
+    cave = { left, right: left + 238 + Math.floor(unit(seed, district, 0, 5287) * 88),
+      y: SEA_LEVEL + 96 + Math.floor(unit(seed, district, 0, 5289) * 218),
+      phase: unit(seed, district, 0, 5291) * 6.28, rail: unit(seed, district, 0, 5293) < 0.42 };
   }
-  return false;
+  longCaveCache[index] = { seed, district, cave };
+  return cave;
+}
+
+function longCaveAt(seed, x, y) {
+  if (y < SEA_LEVEL + 62 || y > SEA_LEVEL + 349) return null;
+  const cave = longCaveLayout(seed, Math.floor(x / LONG_CAVE_WIDTH));
+  if (!cave || x < cave.left || x > cave.right || Math.abs(y - cave.y) > 32) return null;
+  const offset = x - cave.left;
+  const centre = cave.y + Math.sin(offset / 31 + cave.phase) * 12 + Math.sin(offset / 11) * 3.2;
+  const taper = Math.min(1, (x - cave.left + 1) / 10, (cave.right - x + 1) / 10);
+  const radius = (3.2 + 8 * Math.max(0, Math.sin(offset / 22 + cave.phase)) ** 4) * taper;
+  return { centre, radius, rail: cave.rail && taper === 1 };
+}
+
+function caveAt(seed, x, y, depth, column) {
+  if (depth < 0) return null;
+  const cell = Math.floor(x / CAVE_WIDTH);
+  const reference = localCave(seed, cell, 0);
+  const row = Math.floor((y - reference.surface) / CAVE_DEPTH);
+  const cave = localCave(seed, cell, Math.max(0, row));
+  if (!cave) return null;
+  if (cave.entrance && y <= cave.y1 && y >= cave.surface - 7) {
+    const t = Math.max(0, (y - cave.surface) / (cave.y1 - cave.surface));
+    const bend = Math.sin(t * Math.PI) * (6 + Math.sin(cave.phase) * 5);
+    if (Math.abs(x - cave.x1 - bend) < 1.1 + t * cave.bore) return cave;
+  }
+  if (depth < 10 || x < cave.x1 - cave.rx1 * 1.1 || x > cave.x2 + cave.rx2 * 1.1
+    || y < Math.min(cave.y1 - cave.ry1 * 1.1, cave.y2 - cave.ry2 * 1.1)
+    || y > Math.max(cave.y1 + cave.ry1 * 1.1, cave.y2 + cave.ry2 * 1.1)) return null;
+  const ragged = 1 + 0.10 * Math.sin(x * 0.33 + y * 0.14 + cave.phase)
+    + 0.06 * Math.sin(y * 0.53 - x * 0.15);
+  const inRoom = (cx, cy, rx, ry) => Math.abs(x - cx) <= rx * 1.1 && Math.abs(y - cy) <= ry * 1.1
+    && ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < ragged;
+  if (inRoom(cave.x1, cave.y1, cave.rx1, cave.ry1) || inRoom(cave.x2, cave.y2, cave.rx2, cave.ry2)) return cave;
+  if (x < cave.x1 || x > cave.x2) return null;
+  const t = (x - cave.x1) / (cave.x2 - cave.x1);
+  const tunnel = cave.y1 + (cave.y2 - cave.y1) * t
+    + (cave.style === 'rail' ? 0 : Math.sin(t * Math.PI * 2) * 6);
+  return Math.abs(y - tunnel) < cave.bore * (0.9 + 0.25 * Math.sin(t * Math.PI)) ? cave : null;
+}
+
+function caveRockAt(seed, x, y) {
+  if (altitudeOf(y) >= 1250) return null;
+  const cell = Math.floor(x / CAVE_WIDTH);
+  const row = Math.floor((y - localCave(seed, cell, 0).surface) / CAVE_DEPTH);
+  if (row < 1) return null;
+  const cave = localCave(seed, cell, row);
+  if (!cave || (cave.style !== 'marble' && cave.style !== 'granite')) return null;
+  if (x < cave.x1 - cave.rx1 - 5 || x > cave.x2 + cave.rx2 + 5
+    || y < Math.min(cave.y1 - cave.ry1, cave.y2 - cave.ry2) - 5
+    || y > Math.max(cave.y1 + cave.ry1, cave.y2 + cave.ry2) + 5) return null;
+  return cave.style;
+}
+
+function railCaveTile(seed, x, y, column) {
+  if (column.biome.drowned || y < column.height + 18 || altitudeOf(y) >= 1250) return null;
+  const long = longCaveAt(seed, x, y);
+  if (long?.rail) {
+    const track = Math.round(long.centre) + 2;
+    if (y === track) return idOf('minecart-rail');
+    if (y === track + 1) return idOf('stone');
+  }
+  const cell = Math.floor(x / CAVE_WIDTH);
+  const row = Math.floor((y - localCave(seed, cell, 0).surface) / CAVE_DEPTH);
+  const cave = row > 0 ? localCave(seed, cell, row) : null;
+  if (cave?.style === 'rail' && x >= cave.x1 - 6 && x <= cave.x2 + 6) {
+    if (y === cave.y1 + 1) return idOf('minecart-rail');
+    if (y === cave.y1 + 2) return idOf('stone');
+  }
+  return null;
 }
 
 // Whether an open tile underground is full of water. Under the sea, everything open and
@@ -580,53 +639,19 @@ function inShaft(seed, x, depth, bore) {
 // 89,309 dry air tiles below sea level under the ocean in one sampled stretch, and the
 // cave shafts then punched 5% of sea beds open into them. That is the ocean full of air
 // pockets. The cut-off now is hell, where lava takes over instead.
-function submergedVoid(seed, x, y, column) {
+function submergedVoid(seed, x, y, column, local = undefined) {
   if (y < SEA_LEVEL) return false;
   if (column.biome.drowned && altitudeOf(y) < 1250) return true;
+  const cave = local === undefined ? caveAt(seed, x, y, y - column.height, column) : local;
+  if (cave?.style === 'aquifer' && altitudeOf(y) < 1250 && y >= cave.waterline) return true;
   const flood = floodFloor(seed, x, column);
   return flood > 0 && y <= flood;
 }
 
-// The network takes its width from the biome's own cave profile, so a desert gallery is
-// a broad hall and a tundra one is a crawl. Without that the uniform network washed the
-// biome character straight out of the undergrounds it was meant to connect.
-function inNetwork(seed, x, depth, column) {
-  const bore = column ? caveProfile(column).bore || 1 : 1;
-  return inGallery(seed, x, depth, bore) || inShaft(seed, x, depth, bore);
-}
-
-// Whether this tile is open space rather than rock. One predicate, exported, so the
-// generator and the tests cannot drift apart about what counts as a cave - the same
-// mistake the stamping rule made once already, where a second copy in the seam test made
-// the oracle agree with itself and not with the game.
-//
-// The network carves from the very first tile down. Gating it behind `depth > 2`, as the
-// noise caves are, capped every surface shaft with two tiles of soil: the doors were all
-// generated and then all sealed, and measured reachability stayed near zero in half the
-// seeds for that one reason.
-function isCarved(seed, x, y, depth, column) {
-  if (depth >= 0 && inNetwork(seed, x, depth, column)) return true;
-  return depth > 4 && caveDensity(seed, x, y, depth, column) > caveThreshold(column);
-}
-
-function caveDensity(seed, x, y, depth, column) {
-  const p = column ? caveProfile(column) : CAVE_PROFILES.normal;
-  const tunnels = ridged2(seed, x * p.scale, y * p.scale, 601, 4);
-  const rooms = fbm2(seed, x * p.roomScale, y * (p.roomScale * 1.35), 727, 3, 2, 0.5);
-  const squeeze = Math.min(1, depth / 90);
-  let d = tunnels * (1 - p.rooms) + rooms * p.rooms * squeeze;
-  // A positive vertical term rewards columns that line up, which reads as a shaft; a
-  // negative one rewards rows, which reads as a flat-roofed hall.
-  if (p.vertical !== 0) {
-    const grain = ridged2(seed, x * p.scale * 2.6, y * p.scale * 0.34, 883, 3);
-    d += (grain - 0.5) * p.vertical;
-  }
-  return d;
-}
-
-function caveThreshold(column) {
-  const profile = column ? caveProfile(column) : CAVE_PROFILES.normal;
-  return profile.threshold + (profile === CAVE_PROFILES.halls ? 0.035 : 0.055);
+function isCarved(seed, x, y, depth, column = columnOf(seed, x)) {
+  const long = depth > 20 ? longCaveAt(seed, x, y) : null;
+  if (long && Math.abs(y - long.centre) < long.radius) return true;
+  return !!caveAt(seed, x, y, depth, column);
 }
 
 // How far down standing water reaches. Beneath an ocean the sea soaks into the rock, so
@@ -737,7 +762,7 @@ function structureAt(seed, slot, legacy = false) {
 // A structure's absolute vertical position. Separate from structureAt so the shape can be
 // decided without a column lookup, which keeps the slot scan cheap.
 function structureRect(seed, body) {
-  const top = columnOf(seed, body.ax).height + Math.round(body.depth);
+  const top = columnOf(seed, body.ax).legacyHeight + Math.round(body.depth);
   return { x0: body.ax - (body.w >> 1), x1: body.ax - (body.w >> 1) + body.w,
     y0: top, y1: top + body.h, kind: body.kind, slot: body.slot, w: body.w, h: body.h };
 }
@@ -771,7 +796,7 @@ function computeStructureChest(seed, slot, legacy = false) {
   if (unit(seed, slot, 0, 7501) > odds) return null;
   const x = r.kind === 'cistern' ? r.x0 + 1 : r.x0 + 2 + Math.floor(unit(seed, slot, 0, 7503) * Math.max(1, r.w - 5));
   const y = r.y1 - 3;                                  // standing on the floor
-  const depth = y - columnOf(seed, r.body.ax).height;
+  const depth = y - columnOf(seed, r.body.ax).legacyHeight;
   let band = unit(seed, slot, 0, 7507) < 0.06 ? 'rich' : null;
   if (!band) band = depth > 760 ? 'rich' : depth > 320 ? 'deep' : 'caves';
   const kind = band === 'rich' ? 'goldchest' : band === 'deep' ? 'ironchest' : 'woodchest';
@@ -956,7 +981,7 @@ const cachedOssuary = cacheStructure(seed => {
   for (const direction of [side, -side]) {
     for (let distance = 840; distance < 2200; distance += 64) {
       const x = distance * direction;
-      const y = surfaceHeight(seed, x);
+      const y = columnOf(seed, x).legacyHeight;
       if (y >= SEA_LEVEL - 8) continue;
       const slot = Math.floor(x / STRUCTURE_SPACING);
       const overlaps = [slot - 1, slot, slot + 1].some(s => {
@@ -1210,9 +1235,9 @@ function structureWallAt(seed, x, y) {
 // hash is tested first and the geometry - which needs six isCarved calls for a two-by-two
 // object - only runs for the few thousandths of cells that pass it.
 
-const CRYSTAL_ODDS = 0.00068;       // per candidate origin, below the crystal's depth
+const CRYSTAL_ODDS = 0.0042;       // per candidate origin, below the crystal's depth
 const CRYSTAL_MIN_DEPTH = 120;
-const POT_ODDS = 0.0075;
+const POT_ODDS = 0.014;
 
 // Does a two-by-two object fit with its origin here: four open cells with solid ground
 // under both columns?
@@ -1222,7 +1247,7 @@ function standsOn(seed, ox, oy, w, h) {
       const col = columnOf(seed, ox + dx);
       const d = oy + dy - col.height;
       if (d <= 4) return false;
-      if (!isCarved(seed, ox + dx, oy + dy, d, col)) return false;
+      if (!isCarved(seed, ox + dx, oy + dy, d, col) || railCaveTile(seed, ox + dx, oy + dy, col) !== null) return false;
       if (submergedVoid(seed, ox + dx, oy + dy, col)) return false;
       if (lavaFloor(seed, ox + dx, oy + dy)) return false;
     }
@@ -1411,15 +1436,18 @@ function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
   const depth = y - surface;
   const biome = column.biome;
 
-  // The network is cut first and unconditionally: it is the thing that makes the noise
-  // caves reachable, so it must not be subject to the same noise that sealed them.
-  if (isCarved(seed, x, y, depth, column)) {
+  // Abandoned rails and their ballast take precedence over natural cave floors.
+  const rail = railCaveTile(seed, x, y, column);
+  if (rail !== null) return rail;
+  const local = caveAt(seed, x, y, depth, column);
+  const long = !local && depth > 20 ? longCaveAt(seed, x, y) : null;
+  if (local || (long && Math.abs(y - long.centre) < long.radius)) {
     const glow = fbm2(seed, x * 0.09, y * 0.09, 1901, 2, 2, 0.5);
     if (depth > 120 && glow > 0.895) return idOf('crystal');
     // A cave below the water table is not a cave, it is a flooded one. Everything above
     // sea level stays dry, so a cavern that breaches the surface drains rather than
     // holding an impossible column of water.
-    if (submergedVoid(seed, x, y, column)) return idOf('water');
+    if (submergedVoid(seed, x, y, column, local)) return idOf('water');
     // Hell's caverns hold lava in their floors rather than water in their ceilings.
     const lava = lavaFloor(seed, x, y);
     if (lava) return idOf('lava');
@@ -1427,6 +1455,9 @@ function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
     if (prize !== null) return prize;
     const pot = potTileAt(seed, x, y, depth, column);
     if (pot !== null) return pot;
+    if (local && (local.style === 'marble' || local.style === 'granite')
+      && altitudeOf(y) < 1250 && unit(seed, x, y, 5329) > 0.94
+      && !caveAt(seed, x, y + 1, depth + 1, column)) return idOf('cave-spire');
     return AIR;
   }
 
@@ -1450,6 +1481,8 @@ function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
 
   const ore = oreAt(seed, x, y, depth);
   if (ore) return idOf(ore);
+  const caveRock = caveRockAt(seed, x, y);
+  if (caveRock) return idOf(caveRock);
   if (layer === 'stone') {
     // Each biome stains its own stone layer with its own rock, mixed by a noise field so
     // the boundary is a gradient of veins rather than a line.
@@ -1518,7 +1551,7 @@ function lavaFloor(seed, x, y) {
   // caves measured 0% walkable: every cavity below the table filled, and the layer was
   // pure hazard with nowhere to stand.
   const pocket = fbm2(seed, x * 0.013, y * 0.013, 3517, 2, 2, 0.5);
-  return pocket < 0.6;
+  return pocket < 0.56;
 }
 
 // Hell's great hollow, and what lies below it. This is not a shaft: it is the open hall
@@ -2042,14 +2075,14 @@ const EXPORTS_worldgen = {
     archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
-    CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
-    inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
+    CAVE_PROFILES, caveProfile, localCave, longCaveLayout, longCaveAt, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
+    isCarved,
     STRUCTURE_SPACING, BIOME_SITE_SPACING, biomeSitesForSlot: biomeSite, structureAt, structureRect, structurePlaced: computeStructurePlaced, structureTileAt, structureWallAt,
     crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD,
     bloodMoonAt, BLOOD_MOON_ODDS, BLOOD_MOON_GRACE, meteorSite, METEOR_MIN, METEOR_MAX, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
     structureChest: computeStructureChest, chestTileAt, baseContainerAt,
     isLiquidId, isSolidId, baseLevelAt, get WATER_ID() { return idOf('water'); },
-    biomeAt, biomeIndex, heightBias, surfaceHeight, caveDensity, stratum, oreAt,
+    biomeAt, biomeIndex, heightBias, surfaceHeight, stratum, oreAt,
     baseTileAt, baseWallAt, treeAt, stampTree, decorate, generateChunk
   };
 
