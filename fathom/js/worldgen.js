@@ -668,6 +668,15 @@ function caveAt(seed, x, y, depth, column) {
   return Math.abs(y - tunnel) < cave.bore * (0.9 + 0.25 * Math.sin(t * Math.PI)) ? cave : null;
 }
 
+function caveSoundscape(seed, x, y) {
+  const column = columnOf(seed, x);
+  const depth = y - column.height;
+  const local = caveAt(seed, x, y, depth, column);
+  if (local && local.style !== 'rock') return local.style;
+  const extended = depth > 20 ? longCaveAt(seed, x, y) : null;
+  return extended?.rail && Math.abs(y - extended.centre) <= extended.radius + 2 ? 'rail' : null;
+}
+
 function caveRockAt(seed, x, y) {
   if (altitudeOf(y) >= 1250) return null;
   const cell = Math.floor(x / CAVE_WIDTH);
@@ -2283,7 +2292,7 @@ const EXPORTS_worldgen = {
     siegeLayout, siegeAt, SIEGE_PADS, astralTileAt, runawayMineLayout, runawayMineAt, RUNAWAY_BRIDGE_GAPS, archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
-    CAVE_PROFILES, caveProfile, localCave, longCaveLayout, longCaveAt, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
+    CAVE_PROFILES, caveProfile, caveSoundscape, localCave, longCaveLayout, longCaveAt, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     isCarved,
     STRUCTURE_SPACING, BIOME_SITE_SPACING, biomeSitesForSlot: biomeSite, structureAt, structureRect, structurePlaced: computeStructurePlaced, structureTileAt, structureWallAt,
     crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD,

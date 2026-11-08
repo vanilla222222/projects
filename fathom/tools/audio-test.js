@@ -163,9 +163,31 @@ ok(audio.AMBIENCE.caves.cutoff < audio.AMBIENCE.sky.cutoff,
     const night = audio.scoreFor('surface', true, { biome });
     ok(signature(day) !== signature(night) && night.beat > day.beat, biome + ' lacks a separate night arrangement');
   }
+  const depths = [];
+  for (const layer of ['caves', 'deep']) {
+    for (const biome of Object.keys(audio.BIOME_SCORES)) {
+      const score = audio.scoreFor(layer, false, { biome });
+      ok(score === audio.scoreFor(layer, true, { biome }), score.id + ' changed with time of day');
+      ok(signature(score) !== signature(audio.BIOME_SCORES[biome]), score.id + ' copies the surface');
+      depths.push(score);
+    }
+    for (const geology of ['marble', 'granite', 'aquifer', 'rail']) {
+      const score = audio.scoreFor(layer, false, { biome: 'forest', geology });
+      ok(score.id === layer + ':rock:' + geology, geology + ' did not override the local cave score');
+      depths.push(score);
+    }
+  }
+  for (const layer of ['sky', 'space', 'hell', 'hellcaves', 'trench', 'void']) {
+    const score = audio.scoreFor(layer, true, { biome: 'forest' });
+    ok(score.id === 'realm:' + layer, layer + ' still uses its old ambient melody');
+    depths.push(score);
+  }
+  ok(new Set(depths.map(signature)).size === depths.length, 'two underground or realm tracks share an arrangement');
   const special = audio.scoreFor('caves', false, { boss: 'railbreaker', dungeon: 'Runaway Mine', event: 'bloodmoon' });
   ok(special.id === 'boss:railbreaker', 'a local score overrode the boss theme');
-  for (const score of [...bossThemes, ...dungeonThemes, ...Object.values(audio.BIOME_SCORES)]) {
+  ok(audio.scoreFor('caves', true, { dungeon: 'Runaway Mine', event: 'bloodmoon' }).id === 'dungeon:Runaway Mine',
+    'a surface blood moon overrode a dungeon score');
+  for (const score of [...bossThemes, ...dungeonThemes, ...Object.values(audio.BIOME_SCORES), ...depths]) {
     const notes = Array.from({ length: 32 }, (_, i) => audio.scoreNoteAt(score, i));
     const scale = new Set(audio.SCALES[score.scale]);
     ok(notes.every(note => note === null || scale.has((note - score.root) % 12)), score.id + ' left its scale');

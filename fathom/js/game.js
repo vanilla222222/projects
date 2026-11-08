@@ -145,7 +145,8 @@ function makeGame(canvas, deps) {
   function sampleAudioScene() {
     const x = Math.floor(state.player.x);
     const y = Math.floor(state.player.y);
-    const layer = worldgen.layerAt(y).key;
+    const naturalLayer = worldgen.layerAt(y).key;
+    const layer = naturalLayer === 'surface' && y > worldgen.surfaceHeight(seed, x) + 14 ? 'caves' : naturalLayer;
     const biome = world.biomeAt(x, y).key;
     const ossuary = worldgen.dungeonAt(seed, x, y);
     const site = worldgen.biomeSiteAt(seed, x, y);
@@ -157,7 +158,8 @@ function makeGame(canvas, deps) {
     else if (worldgen.archiveAt(seed, x, y)) dungeon = 'Tidal Archive';
     else if (worldgen.runawayMineAt(seed, x, y)) dungeon = 'Runaway Mine';
     else if (worldgen.siegeAt(seed, x, y)) dungeon = 'Astral Siege';
-    return { layer, biome, dungeon, boss: swarm?.bossAlive()?.key, event: eventKey(),
+    const geology = layer === 'caves' || layer === 'deep' ? worldgen.caveSoundscape(seed, x, y) : null;
+    return { layer, biome, dungeon, geology, boss: swarm?.bossAlive()?.key, event: eventKey(),
       night: state.dayPhase > 0.27 && state.dayPhase < 0.73, rain: state.weather?.rain > 0.35,
       submerged: state.player.submerged };
   }
@@ -2607,7 +2609,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=appearance-score-1');
+      const worker = new Worker('workers/chunk.js?v=depth-scores-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
