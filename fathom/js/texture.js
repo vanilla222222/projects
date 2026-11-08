@@ -1058,7 +1058,7 @@ function paintWorkshopFixture(ctx, spec, ox, oy) {
   for (const [y, row] of pixels.entries()) {
     for (let x = 0; x < row.length; x += 1) {
       const colour = spec.powered && row[x] === '4' ? '#aef6ff' : palette[row[x]];
-      if (!colour || (spec.powered && spec.circuit === 'actuator' && row[x] === '2')) continue;
+      if (!colour || (spec.powered && spec.fixture === 'actuator-block' && row[x] === '2')) continue;
       ctx.fillStyle = colour;
       ctx.fillRect(ox + x * 2, oy + y * 2, 2, 2);
     }

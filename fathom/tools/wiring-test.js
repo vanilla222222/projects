@@ -134,4 +134,63 @@ function testWorld() {
   assert.equal(swarm.list[0].practice, true);
 }
 
+{
+  const world = testWorld();
+  const circuit = wiring.makeWiring(world, tiles);
+  for (const channel of ['blue', 'green', 'copper']) circuit.add(0, 0, channel);
+  circuit.add(-1, 0, 'blue');
+  circuit.add(1, 0, 'green');
+  circuit.add(0, 1);
+  circuit.add(0, -1, 'blue');
+  world.set(0, 0, tiles.idOf('and-relay'));
+  world.set(0, 1, tiles.idOf('wire-lamp'));
+  world.set(0, -1, tiles.idOf('wire-lamp'));
+  circuit.pulse(-1, 0, 0, 'blue');
+  assert.equal(tiles.tile(world.get(0, 1)).emit, 0);
+  assert.equal(tiles.tile(world.get(0, -1)).emit, 11);
+  const loaded = wiring.makeWiring(world, tiles);
+  loaded.restore(JSON.parse(JSON.stringify(circuit.serialize())));
+  loaded.pulse(1, 0, 0, 'green');
+  assert.equal(tiles.tile(world.get(0, 1)).emit, 11);
+  assert.equal(tiles.tile(world.get(0, -1)).emit, 11);
+  loaded.pulse(1, 0, 0, 'green');
+  assert.equal(tiles.tile(world.get(0, 1)).emit, 11);
+  world.set(0, 0, tiles.idOf('or-relay'));
+  loaded.pulse(1, 0, 0, 'green');
+  assert.equal(tiles.tile(world.get(0, 1)).emit, 0);
+}
+
+{
+  const world = chunks.makeWorld(20260105, worldgen);
+  world.enableHardmode();
+  const { x, y } = worldgen.dungeonLayout(world.seed);
+  assert.equal(tiles.tile(world.get(x, y + 58)).circuit, 'lower-seal');
+  assert.equal(tiles.tile(world.get(x + 7, y + 73)).circuit, 'relay-gate');
+  assert.equal(tiles.tile(world.get(x + 14, y + 74)).circuit, 'drain-gate');
+  assert.equal(world.getLevel(x + 18, y + 72), world.LEVEL_FULL);
+  assert.equal(world.getLevel(x + 21, y + 72), 0);
+  assert.equal(tiles.tile(world.get(x + 14, y + 75)).climb, true);
+  const circuit = wiring.makeWiring(world, tiles, {
+    puzzle: (point, type) => {
+      assert.equal(type, 'drain-gate');
+      assert.equal(world.getLevel(x + 18, y + 72), 0, 'gate pulses after pumps');
+      world.set(point.x, point.y, tiles.idOf('rope'));
+    }
+  });
+  for (let dx = 11; dx <= 21; dx += 1) circuit.add(x + dx, y + 73);
+  circuit.add(x + 14, y + 74);
+  assert.equal(circuit.pulse(x + 11, y + 73), 12);
+  assert.equal(world.getLevel(x + 21, y + 72), world.LEVEL_FULL);
+  assert.equal(tiles.tile(world.get(x + 14, y + 74)).climb, true);
+  for (const [index, dx] of worldgen.MECHANIST_CACHES.entries()) {
+    assert.equal(tiles.tile(world.get(x + dx, y + 98)).chest, 'mechanist-armory');
+    assert.equal(world.getContainer(x + dx, y + 98)[0].key, worldgen.MECHANIST_WEAPONS[index]);
+  }
+  const swarm = enemy.makeSwarm(world, tiles, { worldgen, dungeonOpen: () => true });
+  const boss = swarm.summon('ossuarymechanist', { x: x + 14, y: y + 98 },
+    { left: x - 23, right: x + 24, top: y + 78, bottom: y + 100 });
+  assert.equal(boss?.spec.key, 'ossuarymechanist');
+  assert.equal(swarm.contextAt(x, y + 94, 0.1).lowerOssuary, true);
+}
+
 console.log('Wiring checks passed across propagation, pumps, timers, cooldowns, persistence and the Ossuary');

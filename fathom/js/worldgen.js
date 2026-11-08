@@ -968,11 +968,11 @@ const cachedOssuary = cacheStructure(seed => {
 function dungeonLayout(seed) { return cachedOssuary(seed, 0); }
 
 function dungeonAt(seed, x, y) {
-  if (Math.abs(x) < 816 || Math.abs(x) > 2224 || y > SEA_LEVEL + 58) return null;
+  if (Math.abs(x) < 816 || Math.abs(x) > 2224 || y > SEA_LEVEL + 100) return null;
   const site = dungeonLayout(seed);
   if (!site) return null;
   const dy = y - site.y;
-  return dy >= -8 && dy <= 58 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
+  return dy >= -8 && dy <= 100 && Math.abs(x - site.x) <= (dy < 0 ? 12 : 24) ? site : null;
 }
 
 function dungeonTile(site, x, y) {
@@ -984,7 +984,8 @@ function dungeonTile(site, x, y) {
     return dy === -8 || (Math.abs(dx) === 12 && dy < -3) ? brick : AIR;
   }
   if (dy === 0) return Math.abs(dx) <= 2 ? idOf('dungeon-gate') : brick;
-  if (Math.abs(dx) === 24 || dy === 58) return brick;
+  if (dy >= 58) return lowerOssuaryTile(dx, dy);
+  if (Math.abs(dx) === 24) return brick;
   if (OSSUARY_FLOORS.includes(dy) && Math.abs(dx) > 2) return brick;
   if (dy > 0 && dy < 18) {
     if (dx === 14) return dy < 14 ? brick : idOf('ossuary-circuit-gate');
@@ -1004,9 +1005,51 @@ function dungeonTile(site, x, y) {
   return AIR;
 }
 
+// The first sealed expansion ends at the arena floor. Future wings can attach below.
+const MECHANIST_CACHES = [-19, -1, 17];
+const MECHANIST_WEAPONS = ['relay-cleaver', 'coil-carbine', 'lattice-scepter'];
+
+function lowerOssuaryTile(dx, dy) {
+  const bulkhead = idOf('ossuary-bulkhead');
+  if (Math.abs(dx) === 24 || dy === 100) return bulkhead;
+  if (dy === 58) return Math.abs(dx) <= 2 ? idOf('lower-ossuary-seal') : bulkhead;
+
+  if (dy < 74) {
+    if (dx === 0) return idOf('rope');
+    if (dx === 7) return dy >= 69 ? idOf('ossuary-relay-gate') : bulkhead;
+    if (dx === 2 && dy === 73) return idOf('pressure-plate');
+    if (dx === 6 && dy === 72) return idOf('ossuary-dart');
+    if (dx === 4 && dy === 73) return idOf('wire-switch');
+    if (dx === 9 && dy === 73) return idOf('wire-lamp');
+    if (dx === 11 && dy === 73) return idOf('wire-switch');
+    if (dx === 18 && dy === 73) return idOf('ossuary-reservoir-inlet');
+    if (dx === 21 && dy === 73) return idOf('ossuary-reservoir-outlet');
+    if (dy === 71 && (dx === 18 || dx === 21)) return bulkhead;
+    if (dy === 72 && dx === 18) return idOf('water');
+    if (dy === 72 && [17, 19, 20, 22].includes(dx)) return bulkhead;
+    if (dy === 73 && [17, 19, 20, 22].includes(dx)) return bulkhead;
+    return AIR;
+  }
+  if (dy === 74) return dx >= 13 && dx <= 15 ? idOf('ossuary-drain-gate') : bulkhead;
+  if (dx === 14) return idOf('rope');
+  if (dy === 98 && (dx === -13 || dx === 13)) return idOf('ossuary-dart');
+  if (dy >= 94 && Math.abs(dx) === 7) return idOf('ossuary-shutter-open');
+  if (dy === 97 && dx === 3) return idOf('wire-lamp');
+  if (dy >= 98) {
+    for (const cx of MECHANIST_CACHES) {
+      if (dx === cx || dx === cx + 1) return cellOf('mechanist-armory', dx - cx, dy - 98).id;
+    }
+  }
+  return AIR;
+}
+
 function baseContainerAt(seed, x, y) {
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) {
+    const armory = MECHANIST_CACHES.indexOf(x - dungeon.x);
+    if (y === dungeon.y + 98 && armory >= 0) {
+      return [{ key: MECHANIST_WEAPONS[armory], count: 1, kind: 'tool' }];
+    }
     if (x === dungeon.x + 21 && y === dungeon.y + 16) {
       return [['wire-spool', 36], ['wire-cutters', 1], ['wire-timer', 1], ['pressure-plate', 2],
         ['actuator-block', 4], ['dart-trap', 1], ['inlet-pump', 1], ['outlet-pump', 1]]
@@ -1810,7 +1853,7 @@ function baseLevelAt(seed, x, y) {
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
-  if (spec.solid || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
+  if (spec.solid || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
   return submergedVoid(seed, x, y, column) ? 255 : 0;
@@ -1892,7 +1935,7 @@ function generateChunk(seed, cx, cy) {
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
     CHUNK, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
-    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
+    LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, MECHANIST_CACHES, MECHANIST_WEAPONS, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,

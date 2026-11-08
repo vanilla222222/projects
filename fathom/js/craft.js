@@ -268,6 +268,10 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'mechanist-core': { name: 'Mechanist Core', kind: 'loot', colour: '#be99ec' },
+  'mechanist-key': { name: 'Mechanist Armory Key', kind: 'loot', colour: '#a4b8ef' },
+  'clockwork-heart': { name: 'Clockwork Heart', kind: 'use', colour: '#c185d4',
+    use: { summon: 'ossuarymechanist', lowerOssuary: true }, text: 'Use in the lower Ossuary arena' },
   'dungeon-key': { name: 'Gilded Ossuary Key', kind: 'loot', colour: '#dbbb6d' },
   'bone-toll': { name: 'Bone Clapper', kind: 'use', colour: '#d4ccb3',
     use: { summon: 'dungeonkeeper', night: true, dungeon: true }, text: 'Ring the Ossuary Bell at night' },
@@ -588,6 +592,10 @@ const WEAPONS = {
   'cobalt-bow': { name: 'Cobalt Bow', damage: 48, useTime: 0.23, reach: 44, ranged: true, ammo: 'arrow' },
   'vault-bow': { name: 'Vault Bow', damage: 78, useTime: 0.21, reach: 53, ranged: true, ammo: 'arrow' },
   'aether-sabre': { name: 'Aether Sabre', damage: 118, useTime: 0.20, reach: 4.4 },
+  'relay-cleaver': { name: 'Relay Cleaver', damage: 196, useTime: 0.28, reach: 4.6, cleave: true, colour: '#d694e0' },
+  'coil-carbine': { name: 'Coil Carbine', damage: 159, useTime: 0.23, reach: 64, ranged: true, ammo: 'bullet', pierce: true, colour: '#8ebbe7' },
+  'lattice-scepter': { name: 'Lattice Scepter', damage: 173, useTime: 0.28, reach: 48,
+    magic: true, mana: 17, spell: 'chain', bolt: '#aeb9ff' },
   'ossuary-sabre': { name: 'Graveglass Sabre', damage: 56, useTime: 0.23, reach: 3.7, colour: '#9fcde4' },
   'ossuary-bow': { name: 'Cryptstring Bow', damage: 43, useTime: 0.23, reach: 46, ranged: true, ammo: 'arrow', colour: '#91abbf' },
   'ossuary-staff': { name: 'Pale Lantern', damage: 52, useTime: 0.29, reach: 43, magic: true, mana: 8, bolt: '#a1d3e9' },
@@ -692,7 +700,8 @@ function describe(key, tilesModule) {
     else lines.push(weapon.reach + ' tiles of range');
     if (weapon.mana) lines.push(weapon.mana + ' mana a shot');
     if (weapon.ammo) lines.push('Fires the best ' + weapon.ammo + ' you carry');
-    if (weapon.spell === 'pierce') lines.push('Pierces up to three enemies');
+    if (weapon.spell === 'pierce' || weapon.pierce) lines.push('Pierces up to three enemies');
+    if (weapon.cleave) lines.push('Also hits enemies within three tiles of the target');
     if (weapon.spell === 'chain') lines.push('Arcs to up to two nearby enemies');
     if (weapon.spell === 'ward') lines.push('Casting grants +14 defence for four seconds');
     if (weapon.drop) lines.push('Only dropped, never made');
@@ -812,6 +821,8 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'clockwork-heart', kind: 'use', count: 1 },
+    need: [['palladium-bar', 3], ['wire-spool', 10], ['bone', 8]], station: 'heavy-workbench' },
   { out: { key: 'bone-toll', kind: 'use', count: 1 }, need: [['bone', 8], ['iron-bar', 3]], station: 'anvil' },
   // Torches are the one thing you must be able to make before anything else.
   { out: { key: 'torch', kind: 'block', count: 3 }, need: [['#wood', 1]], station: null },
@@ -1139,6 +1150,12 @@ for (const w of CRAFT_TILES.WOODS) {
 RECIPES.push(...CRAFT_TILES.WORKSHOP_PLANS);
 ITEMS['wire-spool'] = { name: 'Copper Wire', kind: 'loot', colour: '#d28d5d',
   text: 'Hold to see circuits. Use on a tile to lay one segment.' };
+for (const [key, name, colour, wireChannel] of [
+  ['blue-wire', 'Blue Wire', '#80c4ff', 'blue'], ['green-wire', 'Green Wire', '#7be4ae', 'green']
+]) {
+  ITEMS[key] = { name, colour, kind: 'loot', wireChannel, text: 'A separate circuit channel. Can cross other wires.' };
+  RECIPES.push({ out: { key, kind: 'loot', count: 12 }, need: [['wire-spool', 12]], station: 'signal-bench' });
+}
 ITEMS['wire-cutters'] = { name: 'Wire Cutters', kind: 'loot', colour: '#9cb5bf',
   text: 'Hold to see circuits. Use on a wire to remove and recover it.' };
 RECIPES.push(
@@ -1356,7 +1373,7 @@ const BOSS_CHAPTERS = [
   ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],
   ['voidsovereign'],
   ['riftarchon'],
-  ['prismsentinel']
+  ['prismsentinel', 'ossuarymechanist']
 ];
 
 const BOSS_PREREQUISITES = new Map();
