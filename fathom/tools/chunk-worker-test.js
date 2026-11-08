@@ -56,3 +56,10 @@ context.self.onmessage({ data: { seed, cx, cy } });
 assert.deepEqual(Array.from(result.tiles), Array.from(expected.tiles));
 
 console.log('Worker output, transfer buffers, saved edits and duplicate chunk checks passed');
+
+const underworld = require('../js/underworld').makeUnderworldGenerator(gen);
+const underCy = Math.floor(underworld.SEA_LEVEL / gen.CHUNK);
+context.self.onmessage({ data: { seed, cx, cy: underCy, dimension: 'underworld' } });
+const underChunk = underworld.generateChunk(gen.generationSeed(seed), cx, underCy);
+assert.deepEqual(Array.from(result.tiles), Array.from(underChunk.tiles));
+assert.deepEqual(Array.from(result.walls), Array.from(underChunk.walls));

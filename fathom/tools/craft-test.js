@@ -32,7 +32,7 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
   'dirt', 'clay', 'ice', 'basalt', 'slate', 'brick', 'mud', 'blight', 'flesh', 'sandstone',
   'saltcrust', 'ash', 'brimstone', 'cinderstone', 'skystone', 'starrock', 'voidstone', 'prismstone',
-  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...craft.dropOnly().map(drop => drop.key), ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...tiles.UNDERWORLD_BIOMES.flatMap(biome => [biome.key + '-stone', biome.key + '-wood']), ...craft.dropOnly().map(drop => drop.key), ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
@@ -107,7 +107,7 @@ for (const spec of tiles.TILES) {
 // A bench is makeable with nothing but one species' lumber, by hand, so a fresh world is
 // never a dead end. There is no single "workbench" recipe any more: every wood has one.
 const benches = craft.RECIPES.filter(r => tiles.BY_KEY[r.out.key]?.station === 'workbench');
-ok(benches.length === tiles.WOODS.length, 'not every wood species has a work bench');
+ok(benches.length === tiles.WOODS.length + tiles.UNDERWORLD_BIOMES.length, 'not every wood species has a work bench');
 for (const bench of benches) {
   ok(bench.station === null, bench.out.key + ' cannot be made by hand');
   ok(bench.need.every(([k]) => /wood$/.test(k)), bench.out.key + ' costs more than lumber');

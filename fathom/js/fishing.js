@@ -179,6 +179,12 @@ function suits(entry, ctx) {
 // one global scope in the browser, and two function declarations of the same name do not
 // throw - the later one silently wins. Naming it that made the enemy spawner draw from
 // the fishing table and crash reading an archetype off a bass.
+const FISH_UNDERWORLD_BIOMES = typeof require === 'function' ? require('./tiles.js').UNDERWORLD_BIOMES : UNDERWORLD_BIOMES;
+for (const biome of FISH_UNDERWORLD_BIOMES) {
+  CATCHES.push({ key: biome.fish.key, weight: 12, min: PUDDLE, liquid: biome.key === 'ember-bloom' ? 'lava' : 'water',
+    biomes: [biome.key] });
+}
+
 function catchesFor(ctx) {
   return CATCHES.filter(entry => suits(entry, ctx));
 }

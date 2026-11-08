@@ -108,6 +108,16 @@ function makeRenderer(canvas, deps) {
   }
 
   function drawSky(state) {
+    if (worldgen.realm === 'underworld') {
+      const biome = worldgen.biomeAt(state.world.seed, Math.floor(state.camera.x));
+      for (let band = 0; band < 12; band += 1) {
+        const y = Math.floor(canvas.height * band / 12);
+        const bottom = Math.floor(canvas.height * (band + 1) / 12);
+        ctx.fillStyle = mixHex(biome.stone, biome.accent, 0.07 + band * 0.028);
+        ctx.fillRect(0, y, canvas.width, bottom - y);
+      }
+      return;
+    }
     const [top, mid, low] = skyColours(state.dayPhase);
     const vacuum = spaceFactor(state);
     const bandCount = 12;
@@ -178,9 +188,10 @@ function makeRenderer(canvas, deps) {
       { depth: 15, scale: 0.012, amp: 54, base: 0.78, day: '#355b61', night: '#192637' }
     ];
     const night = Math.min(1, Math.max(0, -light.solarElevation(state.dayPhase) * 2.5));
+    const underground = worldgen.realm === 'underworld' ? worldgen.biomeAt(state.world.seed, Math.floor(state.camera.x)) : null;
     for (const layer of layers) {
       const originX = Math.round(state.camera.x * layer.depth / 4) * 4;
-      ctx.fillStyle = mixHex(layer.day, layer.night, night);
+      ctx.fillStyle = underground ? mixHex(underground.stone, underground.accent, layer.depth / 100) : mixHex(layer.day, layer.night, night);
       for (let x = 0; x < canvas.width; x += 4) {
         const n = noise.fbm1(state.world.seed + 991, (originX + x) * layer.scale, 77, 4, 2, 0.5);
         const y = Math.round((canvas.height * layer.base - n * layer.amp) / 4) * 4;

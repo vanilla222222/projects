@@ -20,7 +20,8 @@ const SETTLEMENT_REGIONS = {
   highlands: 'forge', badlands: 'forge', hell: 'forge', hellcaves: 'forge', trench: 'forge',
   beach: 'kitchen', ocean: 'kitchen', marsh: 'kitchen',
   tundra: 'lab', blight: 'lab', crimson: 'lab', hallow: 'lab',
-  caves: 'ranger', deep: 'forge', sky: 'trade', space: 'lab', void: 'lab'
+  caves: 'ranger', deep: 'forge', sky: 'trade', space: 'lab', void: 'lab',
+  ashwood: 'ranger', 'glass-dunes': 'trade', 'brine-depths': 'kitchen', 'ember-bloom': 'forge', 'gloom-frost': 'lab'
 };
 
 const SETTLEMENT_JOBS = {

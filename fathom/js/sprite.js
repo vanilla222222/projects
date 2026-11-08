@@ -1215,6 +1215,10 @@ function drawCreature(ctx, box, body, c) {
     ctx.translate(-g.cx, 0);
   }
   plan(ctx, g, c);
+  if (c.key?.endsWith('-critter')) {
+    rect(ctx, g, -0.18, -0.62, 0.14, 0.12, '#f4d8ad');
+    rect(ctx, g, -0.30, -0.54, 0.12, 0.10, '#745c91');
+  }
   paintCreatureInlay(ctx, g, body, c);
   if (['glasscolossus', 'coilserpent', 'zenithengine', 'starwyvern', 'wildwyvern'].includes(c.key)) paintHardmodeMachine(ctx, g, c);
   ctx.restore();

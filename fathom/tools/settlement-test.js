@@ -102,7 +102,7 @@ assert.equal(worldgen.worldSettingValues().day, 1440);
   const main = new Set(chapters.flatMap(chapter => chapter.trio ? craft.HARDMODE_TRIO : chapter.bosses || []));
   const side = Object.keys(settlement.CAMPAIGN_HUNTS);
   assert.equal(side.length, 35);
-  assert.deepEqual([...main, ...side].sort(), enemy.ENEMIES.filter(spec => spec.boss && !spec.portalTrial).map(spec => spec.key).sort());
+  assert.deepEqual([...main, ...side].sort(), enemy.ENEMIES.filter(spec => spec.boss && !spec.portalTrial && !spec.underworldGuardian).map(spec => spec.key).sort());
   for (const chapter of chapters) for (const [key] of chapter.reward) itemExists(key);
   const ready = (id, wins, flags) => settlement.campaignChapterReady(
     chapters.find(chapter => chapter.id === id), new Set(wins), new Set(flags), craft.HARDMODE_TRIO);
