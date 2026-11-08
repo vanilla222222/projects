@@ -178,6 +178,15 @@ withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
 
+### Ranger arsenal
+
+Bows fire quickly, crossbows fire slower piercing bolts with less drop, and
+guns fire flat shots. Scatterguns spend one bullet per five-pellet shot.
+The first compatible stack in the four ammo slots takes priority. With no
+matching stack there, weapons use the highest-damage match in the backpack.
+Barbed Arrows and Punch Bullets knock enemies back. Bodkin Bolts penetrate
+up to four targets, and Ember Arrows singe nearby enemies.
+
 ### Town dailies and combat
 
 Open the Quest Board at an active charter pylon to accept that town’s daily.

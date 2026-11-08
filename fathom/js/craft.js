@@ -741,7 +741,10 @@ AMMO.bullet = { family: 'bullet', bonus: 0, colour: '#a8a29b', speed: 1.75 };
 
 // The best ammunition held, by the damage it adds. `countOf` is passed in rather than an
 // inventory, so this is a pure function of what is carried.
-function bestAmmo(countOf, family = 'arrow') {
+function bestAmmo(countOf, family = 'arrow', preferred = []) {
+  for (const key of preferred) {
+    if (AMMO[key] && (AMMO[key].family || 'arrow') === family && countOf(key)) return key;
+  }
   let best = null;
   for (const [key, spec] of Object.entries(AMMO)) {
     if ((spec.family || 'arrow') !== family || !countOf(key)) continue;
@@ -775,6 +778,7 @@ function describe(key, tilesModule) {
     lines.push(weapon.damage + ' damage');
     if (weapon.summon) lines.push('Click to call a spirit. It fights while this focus is held.',
       'Spirit attack · ' + weapon.summon);
+    if (weapon.scatter) lines.push('Fires five close-range pellets for one bullet');
     if (weapon.volley) lines.push('Fires a three-shot fan for one round of ammo');
     lines.push(weapon.useTime.toFixed(2) + 's per swing');
     if (cls === 'melee') lines.push(weapon.reach.toFixed(1) + ' tiles of reach');
@@ -788,6 +792,14 @@ function describe(key, tilesModule) {
     if (weapon.spell === 'ward') lines.push('Casting grants +14 defence for four seconds');
     if (weapon.armory) lines.push(weapon.armory + ' · Only dropped or found in caches');
     else if (weapon.drop) lines.push('Only dropped, never made');
+    return { name: nameOf(key, tilesModule), kind, lines };
+  }
+  const ammo = AMMO[key];
+  if (ammo) {
+    lines.push('+' + ammo.bonus + ' damage');
+    if (ammo.pierce) lines.push('Penetrates up to ' + ammo.pierce + ' targets');
+    if (ammo.shove) lines.push('Heavy knockback on impact');
+    if (ammo.burns) lines.push('Sears nearby enemies on impact');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   const armour = ARMOUR[key];
@@ -1431,6 +1443,61 @@ for (const [key, name, material, power] of [
 
 for (const key of ['meteor-bow', 'emberite-bow', 'solarium-bow']) WEAPONS[key].volley = true;
 for (const key of ['meteor-sword', 'emberite-sword', 'solarium-sword']) WEAPONS[key].cleave = true;
+
+// Crossbows trade recovery time for heavy, flatter shots and reliable penetration.
+const RANGER_CROSSBOWS = [
+  ['wood', 'Wooden', '#wood', 20, 0.72, 32, 2],
+  ['iron', 'Iron', 'iron-bar', 36, 0.61, 40, 2],
+  ['gold', 'Gold', 'gold-bar', 58, 0.56, 46, 2],
+  ['cobalt', 'Cobalt', 'cobalt-bar', 86, 0.49, 50, 3],
+  ['emberite', 'Emberite', 'emberite-bar', 113, 0.47, 54, 2],
+  ['aetherite', 'Aetherite', 'aetherite-bar', 147, 0.44, 59, 3],
+  ...HARDMODE_METALS.map((metal, index) => [
+    metal.key, metal.name, metal.key + '-bar', Math.round(metal.damage * 1.55),
+    0.43 - index * 0.012, 62 + index * 2, 2 + index % 3
+  ])
+];
+for (const [key, name, material, damage, useTime, reach, pierce] of RANGER_CROSSBOWS) {
+  WEAPONS[key + '-crossbow'] = { name: name + ' Crossbow', damage, useTime, reach, pierce, ranged: true, ammo: 'bolt' };
+  RECIPES.push({ out: { key: key + '-crossbow', kind: 'tool', count: 1 },
+    need: [[material, key === 'wood' ? 18 : 10], ['rope', 4]], station: key === 'wood' ? 'workbench' : 'anvil' });
+}
+
+for (const [key, name, metal, damage, useTime, reach, scatter] of [
+  ['tin-handcannon', 'Tin Hand Cannon', 'tin', 19, 0.52, 30, 0],
+  ['copper-pepperbox', 'Copper Pepperbox', 'copper', 14, 0.37, 36, 0],
+  ['silver-scattergun', 'Silver Scattergun', 'silver', 28, 0.52, 30, 0.24],
+  ['gold-carbine', 'Gold Carbine', 'gold', 38, 0.28, 52, 0],
+  ['cobalt-rifle', 'Cobalt Marksman Rifle', 'cobalt', 57, 0.32, 65, 0],
+  ['emberite-blunderbuss', 'Emberite Blunderbuss', 'emberite', 62, 0.39, 37, 0.26],
+  ['aetherite-carbine', 'Aetherite Carbine', 'aetherite', 85, 0.19, 61, 0]
+]) {
+  WEAPONS[key] = { name, damage, useTime, reach, scatter, ranged: true, ammo: 'bullet',
+    pierce: key === 'cobalt-rifle' ? 2 : undefined };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 }, need: [[metal + '-bar', 10], ['#wood', 5]], station: 'anvil' });
+}
+
+for (const [key, name, colour, bonus, speed] of [
+  ['wood', 'Wooden', '#ab8052', 0, 1.28],
+  ...AMMO_METALS.map(([key, name, colour, bonus]) => [key, name, colour, bonus, 1.42])
+]) {
+  const ammo = key === 'wood' ? 'bolt' : key + '-bolt';
+  ITEMS[ammo] = { name: key === 'wood' ? 'Bolt' : name + ' Bolt', kind: 'ammo', colour };
+  AMMO[ammo] = { family: 'bolt', bonus, colour, speed };
+  RECIPES.push({ out: { key: ammo, kind: 'ammo', count: key === 'wood' ? 24 : 32 },
+    need: key === 'wood' ? [['#wood', 2], ['stone', 1]] : [[key + '-bar', 1], ['#wood', 1]],
+    station: key === 'wood' ? 'workbench' : 'anvil' });
+}
+
+for (const [key, name, family, colour, bonus, trait, ingredient] of [
+  ['barbed-arrow', 'Barbed Arrow', 'arrow', '#d8ae92', 5, { shove: 7 }, 'bone'],
+  ['bodkin-bolt', 'Bodkin Bolt', 'bolt', '#abbce3', 8, { pierce: 4 }, 'silver-bar'],
+  ['punch-bullet', 'Punch Bullet', 'bullet', '#e5b176', 9, { shove: 11 }, 'gold-bar']
+]) {
+  ITEMS[key] = { name, kind: 'ammo', colour };
+  AMMO[key] = { family, colour, bonus, speed: family === 'bullet' ? 1.75 : family === 'bolt' ? 1.45 : 1.12, ...trait };
+  RECIPES.push({ out: { key, kind: 'ammo', count: 24 }, need: [[family, 24], [ingredient, 1]], station: 'anvil' });
+}
 
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
