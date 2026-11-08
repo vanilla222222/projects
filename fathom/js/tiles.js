@@ -958,6 +958,11 @@ for (const [key, name, colour] of [
 ]) pushTile({ key, name, colour, solid: false, opacity: 0, emit: 13,
   drops: null, fixture: 'wire-lamp', brineQuest: true });
 
+pushTile({ key: 'kilnsmith-cell', name: 'Kilnsmith’s Cell', colour: '#e9976e', solid: false,
+  opacity: 0, emit: 13, drops: null, fixture: 'wire-lamp', brineQuest: true });
+pushTile({ key: 'ember-forge', name: 'Banked Ember Forge', colour: '#da8662', solid: false,
+  opacity: 5, emit: 14, hardness: 0.4, toughness: 120, fixture: 'heavy-workbench', station: 'ember-forge' });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 

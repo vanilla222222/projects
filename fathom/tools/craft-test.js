@@ -29,7 +29,7 @@ const enemyDrops = require('../js/enemy.js').ENEMIES
 const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 // Meteorite is raw but is in no band: it is not generated with the world at all. A
 // meteor falls where a meteor falls, and its crater is written into the edit diff.
-const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
+const RAW = new Set(['brine-cooling-salt', 'wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
   'dirt', 'clay', 'ice', 'basalt', 'slate', 'brick', 'mud', 'blight', 'flesh', 'sandstone',
   'saltcrust', 'ash', 'brimstone', 'cinderstone', 'skystone', 'starrock', 'voidstone', 'prismstone',
   'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...tiles.UNDERWORLD_BIOMES.flatMap(biome => [biome.key + '-stone', biome.key + '-wood']), ...craft.dropOnly().map(drop => drop.key), ...ORES,

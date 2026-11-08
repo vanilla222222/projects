@@ -13,6 +13,9 @@ const SETTLEMENT_ROLES = {
   tide: { name: 'Tidekeeper’s Landing', station: 'cauldron', job: 'fish',
     supplies: [['brine-depths-wood', 12], ['brine-depths-fish', 2]],
     stock: [['brine-depths-fish-stew', 2, 240], ['gills-potion', 3, 220], ['brine-depths-crate', 1, 620]] },
+  ember: { name: 'Emberbloom Forge Town', station: 'anvil', job: 'repair',
+    supplies: [['ember-bloom-wood', 12], ['ember-bloom-relic', 4]],
+    stock: [['ember-bloom-bar', 3, 340], ['ember-bloom-fish-stew', 2, 310], ['ember-bloom-crate', 1, 760]] },
   lab: { name: 'Survey Lab', station: 'alchemy-table', job: 'specimen',
     supplies: [['bottle', 6], ['glowmoss', 8]], stock: [['shine-potion', 3, 190], ['clarity-potion', 3, 240], ['spelunk-potion', 3, 260]] }
 };
@@ -24,8 +27,86 @@ const SETTLEMENT_REGIONS = {
   beach: 'kitchen', ocean: 'kitchen', marsh: 'kitchen',
   tundra: 'lab', blight: 'lab', crimson: 'lab', hallow: 'lab',
   caves: 'ranger', deep: 'forge', sky: 'trade', space: 'lab', void: 'lab',
-  ashwood: 'ranger', 'glass-dunes': 'trade', 'brine-depths': 'tide', 'ember-bloom': 'forge', 'gloom-frost': 'lab'
+  ashwood: 'ranger', 'glass-dunes': 'trade', 'brine-depths': 'tide', 'ember-bloom': 'ember', 'gloom-frost': 'lab'
 };
+
+// Each project installs a service or supplies one that the local role can use.
+const TOWN_PROJECTS = {
+  ranger: [
+    ['watchtower', 'Trail Watch', 'sawmill', [['rope', 18], ['torch', 20]], [['grapple', 1], ['spelunk-potion', 4]]],
+    ['trail-cache', 'Trail Supply Cache', 'workbench', [['leather', 12], ['feather', 8]], [['lantern-charm', 1], ['rope', 40]]]
+  ],
+  trade: [
+    ['freight-yard', 'Freight Yard', 'loom', [['glass', 16], ['iron-bar', 8]], [['storage-unit', 2], ['storage-access', 1]]],
+    ['cloth-market', 'Cloth Market', 'loom', [['leather', 10], ['copper-bar', 8]], [['town-pylon', 1], ['coin', 520]]]
+  ],
+  forge: [
+    ['rail-yard', 'Rail Yard', 'anvil', [['stone', 35], ['iron-bar', 10]], [['minecart-rail', 64], ['wire-spool', 32]]],
+    ['repair-depot', 'Repair Depot', 'heavy-workbench', [['copper-bar', 10], ['glass', 15]], [['actuator-block', 12], ['wire-spool', 32]]]
+  ],
+  kitchen: [
+    ['smokehouse', 'Harbor Smokehouse', 'cauldron', [['cooked-fish', 6], ['bottle', 8]], [['gills-potion', 6], ['regen-potion', 4]]],
+    ['diving-locker', 'Diving Locker', 'cauldron', [['shell', 14], ['iron-bar', 6]], [['diving-gear', 1], ['gold-rod', 1]]]
+  ],
+  lab: [
+    ['lantern-lab', 'Lantern Lab', 'alchemy-table', [['glowmoss', 12], ['bottle', 10]], [['shine-potion', 8], ['clarity-potion', 5]]],
+    ['field-archive', 'Field Archive', 'workbench', [['glass', 18], ['crystal', 6]], [['empty-terrarium', 6], ['spelunk-potion', 6]]]
+  ],
+  tide: [
+    ['saltroot-fishery', 'Saltroot Fishery', 'cauldron', [['brine-depths-fish', 5], ['brine-depths-wood', 14]], [['saltroot-rod', 1], ['tide-market-scrip', 4]]],
+    ['brine-cistern', 'Brine Cistern', 'cauldron', [['brine-depths-cave-fish', 4], ['brine-depths-bar', 6]], [['brine-depths-crate', 2], ['gills-potion', 6]]]
+  ],
+  ember: [
+    ['banked-kiln', 'Banked Kiln', 'anvil', [['ember-bloom-bar', 8], ['ember-bloom-relic', 10]], [['ember-forge', 1], ['ember-bloom-fish-stew', 3]]],
+    ['lava-tackle', 'Lava Tackle Counter', 'ember-forge', [['ember-bloom-fish', 3], ['ember-bloom-relic', 6]], [['kilnline-rod', 1], ['ember-bloom-crate', 2]]]
+  ],
+  forest: [
+    ['forester-depot', 'Deepwood Forester’s Depot', 'sawmill', [['oaklog', 24], ['rope', 12]], [['spelunk-potion', 6], ['torch', 40]]],
+    ['trail-infirmary', 'Trail Infirmary', 'alchemy-table', [['mushroom', 12], ['bottle', 10]], [['regen-potion', 6], ['healing-salve', 6]]]
+  ],
+  desert: [
+    ['caravan-well', 'Caravan Well', 'workbench', [['sandstone', 25], ['bottle', 10]], [['swift-potion', 6], ['rope', 30]]],
+    ['sunshade-market', 'Sunshade Market', 'loom', [['glass', 20], ['leather', 12]], [['town-pylon', 1], ['coin', 600]]]
+  ],
+  ocean: [
+    ['reef-locker', 'Reef Locker', 'anvil', [['shell', 15], ['iron-bar', 8]], [['tidal-locket', 1], ['gills-potion', 4]]],
+    ['tide-kitchen', 'Tide Kitchen', 'cauldron', [['cooked-fish', 8], ['bottle', 8]], [['gold-rod', 1], ['coin', 540]]]
+  ],
+  hallow: [
+    ['prism-lab', 'Prism Lab', 'alchemy-table', [['crystal', 14], ['stardust', 8]], [['clarity-potion', 8], ['shine-potion', 8]]],
+    ['hallow-observatory', 'Hallow Observatory', 'optics-bench', [['glass', 16], ['palladium-bar', 8]], [['ray-crystal', 4], ['coin', 800]]]
+  ],
+  space: [
+    ['star-dock', 'Star Dock', 'refraction-bench', [['stardust', 12], ['aetherite-bar', 8]], [['wyvern-essence', 6], ['coin', 1100]]],
+    ['orbital-storeroom', 'Orbital Storeroom', 'heavy-workbench', [['iron-bar', 16], ['glass', 20]], [['storage-unit', 3], ['storage-crafter', 1]]]
+  ],
+  ashwood: [
+    ['ash-ward', 'Ashwatch Beacon', 'workbench', [['ashwood-wood', 16], ['ashwood-relic', 8]], [['sootfin-brooch', 1], ['ashwood-crate', 1]]],
+    ['charcoal-store', 'Charcoal Store', 'sawmill', [['ashwood-bar', 6], ['ashwood-fish', 3]], [['ashwood-fish-stew', 5], ['coin', 520]]]
+  ],
+  'glass-dunes': [
+    ['mirror-post', 'Mirror Post', 'loom', [['glass', 18], ['glass-dunes-relic', 8]], [['mirror-float', 1], ['glass-dunes-crate', 1]]],
+    ['sun-shelter', 'Sun Shelter', 'workbench', [['glass-dunes-wood', 16], ['glass-dunes-bar', 5]], [['glass-dunes-fish-stew', 5], ['coin', 530]]]
+  ],
+  'gloom-frost': [
+    ['rime-beacon', 'Rime Beacon', 'alchemy-table', [['gloom-frost-relic', 8], ['gloom-frost-bar', 5]], [['rime-current-band', 1], ['gloom-frost-crate', 1]]],
+    ['whiteout-shelter', 'Whiteout Shelter', 'workbench', [['gloom-frost-wood', 16], ['gloom-frost-fish', 3]], [['gloom-frost-fish-stew', 5], ['shine-potion', 4]]]
+  ]
+};
+
+function townProjects(region) {
+  return TOWN_PROJECTS[region] || TOWN_PROJECTS[SETTLEMENT_REGIONS[region] || 'ranger'];
+}
+
+function tradeKey(first, second) {
+  return [first, second].sort().join('|');
+}
+
+function tradeRank(route) {
+  const delivered = route?.delivered || 0;
+  const reciprocal = (route?.directions?.length || 0) >= 2;
+  return delivered >= 6 && reciprocal ? 3 : delivered >= 3 && reciprocal ? 2 : delivered > 0 ? 1 : 0;
+}
 
 const SETTLEMENT_JOBS = {
   hunt: { goal: 6, text: 'Defeat six wild hostiles in this region.' },
@@ -259,6 +340,17 @@ function settlementDaily(device, region, day) {
     if (offset === 1) return { name: 'Lanternfish for the Market', needs: [['brine-depths-cave-fish', 2]], reward };
     return { name: 'Work the Brine Pools', key: 'daily-fish:brine-depths', goal: 4, reward };
   }
+  const underworld = {
+    ashwood: ['Stock the Ashwatch', 'Charcoal Kitchen', 'Patrol the Ashwood', 'ashwood-wood', 'ashwood-fish'],
+    'glass-dunes': ['Repair the Mirror Posts', 'Feed the Dune Surveyors', 'Break the Glass Pack', 'glass-dunes-bar', 'glass-dunes-fish'],
+    'ember-bloom': ['Charge the Banked Kiln', 'Feed the Furnace Crew', 'Cull the Ember Swarm', 'ember-bloom-relic', 'ember-bloom-fish'],
+    'gloom-frost': ['Resupply the Rime Beacon', 'Provision the Whiteout Shelter', 'Watch the Frozen Road', 'gloom-frost-wood', 'gloom-frost-cave-fish']
+  }[region];
+  if (underworld) {
+    const reward = [[region + '-relic', 4 + offset], ['coin', 220 + offset * 40]];
+    return offset === 2 ? { name: underworld[offset], key: 'hunt:' + region, goal: 5, reward }
+      : { name: underworld[offset], needs: [[underworld[3 + offset], offset === 0 ? 5 : 2]], reward };
+  }
   const [key, count] = role.stock[offset];
   const reward = [[key, Math.max(1, Math.ceil(count / 3))], ['coin', 160 + offset * 40]];
   if (offset < 2) {
@@ -274,6 +366,15 @@ function settlementDaily(device, region, day) {
 
 function makeSettlementLedger(saved = {}) {
   const towns = new Map(saved.towns || []);
+  const routes = new Map(saved.routes || []);
+  function route(from, to) { return routes.get(tradeKey(from, to)); }
+  function recordDelivery(from, to) {
+    const before = route(from, to);
+    const next = { delivered: (before?.delivered || 0) + 1,
+      directions: [...new Set([...(before?.directions || []), from])] };
+    routes.set(tradeKey(from, to), next);
+    return next;
+  }
   const collections = new Map((saved.collections || []).map(([key, values]) => [key, new Set(values)]));
   const claimed = new Set(saved.claimed || []);
   const records = new Map(saved.records || []);
@@ -324,17 +425,17 @@ function makeSettlementLedger(saved = {}) {
     return result;
   }
 
-  return { town, found, record, mark, progress, charterRegions, finish, claimed, records, prizes,
+  return { town, found, record, mark, progress, charterRegions, finish, claimed, records, prizes, route, recordDelivery,
     shipment: saved.shipment || null,
     rangerTrail: { started: false, town: null, camp: null, restored: false, deliveredTo: null, completed: false,
       ...saved.rangerTrail },
     increment(key) { tallies.set(key, (tallies.get(key) || 0) + 1); },
     count: key => tallies.get(key) || collections.get(key)?.size || 0,
-    serialize() { return { shipment: this.shipment, rangerTrail: this.rangerTrail, towns: [...towns], collections: [...collections].map(([key, group]) => [key, [...group]]),
+    serialize() { return { shipment: this.shipment, rangerTrail: this.rangerTrail, towns: [...towns], routes: [...routes], collections: [...collections].map(([key, group]) => [key, [...group]]),
       claimed: [...claimed], records: [...records], prizes: [...prizes], tallies: [...tallies] }; } };
 }
 
-const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey, settlementDaily,
+const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey, settlementDaily, townProjects, tradeRank,
   CAMPAIGN: CAMPAIGN_CHAPTERS, CAMPAIGN_HUNTS, campaignChapterReady, QUESTLINES: SETTLEMENT_QUESTLINES, JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_settlement;
 else if (typeof FATHOM !== 'undefined') FATHOM.settlement = EXPORTS_settlement;

@@ -215,6 +215,26 @@ boss summon. The five bosses have their own attack patterns and drop trophies
 that forge into exploration accessories. Collect the trophy at the altar to
 connect the dungeon’s waystone to the Return Gate camp and other cleared dungeons.
 
+#### Settlements and trade
+
+Open the Town Directory from Town Hall or a pylon to see charters in your
+current realm. Chartered towns can commission civic projects with local
+supplies and nearby workstations. Rank-3 districts with four occupied homes,
+both projects, and a reciprocal trade route can become Civic Centers. Their
+public storehouse supplies one ration per in-game day.
+
+Deliver cargo to establish a partnership. Three deliveries with cargo sent
+both ways unlock partner imports. Six deliveries unlock better stock and
+prices. Each realm keeps its own town directory, shipments, and trade ranks.
+
+#### Emberbloom Forge Town
+
+Defeat Furnace Mycelium in the Spore Crucible and rescue Kera. House her
+near an Emberbloom charter and commission the Banked Kiln to get an Ember
+Forge. A shipment from Brine Depths supplies Brine Cooling Salt, which the
+forge uses for five class weapons. An established route can import more
+salt and unlock stock from both towns.
+
 #### Tidekeeper’s Landing
 
 Defeat the Undertow Warden in the Sunken Sluice and open Marra’s cell.

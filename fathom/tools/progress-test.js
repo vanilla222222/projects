@@ -154,6 +154,10 @@ function climb() {
     for (const encounter of tiles.UNDERWORLD_DUNGEONS) {
       if (was.has('siege-core') && was.has(encounter.summon)) gain(encounter.trophy);
     }
+    if (was.has('furnace-mycelium-trophy') && was.has('ember-bloom-bar') && was.has('brine-depths-fish')) {
+      gain('ember-forge');
+      gain('brine-cooling-salt');
+    }
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('railbreaker-whistle')) gain('railbreaker-drive');
     if (was.has('clockwork-heart')) gain('mechanist-core');

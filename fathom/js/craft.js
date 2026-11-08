@@ -1848,6 +1848,19 @@ for (const [index, [key, name, effect, text]] of [
     need: [[trophy, 1], [biome + '-bar', 5]], station: 'anvil' });
 }
 
+ITEMS['brine-cooling-salt'] = { name: 'Brine Cooling Salt', kind: 'loot', colour: '#9bd9cf' };
+for (const [key, name, design] of [
+  ['slagbreak-halberd', 'Slagbreak Halberd', { damage: 415, reach: 5.1, useTime: 0.37, signature: 'wave' }],
+  ['kilnshot-carbine', 'Kilnshot Carbine', { damage: 363, reach: 63, useTime: 0.35, ranged: true, ammo: 'bullet', signature: 'ricochet' }],
+  ['flashquench-scepter', 'Flashquench Scepter', { damage: 400, reach: 53, useTime: 0.38, magic: true, mana: 13, bolt: '#ffc98f', signature: 'rune' }],
+  ['furnace-familiar', 'Furnace Familiar', { damage: 376, reach: 34, useTime: 0.35, summon: 'chain' }],
+  ['slagbank-charge', 'Slagbank Charge', { damage: 432, reach: 37, useTime: 0.42, throwStyle: 'blast', signature: 'bank' }]
+]) {
+  WEAPONS[key] = { name, colour: '#ee966b', underworld: true, ...design };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 },
+    need: [['ember-bloom-bar', 12], ['ember-bloom-relic', 12], ['brine-cooling-salt', 3]], station: 'ember-forge' });
+}
+
 ITEMS['tide-market-scrip'] = { name: 'Tide Market Scrip', kind: 'loot', colour: '#79c8c5' };
 ITEMS['lowwater-ledger'] = { name: 'Lowwater Survey Ledger', kind: 'loot', colour: '#e3c38a' };
 ITEMS['tideglass-rod'] = { name: 'Tideglass Rod', kind: 'tool', colour: '#83e0d4', rod: true };

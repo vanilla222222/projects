@@ -12,6 +12,13 @@
 
 const VILLAGERS = [
   {
+    key: 'kera', name: 'Kera the Kilnsmith', colour: '#d88b64', hair: '#523747',
+    region: 'ember-bloom', wants: p => p.keraRescued === true,
+    wantsText: 'is trapped in the Spore Crucible',
+    greeting: 'House me near an Emberbloom charter and we can bank the kiln. Marra’s cooling salts will get it to full heat.',
+    stock: [{ key: 'ember-bloom-bar', count: 2, price: 285 }, { key: 'ember-bloom-fish-stew', count: 2, price: 300 }]
+  },
+  {
     key: 'marra', name: 'Marra the Tidekeeper', colour: '#68aaa7', hair: '#435768',
     region: 'brine-depths', wants: p => p.marraRescued === true,
     wantsText: 'is trapped in the Sunken Sluice',

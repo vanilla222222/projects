@@ -169,3 +169,6 @@ for (let i = 1; i <= 8; i += 1) {
   assert.equal(underworld.baseTileAt(genSeed, sluice.x - 12, sluice.floor - 1), tiles.idOf('tidekeeper-cell'));
 }
 assert.ok(fishing.RODS['tideglass-rod'].power > fishing.RODS['saltroot-rod'].power);
+
+const crucible = underworld.dungeonSite(seed, dungeons.find(encounter => encounter.key === 'furnace-mycelium'));
+assert.equal(underworld.baseTileAt(seed, crucible.x - 12, crucible.floor - 1), tiles.idOf('kilnsmith-cell'));
