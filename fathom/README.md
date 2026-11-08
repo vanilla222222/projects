@@ -196,6 +196,16 @@ Gloomfrost Expanse. Each region has local resources, wildlife, fish, a surface
 refuge, cave strongholds, and deep ruins. Cave and deep seals summon local
 guardians. Use relics and local ore to make class weapons.
 
+#### Chapter 2 campaign
+
+Open **Boss campaign** in the Underworld journal for arena coordinates and the
+next encounter. The route has 15 bosses across five legs, each with two biome
+arenas and a border fortress. Forge the reusable summon for each fight at an
+Iron Anvil from local bars and relics. Use it inside the named arena and
+interact with the altar afterward to collect the trophy. Each win unlocks the
+next boss. Each leg’s three trophies can be forged into a class accessory.
+The Crown Below is the final fight.
+
 #### Underworld fishing
 
 Each biome has a surface fish, a cave fish, and a local crate. Bigger pools

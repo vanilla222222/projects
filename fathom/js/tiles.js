@@ -885,6 +885,30 @@ for (const biome of UNDERWORLD_BIOMES) {
     colour: biome.accent, fixture: 'terrarium', specimen: biome.specimen, solid: false, opacity: 4, toughness: 35, hardness: 0.2 });
 }
 
+// Each leg leaves its home biome through a border fortress.
+const UNDERWORLD_CAMPAIGN = [
+  ['charcoal-hart', 'Charcoal Hart', 'Cinderstockade', 'Soot Antler', 'guardian', 'golem', 'fan', 'rush'],
+  ['rootglass-weaver', 'Rootglass Weaver', 'Rootglass Spindle', 'Spindle Egg', 'sovereign', 'spider', 'cross', 'brood'],
+  ['slag-caravan', 'Slag Caravan', 'Furnace Road Tollhouse', 'Melted Toll', 'furnace', 'golem', 'starburst', 'orbit'],
+  ['mirage-regent', 'Mirage Regent', 'Hall of False Suns', 'Mirage Diadem', 'thunderbird', 'bird', 'fan', 'orbit'],
+  ['quartz-maw', 'Quartz Maw', 'Splitglass Quarry', 'Quartz Tooth', 'scourge', 'worm', 'cross', 'rush'],
+  ['silica-admiral', 'Silica Admiral', 'Saltglass Causeway', 'Mirror Pennant', 'archon', 'skeleton', 'starburst', 'sweep'],
+  ['lantern-jaw', 'Lantern Jaw', 'Lanternfish Lock', 'Brine Lantern', 'sovereign', 'maw', 'fan', 'brood'],
+  ['pearl-abbess', 'Pearl Abbess', 'Pearl Ossuary', 'Pearl Rosary', 'guardian', 'skeleton', 'starburst', 'orbit'],
+  ['boilwater-engine', 'Boilwater Engine', 'Steam Divide Foundry', 'Pressure Valve', 'furnace', 'golem', 'cross', 'sweep'],
+  ['scarlet-apiarch', 'Scarlet Apiarch', 'Scarlet Apiary', 'Wax Crown', 'thunderbird', 'beetle', 'starburst', 'brood'],
+  ['kiln-orchid', 'Kiln Orchid', 'Orchid Crucible', 'Kiln Pollen', 'sovereign', 'maw', 'fan', 'sweep'],
+  ['winterfire-saint', 'Winterfire Saint', 'Winterfire Viaduct', 'Cold Censer', 'aurora', 'humanoid', 'cross', 'orbit'],
+  ['rime-gravekeeper', 'Rime Gravekeeper', 'Rimeglass Cemetery', 'Rime Chime', 'aurora', 'skeleton', 'fan', 'rush'],
+  ['eclipse-bell', 'Eclipse Bell', 'Belfry of the Long Night', 'Eclipse Clapper', 'archon', 'bigeye', 'cross', 'brood'],
+  ['underworld-crown', 'The Crown Below', 'Throne at the Last Divide', 'Hollow Crown', 'archon', 'golem', 'starburst', 'sweep']
+].map(([key, name, structure, summonName, kind, body, barrage, tactic], index) => ({
+  key, name, structure, summonName, kind, body, barrage, tactic, index,
+  biome: UNDERWORLD_BIOMES[Math.floor(index / 3)].key,
+  colour: UNDERWORLD_BIOMES[Math.floor(index / 3)].accent,
+  summon: key + '-summon', trophy: key + '-trophy'
+}));
+
 for (const [key, name] of [['underworld-gate', 'Underworld Gate'], ['underworld-return', 'Return Gate']]) {
   pushTile({ key, name, colour: '#c593ee', solid: false, opacity: 0, emit: 16, drops: null,
     fixture: 'underworld-gate', dimensionGate: true });
@@ -892,6 +916,10 @@ for (const [key, name] of [['underworld-gate', 'Underworld Gate'], ['underworld-
 
 pushTile({ key: 'underworld-shrine', name: 'Underworld Challenge Seal', colour: '#efb17f',
   solid: false, opacity: 0, emit: 12, drops: null, fixture: 'wire-lamp', underworldShrine: true });
+pushTile({ key: 'underworld-campaign-seal', name: 'Campaign Altar', colour: '#f5ce83',
+  solid: false, opacity: 0, emit: 14, drops: null, fixture: 'wire-lamp', underworldCampaign: true });
+
+
 
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
@@ -921,7 +949,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, UNDERWORLD_BIOMES, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, UNDERWORLD_BIOMES, UNDERWORLD_CAMPAIGN, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

@@ -43,7 +43,7 @@ const STARTING = ['tin-pick', 'tin-axe', 'tin-hammer', 'tin-sword'];
 const MADE = new Set(craft.RECIPES.map(r => r.out.key));
 const FROM_THE_WORLD = new Set([
   ...enemies.ENEMIES.filter(e => e.specimen?.rare !== 'crystal').flatMap(e => (e.drops || []).map(([k]) => k)),
-  ...enemies.ENEMIES.flatMap(e => (e.bossDrops || []).map(drop => Array.isArray(drop) ? drop[0] : drop)),
+  ...enemies.ENEMIES.filter(e => !e.campaignBoss).flatMap(e => (e.bossDrops || []).map(drop => Array.isArray(drop) ? drop[0] : drop)),
   ...loot.allLootKeys(),
   ...craft.dropOnly().map(drop => drop.key),
   ...worldgen.POT_TABLE.map(e => e.key),
@@ -147,6 +147,10 @@ function climb() {
     if (was.has('warden-igniter')) gain('foundry-prism');
     if (was.has('tide-seal')) gain('archivist-core');
     if (was.has('astral-standard')) gain('siege-core');
+    for (const [index, encounter] of tiles.UNDERWORLD_CAMPAIGN.entries()) {
+      const prior = tiles.UNDERWORLD_CAMPAIGN[index - 1];
+      if (was.has('siege-core') && was.has(encounter.summon) && (!prior || was.has(prior.trophy))) gain(encounter.trophy);
+    }
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('railbreaker-whistle')) gain('railbreaker-drive');
     if (was.has('clockwork-heart')) gain('mechanist-core');
@@ -338,7 +342,7 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
 }
 
 {
-  const ordered = craft.BOSS_CHAPTERS.flat();
+  const ordered = [...craft.BOSS_CHAPTERS.flat(), ...tiles.UNDERWORLD_CAMPAIGN.map(encounter => encounter.key)];
   const summoned = Object.values(craft.ITEMS).flatMap(item => item.use?.summon ? [item.use.summon] : []);
   ok(new Set(ordered).size === ordered.length && summoned.length === ordered.length
     && summoned.every(key => ordered.includes(key)), 'boss order must cover each summon once');
@@ -359,6 +363,14 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
       const expected = boss === 'drownedarchivist' ? 'lenscustodian' : null;
       ok(craft.bossPrerequisite(boss, defeated) === expected, boss + ' has the wrong unlock gate');
     }
+  }
+  const campaignWins = new Set();
+  for (const [index, encounter] of tiles.UNDERWORLD_CAMPAIGN.entries()) {
+    const previous = tiles.UNDERWORLD_CAMPAIGN[index - 1];
+    ok(craft.bossPrerequisite(encounter.key, new Set()) === (previous?.key || null), encounter.name + ' has the wrong gate');
+    ok(craft.bossPrerequisite(encounter.key, campaignWins) === null, encounter.name + ' cannot be reached in order');
+    campaignWins.add(encounter.key);
+    ok(ladder.arrived.get(encounter.summon) < ladder.arrived.get(encounter.trophy), encounter.name + ' trophy is unreachable or early');
   }
   const legacy = craft.restoreBossProgress(['ashguardian']);
   ok(legacy.has('kingslime') && legacy.has('furnacewarden') && !legacy.has('voidsovereign'),

@@ -262,6 +262,15 @@ function makeGame(canvas, deps) {
 
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
+    if (target.spec.campaignBoss) {
+      if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
+        defeatedBosses.add(target.key);
+        settlements.claimed.add('campaign-reward:' + target.key);
+        say('Victory. Recover your trophy at the campaign altar.', 4);
+      }
+      if (activePortalTrial?.boss === target) activePortalTrial = null;
+      return;
+    }
     if (target.spec.underworldGuardian) {
       if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
         settlements.claimed.add('underworld-win:' + target.key);
@@ -339,6 +348,11 @@ function makeGame(canvas, deps) {
     } else if (use.heal !== undefined) {
       if (stats.health >= stats.maxHealth) { say('You are unhurt', 1.2); return true; }
       statsModule.heal(stats, use.heal);
+    } else if (use.campaign) {
+      if (dimension !== 'underworld') { say('Bring this to its Underworld campaign altar', 2); return true; }
+      const site = worldgen.campaignSiteAt(seed, Math.floor(state.player.x), Math.floor(state.player.y));
+      if (site?.encounter.key !== use.summon) { say(spec.text, 3); return true; }
+      return startUnderworldCampaignFight(site);
     } else if (use.summon !== undefined) {
       if (!swarm) return true;
       if (expedition) { say('Finish the active expedition first', 2); return true; }
@@ -843,7 +857,7 @@ function makeGame(canvas, deps) {
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
     if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial
-      || spec.dimensionGate || spec.underworldShrine
+      || spec.dimensionGate || spec.underworldShrine || spec.underworldCampaign
       || (dimension === 'underworld' && Math.abs(aim.x) <= 3 && aim.y === worldgen.SEA_LEVEL)) {
       state.player.mining = null;
       return;
@@ -2572,7 +2586,7 @@ function makeGame(canvas, deps) {
     input.left = input.right = input.jump = input.down = false;
     const rows = ['The Underworld · Return Gate at x 0, y ' + (worldgen.SEA_LEVEL - 1) + '.',
       'Each region has a surface refuge, a cave stronghold and a deep ruin. Challenge the guardians at the two lower seals.'];
-    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    const actions = [{ label: 'Boss campaign', run: openUnderworldCampaign }, { label: 'Town Hall', run: checkHousing }];
     for (const biome of worldgen.BIOMES) {
       const centers = [-2, -1, 0, 1, 2].map(band => band * worldgen.bandWidth);
       const center = centers.find(x => worldgen.biomeAt(seed, x).key === biome.key);
@@ -2584,6 +2598,56 @@ function makeGame(canvas, deps) {
         settlements.claimed.has('underworld-loot:' + biome.key + '-guardian-' + depth)).length + '/2 guardians recovered');
     }
     ui.showTown('Chapter 2 · The Underworld', rows, actions);
+  }
+
+  function openUnderworldCampaign() {
+    const route = tiles.UNDERWORLD_CAMPAIGN;
+    const next = route.find(encounter => !defeatedBosses.has(encounter.key));
+    const count = route.filter(encounter => defeatedBosses.has(encounter.key)).length;
+    const rows = [count + '/' + route.length + ' bosses defeated' + (next ? ' · Next: ' + next.name : ' · Chapter 2 complete'),
+      'Craft each reusable summon at an Iron Anvil using the listed biome’s bars and relics. Fight at the named arena and claim the trophy at its altar.',
+      'Every three trophies can be forged into a class accessory at an Iron Anvil.'];
+    for (const encounter of route) {
+      const site = worldgen.campaignSite(seed, encounter);
+      const biome = worldgen.BIOMES.find(entry => entry.key === encounter.biome);
+      const status = settlements.claimed.has('campaign-reward:' + encounter.key) ? 'Trophy ready'
+        : defeatedBosses.has(encounter.key) ? 'Defeated' : encounter === next ? 'Available' : 'Locked';
+      rows.push((encounter.index + 1) + '. ' + encounter.name + ' · ' + status + ' · ' + encounter.structure
+        + ' · x ' + site.x + ', y ' + (site.floor - 1) + ' · ' + encounter.summonName + ' (' + biome.name + ')');
+      if (encounter === next) rows.push(recipeLine(encounter.summon));
+    }
+    ui.showTown('Chapter 2 · The Crown Below', rows, [{ label: 'Underworld journal', run: openUnderworldJournal }]);
+  }
+
+  function startUnderworldCampaignFight(site) {
+    const { encounter } = site;
+    const required = craft.bossPrerequisite(encounter.key, defeatedBosses);
+    if (required) { say('Defeat ' + enemyModule.BY_KEY[required].name + ' first', 3); return true; }
+    if (settlements.claimed.has('campaign-reward:' + encounter.key)) { say('Claim the trophy at the altar first', 3); return true; }
+    if (!swarm || swarm.bossAlive() || activePortalTrial || expedition) { say('Finish the current encounter first', 2); return true; }
+    const boss = swarm.summon(encounter.key, state.player, { ...site, top: site.top + 1 });
+    if (!boss) { say('Stand nearer the center of the arena and try again', 3); return true; }
+    activePortalTrial = { site, boss };
+    say(encounter.name + ' awakens', 3);
+    sfx('roar');
+    return true;
+  }
+
+  function useCampaignAltar(aim, item) {
+    if (dimension !== 'underworld' || !aim.inReach || !tiles.tile(world.get(aim.x, aim.y)).underworldCampaign) return false;
+    const site = worldgen.campaignSiteAt(seed, aim.x, aim.y);
+    if (!site || aim.x !== site.x || aim.y !== site.floor - 1) return true;
+    const { encounter } = site;
+    const reward = 'campaign-reward:' + encounter.key;
+    if (settlements.claimed.has(reward)) {
+      if (townExchange([], enemyModule.BY_KEY[encounter.key].bossDrops)) {
+        settlements.claimed.delete(reward);
+        say(encounter.index === tiles.UNDERWORLD_CAMPAIGN.length - 1 ? 'The Crown Below has fallen · Chapter 2 complete'
+          : 'Trophy recovered · Check the campaign journal for your next fight', 4);
+      }
+    } else if (item?.key === encounter.summon && insidePortalTrial(site)) return startUnderworldCampaignFight(site);
+    else say('Use ' + encounter.summonName + ' inside ' + encounter.structure, 3);
+    return true;
   }
 
   function useUnderworldShrine(aim) {
@@ -2664,7 +2728,7 @@ function makeGame(canvas, deps) {
     activePortalTrial.boss.dead = true;
     activePortalTrial = null;
     state.arrows = state.arrows.filter(arrow => !arrow.hostile);
-    say('The Trial Seal resets when you leave the arena', 3);
+    say('The encounter resets when you leave the arena', 3);
   }
 
   function openCampaignHunts() {
@@ -3660,7 +3724,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useDimensionGate(aim0, item) || useUnderworldShrine(aim0) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useDimensionGate(aim0, item) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -3986,7 +4050,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=underworld-fishing-1');
+      const worker = new Worker('workers/chunk.js?v=underworld-campaign-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

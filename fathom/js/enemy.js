@@ -806,6 +806,17 @@ for (const [biomeIndex, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
   }
 }
 
+const ENEMY_UNDERWORLD_CAMPAIGN = typeof require === 'function'
+  ? require('./tiles.js').UNDERWORLD_CAMPAIGN : UNDERWORLD_CAMPAIGN;
+for (const encounter of ENEMY_UNDERWORLD_CAMPAIGN) {
+  const { key, name, kind, body, colour, barrage, tactic, index, biome, trophy } = encounter;
+  ENEMIES.push({ key, name, kind, body, colour, barrage, tactic, campaignBoss: true, underworld: true,
+    boss: true, summonOnly: true, weight: 0, minion: biome + '-foe-' + (tactic === 'brood' ? 8 : 4),
+    w: 3.4 + index % 3 * 0.4, h: 3 + index % 3 * 0.2, emit: 9,
+    hp: 19600 + index * 1750, damage: 142 + index * 5,
+    bossDrops: [[trophy, 1], [biome + '-relic', 6 + index % 3 * 3], ['coin', 1400 + index * 110]] });
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -1039,6 +1050,7 @@ function makeSwarm(world, tiles, deps) {
     const createBoss = (x, y) => {
       const boss = makeEnemy(spec, x, y);
       boss.hp = boss.maxHp = Math.round(spec.hp * (deps.bossHealth || 1));
+      if (spec.campaignBoss) boss.campaignArena = arena;
       list.push(boss);
       return boss;
     };
@@ -1169,6 +1181,11 @@ function makeSwarm(world, tiles, deps) {
       else if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
       else if (arch.flies && !(enemy.spec.barrage === 'foundry' && enemy.beams)) stepHoverBoss(enemy, arch, player, dt, toward);
       else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);
+      if (enemy.campaignArena) {
+        const { left, right, top, bottom } = enemy.campaignArena;
+        enemy.x = Math.max(left + 1, Math.min(right - enemy.width, enemy.x));
+        enemy.y = Math.max(top, Math.min(bottom - enemy.height, enemy.y));
+      }
       if (enemy.spec.barrage === 'siege') stepSiege(enemy, player, dt);
       else if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
       return;
@@ -1332,7 +1349,7 @@ function makeSwarm(world, tiles, deps) {
     if (!minion) return;
     enemy.minionCooldown -= dt;
     if (enemy.minionCooldown > 0) return;
-    enemy.minionCooldown = arch.spawnEvery;
+    enemy.minionCooldown = arch.spawnEvery * (enemy.spec.tactic === 'brood' ? 0.58 : 1);
     const spec = ENEMY_BY_KEY[minion];
     if (!spec) return;
     const alive = list.filter(e => e.summonedBy === enemy.key).length;
@@ -1400,7 +1417,8 @@ function makeSwarm(world, tiles, deps) {
     const pattern = enemy.spec.barrage;
     const enraged = enemy.hp <= enemy.maxHp / 2;
     if (pattern === 'shatter') enemy.enraged = enraged;
-    const cooldown = enraged ? 2.75 : 4.1;
+    const { tactic } = enemy.spec;
+    const cooldown = (enraged ? 2.75 : 4.1) * (tactic === 'rush' ? 0.77 : 1);
     const elapsed = (enemy.barrageTime || 0) + dt;
     if (elapsed < cooldown || (pattern === 'shatter' && !enemy.beams && !enemy.onGround)) {
       enemy.barrageTime = Math.min(elapsed, cooldown);
@@ -1424,6 +1442,11 @@ function makeSwarm(world, tiles, deps) {
         : pattern === 'cross' ? [aim - 0.25, aim + 0.25, aim - 1.12, aim + 1.12]
           : pattern === 'starburst' ? Array.from({ length: enraged ? 12 : 8 }, (_, i) =>
             aim + i * Math.PI * 2 / (enraged ? 12 : 8)) : fan.map(offset => aim + offset);
+      if (tactic === 'orbit') {
+        const rotation = (enemy.volley || 0) % 2 ? 0.32 : -0.32;
+        for (let i = 0; i < angles.length; i += 1) angles[i] += rotation;
+      }
+      if (tactic === 'sweep' && enraged) angles.push(0, Math.PI);
       enemy.beams = { live: false, range: pattern === 'shatter' ? 17 : 23, angles, origin: pattern === 'shatter' ? 'feet' : null,
         colour: enemy.spec.colour };
     }
@@ -1435,6 +1458,7 @@ function makeSwarm(world, tiles, deps) {
     deps.bossBarrage?.(enemy, { x, y, angles: enemy.beams.angles, pattern, enraged });
     enemy.beams = null;
     enemy.barrageTime = 0;
+    if (tactic === 'orbit') enemy.volley = (enemy.volley || 0) + 1;
   }
 
   function stepPrismBoss(enemy, arch, player, dt, toward) {
