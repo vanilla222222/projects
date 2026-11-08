@@ -254,6 +254,7 @@ function makeGame(canvas, deps) {
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
     if (!target.spec.boss && !target.spec.passive && !target.spec.specimen && !target.spec.summonOnly) {
+      settlements.increment('hunt:' + townRegion(target.x, target.y));
       recordPatrol(target.x, target.y);
     }
     // A boss gives up everything it carries, every time. A fight you had to prepare for
@@ -570,6 +571,7 @@ function makeGame(canvas, deps) {
     if (!got) { say('Nothing is biting here', 1.4); return; }
     if (got.key !== 'junk' && !Object.hasOwn(fishModule.CRATES, got.key)) {
       settlements.record('fish', got.key);
+      settlements.record('fish:' + ctx.biome, got.key);
       recordFieldwork('fish', got.key, bobber.tx, bobber.ty, ctx.biome);
     }
     dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
@@ -1432,7 +1434,7 @@ function makeGame(canvas, deps) {
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
     const actions = [{ label: 'Progression Journal', run: openProgression },
-      { label: 'Town Contracts', run: openTownOrders }, { label: 'Bestiary', run: openBestiary },
+      { label: 'Town Contracts', run: openTownOrders }, { label: 'Quest Board', run: openQuestBoard }, { label: 'Bestiary', run: openBestiary },
       { label: 'Field Journal', run: openFieldJournal },
       { label: 'A Road Through the Deepwood', run: openRangerTrail }];
     const pylon = nearestTown(x, y, device => physics.aimTile(state.player, device).inReach, 8);
@@ -1727,7 +1729,7 @@ function makeGame(canvas, deps) {
       partners.size + ' distinct active charter regions in the network.',
       'Supply counters and fieldwork need two valid homes. A district needs three.'];
     const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
-      { label: 'Field Journal', run: openFieldJournal }];
+      { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: openQuestBoard }];
     if (region === 'forest') actions.push({ label: 'A Road Through the Deepwood', run: openRangerTrail });
     const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
       && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
@@ -1866,6 +1868,7 @@ function makeGame(canvas, deps) {
       actions.push({ label: 'Survey ' + site.name, run() {
         if (!physics.aimTile(player, { x, y }).inReach) return;
         const fresh = settlements.record('survey', id);
+        settlements.record('survey:' + site.biome, id);
         recordFieldwork('survey', id, x, y, site.biome);
         if (fresh) say(site.name + ' recorded', 2);
         openFieldJournal();
@@ -1883,6 +1886,7 @@ function makeGame(canvas, deps) {
         if (!townExchange([['torch', 4], ['glass', 2]], [])) return;
         world.set(x, y, tiles.idOf('lantern'));
         settlements.record('survey', id);
+        settlements.record('survey:' + site.biome, id);
         recordFieldwork('repair', id, x, y, site.biome);
         openFieldJournal();
       } });
@@ -1927,7 +1931,7 @@ function makeGame(canvas, deps) {
       'Defeat three bosses before time runs out. Leaving the arena, dying or quitting ends the run.',
       'Each active charter region improves the payout. The harder runs require two and three regions.',
       'Claim completed runs from the Field Journal at any active charter pylon.'];
-    const actions = [{ label: 'Field Journal', run: openFieldJournal }];
+    const actions = [{ label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: openQuestBoard }];
     for (const [index, contract] of settlementModule.EXPEDITIONS.entries()) {
       const record = settlements.records.get(index);
       rows.push(contract.name + ' · ' + contract.seconds + 's · ' + contract.bosses
@@ -2154,6 +2158,41 @@ function makeGame(canvas, deps) {
       }
     }
     ui.showTown('Progression Journal', rows, [{ label: 'Back to Town Hall', run: checkHousing }]);
+  }
+
+  function openQuestBoard() {
+    const player = state.player;
+    ui.showTown('Quest Board', [], [], query => {
+      const rows = ['Field objectives track automatically. Claim regional quests beside a charter in that region. Guild quests accept any charter.'];
+      const actions = [{ label: 'Town Hall', run: checkHousing }];
+      for (const line of settlementModule.QUESTLINES) {
+        const name = line.name + (line.region ? ' · ' + townRegionName(line.region) : ' · Guild');
+        if (query && !name.toLowerCase().includes(query)) continue;
+        const index = line.steps.findIndex((_, n) => !settlements.claimed.has('quest:' + line.id + ':' + n));
+        if (index < 0) { rows.push(name + ' · Complete'); continue; }
+        const step = line.steps[index];
+        const id = 'quest:' + line.id + ':' + index;
+        const count = step.key ? settlements.count(step.key) : 0;
+        const objective = step.key ? Math.min(count, step.goal) + ' / ' + step.goal : townItems(step.needs);
+        rows.push(name + ' · ' + (index + 1) + '/3 · ' + step.name + ' · ' + objective
+          + ' · Reward ' + townItems(step.reward));
+        if (step.key && count < step.goal) continue;
+        const charter = nearestTown(player.x, player.y, device => {
+          const local = settlements.town(device);
+          return local?.rank >= 2 && (!line.region || line.region === local.region)
+            && physics.aimTile(player, device).inReach && townHomes(device) >= 2;
+        }, 8);
+        if (charter) actions.push({ label: 'Complete ' + line.name + ' · ' + step.name, run() {
+          if (settlements.claimed.has(id) || deviceAt(charter.x, charter.y) !== charter
+            || !physics.aimTile(player, charter).inReach || townHomes(charter) < 2) return;
+          if (townExchange(step.needs || [], step.reward)) {
+            settlements.claimed.add(id);
+            say(line.name + ' · ' + step.name + ' complete', 3);
+          }
+        } });
+      }
+      return { rows, actions };
+    }, 'Search questlines and regions');
   }
 
   function openTownOrders() {
@@ -2811,6 +2850,7 @@ function makeGame(canvas, deps) {
       target.dead = true;
       recordWildlife(target.spec, 'caught');
       settlements.record('specimen', target.spec.specimen.key);
+      settlements.record('specimen:' + world.biomeAt(Math.floor(target.x), Math.floor(target.y)).key, target.spec.specimen.key);
       recordFieldwork('specimen', target.spec.specimen.key, target.x, target.y);
       sfx('net');
       say('Caught ' + target.spec.name, 2);
