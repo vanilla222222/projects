@@ -98,4 +98,33 @@ for (const spec of tiles.WALLS) {
   check(tiles.tile(exhibit).specimen.gem === 'amethyst', 'crystal terrarium lost its matching gemstone');
 }
 
+{
+  const world = makeWorld(SEED, gen);
+  const found = new Map();
+  const starrock = tiles.idOf('starrock');
+  for (let slot = -150; slot <= 150 && found.size < 3; slot += 1) {
+    const planet = gen.planetoidAt(SEED, slot);
+    if (!planet) continue;
+    for (let dy = -3; dy <= 3; dy += 1) for (let dx = -3; dx <= 3; dx += 1) {
+      const x = planet.cx + dx, y = planet.cy + dy;
+      if (world.get(x, y) !== starrock) continue;
+      const ore = gen.astralTileAt(SEED, x, y, starrock);
+      if (ore !== starrock && !found.has(ore)) found.set(ore, { x, y });
+    }
+  }
+  check(found.size === 3, 'the Astral stage did not populate three planetoid ores');
+  const [editedOre, edited] = found.entries().next().value;
+  world.set(edited.x, edited.y, tiles.AIR);
+  check(world.enableAstral() && !world.enableAstral(), 'Astral unlock was not idempotent');
+  for (const [ore, { x, y }] of found) {
+    check(world.get(x, y) === (ore === editedOre ? tiles.AIR : ore), 'Astral overlay lost a planetoid ore or a player edit');
+  }
+  const restored = makeWorld(SEED, gen);
+  restored.restore(JSON.parse(JSON.stringify(world.serialize())));
+  check(restored.astral, 'Astral unlock did not survive reload');
+  for (const [ore, { x, y }] of found) {
+    check(restored.get(x, y) === (ore === editedOre ? tiles.AIR : ore), 'Astral reload changed terrain or a player edit');
+  }
+}
+
 console.log('World: ' + checks + ' checks passed across both layers, the edit diff and the safe-wall rule');

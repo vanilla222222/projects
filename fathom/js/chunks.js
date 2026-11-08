@@ -60,6 +60,7 @@ function makeWorld(seed, generator) {
   const dirty = new Set();
   let renderRevision = 0;
   let hardmode = false;
+  let astral = false;
   let protectedChunks = new Set();
   let liquidRevision = 0;
 
@@ -97,6 +98,18 @@ function makeWorld(seed, generator) {
     return true;
   }
 
+  function enableAstral() {
+    if (astral) return false;
+    astral = true;
+    for (const key of loaded.keys()) {
+      const cy = Number(key.split(':')[1]);
+      if (cy * generator.CHUNK < generator.SEA_LEVEL - 750) loaded.delete(key);
+    }
+    forgetMemo();
+    renderRevision += 1;
+    return true;
+  }
+
   function biomeAt(x, y) {
     const cx = Math.floor(x / generator.CHUNK), cy = Math.floor(y / generator.CHUNK);
     const altitude = generator.altitudeOf?.(y);
@@ -112,6 +125,13 @@ function makeWorld(seed, generator) {
       for (let index = 0; index < chunk.tiles.length; index += 1) {
         const x = cx * size + index % size, y = cy * size + Math.floor(index / size);
         chunk.tiles[index] = generator.hardmodeTileAt(seed, x, y, chunk.tiles[index]);
+      }
+    }
+    if (astral && generator.astralTileAt && cy * generator.CHUNK < generator.SEA_LEVEL - 750) {
+      const size = generator.CHUNK;
+      for (let index = 0; index < chunk.tiles.length; index += 1) {
+        const x = cx * size + index % size, y = cy * size + Math.floor(index / size);
+        chunk.tiles[index] = generator.astralTileAt(seed, x, y, chunk.tiles[index]);
       }
     }
     const diff = edits.get(key);
@@ -190,8 +210,9 @@ function makeWorld(seed, generator) {
       edits.set(key, diff);
     }
     const base = generator.baseTileAt(seed, x, y);
-    const original = hardmodeApplies(cx, cy) && generator.hardmodeTileAt
+    let original = hardmodeApplies(cx, cy) && generator.hardmodeTileAt
       ? generator.hardmodeTileAt(seed, x, y, base) : base;
+    if (astral && generator.astralTileAt) original = generator.astralTileAt(seed, x, y, original);
     if (id === original) diff.delete(index);
     else diff.set(index, id);
     if (diff.size === 0) edits.delete(key);
@@ -389,13 +410,14 @@ function makeWorld(seed, generator) {
     // bytes become 384 characters instead of roughly 1,100.
     const seen = {};
     for (const [key, bits] of explored) seen[key] = packBits(bits);
-    return { seed, hardmode, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
+    return { seed, hardmode, astral, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
       containers: boxes, explored: seen };
   }
 
   function restore(saved) {
     renderRevision += 1;
     hardmode = !!saved.hardmode;
+    astral = !!saved.astral;
     protectedChunks = new Set(saved.protectedChunks || []);
     edits.clear();
     wallEdits.clear();
@@ -422,7 +444,7 @@ function makeWorld(seed, generator) {
     }
   }
 
-  return { seed, get, set, biomeAt, enableHardmode, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
+  return { seed, get, set, biomeAt, enableHardmode, enableAstral, get astral() { return astral; }, get hardmode() { return hardmode; }, getWall, setWall, getLevel, setLevel, LEVEL_FULL, isWallSafe,
     getContainer, setContainer, clearContainer, hasStoredContainer: (x, y) => containers.has(containerKey(x, y)),
     markExplored, isExplored, exploredCount, chunkAt, acceptGeneratedChunk, hasChunk: (cx, cy) => loaded.has(chunkKey(cx, cy)), evictOutside, editCount, serialize, restore,
     get renderRevision() { return renderRevision; },

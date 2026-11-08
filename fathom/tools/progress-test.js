@@ -60,7 +60,7 @@ function minableTiles() {
     // Meteorite is in no band: it arrives in a crater when the King dies. Counted here
     // as minable because what this test measures is the pickaxe gate, and meteorite's
     // gate is a pickaxe like everything else's - the boss is a separate question.
-    'meteorite', 'void-crystal', 'aetherite', 'palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal',
+    'meteorite', 'void-crystal', 'aetherite', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal',
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
@@ -144,6 +144,7 @@ function climb() {
     }
     if (was.has('warden-igniter')) gain('foundry-prism');
     if (was.has('tide-seal')) gain('archivist-core');
+    if (was.has('astral-standard')) gain('siege-core');
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('railbreaker-whistle')) gain('railbreaker-drive');
     if (was.has('clockwork-heart')) gain('mechanist-core');
@@ -186,6 +187,7 @@ function climb() {
     for (const tile of MINABLE) {
       if (['palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal'].includes(tile.key)
         && !was.has('prism-heart')) continue;
+      if (['lunarium', 'solarium', 'eventide'].includes(tile.key) && !was.has('siege-core')) continue;
       if (was.has(tile.key) || tile.require > power) continue;
       gain(tile.key);
     }
@@ -377,7 +379,7 @@ for (const r of craft.RECIPES) {
 // If everything arrived in one or two rounds there would be no progression at all; if it
 // took thirty, something is gated behind a chain nobody would ever follow.
 ok(ladder.rounds >= 5, 'the whole game is reachable in ' + ladder.rounds + ' rounds');
-ok(ladder.rounds <= 48, 'the ladder is ' + ladder.rounds + ' rounds deep');
+ok(ladder.rounds <= 58, 'the ladder is ' + ladder.rounds + ' rounds deep');
 
 // --- 6. the deepest things really are the last ones --------------------------------------------
 {

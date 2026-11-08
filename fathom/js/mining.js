@@ -64,7 +64,16 @@ const TOOLS = {
   'mythril-hammer': { name: 'Mythril Hammer', job: 'hammer', power: 258, useTime: 0.11, tier: 12 },
   'adamantite-pick': { name: 'Adamantite Pickaxe', job: 'pick', power: 285, useTime: 0.085, tier: 13 },
   'adamantite-axe': { name: 'Adamantite Axe', job: 'axe', power: 290, useTime: 0.092, tier: 13 },
-  'adamantite-hammer': { name: 'Adamantite Hammer', job: 'hammer', power: 288, useTime: 0.1, tier: 13 }
+  'adamantite-hammer': { name: 'Adamantite Hammer', job: 'hammer', power: 288, useTime: 0.1, tier: 13 },
+  'lunarium-pick': { name: 'Lunarium Pickaxe', job: 'pick', power: 325, useTime: 0.078, tier: 14 },
+  'lunarium-axe': { name: 'Lunarium Axe', job: 'axe', power: 328, useTime: 0.085, tier: 14 },
+  'lunarium-hammer': { name: 'Lunarium Hammer', job: 'hammer', power: 330, useTime: 0.09, tier: 14 },
+  'solarium-pick': { name: 'Solarium Pickaxe', job: 'pick', power: 365, useTime: 0.072, tier: 15 },
+  'solarium-axe': { name: 'Solarium Axe', job: 'axe', power: 368, useTime: 0.08, tier: 15 },
+  'solarium-hammer': { name: 'Solarium Hammer', job: 'hammer', power: 370, useTime: 0.085, tier: 15 },
+  'eventide-pick': { name: 'Eventide Pickaxe', job: 'pick', power: 410, useTime: 0.065, tier: 16 },
+  'eventide-axe': { name: 'Eventide Axe', job: 'axe', power: 412, useTime: 0.074, tier: 16 },
+  'eventide-hammer': { name: 'Eventide Hammer', job: 'hammer', power: 415, useTime: 0.079, tier: 16 }
 };
 
 // Which tool a given tile answers to. Anything with a background wall is hammer work,
@@ -96,7 +105,7 @@ function jobFor(spec, isWall) {
 // Doubled power, as Terraria does for dirt, clay and sand: the soft ground you move through
 // rather than the rock you work at.
 // Head colour per tier, so a glance at the hotbar says which pickaxe you are holding.
-const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5', '#a06a5c', '#8de8d3', '#cf8457', '#68b9a8', '#db6f8b'];
+const TIER_COLOURS = ['#8a6a42', '#a9a79c', '#b5733c', '#8f8f97', '#c9ccd6', '#e0c054', '#3f7fb5', '#d4663a', '#a484e5', '#a06a5c', '#8de8d3', '#cf8457', '#68b9a8', '#db6f8b', '#93c9e8', '#ebad68', '#b29ae9'];
 
 const SOFT = new Set(['dirt', 'grass', 'sand', 'snow', 'clay', 'mud']);
 

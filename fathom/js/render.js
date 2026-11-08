@@ -557,6 +557,15 @@ function makeRenderer(canvas, deps) {
         ctx.ellipse(sx + w / 2, sy + h, w * 0.46, Math.max(1, size * 0.1), 0, 0, Math.PI * 2);
         ctx.fill();
       }
+      if (enemy.siegeMarks) {
+        ctx.fillStyle = '#d394ed55';
+        for (const mark of enemy.siegeMarks) {
+          const x = (mark.x - x0) * size - offsetX;
+          const y = (mark.y - y0) * size - offsetY;
+          ctx.fillRect(x - size * 1.15, y - size * 18, size * 2.3, size * 18);
+          ctx.fillRect(x - size * 0.56, y - size * 0.16, size * 1.12, size * 0.19);
+        }
+      }
       if (enemy.shielded) {
         ctx.strokeStyle = '#bcafffc0';
         ctx.lineWidth = size * 0.14;

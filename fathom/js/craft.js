@@ -29,7 +29,15 @@ const HARDMODE_METALS = [
   { key: 'mythril', name: 'Mythril', colour: '#68b9a8', defense: 29, damage: 147,
     bonus: { key: 'conduit', name: 'Conduit', text: 'Magic costs 20% less mana', manaCost: 0.8 } },
   { key: 'adamantite', name: 'Adamantite', colour: '#db6f8b', defense: 34, damage: 164,
-    bonus: { key: 'adamant', name: 'Adamant', text: 'Defence +8 and weapon damage +10%', defense: 8, melee: 1.1, ranged: 1.1, magic: 1.1 } }
+    bonus: { key: 'adamant', name: 'Adamant', text: 'Defence +8 and weapon damage +10%', defense: 8, melee: 1.1, ranged: 1.1, magic: 1.1 } },
+  { key: 'lunarium', name: 'Lunarium', colour: '#93c9e8', defense: 40, damage: 248,
+    spell: 'ward', bonus: { key: 'moonwake', name: 'Moonwake', text: 'Flight +0.25s and health regenerates 25% faster',
+      flightBonus: 0.25, regen: 1.25 } },
+  { key: 'solarium', name: 'Solarium', colour: '#ebad68', defense: 45, damage: 268,
+    spell: 'pierce', bonus: { key: 'sunflare', name: 'Sunflare', text: 'Melee and ranged damage +16%', melee: 1.16, ranged: 1.16 } },
+  { key: 'eventide', name: 'Eventide', colour: '#b29ae9', defense: 50, damage: 289,
+    spell: 'chain', bonus: { key: 'duskfall', name: 'Duskfall', text: 'Weapon damage +18% and magic costs 15% less',
+      melee: 1.18, ranged: 1.18, magic: 1.18, manaCost: 0.85 } }
 ];
 
 const ITEMS = {
@@ -268,6 +276,9 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'siege-core': { name: 'Astral Siege Core', kind: 'loot', colour: '#a7bdf0' },
+  'astral-standard': { name: 'Astral Standard', kind: 'use', colour: '#a7bdf0',
+    use: { summon: 'astralregent', siege: true, layer: 'space' }, text: 'Raise it on the middle Astral Siege platform' },
   'railbreaker-drive': { name: 'Railbreaker Drive', kind: 'loot', colour: '#d4a478' },
   'railbreaker-whistle': { name: 'Railbreaker Whistle', kind: 'use', colour: '#c29177',
     use: { summon: 'railbreaker', runawayMine: true }, text: 'Use below the flooded spur in the Runaway Mine' },
@@ -542,7 +553,7 @@ const EFFECT_FIELDS = {
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
-  glow: 'max', flight: 'max',
+  glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
 };
 
@@ -679,6 +690,9 @@ for (const metal of HARDMODE_METALS) {
     useTime: 0.18, reach: 60, ranged: true, ammo: 'arrow' };
   WEAPONS[metal.key + '-rifle'] = { name: metal.name + ' Rifle', damage: metal.damage - 18,
     useTime: 0.22, reach: 62, ranged: true, ammo: 'bullet', colour: metal.colour };
+  if (metal.spell) WEAPONS[metal.key + '-staff'] = { name: metal.name + ' Staff',
+    damage: metal.damage - 32, useTime: 0.28, reach: 56, magic: true,
+    mana: 18, spell: metal.spell, bolt: metal.colour };
 }
 
 // Ammunition. A bow fires whatever is best in the backpack rather than whatever slot is
@@ -868,6 +882,8 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'astral-standard', kind: 'use', count: 1 },
+    need: [['wyvern-essence', 5], ['adamantite-bar', 6], ['stardust', 12]], station: 'refraction-bench' },
   { out: { key: 'railbreaker-whistle', kind: 'use', count: 1 },
     need: [['iron-bar', 6], ['wire-spool', 8], ['emberite-bar', 2]], station: 'anvil' },
   { out: { key: 'cargo-cart', kind: 'loot', count: 1 },
@@ -1003,7 +1019,9 @@ RECIPES.push(
 for (const metal of HARDMODE_METALS) {
   const bar = metal.key + '-bar';
   RECIPES.push({ out: { key: bar, kind: 'bar', count: 1 }, need: [[metal.key, 3]], station: 'furnace' });
-  for (const job of ['pick', 'axe', 'hammer', 'sword', 'bow', 'rifle']) {
+  const jobs = ['pick', 'axe', 'hammer', 'sword', 'bow', 'rifle'];
+  if (metal.spell) jobs.push('staff');
+  for (const job of jobs) {
     RECIPES.push({ out: { key: metal.key + '-' + job, kind: 'tool', count: 1 },
       need: [[bar, job === 'rifle' ? 11 : 8], ['#wood', 4]], station: 'anvil' });
   }
@@ -1477,7 +1495,8 @@ const BOSS_CHAPTERS = [
   ['riftarchon'],
   ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO],
   ['starwyvern'],
-  ['foundrywarden', 'lenscustodian', 'drownedarchivist']
+  ['foundrywarden', 'lenscustodian', 'drownedarchivist'],
+  ['astralregent']
 ];
 
 const BOSS_PREREQUISITES = new Map();
