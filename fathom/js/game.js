@@ -560,6 +560,7 @@ function makeGame(canvas, deps) {
       say('There is hardly anything there', 1.6);
       return true;
     }
+    const power = rod.power * (state.gear?.fishingPower || 1);
     state.bobber = {
       x: pointer.x,
       y: pointer.y,
@@ -567,9 +568,9 @@ function makeGame(canvas, deps) {
       ty,
       liquid,
       rod: item.key,
-      power: rod.power,
+      power,
       amount,
-      wait: fishModule.biteDelay(Math.random(), rod.power, amount),
+      wait: fishModule.biteDelay(Math.random(), power, amount),
       biting: 0,
       bob: 0
     };
@@ -3985,7 +3986,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=underworld-1');
+      const worker = new Worker('workers/chunk.js?v=underworld-fishing-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

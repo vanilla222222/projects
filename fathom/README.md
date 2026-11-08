@@ -196,6 +196,14 @@ Gloomfrost Expanse. Each region has local resources, wildlife, fish, a surface
 refuge, cave strongholds, and deep ruins. Cave and deep seals summon local
 guardians. Use relics and local ore to make class weapons.
 
+#### Underworld fishing
+
+Each biome has a surface fish, a cave fish, and a local crate. Bigger pools
+can yield crates containing ore, relics, or rare accessories. Emberbloom
+catches require a lava-rated rod. Craft the Saltroot Rod for water or upgrade
+a Hellfire Rod into the Kilnline Rod for lava. Cook the ten local fish into
+stews at a Cauldron.
+
 ### Progression
 
 Start with tin tools and work through copper, iron, silver, gold, cobalt, and emberite.
