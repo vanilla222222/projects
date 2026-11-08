@@ -229,13 +229,13 @@ for (const [station, items] of Object.entries(groups)) {
   console.log('  ' + station.padEnd(10) + items.join(', '));
 }
 
-// --- the three ways of fighting ------------------------------------------------------
+// --- combat classes ------------------------------------------------------
 // Every weapon belongs to a class, every class can be specialised in, and everything that
 // only drops names a monster that really drops it. The last one is the check that matters:
 // an accessory tied to an enemy that does not exist is an item nobody can ever have.
 {
   const enemies = require('../js/enemy.js');
-  const byClass = { melee: [], ranged: [], magic: [] };
+  const byClass = { melee: [], ranged: [], magic: [], summoner: [] };
   for (const [key, w] of Object.entries(craft.WEAPONS)) {
     const cls = craft.classOf(w);
     ok(!!byClass[cls], key + ' has the unknown class ' + cls);
@@ -252,6 +252,10 @@ for (const [station, items] of Object.entries(groups)) {
     if (cls === 'ranged') {
       ok(!!craft.AMMO[w.ammo], key + ' fires ' + w.ammo + ', which is not ammunition');
       ok(w.reach > 10, key + ' is ranged and has an arm\'s reach');
+    }
+    if (cls === 'summoner') {
+      ok(['strike', 'twin', 'ward', 'chain', 'burst'].includes(w.summon), key + ' has no spirit attack');
+      ok(produced.has(key), key + ' cannot be crafted');
     }
     if (cls === 'melee') ok(w.reach < 6, key + ' is melee and reaches ' + w.reach + ' tiles');
   }

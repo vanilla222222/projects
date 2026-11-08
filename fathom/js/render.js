@@ -1128,6 +1128,20 @@ function makeRenderer(canvas, deps) {
       phase('enemies', () => drawEnemies(state, view));
       phase('villagers', () => drawVillagers(state, view));
       phase('player', () => drawPlayer(state, view));
+      if (state.spirit) {
+        const { x, y, colour } = state.spirit;
+        const size = TILE * view.zoom;
+        const sx = Math.round((x - view.x0) * size - view.offsetX);
+        const sy = Math.round((y - view.y0) * size - view.offsetY);
+        const pixel = Math.max(2, Math.round(view.zoom));
+        ctx.fillStyle = '#282139';
+        ctx.fillRect(sx - 3 * pixel, sy - 2 * pixel, 6 * pixel, 4 * pixel);
+        ctx.fillRect(sx - 2 * pixel, sy - 3 * pixel, 4 * pixel, 6 * pixel);
+        ctx.fillStyle = colour;
+        ctx.fillRect(sx - 2 * pixel, sy - 2 * pixel, 4 * pixel, 4 * pixel);
+        ctx.fillStyle = '#fff1cf';
+        ctx.fillRect(sx - pixel, sy - pixel, pixel, pixel);
+      }
     } finally {
       actors.restore();
       ctx = screen;

@@ -178,6 +178,16 @@ withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
 
+### Town dailies and combat
+
+Open the Quest Board at an active charter pylon to accept that town’s daily.
+Supply requests and field jobs rotate at dawn. The standard day and night
+cycle takes 24 minutes, with 12- and 48-minute world settings also available.
+
+Craft a Twig Spirit Focus at a Work Bench and click to call your spirit.
+It attacks nearby enemies it can see while you hold the focus. Upgrade through
+metal and Astral focuses for twin strikes, wards, chains, and bursts.
+
 ### A Road Through the Deepwood
 
 Open the questline from Town Hall, the Field Journal, or the Guide and Builder

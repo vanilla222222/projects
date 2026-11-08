@@ -3,7 +3,7 @@
 // keeps physics independent of frame rate; rendering shows whatever the latest state is.
 
 const STEP = 1 / 120;
-const DAY_SECONDS = 600;
+const DAY_SECONDS = 1440;
 const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
@@ -572,6 +572,7 @@ function makeGame(canvas, deps) {
     if (got.key !== 'junk' && !Object.hasOwn(fishModule.CRATES, got.key)) {
       settlements.record('fish', got.key);
       settlements.record('fish:' + ctx.biome, got.key);
+      settlements.increment('daily-fish:' + ctx.biome);
       recordFieldwork('fish', got.key, bobber.tx, bobber.ty, ctx.biome);
     }
     dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
@@ -1029,14 +1030,16 @@ function makeGame(canvas, deps) {
     const cy = state.player.y + state.player.height * 0.4;
     const dx = pointer.x - cx;
     const dy = pointer.y - cy;
-    const len = Math.hypot(dx, dy) || 1;
     const speed = 42 * kind.speed * (gear.arrowSpeed || 1);
-    state.arrows.push({ x: cx, y: cy, vx: (dx / len) * speed, vy: (dy / len) * speed,
-      damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1)),
+    const heading = Math.atan2(dy, dx);
+    for (const spread of weapon.volley ? [-0.14, 0, 0.14] : [0]) {
+      state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * speed, vy: Math.sin(heading + spread) * speed,
+      damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1) * (spread ? 0.32 : 1)),
       life: kind.family === 'bullet' ? weapon.reach / speed : 2.6 * (gear.arrowSpeed || 1), colour: kind.colour,
       gravity: kind.family === 'bullet' ? 0 : 26,
       burns: !!kind.burns, hits: weapon.pierce ? new Set() : null,
       hitLimit: Number(weapon.pierce) > 1 ? weapon.pierce : 3 });
+    }
     return true;
   }
 
@@ -1122,11 +1125,69 @@ function makeGame(canvas, deps) {
 
   // Swing at an enemy under the cursor. Returns true if something was struck, so mining
   // does not also happen in the same frame.
+  let boundFocus = null;
+  let nextSpiritStrike = 0;
+
+  function spiritLine(x, y, tx, ty) {
+    const steps = Math.ceil(Math.hypot(tx - x, ty - y) * 2);
+    for (let n = 1; n < steps; n += 1) {
+      if (tiles.isSolid(world.get(Math.floor(x + (tx - x) * n / steps),
+        Math.floor(y + (ty - y) * n / steps)))) return false;
+    }
+    return true;
+  }
+
+  function stepSpirit() {
+    const weapon = craft.WEAPONS[boundFocus];
+    const player = state.player;
+    if (!weapon || selectedItem()?.key !== boundFocus) {
+      state.spirit = null;
+      return;
+    }
+    const x = player.x + player.width / 2 + Math.cos(state.time * 4) * 0.8;
+    const y = player.y + 0.3 + Math.sin(state.time * 4) * 0.25;
+    state.spirit = { x, y, colour: weapon.colour };
+    if (state.time < nextSpiritStrike) return;
+    nextSpiritStrike = state.time + weapon.useTime;
+    let target = null, distance = weapon.reach;
+    for (const enemy of swarm.list) {
+      if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
+      const ex = enemy.x + enemy.width / 2, ey = enemy.y + enemy.height / 2;
+      const d = Math.hypot(ex - x, ey - y);
+      if (d > distance || !spiritLine(x, y, ex, ey)) continue;
+      distance = d;
+      target = enemy;
+    }
+    if (!target) return;
+    const damage = Math.round(weapon.damage * (state.gear?.summoner || 1));
+    projectileHit(target, damage);
+    spawnParticles(target.x + target.width / 2, target.y + target.height / 2, weapon.colour, 6);
+    if (weapon.summon === 'ward') state.wardUntil = Math.max(state.wardUntil || 0, state.time + 0.25);
+    if (weapon.summon === 'twin') projectileHit(target, Math.round(damage * 0.28));
+    if (weapon.summon === 'chain' || weapon.summon === 'burst') {
+      const radius = weapon.summon === 'chain' ? 7 : 3;
+      const nearby = swarm.list.filter(enemy => enemy !== target && !enemy.dead && !enemy.spec.passive
+        && !enemy.spec.specimen && Math.hypot(enemy.x - target.x, enemy.y - target.y) <= radius
+        && spiritLine(target.x + target.width / 2, target.y + target.height / 2,
+          enemy.x + enemy.width / 2, enemy.y + enemy.height / 2));
+      for (const enemy of nearby.slice(0, weapon.summon === 'chain' ? 1 : 3)) {
+        projectileHit(enemy, Math.round(damage * 0.45));
+      }
+    }
+  }
+
   function attack() {
     if (swingCooldown > 0) return false;
     const item = selectedItem();
     if (item?.key === 'critter-net') return true;
     const weapon = item ? craft.WEAPONS[item.key] : null;
+    if (weapon?.summon) {
+      if (boundFocus !== item.key) {
+        boundFocus = item.key;
+        say(weapon.name + ' called', 2);
+      }
+      return true;
+    }
     // A bow or a staff does not need something under the cursor: it fires where you
     // point. Both still cost their use time even when the shot fails, so spamming a
     // staff with no mana does not also spam the message.
@@ -1144,7 +1205,10 @@ function makeGame(canvas, deps) {
     if (!target) return false;
     const cx = state.player.x + state.player.width / 2;
     const cy = state.player.y + state.player.height / 2;
-    if (Math.hypot(target.x - cx, target.y - cy) > reach + 1.5) return false;
+    const ex = Math.max(target.x, Math.min(cx, target.x + target.width));
+    const ey = Math.max(target.y, Math.min(cy, target.y + target.height));
+    if (Math.hypot(ex - cx, ey - cy) > reach + (target.boss && weapon ? 2.5 : 1.5)) return false;
+    if (target.boss && !spiritLine(cx, cy, ex, ey)) return false;
 
     // A pickaxe will do, badly. That is the argument for making a sword.
     let hit = 3;
@@ -1198,6 +1262,8 @@ function makeGame(canvas, deps) {
 
   function respawnPlayer() {
     state.wardUntil = 0;
+    boundFocus = null;
+    state.spirit = null;
     state.progress.deaths += 1;
     statsModule.respawn(stats);
     const spot = state.spawn || defaultSpawn();
@@ -1729,7 +1795,7 @@ function makeGame(canvas, deps) {
       partners.size + ' distinct active charter regions in the network.',
       'Supply counters and fieldwork need two valid homes. A district needs three.'];
     const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
-      { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: openQuestBoard }];
+      { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: () => openQuestBoard(device) }];
     if (region === 'forest') actions.push({ label: 'A Road Through the Deepwood', run: openRangerTrail });
     const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
       && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
@@ -2160,11 +2226,49 @@ function makeGame(canvas, deps) {
     ui.showTown('Progression Journal', rows, [{ label: 'Back to Town Hall', run: checkHousing }]);
   }
 
-  function openQuestBoard() {
+  function showTownDaily(rows, actions, selected) {
+    const player = state.player;
+    const eligible = device => deviceAt(device.x, device.y) === device && settlements.town(device)?.rank >= 2
+      && physics.aimTile(player, device).inReach && townHomes(device) >= 2;
+    const device = selected && eligible(selected) ? selected : nearestTown(player.x, player.y, eligible, 8);
+    if (!device) {
+      rows.push('Town daily · Open the board beside an active charter pylon.');
+      return;
+    }
+    const local = settlements.town(device);
+    const dayNumber = () => Math.max(0, state.nights - (wasNight ? 1 : 0));
+    const day = dayNumber();
+    const quest = settlementModule.settlementDaily(device, local.region, day);
+    const daily = local.daily?.day === day ? local.daily : null;
+    const canUse = () => eligible(device) && dayNumber() === day;
+    const progress = quest.key && daily ? settlements.count(quest.key) - daily.start : 0;
+    rows.push('Town daily · ' + townRegionName(local.region) + ' · Day ' + (day + 1) + ' · ' + quest.name);
+    rows.push(daily?.done ? 'Completed for today.' : (quest.needs ? 'Deliver ' + townItems(quest.needs)
+      : 'Progress since acceptance · ' + Math.min(progress, quest.goal) + ' / ' + quest.goal)
+      + ' · Reward ' + townItems(quest.reward) + ' · Refreshes at dawn.');
+    if (daily?.done) return;
+    if (!daily) {
+      actions.push({ label: 'Accept town daily', run() {
+        if (!canUse() || local.daily?.day === day) return;
+        local.daily = { day, start: quest.key ? settlements.count(quest.key) : 0, done: false };
+      } });
+    } else if (!quest.key || progress >= quest.goal) {
+      actions.push({ label: 'Complete town daily', run() {
+        if (!canUse() || local.daily !== daily || daily.done) return;
+        if (townExchange(quest.needs || [], quest.reward)) {
+          daily.done = true;
+          say('Town daily completed', 3);
+        }
+      } });
+    }
+  }
+
+  function openQuestBoard(selected) {
     const player = state.player;
     ui.showTown('Quest Board', [], [], query => {
       const rows = ['Field objectives track automatically. Claim regional quests beside a charter in that region. Guild quests accept any charter.'];
       const actions = [{ label: 'Town Hall', run: checkHousing }];
+      showTownDaily(rows, actions, selected);
       for (const line of settlementModule.QUESTLINES) {
         const name = line.name + (line.region ? ' · ' + townRegionName(line.region) : ' · Guild');
         if (query && !name.toLowerCase().includes(query)) continue;
@@ -2850,7 +2954,9 @@ function makeGame(canvas, deps) {
       target.dead = true;
       recordWildlife(target.spec, 'caught');
       settlements.record('specimen', target.spec.specimen.key);
-      settlements.record('specimen:' + world.biomeAt(Math.floor(target.x), Math.floor(target.y)).key, target.spec.specimen.key);
+      const region = world.biomeAt(Math.floor(target.x), Math.floor(target.y)).key;
+      settlements.record('specimen:' + region, target.spec.specimen.key);
+      settlements.increment('daily-specimen:' + region);
       recordFieldwork('specimen', target.spec.specimen.key, target.x, target.y);
       sfx('net');
       say('Caught ' + target.spec.name, 2);
@@ -3246,6 +3352,7 @@ function makeGame(canvas, deps) {
 
     if (stats.dead) respawnPlayer();
     updateDrops(dt);
+    stepSpirit();
     updateArrows(dt);
 
     for (let i = state.particles.length - 1; i >= 0; i -= 1) {

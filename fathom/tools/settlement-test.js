@@ -84,3 +84,14 @@ for (const line of settlement.QUESTLINES) {
 restored.increment('hunt:forest');
 restored.increment('hunt:forest');
 assert.equal(settlement.makeSettlementLedger(restored.serialize()).count('hunt:forest'), 2);
+
+for (const region of worldgen.BIOMES) {
+  const jobs = [0, 1, 2].map(day => settlement.settlementDaily(devices[0], region.key, day));
+  assert.equal(new Set(jobs.map(job => job.name)).size, 3);
+  assert.deepEqual(settlement.settlementDaily(devices[0], region.key, 3), jobs[0]);
+  for (const job of jobs) for (const [key] of [...job.reward, ...(job.needs || [])]) itemExists(key);
+}
+restored.town(devices[0]).daily = { day: 5, start: 2, done: true };
+assert.deepEqual(settlement.makeSettlementLedger(JSON.parse(JSON.stringify(restored.serialize())))
+  .town(devices[0]).daily, { day: 5, start: 2, done: true });
+assert.equal(worldgen.worldSettingValues().day, 1440);
