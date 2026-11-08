@@ -1846,6 +1846,10 @@ for (const [index, [key, name, effect, text]] of [
     need: [[trophy, 1], [biome + '-bar', 5]], station: 'anvil' });
 }
 
+ITEMS['tide-market-scrip'] = { name: 'Tide Market Scrip', kind: 'loot', colour: '#79c8c5' };
+ITEMS['lowwater-ledger'] = { name: 'Lowwater Survey Ledger', kind: 'loot', colour: '#e3c38a' };
+ITEMS['tideglass-rod'] = { name: 'Tideglass Rod', kind: 'tool', colour: '#83e0d4', rod: true };
+
 for (const [key, name, colour, need] of [
   ['saltroot-rod', 'Saltroot Rod', '#82c2be', [['brine-depths-wood', 8], ['brine-depths-bar', 5], ['rope', 8]]],
   ['kilnline-rod', 'Kilnline Rod', '#ed926d', [['hellfire-rod', 1], ['ember-bloom-bar', 5], ['ember-bloom-relic', 3]]]

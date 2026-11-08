@@ -85,7 +85,7 @@ restored.increment('hunt:forest');
 restored.increment('hunt:forest');
 assert.equal(settlement.makeSettlementLedger(restored.serialize()).count('hunt:forest'), 2);
 
-for (const region of worldgen.BIOMES) {
+for (const region of [...worldgen.BIOMES, ...tiles.UNDERWORLD_BIOMES]) {
   const jobs = [0, 1, 2].map(day => settlement.settlementDaily(devices[0], region.key, day));
   assert.equal(new Set(jobs.map(job => job.name)).size, 3);
   assert.deepEqual(settlement.settlementDaily(devices[0], region.key, 3), jobs[0]);

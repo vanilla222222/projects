@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const overworld = require('../js/worldgen');
-const { makeUnderworldGenerator } = require('../js/underworld');
+const { makeUnderworldGenerator, brineTide } = require('../js/underworld');
 const tiles = require('../js/tiles');
 const enemy = require('../js/enemy');
 const fishing = require('../js/fishing');
@@ -151,3 +151,21 @@ for (let i = 1; i <= 8; i += 1) {
   assert.deepEqual(volleySizes, [2, 5, 4, 4, 8]);
 }
 console.log('All five optional dungeons verified across seeds, including conduits, caches, boss volleys and loot recipes');
+
+assert.equal(brineTide(0.9).low, true);
+assert.equal(brineTide(0.04).low, true);
+assert.equal(brineTide(0.12).low, false);
+assert.equal(brineTide(0.7).low, false);
+assert.ok(Math.abs(brineTide(0.82).untilChange - 0.25) < 1e-9);
+for (let i = 1; i <= 8; i += 1) {
+  const genSeed = overworld.generationSeed(i);
+  const ruin = underworld.tidalRuin(genSeed);
+  assert.equal(underworld.biomeAt(genSeed, ruin.x).key, 'brine-depths');
+  for (const [point, key] of [[ruin.hatch, 'tidal-hatch'], [ruin.exit, 'tidal-exit'], [ruin.archive, 'tidal-archive']]) {
+    assert.equal(underworld.baseTileAt(genSeed, point.x, point.y), tiles.idOf(key));
+    assert.ok(tiles.isSolid(underworld.baseTileAt(genSeed, point.x, point.y + 1)));
+  }
+  const sluice = underworld.dungeonSite(genSeed, dungeons.find(encounter => encounter.key === 'undertow-warden'));
+  assert.equal(underworld.baseTileAt(genSeed, sluice.x - 12, sluice.floor - 1), tiles.idOf('tidekeeper-cell'));
+}
+assert.ok(fishing.RODS['tideglass-rod'].power > fishing.RODS['saltroot-rod'].power);

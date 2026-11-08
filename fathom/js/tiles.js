@@ -950,6 +950,14 @@ pushTile({ key: 'underworld-dungeon-tablet', name: 'Dungeon Inscription', colour
 pushTile({ key: 'underworld-dungeon-lock', name: 'Conduit Lock', colour: '#716087', solid: true,
   opacity: 15, emit: 3, drops: null, underworldLock: true });
 
+for (const [key, name, colour] of [
+  ['tidekeeper-cell', 'Tidekeeper’s Cell', '#7fc5bb'],
+  ['tidal-hatch', 'Lowwater Hatch', '#7dccc9'],
+  ['tidal-exit', 'Emergency Sluice Ladder', '#99d9ce'],
+  ['tidal-archive', 'Lowwater Survey Desk', '#e3c38a']
+]) pushTile({ key, name, colour, solid: false, opacity: 0, emit: 13,
+  drops: null, fixture: 'wire-lamp', brineQuest: true });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 

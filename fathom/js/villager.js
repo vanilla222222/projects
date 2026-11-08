@@ -12,6 +12,13 @@
 
 const VILLAGERS = [
   {
+    key: 'marra', name: 'Marra the Tidekeeper', colour: '#68aaa7', hair: '#435768',
+    region: 'brine-depths', wants: p => p.marraRescued === true,
+    wantsText: 'is trapped in the Sunken Sluice',
+    greeting: 'Give me a room in Brine Depths and a chartered pylon. We can put the fish market back on its feet.',
+    stock: [{ key: 'brine-depths-fish-stew', count: 2, price: 210 }, { key: 'gills-potion', count: 3, price: 240 }]
+  },
+  {
     key: 'guide', name: 'the Guide', colour: '#7fa35c', hair: '#5d4322',
     wants: () => true,
     wantsText: 'moves in as soon as there is a room',
