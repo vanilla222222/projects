@@ -76,7 +76,11 @@ function makeWiring(world, tiles, hooks = {}) {
         }
       } else if (spec.circuitPair) {
         const next = tiles.BY_KEY[spec.circuitPair];
-        if (next.solid && (hooks.occupied?.(point.x, point.y) || world.getLevel(point.x, point.y))) continue;
+        if (next.solid) {
+          if (hooks.occupied?.(point.x, point.y)) continue;
+          const level = world.getLevel(point.x, point.y);
+          if (level && (!spec.valve || !displaceValveWater(point.x, point.y, level))) continue;
+        }
         world.set(point.x, point.y, next.id);
         if (next.solid !== spec.solid) hooks.liquid?.(point.x, point.y);
       } else if (spec.circuit === 'inlet') inlets.push(point);
@@ -97,6 +101,29 @@ function makeWiring(world, tiles, hooks = {}) {
     }
     for (const point of outputs) pulse(point.x, point.y, time, 'copper');
     return queue.length;
+  }
+
+  function displaceValveWater(x, y, amount) {
+    const water = tiles.idOf('water');
+    const destinations = [];
+    let remaining = amount;
+    for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) {
+      const tx = x + dx, ty = y + dy;
+      const id = world.get(tx, ty);
+      if (id !== tiles.AIR && id !== water) continue;
+      const held = world.getLevel(tx, ty);
+      const moved = Math.min(remaining, world.LEVEL_FULL - held);
+      if (moved > 0) destinations.push({ x: tx, y: ty, level: held + moved });
+      remaining -= moved;
+      if (!remaining) break;
+    }
+    if (remaining) return false;
+    for (const target of destinations) {
+      world.setLevel(target.x, target.y, target.level, water);
+      hooks.liquid?.(target.x, target.y);
+    }
+    world.setLevel(x, y, 0, water);
+    return true;
   }
 
   function pump(inlet, outlet) {

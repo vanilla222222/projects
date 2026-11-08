@@ -714,8 +714,8 @@ function oreAt(seed, x, y, depth) {
 
 const STRUCTURE_SPACING = 260;
 
-function structureAt(seed, slot) {
-  if (unit(seed, slot, 0, 6001) > 0.86) return null;
+function structureAt(seed, slot, legacy = false) {
+  if (unit(seed, slot, 0, 6001) > (legacy ? 0.86 : 0.60)) return null;
   const ax = Math.round(slot * STRUCTURE_SPACING
     + STRUCTURE_SPACING * (0.15 + unit(seed, slot, 0, 6003) * 0.7));
   // Anchored to its own column's surface, so a structure sits at a sane depth whether
@@ -746,8 +746,8 @@ function structureRect(seed, body) {
 // live inline in structureTileAt, so a test that asked structureAt where the rooms were
 // got told about rooms that never appear - the third time a rule has existed in two
 // places in this file and the two have disagreed.
-function computeStructurePlaced(seed, slot) {
-  const body = structureAt(seed, slot);
+function computeStructurePlaced(seed, slot, legacy = false) {
+  const body = structureAt(seed, slot, legacy);
   if (!body) return null;
   const rect = structureRect(seed, body);
   // Never in hell, where a wooden cabin among lava is absurd, and never under the sea,
@@ -763,8 +763,8 @@ const STRUCTURE_STATIONS = ['workbench', 'furnace', 'anvil'];
 // Where a structure keeps its chest, if it has one, as an absolute origin. A cabin
 // almost always has one and a ruin often does; a grotto is a natural chamber and a
 // mineshaft was stripped before it was abandoned.
-function computeStructureChest(seed, slot) {
-  const r = cachedStructurePlaced(seed, slot);
+function computeStructureChest(seed, slot, legacy = false) {
+  const r = legacy ? computeStructurePlaced(seed, slot, true) : cachedStructurePlaced(seed, slot);
   if (!r) return null;
   const odds = r.kind === 'cabin' ? 0.86 : r.kind === 'ruin' ? 0.5 : r.kind === 'reliquary' || r.kind === 'cistern' ? 1 : 0;
   if (odds === 0) return null;
@@ -794,6 +794,8 @@ function cacheStructure(compute) {
 
 const cachedStructurePlaced = cacheStructure(computeStructurePlaced);
 const cachedStructureChest = cacheStructure(computeStructureChest);
+// Preserve the unique dungeon anchor across structure density changes.
+const legacyStructureChest = cacheStructure((seed, slot) => computeStructureChest(seed, slot, true));
 
 // The chest tile at a position, if a structure put one there.
 function chestTileAt(seed, x, y) {
@@ -836,6 +838,7 @@ const OCEAN_SITES = ['Reef Shelter', 'Drowned Station', 'Abyssal Vault'];
 const BEACH_SITES = ['Driftwood Jetty', 'Saltwater Storehouse', 'Saltmarrow Catacomb'];
 const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES, blight: BLIGHT_SITES, crimson: CRIMSON_SITES, ocean: OCEAN_SITES, beach: BEACH_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
+  if (slot !== 0 && unit(seed, slot, 0, 6337) > 0.58) return null;
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
   const biome = column.biome.key;
@@ -957,7 +960,7 @@ const cachedOssuary = cacheStructure(seed => {
       if (y >= SEA_LEVEL - 8) continue;
       const slot = Math.floor(x / STRUCTURE_SPACING);
       const overlaps = [slot - 1, slot, slot + 1].some(s => {
-        const chest = cachedStructureChest(seed, s);
+        const chest = legacyStructureChest(seed, s);
         return chest && Math.abs(chest.x - x) <= 25 && chest.y >= y - 9 && chest.y <= y + 58;
       });
       if (!overlaps) return { x, y };
@@ -1328,7 +1331,50 @@ function weatherAt(seed, at, biomeKey) {
   return { rain, wind, snow: cold ? 1 : 0 };
 }
 
+const cachedArchive = cacheStructure(seed => {
+  const preferred = unit(seed, 837, 11) < 0.5 ? -1 : 1;
+  for (let distance = 2048; distance <= 32768; distance += 48) {
+    for (const direction of [preferred, -preferred]) {
+      const x = distance * direction;
+      const y = surfaceHeight(seed, x);
+      if (y < SEA_LEVEL + 6 || ![-24, 0, 24].every(dx => biomeAt(seed, x + dx).key === 'ocean')) continue;
+      return { x, y };
+    }
+  }
+  return null;
+});
+
+function archiveLayout(seed) { return cachedArchive(seed, 0); }
+
+function archiveAt(seed, x, y) {
+  if (Math.abs(x) < 2025 || Math.abs(x) > 32792 || y < SEA_LEVEL || y > SEA_LEVEL + 380) return null;
+  const site = archiveLayout(seed);
+  return site && Math.abs(x - site.x) <= 23 && y >= site.y - 2 && y <= site.y + 59 ? site : null;
+}
+
+function archiveTile(site, x, y) {
+  const dx = x - site.x, dy = y - site.y;
+  const stone = idOf('archive-stone');
+  if (dy === -2 && Math.abs(dx) <= 2) return idOf('archive-entry');
+  if (dy <= 0 || dy === 59 || Math.abs(dx) === 23) return stone;
+  if (dy === 25) return dx >= -4 && dx <= -2 ? idOf('archive-gate') : stone;
+  if (dy === 24 && dx === -21) return idOf('archive-exit');
+  if (dy === 24 && dx === -18) return idOf('archive-fill');
+  if (dy === 7 && dx === 8) return idOf('vault-emitter');
+  if (dy === 7 && dx === 14) return idOf('vault-mirror');
+  if (dy === 8 && dx === 14) return idOf('vault-sensor');
+  if (dy === 9 && dx === 12) return idOf('wire-switch');
+  if (dy === 9 && dx === 16) return idOf('archive-drain');
+  if (dy === 10 && dx >= 10 && dx <= 19) return idOf('oakplatform');
+  if (dy >= 26 && dx === -3) return idOf('rope');
+  if (dy === 58 && dx === 20) return idOf('archive-return');
+  if ((dy === 44 || dy === 51) && Math.abs(dx) >= 7 && Math.abs(dx) <= 12) return idOf('oakplatform');
+  return AIR;
+}
+
 function baseTileAt(seed, x, y, column = columnOf(seed, x)) {
+  const archive = archiveAt(seed, x, y);
+  if (archive) return archiveTile(archive, x, y);
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) return dungeonTile(dungeon, x, y);
   const surface = column.height;
@@ -1832,6 +1878,7 @@ function decorate(write, seed, x, yFrom, yTo) {
 // chosen from the stratum rather than the block, so a cave cut through stone still shows
 // stone wall, and an ore pocket does not leave an ore-coloured hole.
 function baseWallAt(seed, x, y, column = columnOf(seed, x)) {
+  if (archiveAt(seed, x, y)) return wallIdOf('dungeon-wall');
   const dungeon = dungeonAt(seed, x, y);
   if (dungeon) return y < dungeon.y ? 0 : wallIdOf('dungeon-wall');
   const site = biomeSiteAt(seed, x, y);
@@ -1906,7 +1953,7 @@ function baseLevelAt(seed, x, y) {
   const id = baseTileAt(seed, x, y);
   const spec = tile(id);
   if (spec.liquid) return 255;
-  if (spec.solid || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
+  if (spec.solid || archiveAt(seed, x, y) || dungeonAt(seed, x, y) || biomeSiteAt(seed, x, y)?.biome === 'ocean') return 0;
   const column = columnOf(seed, x);
   if (y < column.height) return y >= SEA_LEVEL ? 255 : 0;
   return submergedVoid(seed, x, y, column) ? 255 : 0;
@@ -1972,7 +2019,7 @@ function generateChunk(seed, cx, cy) {
     const lx = wx - x0;
     const ly = wy - y0;
     if (lx < 0 || lx >= CHUNK || ly < 0 || ly >= CHUNK) return;
-    if (dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
+    if (archiveAt(seed, wx, wy) || dungeonAt(seed, wx, wy) || !canStamp(tiles[ly * CHUNK + lx], id)) return;
     tiles[ly * CHUNK + lx] = id;
   };
   for (let wx = x0 - STRUCTURE_MARGIN; wx < x0 + CHUNK + STRUCTURE_MARGIN; wx += 1) {
@@ -1992,12 +2039,12 @@ const EXPORTS_worldgen = {
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
-    foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
+    archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
     inGallery, inShaft, inNetwork, isCarved, GALLERY_SPACING, SHAFT_SPACING,
-    STRUCTURE_SPACING, structureAt, structureRect, structurePlaced: computeStructurePlaced, structureTileAt, structureWallAt,
+    STRUCTURE_SPACING, BIOME_SITE_SPACING, biomeSitesForSlot: biomeSite, structureAt, structureRect, structurePlaced: computeStructurePlaced, structureTileAt, structureWallAt,
     crystalTileAt, potTileAt, potContents, standsOn, weatherAt, RAIN_FIELD, RAIN_THRESHOLD,
     bloodMoonAt, BLOOD_MOON_ODDS, BLOOD_MOON_GRACE, meteorSite, METEOR_MIN, METEOR_MAX, POT_TABLE, CRYSTAL_ODDS, CRYSTAL_MIN_DEPTH, POT_ODDS,
     structureChest: computeStructureChest, chestTileAt, baseContainerAt,

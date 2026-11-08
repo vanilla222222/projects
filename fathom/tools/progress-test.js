@@ -143,6 +143,7 @@ function climb() {
       gain('wyvern-essence');
     }
     if (was.has('warden-igniter')) gain('foundry-prism');
+    if (was.has('tide-seal')) gain('archivist-core');
     if (was.has('lens-sigil') && was.has('foundry-prism')) gain('lens-vault-core');
     if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
@@ -328,7 +329,10 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
     const next = craft.BOSS_CHAPTERS[index + 1]?.[0];
     if (next) ok(craft.bossPrerequisite(next, defeated) === main, next + ' bypasses ' + main);
     defeated.add(main);
-    for (const boss of optional) ok(craft.bossPrerequisite(boss, defeated) === null, boss + ' stays locked');
+    for (const boss of optional) {
+      const expected = boss === 'drownedarchivist' ? 'lenscustodian' : null;
+      ok(craft.bossPrerequisite(boss, defeated) === expected, boss + ' has the wrong unlock gate');
+    }
   }
   const legacy = craft.restoreBossProgress(['ashguardian']);
   ok(legacy.has('kingslime') && legacy.has('furnacewarden') && !legacy.has('voidsovereign'),

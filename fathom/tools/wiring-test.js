@@ -227,4 +227,28 @@ function testWorld() {
   assert.equal(arenaSensor(), null, 'solid blocks should stop optical signals');
 }
 
+{
+  const world = chunks.makeWorld(20260105, worldgen);
+  const site = worldgen.archiveLayout(world.seed);
+  const { x, y } = site;
+  const emitter = () => wiring.traceBeam(world, tiles, x + 8, y + 7).sensor;
+  assert.equal(emitter(), null);
+  const circuit = wiring.makeWiring(world, tiles);
+  for (let dy = 7; dy <= 9; dy += 1) circuit.add(x + 12, y + dy);
+  for (let dx = 13; dx <= 14; dx += 1) circuit.add(x + dx, y + 7);
+  assert.equal(circuit.pulseAll(x + 12, y + 9, 0), 5);
+  assert.deepEqual(emitter(), { x: x + 14, y: y + 8 });
+  assert.equal(tiles.tile(world.get(x + 20, y + 58)).archive, 'return');
+
+  const vx = x + 3, vy = y + 47, water = tiles.idOf('water');
+  world.set(vx, vy, tiles.idOf('powered-valve'));
+  circuit.add(vx, vy);
+  circuit.pulseAll(vx, vy, 0);
+  assert.equal(tiles.tile(world.get(vx, vy)).key, 'powered-valve-open');
+  assert.equal(world.setLevel(vx, vy, 200, water), true);
+  circuit.pulseAll(vx, vy, 1);
+  assert.equal(tiles.tile(world.get(vx, vy)).key, 'powered-valve');
+  assert.equal(world.getLevel(vx, vy - 1), 200, 'closing the valve did not conserve water');
+}
+
 console.log('Wiring checks passed across propagation, pumps, timers, cooldowns, persistence and the Ossuary');
