@@ -701,6 +701,18 @@ pushTile({ key: 'cave-spire', name: 'Mineral Spire', colour: '#9ab5bc', fixture:
 pushTile({ key: 'minecart-rail', name: 'Minecart Rail', colour: '#a79ba0', solid: false,
   platform: true, rail: true, opacity: 3, hardness: 0.25, toughness: 45 });
 
+for (const [key, name, colour, rail, circuitPair] of [
+  ['rail-junction', 'Rail Junction', '#a38ed0', 'upper', 'rail-junction-lower'],
+  ['rail-junction-lower', 'Rail Junction', '#a38ed0', 'lower', 'rail-junction'],
+  ['brake-rail', 'Brake Rail', '#ca975f', 'brake'],
+  ['stop-rail', 'Stop Rail', '#c57578', 'stop']
+]) pushTile({ key, name, colour, rail, circuitPair, platform: true, solid: false,
+  opacity: 3, toughness: 45, hardness: 0.25, drops: key === 'rail-junction-lower' ? 'rail-junction' : key });
+
+defineMulti('rail-cache', 'Abandoned Rail Supply Cache', 2, 2, () => ({
+  solid: false, opacity: 6, colour: '#a77f60', toughness: 65, chest: 'rail-cache', drops: 'ironchest'
+}));
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {
