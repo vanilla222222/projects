@@ -209,6 +209,22 @@ if (!loadError) {
     // And the thing index.html actually calls has to exist.
     ok(typeof booted.makeGame === 'function', 'makeGame is not defined after loading');
 
+    // Renderer construction bakes every registered tile, even before its biome is visited.
+    const noop = () => {};
+    const gradient = { addColorStop: noop };
+    const ctx = {
+      save: noop, restore: noop, beginPath: noop, rect: noop, clip: noop, fillRect: noop, clearRect: noop, strokeRect: noop,
+      moveTo: noop, lineTo: noop, closePath: noop, fill: noop, stroke: noop, arc: noop, ellipse: noop,
+      translate: noop,
+      createRadialGradient: () => gradient, createLinearGradient: () => gradient
+    };
+    try {
+      const atlas = FATHOM.texture.bakeAtlas({ createElement: () => ({ getContext: () => ctx }) }, FATHOM.tiles);
+      ok(atlas.width > 0 && atlas.height > 0, 'tile atlas has no area');
+    } catch (error) {
+      ok(false, 'tile atlas could not bake: ' + error.stack);
+    }
+
     // The names game.js destructures out of deps must all be there, or the game throws
     // the moment it starts rather than when it loads.
     const game = fs.readFileSync(path.join(root, 'js/game.js'), 'utf8');

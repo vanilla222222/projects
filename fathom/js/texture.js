@@ -1012,7 +1012,7 @@ function paintTerrarium(ctx, spec, ox, oy) {
   }
 }
 
-function paintWorkshopFixture(ctx, spec, ox, oy) {
+function paintWorkshopFixture(ctx, spec, variant, ox, oy) {
   if (spec.fixture === 'terrarium') return paintTerrarium(ctx, spec, ox, oy);
   if (spec.fixture === 'optics') {
     ctx.fillStyle = '#383147';
@@ -1032,6 +1032,7 @@ function paintWorkshopFixture(ctx, spec, ox, oy) {
   if (spec.glyph) return paintGlyphStatue(ctx, spec, ox, oy);
   if (WORKSHOP_SILHOUETTES[spec.fixture]) return paintWorkshopSilhouette(ctx, spec, ox, oy);
   const pixels = WORKSHOP_PIXELS[spec.fixture];
+  if (!pixels && spec.furniture) return paintFurniture(ctx, spec, variant, ox, oy);
   const palette = [null, shade(spec.colour, -0.4), spec.colour, shade(spec.colour, 0.27),
     spec.emit ? '#ffd68a' : '#b6a69f'];
   for (const [y, row] of pixels.entries()) {
@@ -1138,7 +1139,7 @@ function bakeAtlas(document, tiles) {
       else if (spec.key === 'campfire') paintCampfire(ctx, spec, v, ox, oy);
       else if (spec.door) paintDoor(ctx, spec, v, ox, oy);
       else if (spec.masonry) paintMasonry(ctx, spec, v, ox, oy);
-      else if (spec.fixture) paintWorkshopFixture(ctx, spec, ox, oy);
+      else if (spec.fixture) paintWorkshopFixture(ctx, spec, v, ox, oy);
       else if (spec.furniture) paintFurniture(ctx, spec, v, ox, oy);
       else if (spec.wood || spec.key === 'wood' || spec.key === 'plank' || spec.key === 'trunk'
         || spec.key === 'blighttrunk' || spec.key === 'fleshtrunk') paintWood(ctx, spec, v, ox, oy);
