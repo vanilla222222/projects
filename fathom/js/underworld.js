@@ -164,9 +164,36 @@ function makeUnderworldGenerator(overworld) {
     }
     if (y === floor || y === top || distance === 18) return stone;
     if (dx === 0 && y === floor - 1) return idOf('underworld-campaign-seal');
+    if (encounter.key === 'undertow-warden' && dx === -12 && y === floor - 1) return idOf('tidekeeper-cell');
     if (x === site.waystone.x && y === site.waystone.y) return idOf('underworld-waystone');
     if (distance === 10 && y === floor - 4) return idOf('lantern');
     if (distance >= 6 && distance <= 9 && y === floor - 7) return idOf(landmarkDecor[encounter.biome]);
+    return AIR;
+  }
+
+  const ruinOffset = bandWidth * 2 + 143;
+
+  function tidalRuin(seed) {
+    const direction = biomeAt(seed, bandWidth) === biomes[1] ? 1 : -1;
+    const x = direction * ruinOffset;
+    const entrance = surfaceHeight(seed, x);
+    const floor = entrance + 39;
+    return { x, entrance, floor, hatch: { x, y: entrance - 1 },
+      exit: { x: x - 8, y: floor - 1 }, archive: { x: x + 8, y: floor - 1 } };
+  }
+
+  function tidalTile(site, x, y) {
+    const dx = x - site.x;
+    const { entrance, floor } = site;
+    const stone = idOf('brine-depths-stone');
+    if (y === entrance - 1 && dx === 0) return idOf('tidal-hatch');
+    if (y < entrance) return AIR;
+    if (y === entrance || y === floor || y === floor - 12 || Math.abs(dx) === 12) return stone;
+    if (y < floor - 12) return undefined;
+    if (y === floor - 1 && x === site.exit.x) return idOf('tidal-exit');
+    if (y === floor - 1 && x === site.archive.x) return idOf('tidal-archive');
+    if (Math.abs(dx) === 5 && y === floor - 4) return idOf('lantern');
+    if (Math.abs(dx) >= 4 && Math.abs(dx) <= 8 && y === floor - 6) return idOf('brine-depths-platform');
     return AIR;
   }
 
@@ -177,6 +204,13 @@ function makeUnderworldGenerator(overworld) {
       if (x === 5 && y === surface - 1) return idOf('underworld-waystone');
       if ((x === -8 || x === 8) && y === surface - 3) return idOf('lantern');
       return AIR;
+    }
+    if (Math.abs(Math.abs(x) - ruinOffset) <= 12 && y >= surface - 15 && y <= surface + 85) {
+      const ruin = tidalRuin(seed);
+      if (Math.abs(x - ruin.x) <= 12 && y >= ruin.entrance - 4 && y <= ruin.floor) {
+        const tile = tidalTile(ruin, x, y);
+        if (tile !== undefined) return tile;
+      }
     }
     const biome = biomeAt(seed, x);
     const floor = surfaceHeight(seed, x);
@@ -256,7 +290,7 @@ function makeUnderworldGenerator(overworld) {
 
   const absent = () => null;
   return { ...overworld, realm: 'underworld', BIOMES: biomes, layerAt, biomeAt, surfaceHeight,
-    campaignSiteAt, campaignSite, dungeonSiteAt, dungeonSite,
+    campaignSiteAt, campaignSite, dungeonSiteAt, dungeonSite, tidalRuin,
     encounterSiteAt(seed, x, y) {
       const dungeon = dungeonSiteAt(seed, x, y);
       return dungeon && y >= dungeon.top ? dungeon : campaignSiteAt(seed, x, y);
@@ -275,6 +309,12 @@ function makeUnderworldGenerator(overworld) {
   };
 }
 
-const EXPORTS_underworld = { makeUnderworldGenerator };
+function brineTide(phase) {
+  const cycle = (phase + 0.18) % 1;
+  const low = cycle < 0.25;
+  return { low, untilChange: (low ? 0.25 : 1) - cycle };
+}
+
+const EXPORTS_underworld = { makeUnderworldGenerator, brineTide };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_underworld;
 else if (typeof FATHOM !== 'undefined') FATHOM.underworld = EXPORTS_underworld;

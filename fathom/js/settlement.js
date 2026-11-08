@@ -10,6 +10,9 @@ const SETTLEMENT_ROLES = {
     supplies: [['iron-bar', 5], ['stone', 20]], stock: [['minecart-rail', 24, 110], ['wire-spool', 24, 140], ['iron-bar', 5, 210]] },
   kitchen: { name: 'Waterside Kitchen', station: 'cauldron', job: 'fish',
     supplies: [['cooked-fish', 3], ['bottle', 4]], stock: [['cooked-fish', 5, 140], ['gills-potion', 3, 220], ['regen-potion', 2, 200]] },
+  tide: { name: 'Tidekeeper’s Landing', station: 'cauldron', job: 'fish',
+    supplies: [['brine-depths-wood', 12], ['brine-depths-fish', 2]],
+    stock: [['brine-depths-fish-stew', 2, 240], ['gills-potion', 3, 220], ['brine-depths-crate', 1, 620]] },
   lab: { name: 'Survey Lab', station: 'alchemy-table', job: 'specimen',
     supplies: [['bottle', 6], ['glowmoss', 8]], stock: [['shine-potion', 3, 190], ['clarity-potion', 3, 240], ['spelunk-potion', 3, 260]] }
 };
@@ -21,7 +24,7 @@ const SETTLEMENT_REGIONS = {
   beach: 'kitchen', ocean: 'kitchen', marsh: 'kitchen',
   tundra: 'lab', blight: 'lab', crimson: 'lab', hallow: 'lab',
   caves: 'ranger', deep: 'forge', sky: 'trade', space: 'lab', void: 'lab',
-  ashwood: 'ranger', 'glass-dunes': 'trade', 'brine-depths': 'kitchen', 'ember-bloom': 'forge', 'gloom-frost': 'lab'
+  ashwood: 'ranger', 'glass-dunes': 'trade', 'brine-depths': 'tide', 'ember-bloom': 'forge', 'gloom-frost': 'lab'
 };
 
 const SETTLEMENT_JOBS = {
@@ -214,6 +217,12 @@ function settlementKey(device) {
 function settlementDaily(device, region, day) {
   const role = settlementRole(region);
   const offset = ((device.x * 31 + device.y * 17 + day) % 3 + 3) % 3;
+  if (region === 'brine-depths') {
+    const reward = [['tide-market-scrip', 2 + offset], ['coin', 220]];
+    if (offset === 0) return { name: 'Jetty Fish Basket', needs: [['brine-depths-fish', 2]], reward };
+    if (offset === 1) return { name: 'Lanternfish for the Market', needs: [['brine-depths-cave-fish', 2]], reward };
+    return { name: 'Work the Brine Pools', key: 'daily-fish:brine-depths', goal: 4, reward };
+  }
   const [key, count] = role.stock[offset];
   const reward = [[key, Math.max(1, Math.ceil(count / 3))], ['coin', 160 + offset * 40]];
   if (offset < 2) {

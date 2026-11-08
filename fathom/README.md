@@ -215,6 +215,17 @@ boss summon. The five bosses have their own attack patterns and drop trophies
 that forge into exploration accessories. Collect the trophy at the altar to
 connect the dungeon’s waystone to the Return Gate camp and other cleared dungeons.
 
+#### Tidekeeper’s Landing
+
+Defeat the Undertow Warden in the Sunken Sluice and open Marra’s cell.
+Build her a furnished home and charter a surface settlement in Brine Depths.
+With Marra and two occupied homes near the charter, the Tide Market opens.
+Its rotating daily contracts pay scrip for potions, stews, and Saltlight Crates.
+
+Accept Marra’s Lowwater Survey at the market. The hatch opens for one quarter
+of each in-game day and the emergency ladder works at every tide. Return the
+survey ledger to Marra’s market for the Tideglass Rod.
+
 #### Underworld fishing
 
 Each biome has a surface fish, a cave fish, and a local crate. Bigger pools

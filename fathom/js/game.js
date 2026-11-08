@@ -858,7 +858,7 @@ function makeGame(canvas, deps) {
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
     if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial
       || spec.dimensionGate || spec.underworldShrine || spec.underworldCampaign
-      || spec.underworldConduit || spec.underworldWaystone || spec.underworldTablet || spec.underworldLock
+      || spec.underworldConduit || spec.underworldWaystone || spec.underworldTablet || spec.underworldLock || spec.brineQuest
       || (dimension === 'underworld' && Math.abs(aim.x) <= 3 && aim.y === worldgen.SEA_LEVEL)) {
       state.player.mining = null;
       return;
@@ -1772,7 +1772,8 @@ function makeGame(canvas, deps) {
     if (occupant) rows.unshift('Room occupied by ' + occupant.spec.name + '.');
     else if (room.valid) rows.unshift('This room is ready for a resident.');
     else rows.unshift(...room.problems);
-    const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
+    const progress = { ...state.progress, marraRescued: dimension === 'underworld' && settlements.claimed.has('marra-rescued') };
+    const available = new Set(villagerModule.eligible(progress).map(v => v.key));
     const actions = [{ label: 'Campaign', run: openCampaign }, { label: 'Progression Journal', run: openProgression },
       { label: 'Town Contracts', run: openTownOrders }, { label: 'Quest Board', run: openQuestBoard }, { label: 'Bestiary', run: openBestiary },
       { label: 'Field Journal', run: openFieldJournal },
@@ -1781,13 +1782,14 @@ function makeGame(canvas, deps) {
     if (pylon) actions.push({ label: 'Local Settlement', run: () => openSettlement(pylon) });
     if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
     for (const spec of villagerModule.VILLAGERS) {
+      if (spec.region && (dimension !== 'underworld' || worldgen.biomeAt(seed, Math.floor(x)).key !== spec.region)) continue;
       const housed = village.list.some(v => v.key === spec.key);
       if (!housed && !available.has(spec.key)) {
         rows.push(spec.name + ' ' + spec.wantsText + '.');
       } else if (room.valid && !occupant) {
         actions.push({ label: (housed ? 'Move ' : 'Invite ') + spec.name, run() {
           if (!physics.aimTile(state.player, { x, y }).inReach) return;
-          const result = village.settle(state.progress, x, y, spec.key);
+          const result = village.settle(progress, x, y, spec.key);
           if (result.moved) say(spec.name + ' has moved in', 3);
           checkHousing();
         } });
@@ -2076,6 +2078,9 @@ function makeGame(canvas, deps) {
       'Supply counters and fieldwork need two valid homes. A district needs three.'];
     const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
       { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: () => openQuestBoard(device) }];
+    if (dimension === 'underworld' && region === 'brine-depths') {
+      actions.push({ label: 'Tidekeeper’s Landing', run: () => openBrineQuest(device) });
+    }
     if (region === 'forest') actions.push({ label: 'A Road Through the Deepwood', run: openRangerTrail });
     const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
       && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
@@ -2588,7 +2593,7 @@ function makeGame(canvas, deps) {
     const rows = ['The Underworld · Return Gate at x 0, y ' + (worldgen.SEA_LEVEL - 1) + '.',
       'Each region has a surface refuge, a cave stronghold and a deep ruin. Challenge the guardians at the two lower seals.'];
     const actions = [{ label: 'Boss campaign', run: openUnderworldCampaign },
-      { label: 'Optional dungeons', run: openUnderworldDungeons }, { label: 'Town Hall', run: checkHousing }];
+      { label: 'Optional dungeons', run: openUnderworldDungeons }, { label: 'Tidekeeper’s Landing', run: () => openBrineQuest() }, { label: 'Town Hall', run: checkHousing }];
     for (const biome of worldgen.BIOMES) {
       const centers = [-2, -1, 0, 1, 2].map(band => band * worldgen.bandWidth);
       const center = centers.find(x => worldgen.biomeAt(seed, x).key === biome.key);
@@ -2655,6 +2660,90 @@ function makeGame(canvas, deps) {
       }
     } else if (item?.key === encounter.summon && insidePortalTrial(site)) return startUnderworldCampaignFight(site);
     else say('Use ' + encounter.summonName + ' inside ' + encounter.structure, 3);
+    return true;
+  }
+
+  function activeBrineMarket(device) {
+    if (dimension !== 'underworld' || !device || deviceAt(device.x, device.y) !== device
+      || settlements.town(device)?.region !== 'brine-depths' || settlements.town(device).rank < 2
+      || !physics.aimTile(state.player, device).inReach || townHomes(device) < 2) return false;
+    const marra = village.list.find(resident => resident.key === 'marra');
+    if (!marra || Math.hypot(marra.home.x - device.x, marra.home.y - device.y) > PYLON_RADIUS) return false;
+    return village.survey(marra.home.x, marra.home.y + 0.72).occupant === marra;
+  }
+
+  function openBrineQuest(selected) {
+    if (dimension !== 'underworld') return;
+    input.left = input.right = input.jump = input.down = false;
+    const sluice = worldgen.dungeonSite(seed, tiles.UNDERWORLD_DUNGEONS.find(encounter => encounter.key === 'undertow-warden'));
+    const ruin = worldgen.tidalRuin(seed);
+    const tide = deps.underworld.brineTide(state.dayPhase);
+    const minutes = Math.ceil(tide.untilChange * worldRules.day / 60);
+    const flags = settlements.claimed;
+    const device = selected || nearestTown(state.player.x, state.player.y, activeBrineMarket, 8);
+    const rows = ['Brine Depths · ' + (tide.low ? 'Low tide' : 'High tide') + ' · changes in about ' + minutes + ' real-time min.',
+      'The Sunken Sluice entrance is at x ' + sluice.x + ', y ' + sluice.entrance + '.'];
+    const actions = [{ label: 'Underworld journal', run: openUnderworldJournal }];
+    if (!flags.has('marra-rescued')) rows.push('Defeat the Undertow Warden, then open Marra’s cell beside the altar.');
+    else {
+      rows.push('Marra is free. Assign her a furnished room through Town Hall in Brine Depths. Found and charter a surface Brine outpost with two occupied homes.');
+      if (flags.has('lowwater-chart')) rows.push('Lowwater Hatch · x ' + ruin.x + ', y ' + ruin.hatch.y
+        + ' · Enter at low tide. The emergency ladder always works.');
+      if (activeBrineMarket(device)) {
+        rows.push('Tide Market is open. Daily contracts pay scrip at the town quest board.');
+        actions.push({ label: 'Brine daily contracts', run: () => openQuestBoard(device) });
+        for (const [cost, key, count] of [[2, 'gills-potion', 3], [3, 'brine-depths-fish-stew', 2], [5, 'brine-depths-crate', 1]]) {
+          actions.push({ label: 'Trade ' + cost + ' scrip for ' + townItems([[key, count]]), run() {
+            if (activeBrineMarket(device)) townExchange([['tide-market-scrip', cost]], [[key, count]]);
+          } });
+        }
+        if (!flags.has('lowwater-chart')) actions.push({ label: 'Take Marra’s Lowwater Survey', run() {
+          if (!activeBrineMarket(device)) return;
+          flags.add('lowwater-chart');
+          openBrineQuest(device);
+        } });
+        else if (!flags.has('lowwater-complete')) actions.push({ label: 'Return the survey ledger for a Tideglass Rod', run() {
+          if (activeBrineMarket(device) && !flags.has('lowwater-complete')
+            && townExchange([['lowwater-ledger', 1]], [['tideglass-rod', 1], ['tide-market-scrip', 5]])) {
+            flags.add('lowwater-complete');
+            openBrineQuest(device);
+          }
+        } });
+      } else rows.push('Visit a charter pylon within 45 tiles of Marra’s occupied home to open the market.');
+      if (flags.has('lowwater-complete')) rows.push('Lowwater Survey complete · The Tideglass Rod improves water fishing power.');
+    }
+    ui.showTown('Tidekeeper’s Landing', rows, actions);
+  }
+
+  function useBrineFixture(aim) {
+    if (dimension !== 'underworld' || !aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (!spec.brineQuest) return false;
+    const flags = settlements.claimed;
+    if (spec.key === 'tidekeeper-cell') {
+      if (!defeatedBosses.has('undertow-warden')) say('Defeat the Undertow Warden to free Marra', 3);
+      else if (!flags.has('marra-rescued')) {
+        flags.add('marra-rescued');
+        say('Marra is free. Invite her into a furnished Brine Depths home.', 4);
+      } else say('Marra’s cell is empty', 2);
+      return true;
+    }
+    if (swarm.bossAlive() || activePortalTrial) { say('Finish the encounter first', 2); return true; }
+    const ruin = worldgen.tidalRuin(seed);
+    if (spec.key === 'tidal-archive') {
+      if (!flags.has('lowwater-entered')) say('Enter through the Lowwater Hatch with Marra’s survey', 3);
+      else if (flags.has('lowwater-complete') || inventory.countOf('lowwater-ledger')) say('Return to the Tide Market', 2);
+      else if (townExchange([], [['lowwater-ledger', 1]])) say('Survey ledger recovered. Bring it to Marra’s market.', 4);
+      return true;
+    }
+    const entering = spec.key === 'tidal-hatch';
+    if (entering && !flags.has('lowwater-chart')) { say('Ask Marra for a survey at an active Tide Market', 3); return true; }
+    if (entering && !deps.underworld.brineTide(state.dayPhase).low) { say('The hatch only opens at low tide', 3); return true; }
+    const landing = safePylonLanding(entering ? ruin.exit : ruin.hatch);
+    if (!landing) { say('The other side needs a clear landing', 3); return true; }
+    relocateWithinRealm(landing);
+    if (entering) flags.add('lowwater-entered');
+    say(entering ? 'Entered the Lowwater Archive' : 'Returned to the Lowwater Hatch', 3);
     return true;
   }
 
@@ -2729,12 +2818,7 @@ function makeGame(canvas, deps) {
         if (!tiles.tile(world.get(destination.x, destination.y)).underworldWaystone) return;
         const landing = safePylonLanding(destination);
         if (!landing) { say('Clear a landing beside the destination waystone', 3); return; }
-        releaseHook();
-        closeChest();
-        if (state.player.cart) physics.dismountMinecart(state.player);
-        Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
-        state.camera.x = landing.x;
-        state.camera.y = landing.y;
+        relocateWithinRealm(landing);
         ui.closeTown();
         say('Arrived at ' + destination.name, 2.5);
       }
@@ -2990,7 +3074,12 @@ function makeGame(canvas, deps) {
     const day = dayNumber();
     const quest = settlementModule.settlementDaily(device, local.region, day);
     const daily = local.daily?.day === day ? local.daily : null;
-    const canUse = () => eligible(device) && dayNumber() === day;
+    const brineDaily = dimension === 'underworld' && local.region === 'brine-depths';
+    if (brineDaily && !activeBrineMarket(device)) {
+      rows.push('Tide Market contracts require Marra in a valid home near this charter.');
+      return;
+    }
+    const canUse = () => eligible(device) && dayNumber() === day && (!brineDaily || activeBrineMarket(device));
     const progress = quest.key && daily ? settlements.count(quest.key) - daily.start : 0;
     rows.push('Town daily · ' + townRegionName(local.region) + ' · Day ' + (day + 1) + ' · ' + quest.name);
     rows.push(daily?.done ? 'Completed for today.' : (quest.needs ? 'Deliver ' + townItems(quest.needs)
@@ -3156,6 +3245,15 @@ function makeGame(canvas, deps) {
     ui.showTown(device.type === 'crafter' ? 'Storage Crafting' : 'Magic Storage', [], [], view);
   }
 
+  function relocateWithinRealm(landing) {
+    releaseHook();
+    closeChest();
+    if (state.player.cart) physics.dismountMinecart(state.player);
+    Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
+    state.camera.x = landing.x;
+    state.camera.y = landing.y;
+  }
+
   function safePylonLanding(device) {
     const p = state.player;
     for (const dx of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
@@ -3195,12 +3293,7 @@ function makeGame(canvas, deps) {
           }
           const landing = safePylonLanding(destination);
           if (!landing) { say('Clear a landing beside the destination pylon', 2.5); return; }
-          releaseHook();
-          closeChest();
-          if (state.player.cart) physics.dismountMinecart(state.player);
-          Object.assign(state.player, landing, { vx: 0, vy: 0, mining: null, fell: 0, landed: 0 });
-          state.camera.x = landing.x;
-          state.camera.y = landing.y;
+          relocateWithinRealm(landing);
           ui.closeTown();
           say('Arrived at ' + name, 2.5);
         } };
@@ -3816,7 +3909,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useDimensionGate(aim0, item) || useUnderworldDungeonFixture(aim0) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useDimensionGate(aim0, item) || useBrineFixture(aim0) || useUnderworldDungeonFixture(aim0) || useUnderworldShrine(aim0) || useCampaignAltar(aim0, item) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -4142,7 +4235,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=underworld-dungeons-1');
+      const worker = new Worker('workers/chunk.js?v=brine-town-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
