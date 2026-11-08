@@ -806,6 +806,10 @@ defineMulti('chapter-armory-cache', 'Armory Cache', 2, 2, () => ({
 workshopFixture('tinkers-workshop', 'Tinker’s Workshop', '#b58eae', 'tinkers-workshop',
   [['#wood', 14], ['iron-bar', 6], ['glass', 4]], 'workbench', { station: 'tinkers-workshop', emit: 3 });
 
+// Species are saved separately so adding enemies never shifts existing tile IDs.
+pushTile({ key: 'enemy-banner', name: 'Enemy Banner', colour: '#b29a83', solid: false,
+  opacity: 0, hardness: 0.1, toughness: 10, drops: null, enemyBanner: true });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 

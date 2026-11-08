@@ -1826,6 +1826,26 @@ for (const [role, order] of Object.entries(BEAT_ORDERS)) {
   });
 }
 
+ITEMS['wildlife-trace'] = { name: 'Wildlife Trace', kind: 'loot', colour: '#bba787',
+  text: 'Natural material used to furnish a terrarium.' };
+RECIPES.push(
+  { out: { key: 'empty-terrarium', kind: 'block', count: 1 }, need: [['glass', 5], ['wildlife-trace', 3]], station: 'workbench' },
+  { out: { key: 'torch', kind: 'block', count: 6 }, need: [['rottenflesh', 2], ['#wood', 1]], station: null },
+  { out: { key: 'lantern', kind: 'block', count: 2 }, need: [['shadowscale', 2], ['glass', 2], ['torch', 2]], station: 'anvil' }
+);
+
+function registerEnemyBanners(roster) {
+  for (const spec of roster) {
+    ITEMS['banner-' + spec.key] = { name: spec.name + ' Banner', kind: 'block', colour: spec.colour,
+      banner: spec.key, text: 'Hang from a wall or ceiling. Nearby hits deal 15% more to this enemy.' };
+  }
+}
+
+function earnedEnemyBanners(spec, defeated, caught, bossCleared) {
+  if (spec.boss) return defeated > 0 || bossCleared ? 1 : 0;
+  return Math.floor((spec.passive ? caught : defeated) / (spec.passive ? 25 : 50));
+}
+
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
   const x0 = Math.floor(px) - STATION_REACH_X;
@@ -2029,7 +2049,7 @@ function restoreBossProgress(saved) {
 const EXPORTS_craft = { RECIPES, ITEMS, BOSS_CHAPTERS, HARDMODE_TRIO, bossPrerequisite, restoreBossProgress, WEAPONS, ARMOUR, ARMOUR_TIERS, ARMOUR_PIECES,
   ACCESSORIES, setBonusFor, equipEffects, TAGS, tagMembers, heldOf, spend, STATION_REACH_X, STATION_REACH_Y,
     stationsNear, canAfford, available, atStation, craft, kindOf, nameOf,
-    classOf, dropOnly, COMBAT_BEATS, AMMO, bestAmmo, grappleOf, describe,
+    classOf, dropOnly, registerEnemyBanners, earnedEnemyBanners, COMBAT_BEATS, AMMO, bestAmmo, grappleOf, describe,
     EFFECT_FIELDS, baseEffects, applyEffect };
 
 if (typeof module !== 'undefined' && module.exports) {

@@ -537,3 +537,24 @@ for (const layer of worldgen.LAYERS) {
 
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);
+
+{
+  const assert = require('node:assert/strict');
+  const recipeInputs = new Set(craft.RECIPES.flatMap(recipe => recipe.need.map(([key]) => key)));
+  const directUses = new Set(['coin', 'mechanist-key', 'dungeon-key']);
+  for (const spec of enemyModule.ENEMIES) {
+    const drops = [...(spec.drops || []), ...(spec.bossDrops || [])];
+    assert.ok(drops.length, spec.key + ' has no drop');
+    for (const entry of drops) {
+      const key = Array.isArray(entry) ? entry[0] : entry;
+      assert.ok(recipeInputs.has(key) || directUses.has(key) || craft.WEAPONS[key] || craft.ACCESSORIES[key]
+        || craft.ITEMS[key]?.use || craft.ITEMS[key]?.critter, key + ' has no use');
+    }
+  }
+  craft.registerEnemyBanners(enemyModule.ENEMIES);
+  assert.equal(Object.values(craft.ITEMS).filter(item => item.banner).length, enemyModule.ENEMIES.length);
+  assert.equal(craft.earnedEnemyBanners(enemyModule.BY_KEY.greenslime, 99, 0, false), 1);
+  assert.equal(craft.earnedEnemyBanners(enemyModule.BY_KEY.greenslime, 100, 0, false), 2);
+  assert.equal(craft.earnedEnemyBanners(enemyModule.BY_KEY.kingslime, 12, 0, true), 1);
+  assert.equal(craft.earnedEnemyBanners(enemyModule.BY_KEY['meadow-mouse'], 50, 25, false), 1);
+}

@@ -1155,6 +1155,26 @@ function makeRenderer(canvas, deps) {
 
   // Rasterize moving sprites on their own grid, leaving the atlas, HUD text and
   // mouse-to-world coordinates at the normal display resolution.
+  function drawEnemyBanners(state, view) {
+    if (!state.enemyBanners?.size) return;
+    const { x0, y0, cols, rows, zoom, offsetX, offsetY } = view;
+    const size = TILE * zoom;
+    const id = tiles.idOf('enemy-banner');
+    for (const banner of state.enemyBanners.values()) {
+      const tx = banner.x - x0, ty = banner.y - y0;
+      if (tx < 0 || ty < 0 || tx >= cols || ty >= rows || state.world.get(banner.x, banner.y) !== id) continue;
+      const x = Math.round(tx * size - offsetX), y = Math.round(ty * size - offsetY);
+      ctx.fillStyle = '#211c2a';
+      ctx.fillRect(x + 2 * zoom, y + 2 * zoom, 12 * zoom, 2 * zoom);
+      ctx.fillRect(x + 4 * zoom, y + 3 * zoom, 8 * zoom, 12 * zoom);
+      ctx.fillStyle = banner.colour;
+      ctx.fillRect(x + 5 * zoom, y + 4 * zoom, 6 * zoom, 8 * zoom);
+      ctx.fillRect(x + 6 * zoom, y + 12 * zoom, 4 * zoom, 2 * zoom);
+      ctx.fillStyle = '#f4d8ac';
+      ctx.fillRect(x + 7 * zoom, y + 6 * zoom, 2 * zoom, 4 * zoom);
+    }
+  }
+
   function drawActors(state, view) {
     const w = Math.ceil(canvas.width / ACTOR_PIXEL);
     const h = Math.ceil(canvas.height / ACTOR_PIXEL);
@@ -1263,6 +1283,7 @@ function makeRenderer(canvas, deps) {
       terrainQuads = terrain.end();
       screen.drawImage(terrain.canvas, 0, 0);
     });
+    phase('banners', () => drawEnemyBanners(state, view));
     phase('water', () => drawLiquidDetail(state, view, sample));
     phase('drops', () => drawDrops(state, view));
     drawActors(state, view);
