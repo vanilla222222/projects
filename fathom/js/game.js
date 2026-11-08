@@ -16,11 +16,13 @@ function makeGame(canvas, deps) {
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
-    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed, sprite });
+    { profiles, palette: profileModule, parseSeed: profileModule.parseSeed, sprite, worldgen });
 
   // Nothing world-shaped exists until a world is chosen, so each of these is filled in by
   // boot(). A character brings its own inventory and stats into whichever world it enters.
   let seed = 0;
+  let worldSettings = worldgen.normalizeWorldSettings();
+  let worldRules = worldgen.worldSettingValues();
   let world = null;
   let renderer = null;
   let touchControls = null, lastUISync = -Infinity;
@@ -165,7 +167,7 @@ function makeGame(canvas, deps) {
   }
 
   function spawnPlayer() {
-    const edge = worldgen.START_FOREST_EDGE;
+    const edge = worldgen.starterForestEdge(seed);
     for (let probe = 0; probe < Math.ceil(edge / 7) * 2; probe += 1) {
       const column = (probe % 2 ? -1 : 1) * Math.ceil(probe / 2) * 7;
       if (column < -edge || column >= edge) continue;
@@ -422,7 +424,7 @@ function makeGame(canvas, deps) {
     const night = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
     if (night && !wasNight) {
       state.nights += 1;
-      state.bloodMoon = worldgen.bloodMoonAt(seed, state.nights);
+      state.bloodMoon = worldgen.bloodMoonAt(seed, state.nights, worldRules.bloodMoon);
       if (state.bloodMoon) {
         say('The moon is bleeding', 4.2);
         sfx('roar', { gain: 0.7, pitch: 1.3 });
@@ -1046,7 +1048,7 @@ function makeGame(canvas, deps) {
           if (!solid) {
             a.escapeTerrain = false;
             if (pointHitsPlayer(a.x, a.y, a.radius || 0)) {
-              if (statsModule.damage(stats, a.damage) > 0) lastHurt = a.hostile;
+              if (statsModule.damage(stats, a.damage * worldRules.damage) > 0) lastHurt = a.hostile;
               hit = true;
             }
           }
@@ -2466,8 +2468,8 @@ function makeGame(canvas, deps) {
       audio.stepMusic(dt, layerKey, state.dayPhase > 0.27 && state.dayPhase < 0.73);
     }
     stepEvents();
-    state.weather = worldgen.weatherAt(seed, state.time,
-      worldgen.biomeAt(seed, Math.floor(state.player.x)).key);
+    state.weather = worldRules.weather ? worldgen.weatherAt(seed, state.time,
+      worldgen.biomeAt(seed, Math.floor(state.player.x)).key) : null;
 
     const gear = currentEffects();
     state.gear = gear;
@@ -2485,7 +2487,7 @@ function makeGame(canvas, deps) {
       const friendly = hit && hit.spec.kind === 'slime'
         && state.gear && state.gear.slimeFriend;
       if (hit && !friendly) {
-        const dealt = statsModule.damage(stats, hit.spec.damage);
+        const dealt = statsModule.damage(stats, hit.spec.damage * worldRules.damage);
         lastHurt = hit.spec.name;
         if (dealt > 0) {
           // Knocked away from whatever hit you, so contact damage is not a death loop.
@@ -2554,7 +2556,7 @@ function makeGame(canvas, deps) {
       if (p.life <= 0) state.particles.splice(i, 1);
     }
 
-    state.dayPhase = (state.dayPhase + dt / DAY_SECONDS) % 1;
+    state.dayPhase = (state.dayPhase + dt / worldRules.day) % 1;
     const target = state.player;
     const lerp = 1 - Math.pow(0.0015, dt);
     state.camera.x += (target.x + target.width / 2 - state.camera.x) * lerp;
@@ -2573,7 +2575,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=astral-siege-1');
+      const worker = new Worker('workers/chunk.js?v=world-settings-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2627,7 +2629,7 @@ function makeGame(canvas, deps) {
     }
     if (next) {
       chunkJob = { ...next, world };
-      chunkWorker.postMessage({ ...next, seed });
+      chunkWorker.postMessage({ ...next, seed: Number(seed), settings: seed.factors ? worldSettings : undefined });
     }
   }
 
@@ -2896,16 +2898,19 @@ function makeGame(canvas, deps) {
     bestiary = Object.assign(Object.create(null), characterRecord.bestiary || {});
     cargoItems = characterRecord.cargoItems || [];
     const worldRecord = profiles.loadWorld(worldId) || {};
-    seed = choice.world.seed;
+    worldSettings = worldgen.normalizeWorldSettings(worldRecord.settings || choice.world.settings);
+    worldRules = worldgen.worldSettingValues(worldSettings);
+    seed = worldgen.generationSeed(choice.world.seed, worldSettings);
 
     world = chunks.makeWorld(seed, worldgen);
     startChunkWorker();
-    if (worldRecord.world && worldRecord.world.seed === seed) world.restore(worldRecord.world);
+    if (worldRecord.world && worldRecord.world.seed === Number(seed)) world.restore(worldRecord.world);
 
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, {
       worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage,
+      enemyActivity: worldRules.enemies, bossHealth: worldRules.bossHealth,
       wyvernsUnlocked: () => defeatedBosses.has('starwyvern'), lensLit: lensSensorLit, siegeStrike: fireSiegeStrike
     });
     wiring = deps.wiring.makeWiring(world, tiles, {
@@ -3141,7 +3146,7 @@ function makeGame(canvas, deps) {
     get swarm() { return swarm; },
     get inventory() { return inventory; },
     get stats() { return stats; },
-    get seed() { return seed; },
+    get seed() { return Number(seed); },
     get ui() { return ui; },
     get profiles() { return profiles; },
     get audio() { return audio; },

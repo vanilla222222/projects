@@ -410,7 +410,7 @@ function makeWorld(seed, generator) {
     // bytes become 384 characters instead of roughly 1,100.
     const seen = {};
     for (const [key, bits] of explored) seen[key] = packBits(bits);
-    return { seed, hardmode, astral, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
+    return { seed: Number(seed), hardmode, astral, protectedChunks: [...protectedChunks], edits: out, wallEdits: wallOut, levels: levelOut,
       containers: boxes, explored: seen };
   }
 

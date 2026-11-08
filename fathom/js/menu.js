@@ -5,7 +5,7 @@
 // size is meaningless and both evils can exist out along the axis.
 
 function makeMenu(root, deps) {
-  const { profiles, palette, sprite } = deps;
+  const { profiles, palette, sprite, worldgen } = deps;
   let resolve = null;
   let chosenCharacter = null;
   let pendingColours = null;
@@ -191,12 +191,15 @@ function makeMenu(root, deps) {
     const worlds = profiles.listWorlds();
     if (!worlds.length) el('p', 'empty', list, 'No worlds yet.');
     for (const entry of worlds.slice().sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0))) {
-      card(list, entry.name, 'seed ' + entry.seed + ' · ' + played(entry.playedSeconds),
+      const worldCard = card(list, entry.name, 'seed ' + entry.seed + ' · ' + played(entry.playedSeconds),
         () => finish(entry),
         () => {
           profiles.removeWorld(entry.id);
           showWorlds();
         });
+      const settings = el('button', 'ghost world-settings-button', worldCard, 'Settings');
+      settings.setAttribute('aria-label', 'Settings for ' + entry.name);
+      settings.addEventListener('click', () => showWorldSettings(entry));
     }
     const row = el('div', 'button-row', body);
     const back = el('button', 'ghost', row, 'Back');
@@ -205,8 +208,66 @@ function makeMenu(root, deps) {
     create.addEventListener('click', showCreateWorld);
   }
 
+  function worldSettingsFields(parent, saved, locked = false) {
+    const current = worldgen.normalizeWorldSettings(saved);
+    const controls = new Map();
+    const presetRow = el('label', 'field', parent);
+    el('span', null, presetRow, locked ? 'Gameplay preset' : 'World preset');
+    const preset = el('select', null, presetRow);
+    for (const [key, label] of [
+      ['standard', 'Standard'], ['builder', 'Builder'], ['explorer', 'Explorer'],
+      ['survival', 'Survival'], ['custom', 'Custom']
+    ]) {
+      const option = el('option', null, preset, label);
+      option.value = key;
+      if (key === 'custom') option.disabled = true;
+    }
+    preset.value = saved ? 'custom' : 'standard';
+    for (const [title, generation] of [['World generation', true], ['Gameplay', false]]) {
+      const group = el('fieldset', 'world-setting-group', parent);
+      el('legend', null, group, title);
+      if (generation && locked) el('p', 'hint', group, 'Generation settings are fixed when the world is created.');
+      const fields = el('div', 'world-setting-grid', group);
+      for (const field of worldgen.WORLD_SETTINGS.filter(field => Boolean(field.generation) === generation)) {
+        const row = el('label', 'field', fields);
+        el('span', null, row, field.label);
+        const select = el('select', null, row);
+        for (const [value, label] of field.options) {
+          const option = el('option', null, select, label);
+          option.value = value;
+        }
+        select.value = current[field.key];
+        select.disabled = generation && locked;
+        const help = el('small', 'world-setting-help', row, field.help);
+        help.id = 'setting-help-' + field.key;
+        select.setAttribute('aria-describedby', help.id);
+        select.addEventListener('change', () => { preset.value = 'custom'; });
+        controls.set(field.key, select);
+      }
+    }
+    preset.addEventListener('change', () => {
+      const values = worldgen.normalizeWorldSettings(worldgen.WORLD_PRESETS[preset.value]);
+      for (const [key, select] of controls) if (!select.disabled) select.value = values[key];
+    });
+    return () => Object.fromEntries(Array.from(controls, ([key, select]) => [key, select.value]));
+  }
+
+  function showWorldSettings(entry) {
+    const body = shell(entry.name + ' settings', 'Gameplay changes take effect the next time you enter this world.');
+    const form = el('div', 'form', body);
+    const readSettings = worldSettingsFields(form, profiles.loadWorld(entry.id)?.settings || entry.settings || {}, true);
+    const row = el('div', 'button-row', body);
+    const back = el('button', 'ghost', row, 'Back');
+    back.addEventListener('click', showWorlds);
+    const save = el('button', 'primary', row, 'Save settings');
+    save.addEventListener('click', () => {
+      if (profiles.saveWorld(entry.id, { settings: readSettings() })) showWorlds();
+      else save.textContent = 'Save failed. Retry';
+    });
+  }
+
   function showCreateWorld() {
-    const body = shell('New world', 'Endless either way, so there is no size to pick.');
+    const body = shell('New world', 'Choose a preset or tune the generation and gameplay settings.');
     const form = el('div', 'form', body);
     const nameRow = el('label', 'field', form);
     el('span', null, nameRow, 'Name');
@@ -218,19 +279,20 @@ function makeMenu(root, deps) {
     el('span', null, seedRow, 'Seed');
     const seed = el('input', null, seedRow);
     seed.placeholder = 'leave blank for a random world';
-    const resolved = el('p', 'hint', form, 'Words or a number. The same seed always makes the same world.');
+    const resolved = el('p', 'hint', form, 'The same seed and generation settings recreate the same terrain.');
     seed.addEventListener('input', () => {
       resolved.textContent = seed.value.trim() === ''
-        ? 'Words or a number. The same seed always makes the same world.'
+        ? 'The same seed and generation settings recreate the same terrain.'
         : 'Resolves to ' + deps.parseSeed(seed.value);
     });
 
+    const readSettings = worldSettingsFields(form);
     const row = el('div', 'button-row', body);
     const back = el('button', 'ghost', row, 'Back');
     back.addEventListener('click', showWorlds);
     const make = el('button', 'primary', row, 'Create');
     make.addEventListener('click', () => {
-      finish(profiles.createWorld({ name: name.value, seed: seed.value }));
+      finish(profiles.createWorld({ name: name.value, seed: seed.value, settings: readSettings() }));
     });
     name.focus();
   }

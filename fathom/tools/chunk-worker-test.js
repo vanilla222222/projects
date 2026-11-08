@@ -44,4 +44,15 @@ world.acceptGeneratedChunk(cx, cy, result);
 assert.equal(world.get(x, y), tile);
 assert.equal(world.getWall(x, y), wall);
 assert.equal(world.acceptGeneratedChunk(cx, cy, expected), result);
+const settings = gen.WORLD_PRESETS.explorer;
+const customized = gen.generationSeed(seed, settings);
+const upperCy = 5;
+context.self.onmessage({ data: { seed, cx, cy: upperCy, settings } });
+const expectedCustom = gen.generateChunk(customized, cx, upperCy);
+assert.deepEqual(Array.from(result.tiles), Array.from(expectedCustom.tiles));
+assert.deepEqual(Array.from(result.walls), Array.from(expectedCustom.walls));
+assert.notDeepEqual(Array.from(result.tiles), Array.from(gen.generateChunk(seed, cx, upperCy).tiles));
+context.self.onmessage({ data: { seed, cx, cy } });
+assert.deepEqual(Array.from(result.tiles), Array.from(expected.tiles));
+
 console.log('Worker output, transfer buffers, saved edits and duplicate chunk checks passed');

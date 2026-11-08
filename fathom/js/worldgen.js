@@ -5,6 +5,67 @@
 // correction. Structures are stamped from a margin scan so a tree rooted in one chunk still
 // appears in its neighbour; STRUCTURE_MARGIN must exceed the widest structure's half-width.
 
+const WORLD_SETTINGS = [
+  { key: 'relief', label: 'Surface relief', help: 'Changes the height of hills and valleys.', generation: true,
+    options: [['gentle', 'Gentle', 0.6], ['normal', 'Rolling', 1], ['rugged', 'Rugged', 1.45]] },
+  { key: 'caves', label: 'Cave density', help: 'Changes how many cave pockets form and their size.', generation: true,
+    options: [['sparse', 'Sparse', 0.65], ['normal', 'Balanced', 1], ['dense', 'Cavernous', 1.22]] },
+  { key: 'mouths', label: 'Cave entrances', help: 'Changes how often caves open onto the surface.', generation: true,
+    options: [['few', 'Few', 0.22], ['normal', 'Standard', 0.52], ['many', 'Many', 0.86]] },
+  { key: 'longCaves', label: 'Long cave systems', help: 'Controls the extended cave and rail networks.', generation: true,
+    options: [['off', 'None', 0], ['few', 'Rare', 0.3], ['normal', 'Occasional', 0.64], ['many', 'Frequent', 0.88]] },
+  { key: 'structures', label: 'Structures', help: 'Controls ordinary ruins and biome landmarks.', generation: true,
+    options: [['scarce', 'Very rare', 0.55], ['normal', 'Rare', 1], ['more', 'More frequent', 1.17]] },
+  { key: 'ores', label: 'Ore richness', help: 'Changes ore frequency in rock and planetoids.', generation: true,
+    options: [['lean', 'Lean', -0.024], ['normal', 'Standard', 0], ['rich', 'Rich', 0.024]] },
+  { key: 'oceans', label: 'Ocean coverage', help: 'Changes how much of the world becomes ocean.', generation: true,
+    options: [['small', 'Continental', 0.085], ['normal', 'Mixed', 0], ['large', 'Oceanic', -0.085]] },
+  { key: 'biomes', label: 'Biome stretches', help: 'Changes how far you travel before the climate changes.', generation: true,
+    options: [['small', 'Compact', 0.7], ['normal', 'Standard', 1], ['large', 'Expansive', 1.5]] },
+  { key: 'forest', label: 'Starting forest', help: 'Sets the guaranteed forest around spawn.', generation: true,
+    options: [['small', '6 chunks', 6], ['normal', '10 chunks', 10], ['large', '16 chunks', 16]] },
+  { key: 'enemies', label: 'Enemy activity', help: 'Controls ordinary hostile spawn rates. Wildlife and bosses remain available.',
+    options: [['peaceful', 'Very quiet', 0.32], ['quiet', 'Quiet', 0.55], ['normal', 'Standard', 1], ['busy', 'Busy', 1.55]] },
+  { key: 'damage', label: 'Enemy damage', help: 'Scales damage from enemy contact and boss projectiles.',
+    options: [['low', 'Reduced', 0.72], ['normal', 'Standard', 1], ['high', 'Punishing', 1.35]] },
+  { key: 'bossHealth', label: 'Boss health', help: 'Scales health for newly summoned bosses.',
+    options: [['low', 'Reduced', 0.78], ['normal', 'Standard', 1], ['high', 'Enduring', 1.35]] },
+  { key: 'day', label: 'Day cycle', help: 'Length of one full day and night.',
+    options: [['fast', '5 minutes', 300], ['normal', '10 minutes', 600], ['slow', '20 minutes', 1200]] },
+  { key: 'bloodMoon', label: 'Blood moons', help: 'Controls how often blood moons can start.',
+    options: [['off', 'Off', 0], ['normal', 'Standard', 0.14], ['often', 'Frequent', 0.28]] },
+  { key: 'weather', label: 'Weather', help: 'Toggles rain and other weather effects.',
+    options: [['off', 'Off', false], ['normal', 'On', true]] }
+];
+
+const WORLD_PRESETS = {
+  standard: {},
+  builder: { relief: 'gentle', caves: 'sparse', mouths: 'few', ores: 'rich', forest: 'large',
+    enemies: 'peaceful', damage: 'low', day: 'slow', bloodMoon: 'off' },
+  explorer: { relief: 'rugged', caves: 'dense', mouths: 'many', longCaves: 'many', structures: 'more', biomes: 'small' },
+  survival: { relief: 'rugged', caves: 'sparse', mouths: 'few', structures: 'scarce', ores: 'lean',
+    enemies: 'busy', damage: 'high', bossHealth: 'high', bloodMoon: 'often' }
+};
+
+function normalizeWorldSettings(input) {
+  return Object.fromEntries(WORLD_SETTINGS.map(field => [
+    field.key, field.options.some(([key]) => key === input?.[field.key]) ? input[field.key] : 'normal'
+  ]));
+}
+
+function worldSettingValues(input) {
+  const settings = normalizeWorldSettings(input);
+  return Object.fromEntries(WORLD_SETTINGS.map(field =>
+    [field.key, field.options.find(([key]) => key === settings[field.key])[2]]));
+}
+
+function generationSeed(seed, input) {
+  const settings = normalizeWorldSettings(input);
+  if (!WORLD_SETTINGS.some(field => field.generation && settings[field.key] !== 'normal')) return seed;
+  return Object.freeze({ number: seed, factors: Object.freeze(worldSettingValues(settings)),
+    valueOf: () => seed, toString: () => String(seed) });
+}
+
 const CHUNK = 48;
 const SKY_H = 192;
 const STRUCTURE_MARGIN = 14;
@@ -205,7 +266,7 @@ function moisture(seed, x) {
 function continent(seed, x) {
   const base = fbm1(seed, x * 0.00036, 577, 4, 2, 0.5);
   const detail = fbm1(seed, x * 0.0029, 643, 2, 2, 0.5);
-  return (base * 0.82 + detail * 0.18 - 0.42) * 2.6;
+  return (base * 0.82 + detail * 0.18 - 0.42) * 2.6 + (seed.factors?.oceans || 0);
 }
 
 // Smooth membership in each climate biome. The kernel is wide enough that neighbouring
@@ -256,7 +317,7 @@ function smoothWeights(seed, x) {
   let m = moisture(seed, wx);
   const influence = 0.78 * (1 - homeFactor(x));
   if (influence > 0) {
-    const at = wx / CLIMATE_REGION_WIDTH;
+    const at = wx / (CLIMATE_REGION_WIDTH * (seed.factors?.biomes || 1));
     const region = Math.floor(at);
     const blend = smooth(Math.max(0, Math.min(1, (at - region - 0.64) / 0.36)));
     const from = regionalBiome(seed, region);
@@ -432,7 +493,8 @@ function buildColumn(seed, x) {
   // The first slice of negative continent is still coast, not sea: without that offset
   // the steeper curve turned almost a third of the world into ocean.
   const abyss = Math.pow(Math.max(0, shelf - 0.14), 1.4) * 2600;
-  let h = SEA_LEVEL - 34 + (rolling + hills + landform) * relief + detail + bias * relief
+  const reliefScale = seed.factors?.relief || 1;
+  let h = SEA_LEVEL - 34 + (rolling + hills + landform) * relief * reliefScale + detail * reliefScale + bias * relief
     + abyss - Math.max(0, land) * 12;
   // Pull the ground up towards dry land near the origin. Below the ceiling nothing
   // happens at all, so the homeland keeps its own hills and valleys; only a column that
@@ -447,7 +509,7 @@ function buildColumn(seed, x) {
   const massif = fbm1(seed, u * 0.00145, 83, 3, 2, 0.52) - 0.5;
   const knolls = fbm1(seed, u * 0.017, 87, 2, 2, 0.45) - 0.5;
   const terrace = smooth(Math.max(0, Math.min(1, (broad + 0.14) * 2.8))) - 0.35;
-  h += inland * (massif * (38 + ridgeWeight * 42 - flatWeight * 17)
+  h += inland * reliefScale * (massif * (38 + ridgeWeight * 42 - flatWeight * 17)
     + knolls * (14 + ridgeWeight * 10 - flatWeight * 8) - dryWeight * terrace * 18);
   const dryCeiling = SEA_LEVEL - BEACH_BAND - 8;
   if (home > 0 && h > dryCeiling) h += (dryCeiling - h) * home;
@@ -462,9 +524,14 @@ function buildColumn(seed, x) {
     if (blight) biome = BY_BIOME[blight];
   }
   const terrainBiome = biome;
-  if (x >= -START_FOREST_EDGE && x < START_FOREST_EDGE) biome = BY_BIOME.forest;
+  const forestEdge = starterForestEdge(seed);
+  if (x >= -forestEdge && x < forestEdge) biome = BY_BIOME.forest;
   return { x, biome, terrainBiome, climate: CLIMATE_BIOMES[best], height: h, legacyHeight, bias, land, cover,
     weights: choice.weights, choice };
+}
+
+function starterForestEdge(seed) {
+  return (seed.factors?.forest || START_FOREST_CHUNKS) * CHUNK / 2;
 }
 
 function biomeAt(seed, x) {
@@ -523,10 +590,11 @@ function localCave(seed, cell, row) {
   const surface = surfaceHeight(seed, origin + 25 + Math.floor(unit(seed, cell, 0, 5203) * 10));
   const top = surface + row * CAVE_DEPTH;
   const volcanic = altitudeOf(top + 55) >= 1750 && altitudeOf(top + 55) < 2170;
-  if (row === 0 || random(5201) < (volcanic ? 0.95 : 0.77)) {
+  const density = seed.factors?.caves || 1;
+  if (row === 0 || random(5201) < Math.min(0.99, (volcanic ? 0.95 : 0.77) * density)) {
     const x2 = origin + 72 + Math.floor(random(5207) * 12);
     const profile = volcanic ? CAVE_PROFILES.volcanic : caveProfile(columnOf(seed, origin + CAVE_WIDTH / 2));
-    const entrance = row === 0 && surface < SEA_LEVEL - 5 && (cell === 0 || random(5209) < 0.52);
+    const entrance = row === 0 && surface < SEA_LEVEL - 5 && (cell === 0 || random(5209) < (seed.factors?.mouths ?? 0.52));
     const styleRoll = random(5211);
     const style = row === 0 || altitudeOf(top + 55) >= 1250 ? 'rock' : styleRoll < 0.13 ? 'marble'
       : styleRoll < 0.26 ? 'granite' : styleRoll < 0.39 ? 'aquifer'
@@ -535,8 +603,8 @@ function localCave(seed, cell, row) {
     const y2 = style === 'rail' ? y1 : y1 + Math.floor(random(5217) * 31) - 12;
     cave = {
       x1, x2, y1, y2, entrance, surface, style, phase: random(5219) * 6.28,
-      rx1: (13 + random(5221) * 6) * profile.width,
-      rx2: (12 + random(5223) * 8) * profile.width,
+      rx1: (13 + random(5221) * 6) * profile.width * Math.sqrt(density),
+      rx2: (12 + random(5223) * 8) * profile.width * Math.sqrt(density),
       ry1: (7 + random(5227) * 5) * profile.height,
       ry2: (8 + random(5229) * 5) * profile.height,
       bore: (1.9 + random(5231) * 1.2) * profile.bore,
@@ -552,7 +620,7 @@ function longCaveLayout(seed, district) {
   const saved = longCaveCache[index];
   if (saved?.seed === seed && saved.district === district) return saved.cave;
   let cave = null;
-  if (unit(seed, district, 0, 5281) < 0.64) {
+  if (unit(seed, district, 0, 5281) < (seed.factors?.longCaves ?? 0.64)) {
     const left = district * LONG_CAVE_WIDTH + 40 + Math.floor(unit(seed, district, 0, 5283) * 40);
     cave = { left, right: left + 238 + Math.floor(unit(seed, district, 0, 5287) * 88),
       y: SEA_LEVEL + 96 + Math.floor(unit(seed, district, 0, 5289) * 218),
@@ -752,7 +820,7 @@ function oreAt(seed, x, y, depth) {
     if (depth < band.from || depth > band.to) continue;
     const scale = band.size * 1.28;
     const blob = fbm2(seed, x * scale, y * scale, band.salt, 2, 2, 0.5);
-    if (blob > band.rarity) return band.key;
+    if (blob > band.rarity - (seed.factors?.ores || 0)) return band.key;
   }
   return null;
 }
@@ -768,7 +836,7 @@ function oreAt(seed, x, y, depth) {
 const STRUCTURE_SPACING = 260;
 
 function structureAt(seed, slot, legacy = false) {
-  if (unit(seed, slot, 0, 6001) > (legacy ? 0.86 : 0.60)) return null;
+  if (unit(seed, slot, 0, 6001) > (legacy ? 0.86 : 0.60 * (seed.factors?.structures || 1))) return null;
   const ax = Math.round(slot * STRUCTURE_SPACING
     + STRUCTURE_SPACING * (0.15 + unit(seed, slot, 0, 6003) * 0.7));
   // Anchored to its own column's surface, so a structure sits at a sane depth whether
@@ -891,7 +959,7 @@ const OCEAN_SITES = ['Reef Shelter', 'Drowned Station', 'Abyssal Vault'];
 const BEACH_SITES = ['Driftwood Jetty', 'Saltwater Storehouse', 'Saltmarrow Catacomb'];
 const BIOME_SITE_NAMES = { forest: FOREST_SITES, desert: DESERT_SITES, tundra: TUNDRA_SITES, jungle: JUNGLE_SITES, marsh: MARSH_SITES, highlands: HIGHLAND_SITES, badlands: BADLAND_SITES, savanna: SAVANNA_SITES, taiga: TAIGA_SITES, plains: PLAINS_SITES, blight: BLIGHT_SITES, crimson: CRIMSON_SITES, ocean: OCEAN_SITES, beach: BEACH_SITES };
 const biomeSite = cacheStructure((seed, slot) => {
-  if (slot !== 0 && unit(seed, slot, 0, 6337) > 0.58) return null;
+  if (slot !== 0 && unit(seed, slot, 0, 6337) > 0.58 * (seed.factors?.structures || 1)) return null;
   const x = slot * BIOME_SITE_SPACING + 25 + Math.floor(unit(seed, slot, 0, 6311) * 84);
   const column = columnOf(seed, x);
   const biome = column.biome.key;
@@ -1363,9 +1431,9 @@ const GUST_FIELD = 0.012;
 const BLOOD_MOON_ODDS = 0.14;
 const BLOOD_MOON_GRACE = 2;
 
-function bloodMoonAt(seed, night) {
+function bloodMoonAt(seed, night, odds = BLOOD_MOON_ODDS) {
   if (night <= BLOOD_MOON_GRACE) return false;
-  return unit(seed, night, 0, 9401) < BLOOD_MOON_ODDS;
+  return unit(seed, night, 0, 9401) < odds;
 }
 
 // Where a meteor lands, given which meteor it is. Far enough away to be a journey and
@@ -1868,7 +1936,7 @@ function astralTileAt(seed, x, y, id) {
   const altitude = altitudeOf(y);
   if (altitude >= -750 || tile(id).key !== 'starrock') return id;
   const vein = unit(seed, Math.floor(x / 2), Math.floor(y / 2), 9311);
-  if (vein < 0.32) return id;
+  if (vein < 0.32 - (seed.factors?.ores || 0) * 4) return id;
   return idOf(altitude >= -1030 ? 'lunarium' : altitude >= -1260 ? 'solarium' : 'eventide');
 }
 
@@ -2159,9 +2227,10 @@ function hardmodeTileAt(seed, x, y, id) {
     && y === surfaceHeight(seed, x)) return idOf('hallowgrass');
   if (!HARDMODE_STONE.has(key)) return id;
   const vein = unit(seed, Math.floor(x / 3), Math.floor(y / 3), 8819);
-  if (altitude >= 1950 && vein > 0.972) return idOf('adamantite');
-  if (altitude >= 850 && altitude < 1950 && vein > 0.969) return idOf('mythril');
-  if (altitude >= 160 && altitude < 850 && vein > 0.966) return idOf('palladium');
+  const richness = (seed.factors?.ores || 0) * 0.5;
+  if (altitude >= 1950 && vein > 0.972 - richness) return idOf('adamantite');
+  if (altitude >= 850 && altitude < 1950 && vein > 0.969 - richness) return idOf('mythril');
+  if (altitude >= 160 && altitude < 850 && vein > 0.966 - richness) return idOf('palladium');
   if (!isHallowRegion(seed, x) || altitude < 25 || altitude > 740) return id;
   if (vein > 0.94) {
     return idOf(HALLOW_CRYSTALS[Math.floor(unit(seed, Math.floor(x / 3), Math.floor(y / 3), 8821) * 3)]);
@@ -2206,7 +2275,7 @@ function generateChunk(seed, cx, cy) {
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
 const EXPORTS_worldgen = {
-    CHUNK, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
+    CHUNK, WORLD_SETTINGS, WORLD_PRESETS, normalizeWorldSettings, worldSettingValues, generationSeed, starterForestEdge, HALLOW_BIOME, isHallowRegion, hardmodeTileAt, WORLD_H, SKY_H, STRUCTURE_MARGIN, BIOMES, TREES, ORE_BANDS,
     LAYERS, VOID_START, ASHVAULT_DEPTH, ashvaultAt, dungeonAt, dungeonLayout, MECHANIST_CACHES, MECHANIST_WEAPONS, FOREST_SITES, DESERT_SITES, TUNDRA_SITES, JUNGLE_SITES, MARSH_SITES, HIGHLAND_SITES, biomeSiteAt, forestSiteAt, layerAt, altitudeOf, TREE_LOG, BLEND_FIELD, BLEND_THRESHOLD, climateChoice,
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,

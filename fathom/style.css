@@ -359,6 +359,16 @@ html, body {
 .card-delete:hover { border-color: #c4606a; color: #ef8a92; }
 
 .form { display: grid; gap: 13px; margin-bottom: 18px; }
+.world-settings-button { margin: 0 8px; align-self: center; }
+.world-setting-group { border: 1px solid var(--edge); border-radius: 8px; padding: 12px; min-width: 0; }
+.world-setting-group legend { padding: 0 5px; color: var(--accent); font-size: 13px; }
+.world-setting-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.world-setting-help { color: var(--dim); font-size: 11px; line-height: 1.4; }
+.world-setting-grid select { min-width: 0; width: 100%; }
+@media (max-width: 460px) {
+  .world-setting-grid { grid-template-columns: 1fr; }
+  .world-settings-button { margin-inline: 3px; }
+}
 .field { display: grid; gap: 5px; }
 .field span { color: var(--dim); font-size: 11.5px; }
 
