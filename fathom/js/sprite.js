@@ -899,7 +899,9 @@ function drawPerson(ctx, box, look, pose) {
   leg(-0.05, legB, pantsDark, spriteShade(pantsDark, -0.08), spriteShade(boot, -0.2));
   arm(-0.09 - lean, armB, shirtDark, skinDark);
 
-  // Torso: shoulders out, waist in, with a collar and a belt.
+  // A dark tunic edge and squared jaw keep the person legible at sprite resolution.
+  poly(ctx, g, [-0.27 - lean, -0.8, 0.27 - lean, -0.8, 0.22, -0.43, -0.22, -0.43],
+    '#232139');
   poly(ctx, g, [-0.23 - lean, -0.78, 0.23 - lean, -0.78, 0.18, -0.44, -0.18, -0.44], shirt);
   poly(ctx, g, [-0.23 - lean, -0.78, 0.23 - lean, -0.78, 0.2 - lean, -0.72, -0.2 - lean,
     -0.72], shirtLight);
@@ -941,7 +943,11 @@ function drawPerson(ctx, box, look, pose) {
   // Neck and head.
   const hx = 0.01 - lean * 1.6;
   rect(ctx, g, hx - 0.06, -0.82, 0.12, 0.06, skinDark);
-  ell(ctx, g, hx, -0.89, 0.155, 0.085, skin);
+  poly(ctx, g, [hx - 0.20, -0.96, hx + 0.13, -0.96, hx + 0.20, -0.91,
+    hx + 0.20, -0.85, hx + 0.12, -0.80, hx - 0.12, -0.80, hx - 0.20, -0.85], '#232139');
+  rect(ctx, g, hx - 0.15, -0.945, 0.30, 0.108, skinDark);
+  rect(ctx, g, hx - 0.08, -0.94, 0.235, 0.097, skin);
+  rect(ctx, g, hx + 0.01, -0.932, 0.122, 0.019, spriteShade(skin, 0.3));
   const hairstyle = look.hairstyle || 'swept';
   if (!gear.head && hairstyle !== 'shaved') {
     ell(ctx, g, hx - 0.027, -0.939, 0.158, 0.055, hair);

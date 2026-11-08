@@ -43,104 +43,40 @@ function hashPixel(id, variant, x, y) {
   return (h >>> 0) / 4294967296;
 }
 
-// The base material painter. Per-pixel noise alone averages out to flat colour at any
-// distance, so this works at three scales: broad blotches, mid-size clusters, and single
-// pixels. What a material gets on top of that depends on what it is - soil has pebbles,
-// rock has bedding planes and cracks, sand has ripples - because "brown with noise" and
-// "grey with noise" is what made every surface look like the same surface.
+// A small shade ramp and shared clusters give each material a readable silhouette.
 function paintGrain(ctx, spec, variant, ox, oy) {
-  const grain = spec.grain || 0;
-  if (grain <= 0) return;
-
-  // Broad blotches: a handful of soft patches per tile, which is the scale the eye reads
-  // as material rather than as dirt on the screen.
-  // Kept low-contrast and small on purpose: a bright blotch is a shape, and a shape that
-  // repeats every few tiles reads as wallpaper rather than as ground.
-  for (let i = 0; i < 3; i += 1) {
-    const n = hashPixel(spec.id, variant * 7 + i, i * 5, 3);
-    const cx = (hashPixel(spec.id, variant, i * 3, 11) * TILE) | 0;
-    const cy = (hashPixel(spec.id, variant, i * 3, 29) * TILE) | 0;
-    const r = 2 + n * 3;
-    ctx.fillStyle = shade(spec.colour, (n - 0.5) * grain * 0.8);
-    ctx.beginPath();
-    ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Mid-size clusters and single pixels.
-  for (let y = 0; y < TILE; y += 1) {
-    for (let x = 0; x < TILE; x += 1) {
-      const n = hashPixel(spec.id, variant, x, y);
-      if (n > 0.62) {
-        ctx.fillStyle = shade(spec.colour, (n - 0.62) * grain * 2.6);
-        ctx.fillRect(ox + x, oy + y, 1, 1);
-      } else if (n < 0.3) {
-        ctx.fillStyle = shade(spec.colour, -(0.3 - n) * grain * 2.6);
-        ctx.fillRect(ox + x, oy + y, 1, 1);
-      }
-    }
-  }
-
-  paintMaterial(ctx, spec, variant, ox, oy);
-}
-
-// What distinguishes one material from another at a glance.
-function paintMaterial(ctx, spec, variant, ox, oy) {
+  if (!spec.grain) return;
+  const dark = shade(spec.colour, -0.22);
+  const bright = shade(spec.colour, 0.21);
   const kind = materialOf(spec);
-  if (kind === 'soil') {
-    // Pebbles and root flecks.
-    for (let i = 0; i < 5; i += 1) {
-      const px = (hashPixel(spec.id, variant + 3, i * 7, 2) * TILE) | 0;
-      const py = (hashPixel(spec.id, variant + 3, i * 7, 19) * TILE) | 0;
-      const big = hashPixel(spec.id, variant, i, 41) > 0.72;
-      ctx.fillStyle = shade(spec.colour, big ? 0.3 : -0.28);
-      ctx.fillRect(ox + px, oy + py, big ? 2 : 1, big ? 2 : 1);
-    }
-    return;
-  }
-  if (kind === 'rock') {
-    // Bedding planes: a couple of faint horizontal seams, offset per variant, which is
-    // what makes a wall of stone read as layered rock rather than as grey paint.
-    for (let i = 0; i < 2; i += 1) {
-      const y = ((variant * 5 + i * 9 + 3) % TILE);
-      ctx.fillStyle = shade(spec.colour, -0.16);
-      ctx.fillRect(ox, oy + y, TILE, 1);
-      ctx.fillStyle = shade(spec.colour, 0.1);
-      ctx.fillRect(ox, oy + y + 1, TILE, 1);
-    }
-    // A crack, sometimes.
-    if (hashPixel(spec.id, variant, 5, 5) > 0.55) {
-      ctx.fillStyle = shade(spec.colour, -0.3);
-      let cx = (hashPixel(spec.id, variant, 9, 1) * TILE) | 0;
-      for (let y = 2; y < TILE - 2; y += 1) {
-        ctx.fillRect(ox + cx, oy + y, 1, 1);
-        if (hashPixel(spec.id, variant, cx, y) > 0.6) cx += hashPixel(spec.id, variant, y, cx) > 0.5 ? 1 : -1;
-        cx = Math.max(0, Math.min(TILE - 1, cx));
-      }
-    }
-    return;
-  }
-  if (kind === 'sand') {
-    // Ripples.
-    for (let y = (variant % 4); y < TILE; y += 4) {
-      ctx.fillStyle = shade(spec.colour, -0.1);
-      for (let x = 0; x < TILE; x += 1) {
-        const wave = Math.round(Math.sin((x + variant * 3) * 0.6) * 1.2);
-        ctx.fillRect(ox + x, oy + y + wave, 1, 1);
-      }
-    }
-    return;
-  }
-  if (kind === 'ice') {
-    // Facets: a few bright diagonal slivers.
-    for (let i = 0; i < 3; i += 1) {
-      const x = (hashPixel(spec.id, variant, i * 11, 7) * TILE) | 0;
-      const y = (hashPixel(spec.id, variant, i * 11, 23) * TILE) | 0;
-      const len = 3 + ((i + variant) % 4);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      for (let j = 0; j < len; j += 1) {
-        ctx.fillRect(ox + ((x + j) % TILE), oy + ((y + j) % TILE), 1, 1);
-      }
+  const pattern = variant % PATTERNS;
+
+  for (let i = 0; i < 4; i += 1) {
+    const x = 1 + Math.floor(hashPixel(spec.id, pattern, i, 11) * 9);
+    const y = 1 + Math.floor(hashPixel(spec.id, pattern, i, 29) * 11);
+    if (kind === 'rock') {
+      ctx.fillStyle = dark;
+      ctx.fillRect(ox + x, oy + y, 5, 2);
+      ctx.fillRect(ox + x + 4, oy + y + 2, 2, 2);
+      ctx.fillStyle = bright;
+      ctx.fillRect(ox + x + 1, oy + y + 2, 3, 1);
+    } else if (kind === 'sand') {
+      ctx.fillStyle = dark;
+      ctx.fillRect(ox + x, oy + y + 1, 3, 1);
+      ctx.fillStyle = bright;
+      ctx.fillRect(ox + x + 2, oy + y, 4, 1);
+    } else if (kind === 'ice') {
+      ctx.fillStyle = dark;
+      ctx.fillRect(ox + x, oy + y + 1, 3, 2);
+      ctx.fillStyle = bright;
+      ctx.fillRect(ox + x + 2, oy + y, 4, 1);
+      ctx.fillRect(ox + x + 4, oy + y - 1, 2, 1);
+    } else {
+      const width = 2 + (i + pattern) % 3;
+      ctx.fillStyle = dark;
+      ctx.fillRect(ox + x + 1, oy + y + 1, width, 2);
+      ctx.fillStyle = shade(spec.colour, i % 3 === 0 ? 0.21 : 0.10);
+      ctx.fillRect(ox + x, oy + y, width, 1);
     }
   }
 }
@@ -205,19 +141,19 @@ function paintOre(ctx, spec, variant, ox, oy) {
   ctx.fillStyle = '#5f5f69';
   ctx.fillRect(ox, oy, TILE, TILE);
   paintGrain(ctx, { id: spec.id, colour: '#5f5f69', grain: 0.12 }, variant, ox, oy);
-  const blobs = 3 + Math.floor(hashPixel(spec.id, variant, 91, 7) * 3);
-  for (let i = 0; i < blobs; i += 1) {
-    const cx = 2 + hashPixel(spec.id, variant, i, 11) * (TILE - 4);
-    const cy = 2 + hashPixel(spec.id, variant, i, 23) * (TILE - 4);
-    const r = 1.6 + hashPixel(spec.id, variant, i, 37) * 2.1;
-    const g = ctx.createRadialGradient(ox + cx, oy + cy, 0, ox + cx, oy + cy, r);
-    g.addColorStop(0, shade(spec.colour, 0.35));
-    g.addColorStop(0.6, spec.colour);
-    g.addColorStop(1, shade(spec.colour, -0.35));
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
-    ctx.fill();
+  const pattern = variant % PATTERNS;
+  const outline = shade(spec.colour, -0.46);
+  const glint = shade(spec.colour, 0.48);
+  for (let i = 0; i < 4; i += 1) {
+    const x = ox + 1 + (i % 2) * 8 + Math.floor(hashPixel(spec.id, pattern, i, 11) * 2);
+    const y = oy + 1 + Math.floor(i / 2) * 8 + Math.floor(hashPixel(spec.id, pattern, i, 23) * 2);
+    ctx.fillStyle = outline;
+    ctx.fillRect(x, y + 1, 6, 3);
+    ctx.fillRect(x + 1, y, 4, 5);
+    ctx.fillStyle = spec.colour;
+    ctx.fillRect(x + 1, y + 1, 4, 3);
+    ctx.fillStyle = glint;
+    ctx.fillRect(x + 1, y + 1, 2, 1);
   }
 }
 
@@ -249,28 +185,21 @@ function paintWood(ctx, spec, variant, ox, oy) {
 }
 
 function paintLeaves(ctx, spec, variant, ox, oy) {
-  ctx.clearRect(ox, oy, TILE, TILE);
-  ctx.save();
-  for (let i = 0; i < 9; i += 1) {
-    const cx = 1 + hashPixel(spec.id, variant, i, 5) * (TILE - 2);
-    const cy = 1 + hashPixel(spec.id, variant, i, 15) * (TILE - 2);
-    const r = 2.1 + hashPixel(spec.id, variant, i, 25) * 3.1;
-    const edge = Math.min(cx, cy, TILE - cx, TILE - cy) / (TILE / 2);
-    ctx.globalAlpha = 0.55 + edge * 0.45;
-    const tone = (hashPixel(spec.id, variant, i, 35) - 0.45) * 0.55;
-    ctx.fillStyle = shade(spec.colour, tone);
-    ctx.beginPath();
-    ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
-    ctx.fill();
+  const shadow = shade(spec.colour, -0.36);
+  const light = shade(spec.colour, 0.28);
+  for (let i = 0; i < 7; i += 1) {
+    const x = ox + Math.floor(hashPixel(spec.id, variant, i, 5) * 13) - 2;
+    const y = oy + Math.floor(hashPixel(spec.id, variant, i, 15) * 13) - 2;
+    const w = 5 + (i + variant) % 3;
+    ctx.fillStyle = shadow;
+    ctx.fillRect(x, y + 2, w, 4);
+    ctx.fillRect(x + 1, y, w - 2, 7);
+    ctx.fillStyle = spec.colour;
+    ctx.fillRect(x + 1, y + 2, w - 2, 3);
+    ctx.fillRect(x + 2, y + 1, w - 4, 4);
+    ctx.fillStyle = light;
+    ctx.fillRect(x + 2, y + 1, 2, 1);
   }
-  ctx.globalAlpha = 1;
-  for (let i = 0; i < 5; i += 1) {
-    const cx = 2 + hashPixel(spec.id, variant, i, 45) * (TILE - 4);
-    const cy = 2 + hashPixel(spec.id, variant, i, 55) * (TILE - 6);
-    ctx.fillStyle = shade(spec.colour, 0.3);
-    ctx.fillRect(ox + cx, oy + cy, 1.4, 1.4);
-  }
-  ctx.restore();
 }
 
 function paintCrystal(ctx, spec, variant, ox, oy) {
@@ -395,32 +324,23 @@ function paintGlass(ctx, spec, variant, ox, oy) {
 // hillside read as coloured dirt. Now the top two rows are a lighter band with blades
 // standing out of it, so the surface of the world has a silhouette.
 function paintGrass(ctx, spec, variant, ox, oy, soil) {
-  ctx.fillStyle = soil || shade(spec.colour, -0.5);
-  ctx.fillRect(ox, oy, 16, 16);
-  ctx.fillStyle = spec.colour;
-  ctx.fillRect(ox, oy, 16, 4);
-  ctx.fillStyle = shade(spec.colour, 0.16);
-  ctx.fillRect(ox, oy, 16, 1);
-  // A ragged lower edge, so grass meets soil as a fringe of roots and not as a ruled line.
-  for (let x = 0; x < 16; x += 1) {
-    const h = 3 + ((x * 7 + variant * 5) % 3);
-    ctx.fillStyle = shade(spec.colour, -0.12);
-    ctx.fillRect(ox + x, oy + 4, 1, h - 2);
+  const earth = soil || shade(spec.colour, -0.5);
+  ctx.fillStyle = earth;
+  ctx.fillRect(ox, oy, TILE, TILE);
+  for (let x = 0; x < TILE; x += 2) {
+    const depth = 3 + ((x * 7 + variant * 5) % 4);
+    ctx.fillStyle = shade(spec.colour, -0.25);
+    ctx.fillRect(ox + x, oy, 2, depth + 2);
+    ctx.fillStyle = spec.colour;
+    ctx.fillRect(ox + x, oy, 2, depth);
+    ctx.fillStyle = shade(spec.colour, 0.28);
+    ctx.fillRect(ox + x, oy, 2, 1 + (x + variant) % 2);
   }
-  // Blades rising above the block, drawn into the top rows of the tile below's space by
-  // staying inside this tile: the autotile lip above does the rest.
-  for (let i = 0; i < 4; i += 1) {
-    const x = (i * 4 + variant * 3 + 1) % 16;
-    const tall = 1 + ((x + variant) % 3);
-    ctx.fillStyle = shade(spec.colour, 0.3);
-    ctx.fillRect(ox + x, oy, 1, -tall + 1 > 0 ? 1 : 1);
-    ctx.fillRect(ox + x, oy, 1, 1);
-  }
-  ctx.fillStyle = 'rgba(0,0,0,0.12)';
-  for (let i = 0; i < 5; i += 1) {
-    const x = (i * 5 + variant * 7) % 16;
-    const y = 6 + ((i * 3 + variant) % 9);
-    ctx.fillRect(ox + x, oy + y, 1, 1);
+  ctx.fillStyle = '#231c3638';
+  for (let i = 0; i < 3; i += 1) {
+    const x = (i * 5 + variant * 7) % 13;
+    const y = 8 + ((i * 3 + variant) % 6);
+    ctx.fillRect(ox + x, oy + y, 3, 2);
   }
 }
 
@@ -1201,6 +1121,10 @@ function bakeAtlas(document, tiles) {
       const ox = atlasX(spec.id, v);
       const oy = atlasY(spec.id);
       const band = Math.floor(v / PATTERNS);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(ox, oy, TILE, TILE);
+      ctx.clip();
       if (spec.gem || spec.key === 'void-crystal') paintGem(ctx, spec, v, ox, oy);
       else if (spec.ore) paintOre(ctx, spec, v, ox, oy);
       else if (spec.platform) paintPlatform(ctx, spec, v, ox, oy);
@@ -1265,6 +1189,7 @@ function bakeAtlas(document, tiles) {
         ctx.fillRect(ox + TILE - 1, oy, 1, TILE);
         ctx.restore();
       }
+      ctx.restore();
     }
   }
   return canvas;
