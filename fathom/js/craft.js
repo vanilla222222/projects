@@ -597,7 +597,7 @@ const EFFECT_FIELDS = {
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul', thrower: 'mul',
-  meleeReach: 'add', spiritReach: 'add', spiritInterval: 'mul', throwBlast: 'mul', throwSpeed: 'mul',
+  meleeReach: 'add', spiritReach: 'add', spiritInterval: 'mul', throwBlast: 'mul', throwSpeed: 'mul', fishingPower: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
@@ -1783,10 +1783,20 @@ for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
 
 // Starter gear teaches each class. Later weapons have a three-attack rhythm.
 for (const [index, biome] of CRAFT_TILES.UNDERWORLD_BIOMES.entries()) {
-  const { key, accent, oreName, fish } = biome;
+  const { key, accent, oreName, fish, caveFish, crate } = biome;
   ITEMS[key + '-bar'] = { name: oreName + ' Bar', kind: 'bar', colour: accent };
   ITEMS[key + '-relic'] = { name: biome.name + ' Relic', kind: 'loot', colour: accent };
-  ITEMS[fish.key] = { name: fish.name, kind: 'loot', colour: accent };
+  ITEMS[crate.key] = { name: crate.name, kind: 'use', colour: accent,
+    use: { open: crate.key }, text: 'Open for local ore, relics, and a chance at fishing gear.' };
+  for (const [catchIndex, entry] of [fish, caveFish].entries()) {
+    ITEMS[entry.key] = { name: entry.name, kind: 'loot', colour: accent };
+    const dish = entry.key + '-stew';
+    const meal = ['hearty', 'trail', 'focus'][(index + catchIndex) % 3];
+    ITEMS[dish] = { name: entry.name + ' Stew', kind: 'use', colour: accent, use: { meal, heal: 105 + catchIndex * 30 },
+      text: 'Restores ' + (105 + catchIndex * 30) + ' health and grants the ' + meal + ' meal buff.' };
+    RECIPES.push({ out: { key: dish, kind: 'use', count: 1 },
+      need: [[entry.key, 1], [catchIndex ? 'glowmoss' : 'mushroom', 1]], station: 'cauldron' });
+  }
   const weapon = [
     ['pyre-glaive', 'Pyre Glaive', { damage: 348, useTime: 0.23, reach: 5.1, signature: 'lunge' }],
     ['sun-glass-crossbow', 'Sun Glass Crossbow', { damage: 494, useTime: 0.37, reach: 67, ranged: true, ammo: 'bolt', pierce: 4 }],
@@ -1801,6 +1811,21 @@ for (const [index, biome] of CRAFT_TILES.UNDERWORLD_BIOMES.entries()) {
       need: [[key + '-bar', 10], [key + '-relic', 8], ['eventide-bar', 2]], station: 'anvil' }
   );
 }
+
+for (const [key, name, colour, need] of [
+  ['saltroot-rod', 'Saltroot Rod', '#82c2be', [['brine-depths-wood', 8], ['brine-depths-bar', 5], ['rope', 8]]],
+  ['kilnline-rod', 'Kilnline Rod', '#ed926d', [['hellfire-rod', 1], ['ember-bloom-bar', 5], ['ember-bloom-relic', 3]]]
+]) {
+  ITEMS[key] = { name, kind: 'tool', colour, rod: true };
+  RECIPES.push({ out: { key, kind: 'tool', count: 1 }, need, station: 'anvil' });
+}
+for (const [key, name, colour, text, effect] of [
+  ['sootfin-brooch', 'Sootfin Brooch', '#ba856c', 'Regeneration +22% and emits light', { regen: 1.22, glow: 5 }],
+  ['mirror-float', 'Mirror Float', '#edc492', 'Pickup range +30% and fall damage −18%', { pickup: 1.3, fallMul: 0.82 }],
+  ['saltlight-locket', 'Saltlight Locket', '#86d5ce', 'Breath lasts 80% longer and emits light', { breathMul: 1.8, glow: 7 }],
+  ['kilnline-spool', 'Kilnline Spool', '#f8a47a', 'Lava damage −24% and faster bites', { lavaDamage: 0.76, fishingPower: 1.14 }],
+  ['rime-current-band', 'Rime Current Band', '#bfc0ee', 'Faster bites and movement speed +6%', { fishingPower: 1.18, speed: 1.06 }]
+]) ACCESSORIES[key] = { name, colour, text, ...effect };
 
 const STARTER_COMBAT_WEAPONS = new Set([
   'wood-sword', 'tin-sword', 'copper-sword', 'iron-sword', 'silver-sword',
@@ -1898,10 +1923,10 @@ const TAGS = {
   '#fish': (key) => ['bass', 'goldfish', 'trout', 'icepike', 'perch', 'piranha',
     'oasiscarp', 'shrimp', 'swordfish', 'rotgill', 'cavefish', 'glowfish', 'mudeel',
     'frostminnow', 'shadowcarp', 'deepshrimp'].includes(key)
-    || CRAFT_TILES.UNDERWORLD_BIOMES.some(biome => biome.key !== 'ember-bloom' && biome.fish.key === key),
+    || CRAFT_TILES.UNDERWORLD_BIOMES.some(biome => biome.key !== 'ember-bloom' && (biome.fish.key === key || biome.caveFish.key === key)),
   // Everything out of the lava cooks too, and into something better: hell is further to
   // go, and the fish there are worth the trip.
-  '#lavafish': (key) => ['flarefin', 'obsidifish', 'magmasnail', 'ember-bloom-fish'].includes(key),
+  '#lavafish': (key) => ['flarefin', 'obsidifish', 'magmasnail', 'ember-bloom-fish', 'ember-bloom-cave-fish'].includes(key),
   '#wood': (key) => {
     const spec = CRAFT_TILES.BY_KEY[key];
     return !!(spec && spec.wood && key.endsWith('wood'));

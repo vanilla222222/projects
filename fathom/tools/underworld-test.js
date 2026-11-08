@@ -56,3 +56,21 @@ restored.restore(JSON.parse(JSON.stringify(world.serialize())));
 assert.equal(restored.get(3, sea - 2), tiles.idOf('ashwood-wood'));
 
 console.log('Underworld checks passed for five biomes, three structure bands, local loot, enemies, fishing, and save round trips');
+
+for (const biome of tiles.UNDERWORLD_BIOMES) {
+  const liquid = biome.key === 'ember-bloom' ? 'lava' : 'water';
+  const surface = { biome: biome.key, layer: 'surface', liquid, amount: fishing.POOL };
+  const cave = { ...surface, layer: 'caves' };
+  assert.ok(fishing.catchesFor(surface).some(entry => entry.key === biome.crate.key));
+  assert.ok(!fishing.catchesFor(surface).some(entry => entry.key === biome.caveFish.key));
+  assert.ok(fishing.catchesFor(cave).some(entry => entry.key === biome.caveFish.key));
+  assert.equal(craft.ITEMS[biome.crate.key].use.open, biome.crate.key);
+  const loot = fishing.crateContents(() => 0, seed, 0, 0, biome.crate.key);
+  assert.ok(loot.some(entry => entry.key === biome.key + '-ore'));
+  assert.ok(loot.some(entry => craft.ACCESSORIES[entry.key]));
+  for (const fish of [biome.fish, biome.caveFish]) {
+    assert.ok(craft.RECIPES.some(recipe => recipe.out.key === fish.key + '-stew' && recipe.station === 'cauldron'));
+  }
+}
+assert.equal(fishing.RODS['kilnline-rod'].lava, true);
+assert.ok(fishing.RODS['saltroot-rod'].power > fishing.RODS['gold-rod'].power);

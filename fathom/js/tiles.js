@@ -848,6 +848,10 @@ const UNDERWORLD_BIOMES = [
 ].map(([key, name, accent, soil, stone, woodName, oreName, critter, body, structures, enemies]) => ({
   key, name, accent, soil, stone, woodName, oreName, structures, enemies,
   fish: { key: key + '-fish', name: { ashwood: 'Sootfin', 'glass-dunes': 'Glass Carp', 'brine-depths': 'Brine Eel', 'ember-bloom': 'Flame Koi', 'gloom-frost': 'Rime Perch' }[key] },
+  caveFish: { key: key + '-cave-fish', name: { ashwood: 'Cinder Loach', 'glass-dunes': 'Shard Darter',
+    'brine-depths': 'Salt Lanternfish', 'ember-bloom': 'Magma Barb', 'gloom-frost': 'Gloom Char' }[key] },
+  crate: { key: key + '-crate', name: { ashwood: 'Charcoal Crate', 'glass-dunes': 'Mirror Crate',
+    'brine-depths': 'Saltlight Crate', 'ember-bloom': 'Kiln Crate', 'gloom-frost': 'Rime Crate' }[key] },
   specimen: { key: key + '-critter', name: critter, body, colour: accent, biomes: [key], underworld: true }
 }));
 

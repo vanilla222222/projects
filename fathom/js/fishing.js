@@ -35,7 +35,9 @@ const RODS = {
   'wood-rod': { name: 'Wooden Rod', power: 1 },
   'iron-rod': { name: 'Iron Rod', power: 1.45 },
   'gold-rod': { name: 'Gilded Rod', power: 1.9 },
-  'hellfire-rod': { name: 'Hellfire Rod', power: 2.1, lava: true }
+  'hellfire-rod': { name: 'Hellfire Rod', power: 2.1, lava: true },
+  'saltroot-rod': { name: 'Saltroot Rod', power: 2.65 },
+  'kilnline-rod': { name: 'Kilnline Rod', power: 2.85, lava: true }
 };
 
 // Which biomes count as what. A catch can name biomes directly or name one of these
@@ -180,9 +182,20 @@ function suits(entry, ctx) {
 // throw - the later one silently wins. Naming it that made the enemy spawner draw from
 // the fishing table and crash reading an archetype off a bass.
 const FISH_UNDERWORLD_BIOMES = typeof require === 'function' ? require('./tiles.js').UNDERWORLD_BIOMES : UNDERWORLD_BIOMES;
-for (const biome of FISH_UNDERWORLD_BIOMES) {
-  CATCHES.push({ key: biome.fish.key, weight: 12, min: PUDDLE, liquid: biome.key === 'ember-bloom' ? 'lava' : 'water',
-    biomes: [biome.key] });
+for (const [index, biome] of FISH_UNDERWORLD_BIOMES.entries()) {
+  const liquid = biome.key === 'ember-bloom' ? 'lava' : 'water';
+  CATCHES.push(
+    { key: biome.fish.key, weight: 15, min: PUDDLE, liquid, biomes: [biome.key] },
+    { key: biome.caveFish.key, weight: 10, min: PUDDLE, liquid, bands: ['underground'], biomes: [biome.key] },
+    { key: biome.crate.key, weight: 6, min: POOL, liquid, biomes: [biome.key] }
+  );
+  CRATES[biome.crate.key] = [
+    { key: biome.key + '-ore', min: 3, max: 7, chance: 1 },
+    { key: ['sootfin-brooch', 'mirror-float', 'saltlight-locket', 'kilnline-spool', 'rime-current-band'][index],
+      min: 1, max: 1, chance: 0.14 },
+    { key: biome.key + '-relic', min: 2, max: 4, chance: 0.6 },
+    { key: 'coin', min: 140, max: 420, chance: 1 }
+  ];
 }
 
 function catchesFor(ctx) {

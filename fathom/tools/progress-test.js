@@ -186,6 +186,12 @@ function climb() {
     if (was.has('saltmarrow-token')) gain('saltmarrow-bone');
     if (was.has('rift-sigil')) gain('rift-core');
     if (was.has('prism-sigil')) gain('prism-heart');
+    if (was.has('siege-core')) {
+      const crates = require('../js/fishing.js').CRATES;
+      for (const biome of tiles.UNDERWORLD_BIOMES) {
+        for (const entry of crates[biome.crate.key]) if (craft.ACCESSORIES[entry.key]) gain(entry.key);
+      }
+    }
     for (const tile of MINABLE) {
       if (['palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal'].includes(tile.key)
         && !was.has('prism-heart')) continue;

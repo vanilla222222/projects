@@ -100,7 +100,9 @@ function makeUnderworldGenerator(overworld) {
     const chamber = Math.sin(x * 0.026 + y * 0.028) + Math.sin(x * 0.057 - y * 0.047);
     if (depth > 9 && (wave > tunnel || chamber > room)) {
       if (depth > 70 && wave > 1.7 && biome.key === 'ember-bloom') return lava;
-      if (depth > 35 && chamber > 1.77 && biome.key === 'brine-depths') return water;
+      if (depth > 42 && chamber > Math.min(1.93, room + 0.09)) {
+        return biome.key === 'ember-bloom' ? lava : water;
+      }
       return AIR;
     }
     if (depth > 13 && unit(seed, Math.floor(x / 3), Math.floor(y / 3), 8541) < 0.115) return idOf(biome.key + '-ore');
