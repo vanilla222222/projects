@@ -189,6 +189,18 @@ Start with combinations such as Swift Boots and a Cloud Charm for Cloudstep
 Boots. The Workshop also combines class accessories and utility gear from
 Trail through Eventide.
 
+### Signature attacks
+
+Weapon tooltips describe special attacks. The Furnace Lance thrusts through
+a narrow line, the Ashblade wards its wielder during a swing, and the Shatter
+Maul sends a shockwave along the aim. The Tin Hand Cannon banks off terrain,
+while the Copper Pepperbox fires a timed three-round burst for one bullet.
+
+Diamond Staff bolts curve toward visible enemies. The Ward Scepter plants a
+proximity rune, and the Mythril Charge flashes before it explodes. Emberite
+and Solarium flasks can bank off walls. With a Spirit Focus held, click an
+enemy to prioritize it for the next three seconds.
+
 ### Thrower
 
 Craft an Oak Boomerang at a Work Bench to start. Thrower weapons are reusable

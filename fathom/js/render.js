@@ -844,6 +844,25 @@ function makeRenderer(canvas, deps) {
     for (const a of state.arrows) {
       const sx = (a.x - x0) * size - offsetX;
       const sy = (a.y - y0) * size - offsetY;
+      if (a.delay > 0) continue;
+      if (a.armed || a.shockwave) {
+        const pixel = Math.max(2, Math.round(zoom));
+        const x = Math.round(sx / pixel) * pixel, y = Math.round(sy / pixel) * pixel;
+        ctx.fillStyle = a.colour || '#eab184';
+        if (a.armed) {
+          const bright = Math.floor(a.life * (a.armed === 'rune' ? 12 : 28)) % 2 === 0;
+          if (bright) ctx.fillStyle = '#fff0b2';
+          ctx.fillRect(x - 3 * pixel, y + pixel, 7 * pixel, pixel);
+          ctx.fillRect(x - pixel, y - pixel, 3 * pixel, pixel);
+          ctx.fillRect(x, y - 3 * pixel, pixel, 5 * pixel);
+        } else {
+          const direction = Math.sign(a.vx) || 1;
+          for (let n = 0; n < 4; n += 1) {
+            ctx.fillRect(x - n * pixel * direction, y - n * pixel, pixel, (2 * n + 1) * pixel);
+          }
+        }
+        continue;
+      }
       const len = Math.hypot(a.vx, a.vy) || 1;
       const ux = a.vx / len;
       const uy = a.vy / len;
@@ -1159,6 +1178,15 @@ function makeRenderer(canvas, deps) {
         ctx.fillRect(sx - 2 * pixel, sy - 2 * pixel, 4 * pixel, 4 * pixel);
         ctx.fillStyle = '#fff1cf';
         ctx.fillRect(sx - pixel, sy - pixel, pixel, pixel);
+        const mark = state.spirit.mark;
+        if (mark) {
+          const mx = Math.round((mark.x + mark.width / 2 - view.x0) * size - view.offsetX);
+          const my = Math.round((mark.y - view.y0) * size - view.offsetY) - 4 * pixel;
+          ctx.fillStyle = colour;
+          ctx.fillRect(mx - 2 * pixel, my, 5 * pixel, pixel);
+          ctx.fillRect(mx - pixel, my + pixel, 3 * pixel, pixel);
+          ctx.fillRect(mx, my + 2 * pixel, pixel, pixel);
+        }
       }
     } finally {
       actors.restore();

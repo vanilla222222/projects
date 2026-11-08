@@ -811,6 +811,8 @@ function describe(key, tilesModule) {
     }[weapon.throwStyle]);
     if (weapon.summon) lines.push('Click to call a spirit. It fights while this focus is held.',
       'Spirit attack · ' + weapon.summon);
+    if (weapon.signature) lines.push(COMBAT_SIGNATURES[weapon.signature]);
+    if (weapon.summon) lines.push('Click an enemy to direct the spirit’s attacks');
     if (weapon.scatter) lines.push('Fires five close-range pellets for one bullet');
     if (weapon.volley) lines.push('Fires a three-shot fan for one round of ammo');
     lines.push(weapon.useTime.toFixed(2) + 's per swing');
@@ -1739,6 +1741,41 @@ for (const [key, name, first, second, colour] of [
   ['starweave-flight-kit', 'Starweave Flight Kit', 'starweave-wings', 'utility-eventide-traveler', '#dbc5f5'],
   ['explorers-mantle', 'Explorer’s Mantle', 'cloudstep-boots', 'delvers-lantern', '#c8c2ab']
 ]) addTinkerRecipe(key, name, first, second, colour);
+
+const COMBAT_SIGNATURES = {
+  sweep: 'Sweeps through enemies in the aimed arc',
+  lunge: 'Thrusts through a narrow line and lunges toward the aim',
+  guard: 'Raises a short defence ward with each swing',
+  wave: 'Sends a shockwave through enemies in the aimed line',
+  ricochet: 'Shots bounce off solid surfaces',
+  burst: 'Fires three staggered rounds per bullet',
+  seeker: 'Bolts curve toward visible enemies',
+  spellfan: 'Casts three bolts in a wide arc',
+  rune: 'Leaves a rune that bursts when an enemy approaches',
+  bank: 'Can bank off walls before bursting',
+  fuse: 'Arms a charge on impact, then bursts after a short delay'
+};
+for (const [signature, keys] of Object.entries({
+  sweep: ['bone-flail', 'meteor-sword', 'emberite-sword', 'solarium-sword'],
+  lunge: ['furnace-lance', 'aether-sabre', 'eventide-sword'],
+  guard: ['ashblade', 'adamantite-sword'],
+  wave: ['shatter-maul', 'lunarium-sword'],
+  ricochet: ['tin-handcannon', 'cobalt-rifle', 'lunarium-bow'],
+  burst: ['copper-pepperbox', 'induction-repeater', 'aetherite-carbine'],
+  seeker: ['amethyst-staff', 'diamond-staff', 'eventide-staff'],
+  spellfan: ['ruby-staff', 'cinder-scepter', 'solarium-staff'],
+  rune: ['ward-scepter', 'zenith-focus', 'mythril-staff'],
+  bank: ['emberite-flask', 'solarium-flask'],
+  fuse: ['mythril-charge']
+})) {
+  for (const key of keys) WEAPONS[key].signature = signature;
+}
+for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
+  for (const [form, signature] of Object.entries({
+    glaive: 'lunge', maul: 'wave', cutlass: 'sweep', warpick: 'guard',
+    carbine: 'ricochet', repeater: 'burst', wand: 'seeker', scepter: 'rune', focus: 'spellfan'
+  })) WEAPONS[chapter.key + '-' + form].signature = signature;
+}
 
 function stationsNear(world, tiles, px, py) {
   const found = new Set();
