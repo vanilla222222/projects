@@ -88,7 +88,7 @@ for (const spec of ENEMIES) {
   const layer = (spec.layers || ['surface'])[0];
   const biome = (spec.biomes || ['plains'])[0];
   const ctx = { biome, layer, dungeon: spec.dungeon, lowerOssuary: spec.lowerOssuary, wyvernsUnlocked: spec.wyvernsUnlocked, foundry: spec.foundry, wet: !!spec.wet, day: spec.day === false ? false : true,
-    event: spec.event || null };
+    event: spec.event || null, armory: spec.armory, bossDefeated: key => key === spec.requiresBoss };
   if (spec.summonOnly || spec.hiddenSpawn) {
     // The one thing a summon-only enemy must prove: that there is no situation at all
     // in which the spawn table could produce it. Checked against every combination the
@@ -108,6 +108,10 @@ for (const spec of ENEMIES) {
     continue;
   }
   ok(poolFor(ctx).indexOf(spec) !== -1, spec.key + ' cannot spawn in its own habitat');
+  if (spec.requiresBoss) {
+    ok(!poolFor({ ...ctx, bossDefeated: () => false }).includes(spec), spec.key + ' spawns before its boss');
+    if (spec.armory) ok(!poolFor({ ...ctx, armory: null }).includes(spec), spec.key + ' spawns outside its armory');
+  }
   // A night-only enemy must be absent by day, and vice versa.
   if (spec.day === false) {
     ok(poolFor({ ...ctx, day: true }).indexOf(spec) === -1,

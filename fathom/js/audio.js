@@ -220,6 +220,16 @@ const DUNGEON_SCORES = Object.fromEntries([
   ['Starfall Foundry', 56, 'dark', 0.44, [0, 2, 2, 4, 1, 3, null, 0], 'square'],
   ['Tidal Archive', 57, 'dark', 0.85, [0, null, 3, 2, 4, null, 1, 2], 'sine'],
   ['Runaway Mine', 52, 'bright', 0.43, [0, 0, 3, 1, 0, 4, 2, 1], 'triangle'],
+  ['Amber Warren', 58, 'bright', 0.64, [0, 2, 4, null, 2, 1, 3, 0], 'triangle'],
+  ['Moonblind Catacombs', 49, 'dark', 0.78, [0, null, 1, 4, 3, null, 1, 2], 'sine'],
+  ['Cinder Arsenal', 45, 'dark', 0.43, [0, 0, 3, 2, 4, 0, 1, null], 'square'],
+  ['Obsidian Bastion', 43, 'dark', 0.61, [0, 4, null, 1, 0, 3, 2, 1], 'triangle'],
+  ['Null Reliquary', 38, 'dark', 0.96, [0, null, null, 1, 3, null, 2, 0], 'sine'],
+  ['Rift Observatory', 64, 'bright', 0.59, [0, 3, 6, 2, null, 5, 2, 1], 'sine'],
+  ['Prismatic Cloister', 66, 'bright', 0.66, [0, 2, 5, 7, 5, null, 3, 1], 'triangle'],
+  ['Comet Roost', 62, 'bright', 0.52, [0, 4, null, 6, 2, 5, 4, 1], 'sine'],
+  ['Meteor Crucible', 47, 'dark', 0.42, [0, 1, 0, 4, 3, 2, null, 3], 'square'],
+  ['Eventide Citadel', 51, 'dark', 0.58, [0, 5, 4, null, 2, 6, 1, 3], 'triangle'],
   ['Astral Siege', 62, 'dark', 0.5, [0, 4, 2, 5, 3, 4, null, 1], 'triangle']
 ].map(([key, ...data]) => [key, makeScore('dungeon:' + key, ...data, key === 'Tidal Archive' ? 'water-dungeon' : 'dungeon')]));
 

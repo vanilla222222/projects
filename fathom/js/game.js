@@ -150,7 +150,8 @@ function makeGame(canvas, deps) {
     const biome = world.biomeAt(x, y).key;
     const ossuary = worldgen.dungeonAt(seed, x, y);
     const site = worldgen.biomeSiteAt(seed, x, y);
-    let dungeon = site?.name;
+    const armory = worldgen.chapterArmoryAt(seed, x, y);
+    let dungeon = armory && y > armory.y ? armory.name : site?.name;
     if (ossuary) dungeon = y >= ossuary.y + 100 ? 'Lens Vault'
       : y >= ossuary.y + 58 ? 'Hardmode Ossuary' : 'Ossuary';
     else if (worldgen.ashvaultAt(seed, x, y)) dungeon = 'Ashvault';
@@ -252,7 +253,9 @@ function makeGame(canvas, deps) {
     // A boss gives up everything it carries, every time. A fight you had to prepare for
     // should not then also be a lottery.
     if (target.spec.bossDrops) {
+      const firstClear = !defeatedBosses.has(target.spec.key);
       defeatedBosses.add(target.spec.key);
+      const armory = firstClear && worldgen.chapterArmories(seed).find(site => site.boss === target.key);
       for (const entry of target.spec.bossDrops) {
         const [key, count] = Array.isArray(entry) ? entry : [entry, 1];
         const x = target.x + target.width / 2;
@@ -274,10 +277,11 @@ function makeGame(canvas, deps) {
       } else if (target.key === 'starwyvern') {
         say('Wild wyverns now roam Space. Hunt them for essence to craft wings.', 6);
       } else say(target.spec.name + ' is dead', 3.4);
+      if (armory) say(armory.name + ' unsealed at x ' + armory.x + ' · New enemies roam the world. See Journal.', 6);
       return;
     }
     const table = RARE_BY_ENEMY[target.key];
-    if (!table || !table.length || Math.random() > RARE_CHANCE) return;
+    if (!table || !table.length || Math.random() > (target.spec.armoryLootChance || RARE_CHANCE)) return;
     const prize = table[Math.floor(Math.random() * table.length)];
     dropItem(target.x, target.y, prize.key, prize.kind, 1);
     say(craft.nameOf(prize.key, tiles) + '!', 2.4);
@@ -797,7 +801,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege) {
+    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory) {
       state.player.mining = null;
       return;
     }
@@ -1236,6 +1240,13 @@ function makeGame(canvas, deps) {
   function useChest(aim) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.chest) return false;
+    if (spec.chest === 'chapter-armory-cache') {
+      const site = worldgen.chapterArmoryAt(seed, aim.x, aim.y);
+      if (!site || !defeatedBosses.has(site.boss)) {
+        say('This cache is bound to the dungeon seal', 2);
+        return true;
+      }
+    }
     if (spec.chest === 'ossuary-workshop-cache') {
       const site = worldgen.dungeonAt(seed, aim.x, aim.y);
       if (!site || !defeatedBosses.has('dungeonkeeper')
@@ -1482,6 +1493,12 @@ function makeGame(canvas, deps) {
         }
       }
       if (hallow !== null) rows.push('Hallow surface near x ' + hallow + ' · Search the caves below for spell crystals.');
+    }
+    const armories = worldgen.chapterArmories(seed).filter(site => defeatedBosses.has(site.boss));
+    for (const armory of armories) {
+      rows.push(armory.name + ' · x ' + armory.x + ', y ' + armory.y
+        + ' · Four caches with class gear. ' + armory.material + ' roamers hunt in '
+        + armory.layers.map(layer => worldgen.LAYERS.find(band => band.key === layer)?.name || layer).join(', ') + '.');
     }
     rows.push('Workshop · Build a Heavy Workbench at a Work Bench to unlock advanced stations and statues.');
     rows.push('Sawmill furniture · Loom textiles · Alchemy Table potions · Cauldron meals');
@@ -1792,6 +1809,21 @@ function makeGame(canvas, deps) {
 
   function useDungeonEntrance(aim) {
     const key = tiles.tile(world.get(aim.x, aim.y)).key;
+    if (key === 'chapter-armory-seal') {
+      const armory = worldgen.chapterArmoryAt(seed, aim.x, aim.y);
+      if (!armory) return true;
+      if (!defeatedBosses.has(armory.boss)) {
+        say(armory.name + ' opens after defeating ' + enemyModule.BY_KEY[armory.boss].name, 3);
+        return true;
+      }
+      for (let dx = -1; dx <= 1; dx += 1) {
+        if (tiles.tile(world.get(armory.x + dx, armory.y)).key === key) {
+          world.set(armory.x + dx, armory.y, dx === 0 ? tiles.idOf('rope') : tiles.AIR);
+        }
+      }
+      say(armory.name + ' is open', 2.5);
+      return true;
+    }
     if (key !== 'dungeon-bell' && key !== 'dungeon-gate') return false;
     if (!defeatedBosses.has('dungeonkeeper')) {
       if (key === 'dungeon-bell' && inventory.countOf('bone-toll')) return useConsumable({ key: 'bone-toll' });
@@ -2609,7 +2641,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=depth-scores-1');
+      const worker = new Worker('workers/chunk.js?v=boss-armories-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2943,7 +2975,8 @@ function makeGame(canvas, deps) {
     renderer = render.makeRenderer(canvas, { tiles, texture, autotile, light, worldgen, noise, sprite, webgl: deps.webgl });
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, {
-      worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage,
+      worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'),
+      bossDefeated: key => defeatedBosses.has(key), bossBarrage: fireBossBarrage,
       enemyActivity: worldRules.enemies, bossHealth: worldRules.bossHealth,
       wyvernsUnlocked: () => defeatedBosses.has('starwyvern'), lensLit: lensSensorLit, siegeStrike: fireSiegeStrike
     });

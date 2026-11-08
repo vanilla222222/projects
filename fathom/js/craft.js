@@ -12,7 +12,7 @@ const CRAFT_TOOLS = (typeof require === 'function') ? require('./mining.js').TOO
 const CRAFT_WALLS = (typeof require === 'function')
   ? require('./tiles.js').WALL_BY_KEY : WALL_BY_KEY;
 const CRAFT_TILES = (typeof require === 'function')
-  ? require('./tiles.js') : { BY_KEY, TILES, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, CRITTER_SPECIMENS };
+  ? require('./tiles.js') : FATHOM.tiles;
 // Resolved at call time rather than at load time. buffs.js is loaded after this file in
 // the browser, so naming `BUFFS` here would read a `const` before its declaration and
 // throw on load - which is the same trap the two lookups above are written around, and
@@ -418,13 +418,32 @@ for (const tier of ARMOUR_TIERS) {
   }
 }
 
+const ARMORY_SET_BONUSES = new Map();
+for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
+  for (const [style, role, multiplier] of [
+    ['melee', 'Vanguard', 1.18], ['ranged', 'Marksman', 1.20], ['magic', 'Arcanist', 1.22]
+  ]) {
+    const tier = chapter.key + '-' + style;
+    const name = chapter.material + ' ' + role;
+    ARMORY_SET_BONUSES.set(tier, { key: tier, name,
+      text: '+' + Math.round((multiplier - 1) * 100) + '% ' + style + ' damage',
+      [style]: multiplier });
+    for (const piece of ARMOUR_PIECES) {
+      ARMOUR[tier + '-' + piece.suffix] = { name: name + ' ' + piece.label,
+        slot: piece.slot, tier, colour: chapter.colour,
+        defense: Math.max(1, Math.round(chapter.defense * piece.share
+          * (style === 'melee' ? 1 : style === 'ranged' ? 0.85 : 0.72))) };
+    }
+  }
+}
+
 // Wearing all four pieces of one metal grants that metal's bonus. A set bonus is what
 // makes a complete suit worth the detour rather than four separate upgrades.
 function setBonusFor(worn) {
   const tiers = worn.filter(Boolean).map(key => ARMOUR[key] && ARMOUR[key].tier);
   if (tiers.length !== 4 || tiers.some(t => !t || t !== tiers[0])) return null;
   const tier = ARMOUR_TIERS.find(t => t.key === tiers[0]);
-  return tier ? tier.bonus : null;
+  return tier?.bonus || ARMORY_SET_BONUSES.get(tiers[0]) || null;
 }
 
 // Accessories. The slots have been there since the inventory was built and nothing has
@@ -764,7 +783,8 @@ function describe(key, tilesModule) {
     if (weapon.cleave) lines.push('Also hits enemies within three tiles of the target');
     if (weapon.spell === 'chain') lines.push('Arcs to up to two nearby enemies');
     if (weapon.spell === 'ward') lines.push('Casting grants +14 defence for four seconds');
-    if (weapon.drop) lines.push('Only dropped, never made');
+    if (weapon.armory) lines.push(weapon.armory + ' · Only dropped or found in caches');
+    else if (weapon.drop) lines.push('Only dropped, never made');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   const armour = ARMOUR[key];
@@ -772,7 +792,8 @@ function describe(key, tilesModule) {
     const tier = ARMOUR_TIERS.find(t => t.key === armour.tier);
     lines.push('Armour, worn on the ' + armour.slot);
     lines.push(armour.defense + ' defence');
-    if (tier && tier.bonus) lines.push('Full set: ' + tier.bonus.text);
+    const bonus = tier?.bonus || ARMORY_SET_BONUSES.get(armour.tier);
+    if (bonus) lines.push('Full set: ' + bonus.text);
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   const acc = ACCESSORIES[key];
@@ -858,6 +879,38 @@ function describe(key, tilesModule) {
     return { name: nameOf(key, tilesModule), kind, lines };
   }
   return { name: nameOf(key, tilesModule), kind, lines };
+}
+
+const ARMORY_HANDLING = {
+  melee: [
+    [0.75, 0.19, 3.1, {}], [0.91, 0.31, 4.6, { cleave: true }],
+    [1.27, 0.49, 3.8, { cleave: true, knockback: 2.4 }],
+    [0.88, 0.24, 3.6, {}], [1.12, 0.33, 3.0, { knockback: 1.8 }]
+  ],
+  ranged: [
+    [0.63, 0.23, 32, { ammo: 'arrow' }], [1.03, 0.43, 55, { ammo: 'arrow', pierce: 2 }],
+    [0.78, 0.28, 44, { ammo: 'bullet' }], [1.23, 0.52, 67, { ammo: 'bullet', pierce: 3 }],
+    [0.51, 0.15, 39, { ammo: 'bullet' }]
+  ],
+  magic: [
+    [0.68, 0.24, 36, { mana: 4 }], [1.16, 0.43, 55, { mana: 9, spell: 'pierce' }],
+    [0.83, 0.38, 44, { mana: 10, spell: 'chain' }], [0.79, 0.45, 39, { mana: 11, spell: 'ward' }],
+    [1.35, 0.55, 43, { mana: 13 }]
+  ]
+};
+for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
+  for (const [style, forms] of Object.entries(CRAFT_TILES.ARMORY_FORMS)) {
+    forms.forEach((form, i) => {
+      const [scale, useTime, reach, traits] = ARMORY_HANDLING[style][i];
+      WEAPONS[chapter.key + '-' + form] = {
+        name: chapter.material + ' ' + form[0].toUpperCase() + form.slice(1),
+        damage: Math.round(chapter.power * scale), useTime, reach, ...traits,
+        colour: chapter.colour, bolt: chapter.colour, armory: chapter.name,
+        ranged: style === 'ranged', magic: style === 'magic',
+        drop: chapter.key + (i === 4 ? '-roamer' : '-warden')
+      };
+    });
+  }
 }
 
 // Which class a weapon belongs to, which decides which multiplier it is scaled by. Read

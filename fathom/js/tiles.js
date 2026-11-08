@@ -766,6 +766,42 @@ function wallIdOf(key) {
   return found.id;
 }
 
+// The same chapter data drives dungeon generation, enemy gates and loot.
+const ARMORY_CHAPTERS = [
+  ['kingslime', 'Amber Warren', 'Amber', '#d4ab53', 14, 33, 3, ['surface', 'caves']],
+  ['hollloweye', 'Moonblind Catacombs', 'Moonblind', '#a6b9f5', 28, 72, 6, ['surface', 'caves']],
+  ['furnacewarden', 'Cinder Arsenal', 'Cinder', '#ed8958', 51, 155, 10, ['caves', 'deep']],
+  ['ashguardian', 'Obsidian Bastion', 'Obsidian', '#b791cb', 75, 275, 15, ['deep', 'hell']],
+  ['voidsovereign', 'Null Reliquary', 'Null', '#b29bdd', 96, 390, 18, ['hellcaves', 'void']],
+  ['riftarchon', 'Rift Observatory', 'Rift', '#6ddbc1', 113, 530, 21, ['deep', 'void']],
+  ['prismsentinel', 'Prismatic Cloister', 'Prismatic', '#f1a8db', 135, 680, 25, ['surface', 'caves', 'deep']],
+  ['starwyvern', 'Comet Roost', 'Comet', '#9ad9ee', 155, 820, 29, ['sky', 'space']],
+  ['foundrywarden', 'Meteor Crucible', 'Meteor', '#efa765', 180, 990, 34, ['space', 'deep']],
+  ['astralregent', 'Eventide Citadel', 'Eventide', '#d7a5ff', 215, 1200, 39, ['space', 'void']]
+].map(([boss, name, material, colour, power, hp, defense, layers], index) => ({
+  boss, name, material, colour, power, hp, defense, layers, index,
+  key: 'armory-' + boss, anchor: (index % 2 ? -1 : 1) * (5650 + Math.floor(index / 2) * 360)
+}));
+
+const ARMORY_FORMS = {
+  melee: ['foil', 'glaive', 'maul', 'cutlass', 'warpick'],
+  ranged: ['shortbow', 'longbow', 'carbine', 'rifle', 'repeater'],
+  magic: ['wand', 'lance', 'conduit', 'scepter', 'focus']
+};
+const ARMORY_PIECE_KEYS = ['helmet', 'chest', 'legs', 'boots'];
+
+for (const chapter of ARMORY_CHAPTERS) {
+  pushTile({ key: chapter.key + '-brick', name: chapter.material + ' Masonry',
+    solid: true, opacity: 15, colour: shadeHex(chapter.colour, -0.35),
+    toughness: 250, drops: null, chapterArmory: true });
+}
+pushTile({ key: 'chapter-armory-seal', name: 'Bossbound Seal', solid: true, opacity: 12, emit: 6,
+  colour: '#bda1de', toughness: 250, drops: null, chapterArmory: true });
+defineMulti('chapter-armory-cache', 'Armory Cache', 2, 2, () => ({
+  solid: false, opacity: 8, emit: 5, colour: '#b88ba9', toughness: 95,
+  chest: 'chapter-armory-cache', drops: null, chapterArmory: true
+}));
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 
@@ -794,7 +830,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 
