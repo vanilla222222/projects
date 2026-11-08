@@ -1016,9 +1016,9 @@ function makeGame(canvas, deps) {
   // Loose a bow. An arrow is a small body that flies, falls, and stops at the first thing
   // it meets; spending the ammunition is what distinguishes it from a sword swing.
   function shoot(weapon) {
-    // The best arrow held, not the one in the selected slot: a second hotbar for
-    // ammunition is a chore, and Terraria does not ask for one either.
-    const ammo = craft.bestAmmo(key => inventory.countOf(key), weapon.ammo);
+    const quiver = inventory.section('ammo');
+    const preferred = inventory.slots.slice(quiver.from, quiver.to).map(slot => slot?.key);
+    const ammo = craft.bestAmmo(key => inventory.countOf(key), weapon.ammo, preferred);
     if (!ammo) {
       say('Out of ' + craft.nameOf(weapon.ammo, tiles), 1.0);
       return false;
@@ -1032,13 +1032,17 @@ function makeGame(canvas, deps) {
     const dy = pointer.y - cy;
     const speed = 42 * kind.speed * (gear.arrowSpeed || 1);
     const heading = Math.atan2(dy, dx);
-    for (const spread of weapon.volley ? [-0.14, 0, 0.14] : [0]) {
+    const spreads = weapon.scatter
+      ? [-1, -0.5, 0, 0.5, 1].map(fraction => fraction * weapon.scatter)
+      : weapon.volley ? [-0.14, 0, 0.14] : [0];
+    const hitLimit = Math.max(Number(weapon.pierce === true ? 3 : weapon.pierce) || 1, kind.pierce || 1);
+    for (const spread of spreads) {
+      const scale = weapon.scatter ? 0.42 : spread ? 0.32 : 1;
       state.arrows.push({ x: cx, y: cy, vx: Math.cos(heading + spread) * speed, vy: Math.sin(heading + spread) * speed,
-      damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1) * (spread ? 0.32 : 1)),
-      life: kind.family === 'bullet' ? weapon.reach / speed : 2.6 * (gear.arrowSpeed || 1), colour: kind.colour,
-      gravity: kind.family === 'bullet' ? 0 : 26,
-      burns: !!kind.burns, hits: weapon.pierce ? new Set() : null,
-      hitLimit: Number(weapon.pierce) > 1 ? weapon.pierce : 3 });
+        damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1) * scale),
+        life: weapon.reach / speed, colour: kind.colour,
+        gravity: kind.family === 'bullet' ? 0 : kind.family === 'bolt' ? 9 : 26,
+        burns: kind.burns, shove: kind.shove, hits: hitLimit > 1 ? new Set() : null, hitLimit });
     }
     return true;
   }
@@ -1108,6 +1112,15 @@ function makeGame(canvas, deps) {
             hit = !a.hits || a.hits.size >= (a.hitLimit || 3);
             spawnParticles(a.x, a.y, target.spec.colour, 5);
             projectileHit(target, a.damage);
+            if (a.shove && !target.dead && !target.boss) target.vx += Math.sign(a.vx) * a.shove;
+            if (a.burns) {
+              for (const other of swarm.list) {
+                if (other === target || other.dead || other.spec.passive || other.spec.specimen
+                  || Math.hypot(other.x - a.x, other.y - a.y) > 2.3
+                  || !spiritLine(a.x, a.y, other.x + other.width / 2, other.y + other.height / 2)) continue;
+                projectileHit(other, Math.round(a.damage * 0.22));
+              }
+            }
             if (a.spell === 'chain') {
               const links = swarm.list.filter(other => other !== target
                 && Math.hypot(other.x - target.x, other.y - target.y) <= 6).slice(0, 2);

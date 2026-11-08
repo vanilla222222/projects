@@ -433,3 +433,12 @@ for (const [station, items] of Object.entries(groups)) {
 
 console.log('\n' + checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);
+
+const rangerAssert = require('node:assert/strict');
+const rangerAmmo = key => ['gold-bolt', 'bolt', 'bullet'].includes(key) ? 1 : 0;
+rangerAssert.equal(craft.bestAmmo(rangerAmmo, 'bolt', ['bullet', 'bolt']), 'bolt');
+rangerAssert.equal(craft.bestAmmo(rangerAmmo, 'bolt'), 'gold-bolt');
+rangerAssert.equal(craft.bestAmmo(rangerAmmo, 'arrow', ['bolt']), null);
+rangerAssert.equal(craft.WEAPONS['wood-crossbow'].pierce, 2);
+rangerAssert.equal(craft.AMMO['bodkin-bolt'].pierce, 4);
+rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);

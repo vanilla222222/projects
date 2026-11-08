@@ -229,6 +229,16 @@ function makeUI(root, deps) {
         ctx.fillRect(5 * u, 6 * u, 10 * u, 2 * u);
         return canvas;
       }
+      if (craft.WEAPONS[item.key].ammo === 'bolt') {
+        ctx.fillStyle = '#9c633f';
+        ctx.fillRect(2 * u, 8 * u, 12 * u, 2 * u);
+        ctx.fillRect(4 * u, 10 * u, 3 * u, 3 * u);
+        ctx.fillStyle = '#c5bbbf';
+        ctx.fillRect(10 * u, 4 * u, 2 * u, 10 * u);
+        ctx.fillRect(8 * u, 5 * u, 2 * u, 2 * u);
+        ctx.fillRect(8 * u, 11 * u, 2 * u, 2 * u);
+        return canvas;
+      }
       const pickKey = item.key.replace(/-bow$/, '-pick');
       ctx.strokeStyle = mining?.toolSpec(pickKey) ? mining.tierColour({ key: pickKey }) : '#8a6038';
       ctx.lineWidth = Math.max(1.5, u * 1.4);
@@ -621,7 +631,7 @@ function makeUI(root, deps) {
     const right = el('div', 'panel equip-panel', els.screen);
     el('h2', null, right).textContent = 'Equipment';
     els.equipSlots = [];
-    for (const [key, title] of [['armor', 'Armour'], ['accessory', 'Accessories'], ['vanity', 'Vanity'], ['ammo', 'Ammo'], ['coins', 'Coins']]) {
+    for (const [key, title] of [['armor', 'Armour'], ['accessory', 'Accessories'], ['vanity', 'Vanity'], ['ammo', 'Ammo · leftmost match fires first'], ['coins', 'Coins']]) {
       const group = el('div', 'equip-group', right);
       el('span', 'equip-label', group).textContent = title;
       const row = el('div', 'equip-row', group);
