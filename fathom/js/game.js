@@ -12,7 +12,7 @@ function makeGame(canvas, deps) {
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule, sprite, audio: audioModule,
-    buffs: buffModule, fishing: fishModule } = deps;
+    buffs: buffModule, fishing: fishModule, settlement: settlementModule } = deps;
 
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -52,6 +52,8 @@ function makeGame(canvas, deps) {
   let village = null;
   let townDevices = [];
   let completedOrders = new Set();
+  let settlements = settlementModule.makeSettlementLedger();
+  let expedition = null;
   let defeatedBosses = new Set();
   let bestiary = Object.create(null);
   let storageItems = [];
@@ -117,6 +119,7 @@ function makeGame(canvas, deps) {
     ['E', 'Backpack'],
     ['G', 'Grappling hook'],
     ['H', 'Town Hall and housing'],
+    ['J', 'Field Journal and settlements'],
     ['M', 'Map  ( [ ] zoom )'],
     ['N', 'Sound'],
     ['B', 'Music'],
@@ -250,6 +253,9 @@ function makeGame(canvas, deps) {
 
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
+    if (!target.spec.boss && !target.spec.passive && !target.spec.specimen && !target.spec.summonOnly) {
+      recordPatrol(target.x, target.y);
+    }
     // A boss gives up everything it carries, every time. A fight you had to prepare for
     // should not then also be a lottery.
     if (target.spec.bossDrops) {
@@ -309,6 +315,7 @@ function makeGame(canvas, deps) {
       statsModule.heal(stats, use.heal);
     } else if (use.summon !== undefined) {
       if (!swarm) return true;
+      if (expedition) { say('Finish the active expedition first', 2); return true; }
       const required = craft.bossPrerequisite(use.summon, defeatedBosses);
       if (required) {
         say('Defeat ' + enemyModule.BY_KEY[required].name + ' first', 2.4);
@@ -561,6 +568,10 @@ function makeGame(canvas, deps) {
     };
     const got = fishModule.rollCatch(ctx, Math.random(), bobber.power);
     if (!got) { say('Nothing is biting here', 1.4); return; }
+    if (got.key !== 'junk' && !Object.hasOwn(fishModule.CRATES, got.key)) {
+      settlements.record('fish', got.key);
+      recordFieldwork('fish', got.key, bobber.tx, bobber.ty, ctx.biome);
+    }
     dropItem(bobber.tx, bobber.ty - 1, got.key, craft.kindOf(got.key), 1);
     sfx('pickup', { pitch: 1.35 });
     spawnParticles(bobber.x, bobber.y,
@@ -1054,6 +1065,7 @@ function makeGame(canvas, deps) {
 
   function projectileHit(target, damage) {
     if (target.dead || !swarm.damage(target, damage) || target.practice) return;
+    if (target.expedition) { target.expeditionDefeated = true; return; }
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
     }
@@ -1158,6 +1170,7 @@ function makeGame(canvas, deps) {
       }
     }
     if (swarm.damage(target, hit) && !target.practice) {
+      if (target.expedition) { target.expeditionDefeated = true; return true; }
       for (const [key, count] of target.spec.drops || []) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
       }
@@ -1191,6 +1204,7 @@ function makeGame(canvas, deps) {
     state.player.y = spot.y;
     state.player.vx = 0;
     state.player.vy = 0;
+    stopExpedition();
     if (swarm) swarm.clear();
     releaseHook();
     state.bobber = null;
@@ -1414,7 +1428,11 @@ function makeGame(canvas, deps) {
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
     const actions = [{ label: 'Progression Journal', run: openProgression },
-      { label: 'Town Contracts', run: openTownOrders }, { label: 'Bestiary', run: openBestiary }];
+      { label: 'Town Contracts', run: openTownOrders }, { label: 'Bestiary', run: openBestiary },
+      { label: 'Field Journal', run: openFieldJournal }];
+    const pylon = nearestTown(x, y, device => physics.aimTile(state.player, device).inReach, 8);
+    if (pylon) actions.push({ label: 'Local Settlement', run: () => openSettlement(pylon) });
+    if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
     for (const spec of villagerModule.VILLAGERS) {
       const housed = village.list.some(v => v.key === spec.key);
       if (!housed && !available.has(spec.key)) {
@@ -1428,8 +1446,407 @@ function makeGame(canvas, deps) {
         } });
       }
     }
-    rows.push('Two occupied homes in range power a pylon. Shops discount prices in clusters of two or more.');
+    rows.push('Build a Town Pylon near two occupied homes to found a regional outpost and link other settlements.');
     ui.showTown('Town Hall', rows, actions);
+  }
+
+  function townRegion(x, y) {
+    const layer = worldgen.layerAt(y).key;
+    return layer === 'surface' ? world.biomeAt(Math.floor(x), Math.floor(y)).key : layer;
+  }
+
+  function townRegionName(region) {
+    return worldgen.LAYERS.find(layer => layer.key === region)?.name
+      || worldgen.BIOMES.find(biome => biome.key === region)?.name || region;
+  }
+
+  function townPylons() {
+    return townDevices.filter(device => device.type === 'pylon' && deviceAt(device.x, device.y) === device);
+  }
+
+  function townHomes(device) {
+    return village.nearbyHomes(device.x, device.y, PYLON_RADIUS);
+  }
+
+  function charterRegions() {
+    return settlements.charterRegions(townPylons(), townHomes);
+  }
+
+  function nearestTown(x, y, accepts, range) {
+    let best = null;
+    for (const device of townPylons()) {
+      const distance = Math.hypot(device.x - x, device.y - y);
+      if (distance > range || !accepts(device)) continue;
+      best = device;
+      range = distance;
+    }
+    return best;
+  }
+
+  function recordFieldwork(job, id, x, y, region = townRegion(x, y)) {
+    const device = nearestTown(x, y, candidate => {
+      const local = settlements.town(candidate);
+      return local?.rank === 1 && local.region === region
+        && settlementModule.settlementJob(region) === job
+        && settlements.progress(local) < settlementModule.JOBS[job].goal && townHomes(candidate) >= 2;
+    }, 1600);
+    if (device && settlements.mark(settlements.town(device), job, id)) {
+      say(settlementModule.settlementRole(region).name + ' fieldwork complete', 3);
+    }
+  }
+
+  function recordTownCraft(recipe) {
+    if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
+    const key = recipe.out.key;
+    if (craft.ITEMS[key]?.use?.meal || key === 'cooked-fish' || key === 'seared-fish') settlements.record('food', key);
+    if (tiles.BY_KEY[key]?.circuit) settlements.record('mechanism', key);
+  }
+
+  function recordPatrol(x, y) {
+    const region = townRegion(x, y);
+    if (settlementModule.settlementJob(region) === 'hunt') {
+      recordFieldwork('hunt', null, x, y, region);
+      return;
+    }
+    const job = settlementModule.settlementJob(region);
+    if (job !== 'survey' && job !== 'repair') return;
+    const device = nearestTown(x, y, candidate => {
+      const local = settlements.town(candidate);
+      return local?.rank === 1 && local.region === region && local.kills < 6
+        && settlements.progress(local) < settlementModule.JOBS[job].goal && townHomes(candidate) >= 2;
+    }, 1600);
+    if (device) {
+      const local = settlements.town(device);
+      if (!nextLandmark(device, local)) local.kills += 1;
+    }
+  }
+
+  function townExchange(needs, rewards) {
+    const result = villagerModule.completeTownOrder(inventory, { needs, rewards }, craft.kindOf);
+    if (result === 'missing') say('Missing supplies', 2);
+    if (result === 'full') say('Make room for the reward', 2);
+    if (result === 'complete') ui.sync(state);
+    return result === 'complete';
+  }
+
+  function townItems(items) {
+    return items.map(([key, count]) => craft.nameOf(key, tiles) + ' ×' + count).join(', ');
+  }
+
+  function siteMark(site) {
+    return site.x + ':' + site.top;
+  }
+
+  function nextLandmark(device, local) {
+    const spacing = worldgen.BIOME_SITE_SPACING;
+    const slot = Math.floor(device.x / spacing);
+    let best = null, distance = Infinity;
+    for (let offset = -11; offset <= 11; offset += 1) {
+      for (const site of worldgen.biomeSitesForSlot(seed, slot + offset) || []) {
+        if (site.biome !== local.region || local.marks.includes(siteMark(site))) continue;
+        const d = Math.hypot(site.x - device.x, site.top - device.y);
+        if (d < distance && d <= 1580) { best = site; distance = d; }
+      }
+    }
+    return best;
+  }
+
+  function openSettlement(device) {
+    const local = settlements.town(device);
+    const region = local?.region || townRegion(device.x, device.y);
+    const role = settlementModule.settlementRole(region);
+    const residents = townHomes(device);
+    const job = settlementModule.settlementJob(region);
+    const work = settlementModule.JOBS[job];
+    const partners = charterRegions();
+    const rows = [townRegionName(region) + ' · ' + residents + ' occupied homes · Rank ' + (local?.rank || 0),
+      partners.size + ' distinct active charter regions in the network.',
+      'Supply counters and fieldwork need two valid homes. A district needs three.'];
+    const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
+      { label: 'Field Journal', run: openFieldJournal }];
+    const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
+      && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
+    if (residents < 2) {
+      rows.push('Build and assign two furnished homes within 45 tiles of this pylon.');
+    } else if (!local) {
+      const crowded = townPylons().some(other => other !== device && settlements.town(other)
+        && Math.hypot(other.x - device.x, other.y - device.y) < PYLON_RADIUS * 2);
+      if (crowded) rows.push('Place the pylon at least 90 tiles from the nearest founded town.');
+      else actions.push({ label: 'Found outpost · ' + townItems(role.supplies), run() {
+        if (!canUse() || settlements.town(device)) return;
+        if (townExchange(role.supplies, []) && settlements.found(device, region)) {
+          say(role.name + ' founded', 3);
+          openSettlement(device);
+        }
+      } });
+    } else {
+      if (local.rank === 1) {
+        const progress = settlements.progress(local);
+        rows.push('Fieldwork · ' + work.text + ' ' + progress + ' / ' + work.goal);
+        if (job === 'survey' || job === 'repair') {
+          const site = nextLandmark(device, local);
+          if (site) rows.push('Nearest assignment · ' + site.name + ' · x ' + site.x + ', y ' + (site.top + site.height - 2));
+          else rows.push('No landmark in range. Complete the alternate regional patrol instead.');
+          if (!site) {
+            rows.push('Patrol · ' + local.kills + ' / 6 wild hostiles defeated.');
+          }
+        }
+        if (progress >= work.goal || local.kills >= 6) {
+          actions.push({ label: 'Charter this town · receive a pylon and 250 coin', run() {
+            if (!canUse() || local.rank !== 1) return;
+            if (townExchange([], [['town-pylon', 1], ['coin', 250]])) {
+              local.rank = 2;
+              openSettlement(device);
+            }
+          } });
+        }
+      }
+      if (local.rank === 2) {
+        const station = craft.nameOf(role.station, tiles);
+        rows.push('District upgrade · House three residents and place a ' + station + ' beside this pylon.');
+        actions.push({ label: 'Open a district workshop', run() {
+          if (!canUse(3) || local.rank !== 2 || !craft.stationsNear(world, tiles, device.x, device.y).has(role.station)) {
+            say('The district needs three homes and a ' + station + ' nearby', 3);
+            return;
+          }
+          if (townExchange([], [['storage-access', 1], ['coin', 400]])) {
+            local.rank = 3;
+            openSettlement(device);
+          }
+        } });
+      }
+      if (local.rank === 3) rows.push(residents >= 3
+        ? 'District workshop active · preferred prices and all regional stock.'
+        : 'District needs its third resident to restore preferred prices and stock.');
+      const discount = Math.max(0.55, 1 - (local.rank === 3 && residents >= 3 ? 0.18 : 0)
+        - Math.max(0, partners.size - 1) * 0.08);
+      for (const [key, count, price] of role.stock.slice(0, residents < 3 ? Math.min(2, local.rank) : local.rank)) {
+        const cost = Math.ceil(price * discount);
+        actions.push({ label: 'Buy ' + townItems([[key, count]]) + ' · ' + cost + ' coin', run() {
+          if (canUse()) townExchange([['coin', cost]], [[key, count]]);
+        } });
+      }
+      if (local.rank >= 2 && partners.size >= 2) {
+        rows.push('Trade shipment · Pack one shipment per town per day. Deliver it at a partner pylon.');
+        const delivery = role.supplies[local.deliveries % role.supplies.length];
+        if (local.lastDelivery < state.nights && !settlements.shipment) {
+          for (const partnerRegion of partners) {
+            if (partnerRegion === region) continue;
+            const partner = nearestTown(device.x, device.y, candidate => {
+              const other = settlements.town(candidate);
+              return other?.rank >= 2 && other.region === partnerRegion && townHomes(candidate) >= 2;
+            }, Infinity);
+            if (!partner) continue;
+            const destination = townRegionName(partnerRegion) + ' at x ' + partner.x;
+            actions.push({ label: 'Pack shipment to ' + destination + ' · ' + townItems([delivery]), run() {
+              if (!canUse() || settlements.shipment || local.lastDelivery >= state.nights
+                || deviceAt(partner.x, partner.y) !== partner || townHomes(partner) < 2) return;
+              if (!townExchange([delivery], [])) return;
+              settlements.shipment = { from: settlementModule.settlementKey(device), to: settlementModule.settlementKey(partner), cargo: delivery };
+              local.lastDelivery = state.nights;
+              local.deliveries += 1;
+              say('Shipment packed for ' + destination, 3);
+              openSettlement(device);
+            } });
+          }
+        }
+      }
+      const shipment = settlements.shipment;
+      if (shipment?.to === settlementModule.settlementKey(device) && local.rank >= 2) {
+        actions.push({ label: 'Deliver shipment · 420 coin and regional supplies', run() {
+          if (!canUse() || settlements.shipment !== shipment) return;
+          const [key, count] = role.stock[0];
+          if (townExchange([], [['coin', 420], [key, count]])) {
+            settlements.shipment = null;
+            openSettlement(device);
+          }
+        } });
+      }
+      if (shipment?.from === settlementModule.settlementKey(device)) {
+        rows.push('Shipment awaiting delivery at pylon ' + shipment.to.replace(':', ', ') + '.');
+        actions.push({ label: 'Unpack shipment and recover supplies', run() {
+          if (!canUse() || settlements.shipment !== shipment) return;
+          if (townExchange([], [shipment.cargo])) {
+            settlements.shipment = null;
+            openSettlement(device);
+          }
+        } });
+      }
+    }
+    ui.showTown(role.name, rows, actions);
+  }
+
+  function openFieldJournal() {
+    input.left = input.right = input.jump = input.down = false;
+    const player = state.player;
+    const x = Math.floor(player.x + player.width / 2), y = Math.floor(player.y + player.height / 2);
+    const site = worldgen.biomeSiteAt(seed, x, y);
+    const regions = charterRegions();
+    const rows = ['Collections track distinct catches, exhibits, dishes, mechanisms and sites in this world.',
+      'Claims are available beside any active charter pylon.',
+      'Charter regions · ' + ([...regions].map(townRegionName).join(', ') || 'None')];
+    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    if (site) {
+      const id = siteMark(site);
+      rows.push('Current landmark · ' + site.name);
+      actions.push({ label: 'Survey ' + site.name, run() {
+        if (!physics.aimTile(player, { x, y }).inReach) return;
+        const fresh = settlements.record('survey', id);
+        recordFieldwork('survey', id, x, y, site.biome);
+        if (fresh) say(site.name + ' recorded', 2);
+        openFieldJournal();
+      } });
+      const repair = nearestTown(x, y, device => {
+        const local = settlements.town(device);
+        return local?.region === site.biome && local.rank === 1 && settlementModule.settlementJob(local.region) === 'repair'
+          && settlements.progress(local) === 0 && townHomes(device) >= 2;
+      }, 1600);
+      if (repair) actions.push({ label: 'Restore landmark · install a lantern for 4 torches and 2 glass', run() {
+        if (!physics.aimTile(player, { x, y }).inReach || world.get(x, y) !== tiles.AIR) {
+          say('Stand in a clear tile inside the landmark', 2);
+          return;
+        }
+        if (!townExchange([['torch', 4], ['glass', 2]], [])) return;
+        world.set(x, y, tiles.idOf('lantern'));
+        settlements.record('survey', id);
+        recordFieldwork('repair', id, x, y, site.biome);
+        openFieldJournal();
+      } });
+    }
+    const charter = nearestTown(x, y, device => settlements.town(device)?.rank >= 2
+      && townHomes(device) >= 2 && physics.aimTile(player, device).inReach, 8);
+    const canClaim = () => charter && deviceAt(charter.x, charter.y) === charter
+      && physics.aimTile(player, charter).inReach && townHomes(charter) >= 2;
+    function showGoal(goal, count, id) {
+      rows.push(goal.name + ' · ' + Math.min(count, goal.goal) + ' / ' + goal.goal
+        + (settlements.claimed.has(id) ? ' · Claimed' : ' · ' + townItems(goal.reward)));
+      if (!charter || count < goal.goal || settlements.claimed.has(id)) return;
+      actions.push({ label: 'Claim ' + goal.name, run() {
+        if (settlements.claimed.has(id) || !canClaim()) return;
+        if (townExchange([], goal.reward)) {
+          settlements.claimed.add(id);
+          openFieldJournal();
+        }
+      } });
+    }
+    for (const goal of settlementModule.MILESTONES) showGoal(goal, settlements.count(goal.key), goal.key + ':' + goal.goal);
+    for (const goal of settlementModule.NETWORK) showGoal(goal, regions.size, 'network:' + goal.goal);
+    for (const [index, reward] of settlements.prizes) {
+      const name = settlementModule.EXPEDITIONS[index].name;
+      rows.push(name + ' reward ready · ' + townItems(reward));
+      if (charter) actions.push({ label: 'Claim ' + name + ' reward', run() {
+        if (!canClaim() || settlements.prizes.get(index) !== reward) return;
+        if (townExchange([], reward)) {
+          settlements.prizes.delete(index);
+          openFieldJournal();
+        }
+      } });
+    }
+    if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
+    ui.showTown('Field Journal', rows, actions);
+  }
+
+  function openExpeditions() {
+    const partners = charterRegions().size;
+    const site = worldgen.siegeLayout(seed);
+    const rows = ['Return to the middle Astral Siege platform at x ' + site.x + ', y ' + (site.y - 4) + '.',
+      'Defeat three bosses before time runs out. Leaving the arena, dying or quitting ends the run.',
+      'Each active charter region improves the payout. The harder runs require two and three regions.',
+      'Claim completed runs from the Field Journal at any active charter pylon.'];
+    const actions = [{ label: 'Field Journal', run: openFieldJournal }];
+    for (const [index, contract] of settlementModule.EXPEDITIONS.entries()) {
+      const record = settlements.records.get(index);
+      rows.push(contract.name + ' · ' + contract.seconds + 's · ' + contract.bosses
+        .map(key => enemyModule.BY_KEY[key].name).join(' → ')
+        + (record ? ' · Best ' + record.best + 's · ' + record.clears + ' clears' : ''));
+      rows.push(contract.rule);
+      if (partners < index + 1) rows.push('Requires ' + (index + 1) + ' active charter regions.');
+      else if (settlements.prizes.has(index)) rows.push('Claim your last reward before starting another run.');
+      else actions.push({ label: 'Start ' + contract.name, run: () => startExpedition(index) });
+    }
+    ui.showTown('Astral Expeditions', rows, actions);
+  }
+
+  function startExpedition(index) {
+    const partners = charterRegions().size;
+    if (!world.astral || expedition || swarm.bossAlive() || partners < index + 1 || settlements.prizes.has(index)) return;
+    const site = worldgen.siegeLayout(seed);
+    if (Math.abs(state.player.x - site.x) > 9 || Math.abs(state.player.y - (site.y - 4)) > 4) {
+      say('Start on the middle Astral Siege platform', 3);
+      return;
+    }
+    const contract = settlementModule.EXPEDITIONS[index];
+    const arena = { left: site.x - 38, right: site.x + 38, top: site.y - 32, bottom: site.y + 1 };
+    const target = swarm.summon(contract.bosses[0], state.player, arena);
+    if (!target) { say('Clear the air above the siege platform', 3); return; }
+    prepareExpeditionBoss(target, contract);
+    expedition = { index, contract, arena, target, wave: 0, start: state.time, partners, nextStrike: state.time + 8 };
+    state.expeditionStatus = contract.name + ' · Wave 1 / 3';
+    ui.closeTown();
+    say(contract.name + ' started', 3);
+  }
+
+  function prepareExpeditionBoss(target, contract) {
+    target.expedition = true;
+    if (contract.health) target.hp = target.maxHp = Math.round(target.maxHp * contract.health);
+  }
+
+  function stopExpedition(message) {
+    if (!expedition) return;
+    expedition.target.dead = true;
+    state.arrows = state.arrows.filter(arrow => !arrow.hostile);
+    expedition = null;
+    state.expeditionStatus = '';
+    if (message) say(message, 4);
+  }
+
+  function stepExpedition() {
+    if (!expedition) return;
+    const run = expedition;
+    const player = state.player;
+    const elapsed = state.time - run.start;
+    if (elapsed >= run.contract.seconds) { stopExpedition('Expedition timed out'); return; }
+    if (player.x < run.arena.left - 7 || player.x > run.arena.right + 7 ||
+      player.y < run.arena.top - 15 || player.y > run.arena.bottom + 12) {
+      stopExpedition('Expedition failed · You left the siege platforms');
+      return;
+    }
+    if (run.target.dead) {
+      if (!run.target.expeditionDefeated) { stopExpedition('Expedition interrupted'); return; }
+      if (run.wave + 1 >= run.contract.bosses.length) {
+        settlements.finish(run.index, elapsed);
+        const rewards = [[run.contract.ore, 3 + Math.min(5, run.partners)], ['coin', 3000 + run.partners * 400]];
+        settlements.prizes.set(run.index, rewards);
+        stopExpedition(run.contract.name + ' cleared in ' + Math.ceil(elapsed) + 's');
+        return;
+      }
+      const target = swarm.summon(run.contract.bosses[run.wave + 1], player, run.arena);
+      if (!target) {
+        state.expeditionStatus = 'Move into open space for the next wave · ' + Math.ceil(run.contract.seconds - elapsed) + 's';
+        return;
+      }
+      prepareExpeditionBoss(target, run.contract);
+      run.strike = null;
+      run.target = target;
+      run.wave += 1;
+      say(run.contract.name + ' · Wave ' + (run.wave + 1), 2);
+    }
+    if (run.contract.lightning && state.time >= run.nextStrike) {
+      if (run.strike) {
+        fireSiegeStrike(run.target, run.strike);
+        run.strike = null;
+        run.target.siegeMarks = null;
+        run.nextStrike = state.time + 7;
+      } else {
+        const x = Math.floor(player.x);
+        const y = Math.ceil(player.y + 2);
+        run.strike = [-2, 0, 2].map(offset => ({ x: x + offset, y }));
+        run.target.siegeMarks = run.strike;
+        run.nextStrike = state.time + 1.2;
+      }
+    }
+    state.expeditionStatus = run.contract.name + ' · Wave ' + (run.wave + 1) + ' / 3 · '
+      + Math.ceil(run.contract.seconds - elapsed) + 's';
   }
 
   function openBestiary() {
@@ -1521,6 +1938,7 @@ function makeGame(canvas, deps) {
       rows.push('Astral Siege · Space platform at x ' + siege.x + ', y ' + (siege.y - 3) + '. Raise an Astral Standard in the middle.');
       rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
     }
+    if (world.astral) rows.push('Astral Expeditions · Open the Field Journal at the middle Astral Siege platform.');
     if (world.astral) rows.push('Planetoid ores · Lunarium 750–1,030, Solarium 1,030–1,260, Eventide above 1,260 tiles over sea level.');
 
     rows.push('Minecarts · Craft at an Anvil. Repair abandoned rail gaps or lay your own route.');
@@ -1656,7 +2074,7 @@ function makeGame(canvas, deps) {
             if (recipe.station && !current.has(recipe.station)) return;
             const before = storageItems.map(stack => ({ ...stack }));
             if (craft.craft(port, recipe)) {
-              if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
+              recordTownCraft(recipe);
             } else {
               storageItems.splice(0, storageItems.length, ...before);
               say('Not enough room or materials', 1.4);
@@ -1696,9 +2114,11 @@ function makeGame(canvas, deps) {
       .map(destination => {
         const layer = worldgen.layerAt(destination.y);
         const area = layer.key === 'surface' ? worldgen.biomeAt(seed, destination.x).name : layer.name;
-        const name = area + ' · ' + destination.x + ', ' + destination.y;
+        const local = settlements.town(destination);
+        const name = (local ? settlementModule.settlementRole(local.region).name + ' · ' : '')
+          + area + ' · ' + destination.x + ', ' + destination.y;
         return { label: 'Travel to ' + name, run() {
-          if (swarm.bossAlive()) { say('Pylons go dark during boss fights', 2); return; }
+          if (expedition || swarm.bossAlive()) { say('Pylons go dark during boss fights', 2); return; }
           if (!physics.aimTile(state.player, source).inReach || deviceAt(source.x, source.y) !== source) return;
           if (deviceAt(destination.x, destination.y) !== destination ||
             village.nearbyHomes(source.x, source.y, PYLON_RADIUS) < 2 ||
@@ -1719,6 +2139,7 @@ function makeGame(canvas, deps) {
         } };
       });
     if (residents >= 2 && !actions.length) rows.push('Place another pylon at least 90 tiles away to link a second town.');
+    actions.unshift({ label: 'Local Settlement', run: () => openSettlement(source) });
     ui.showTown('Pylon Network', rows, actions);
   }
 
@@ -1726,7 +2147,7 @@ function makeGame(canvas, deps) {
     const device = deviceAt(aim.x, aim.y);
     if (!device) return false;
     input.left = input.right = input.jump = input.down = false;
-    if (device.type === 'pylon') openPylon(device);
+    if (device.type === 'pylon') openSettlement(device);
     else openStorage(device);
     return true;
   }
@@ -2215,6 +2636,8 @@ function makeGame(canvas, deps) {
       }
       target.dead = true;
       recordWildlife(target.spec, 'caught');
+      settlements.record('specimen', target.spec.specimen.key);
+      recordFieldwork('specimen', target.spec.specimen.key, target.x, target.y);
       sfx('net');
       say('Caught ' + target.spec.name, 2);
       return true;
@@ -2225,6 +2648,7 @@ function makeGame(canvas, deps) {
     if (spec.key === 'empty-terrarium' && specimen) {
       world.set(aim.x, aim.y, tiles.idOf('terrarium-' + specimen));
       inventory.take(item.key, 1);
+      settlements.record('exhibit', specimen);
       say(craft.ITEMS[item.key].name + ' is now on display', 1.5);
       return true;
     }
@@ -2546,6 +2970,7 @@ function makeGame(canvas, deps) {
 
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase, eventKey());
+      stepExpedition();
       const hit = swarm.touching(state.player);
       // The Royal Gel: slimes stop noticing you. The king is still a slime, and is the
       // one slime it does not work on, because a trinket that turns off the boss fight
@@ -2797,7 +3222,7 @@ function makeGame(canvas, deps) {
     ui.setField('depth', depth > 0 ? layer.name + ' · ' + depth + 'm' : layer.name);
     ui.setField('coords', Math.floor(state.player.x) + ', ' + Math.floor(state.player.y));
     ui.setField('seed', String(seed));
-    ui.setMessage(state.time < state.messageUntil ? state.message : '');
+    ui.setMessage(state.time < state.messageUntil ? state.message : state.expeditionStatus || '');
     ui.sync(state);
   }
 
@@ -2844,6 +3269,11 @@ function makeGame(canvas, deps) {
       }
       if (ev.code === 'KeyG') {
         fireHook();
+        ev.preventDefault();
+        return;
+      }
+      if (ev.code === 'KeyJ') {
+        openFieldJournal();
         ev.preventDefault();
         return;
       }
@@ -2941,6 +3371,7 @@ function makeGame(canvas, deps) {
       villagers: village ? village.serialize() : [],
       townDevices,
       completedOrders: [...completedOrders],
+      settlements: settlements.serialize(),
       defeatedBosses: [...defeatedBosses],
       storageItems,
       spawn: { x: state.player.x, y: state.player.y },
@@ -3031,6 +3462,9 @@ function makeGame(canvas, deps) {
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
     townDevices = worldRecord.townDevices || [];
     completedOrders = new Set(worldRecord.completedOrders || []);
+    settlements = settlementModule.makeSettlementLedger(worldRecord.settlements);
+    expedition = null;
+    state.expeditionStatus = '';
     defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
     if (defeatedBosses.has('prismsentinel') && !world.hardmode) world.enableHardmode();
     if (defeatedBosses.has('astralregent') && !world.astral) world.enableAstral();
@@ -3040,6 +3474,8 @@ function makeGame(canvas, deps) {
     state.wardUntil = 0;
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;
+    state.settlementMarkers = () => townPylons().filter(device => settlements.town(device))
+      .map(device => ({ x: device.x, y: device.y, rank: settlements.town(device).rank }));
     state.progress = Object.assign({ coins: 0, bars: 0, deaths: 0, deepest: 0 },
       characterRecord.progress || {});
     state.enemies = swarm.list;
@@ -3055,7 +3491,7 @@ function makeGame(canvas, deps) {
     ui.onSelectHotbar = index => { state.player.selected = index - inventory.section('hotbar').from; ui.sync(state); };
     ui.onCraft = (recipe) => {
       if (craft.craft(inventory, recipe)) {
-        if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
+        recordTownCraft(recipe);
         say('Crafted ' + craft.nameOf(recipe.out.key, tiles), 1.2);
       } else {
         say('No room for that', 1.2);

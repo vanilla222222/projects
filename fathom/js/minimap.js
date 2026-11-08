@@ -153,6 +153,9 @@ function makeMinimap(canvas, deps) {
       ctx.lineWidth = 1;
       ctx.stroke();
     };
+    for (const town of state.settlementMarkers?.() || []) {
+      mark(town.x, town.y, town.rank >= 2 ? '#79e2ae' : '#b4aa8f', large ? 5 : 3);
+    }
     if (state.spawn) mark(state.spawn.x, state.spawn.y, '#8fd4ff', large ? 5 : 3);
     mark(state.player.x, state.player.y, '#ffd35c', large ? 5 : 3.5);
 

@@ -135,6 +135,7 @@ the cost of one small canvas.
 | `js/minimap.js` | The map, and what the player has revealed of it |
 | `js/housing.js` | Room detection and what makes a room a home |
 | `js/villager.js` | Who moves in, when, and what they sell |
+| `js/settlement.js` | Regional roles, charters, collections, trade and expedition records |
 | `js/enemy.js` | 240 enemies including thirty-seven bosses, spawn pools per biome, layer and event |
 | `js/registry.js` | The one object every module registers its exports on |
 | `js/player.js` | movement, per-axis tile collision, unstick, reach |
@@ -176,6 +177,36 @@ Reinforced units add 80. Right-click a heart or terminal to search, deposit, or
 withdraw from the shared stock for that world. A Storage Crafting Terminal uses
 stored ingredients and crafting stations near the terminal. Withdraw items before
 removing a heart or unit if doing so would leave too little capacity.
+
+### Regional settlements
+
+Use a Town Pylon with two valid occupied homes nearby to found an outpost.
+The pylon's biome or depth determines its specialty and supply counter.
+Outposts in different regions ask you to patrol, survey ruins, restore a
+landmark light, fish, or catch local wildlife. Press J for the Field Journal,
+or open it from Town Hall on touch devices. Landmark surveys and repairs are
+performed from the journal while standing inside the structure.
+
+Finish the local assignment to charter the outpost and earn a pylon for the
+next town. Three homes and a specialty station close to the pylon qualify it
+for a district workshop. Active charters in distinct regions unlock cheaper
+regional supplies, shared storage equipment and shipments. Pack a shipment at
+one charter and deliver it to the named partner pylon. The sender can unpack
+it to recover the materials if the route changes. Founded towns appear on
+the map, with green markers for chartered towns.
+
+The Field Journal tracks distinct fish, netted critters, terrarium exhibits,
+cooked dishes, crafted mechanisms, and surveyed landmarks. Claim milestone rewards beside an active charter pylon.
+
+### Astral expeditions
+
+Defeat the Astral Regent, then open the Field Journal on the middle Astral
+Siege platform. Three repeatable runs pair three bosses each with timed
+challenges, lightning, reinforced bosses, or the Regent's bombardment.
+One, two, or three distinct charter regions unlock the three runs, and more
+active regions improve the payout. Death, timeout, or leaving the arena ends
+the run. The journal keeps best times and banks rewards for collection at
+an active charter pylon.
 
 ### Ashvaults and the Void
 
