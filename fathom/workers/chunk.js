@@ -1,6 +1,6 @@
 'use strict';
 // A separate generator cache keeps speculative chunks off the frame loop.
-importScripts('../js/registry.js', '../js/rng.js?v=boss-armories-1', '../js/noise.js', '../js/tiles.js?v=brine-town-1', '../js/worldgen.js?v=portal-trials-1', '../js/underworld.js?v=brine-town-1');
+importScripts('../js/registry.js', '../js/rng.js?v=boss-armories-1', '../js/noise.js', '../js/tiles.js?v=settlement-network-2', '../js/worldgen.js?v=portal-trials-1', '../js/underworld.js?v=settlement-network-2');
 const underworld = FATHOM.underworld.makeUnderworldGenerator(FATHOM.worldgen);
 let activeKey;
 let activeSeed;

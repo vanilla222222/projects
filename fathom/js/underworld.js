@@ -164,6 +164,7 @@ function makeUnderworldGenerator(overworld) {
     }
     if (y === floor || y === top || distance === 18) return stone;
     if (dx === 0 && y === floor - 1) return idOf('underworld-campaign-seal');
+    if (encounter.key === 'furnace-mycelium' && dx === -12 && y === floor - 1) return idOf('kilnsmith-cell');
     if (encounter.key === 'undertow-warden' && dx === -12 && y === floor - 1) return idOf('tidekeeper-cell');
     if (x === site.waystone.x && y === site.waystone.y) return idOf('underworld-waystone');
     if (distance === 10 && y === floor - 4) return idOf('lantern');

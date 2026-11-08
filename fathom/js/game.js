@@ -1775,11 +1775,12 @@ function makeGame(canvas, deps) {
     if (occupant) rows.unshift('Room occupied by ' + occupant.spec.name + '.');
     else if (room.valid) rows.unshift('This room is ready for a resident.');
     else rows.unshift(...room.problems);
-    const progress = { ...state.progress, marraRescued: dimension === 'underworld' && settlements.claimed.has('marra-rescued') };
+    const progress = { ...state.progress, marraRescued: dimension === 'underworld' && settlements.claimed.has('marra-rescued'),
+      keraRescued: dimension === 'underworld' && settlements.claimed.has('kera-rescued') };
     const available = new Set(villagerModule.eligible(progress).map(v => v.key));
     const actions = [{ label: 'Campaign', run: openCampaign }, { label: 'Progression Journal', run: openProgression },
       { label: 'Town Contracts', run: openTownOrders }, { label: 'Quest Board', run: openQuestBoard }, { label: 'Bestiary', run: openBestiary },
-      { label: 'Field Journal', run: openFieldJournal },
+      { label: 'Field Journal', run: openFieldJournal }, { label: 'Town directory', run: openTownDirectory },
       { label: 'A Road Through the Deepwood', run: openRangerTrail }];
     const pylon = nearestTown(x, y, device => physics.aimTile(state.player, device).inReach, 8);
     if (pylon) actions.push({ label: 'Local Settlement', run: () => openSettlement(pylon) });
@@ -1964,7 +1965,7 @@ function makeGame(canvas, deps) {
 
   function townRegion(x, y) {
     const layer = worldgen.layerAt(y).key;
-    return layer === 'surface' ? world.biomeAt(Math.floor(x), Math.floor(y)).key : layer;
+    return dimension === 'underworld' || layer === 'surface' ? world.biomeAt(Math.floor(x), Math.floor(y)).key : layer;
   }
 
   function townRegionName(region) {
@@ -2069,6 +2070,140 @@ function makeGame(canvas, deps) {
     return best;
   }
 
+  function usableCharter(device, homes = 2) {
+    return device && deviceAt(device.x, device.y) === device && settlements.town(device)?.rank >= 2
+      && physics.aimTile(state.player, device).inReach && townHomes(device) >= homes;
+  }
+
+  function residentAt(device, key) {
+    const resident = village.list.find(entry => entry.key === key);
+    return !!resident && Math.hypot(resident.home.x - device.x, resident.home.y - device.y) <= PYLON_RADIUS
+      && village.survey(resident.home.x, resident.home.y + 0.72).occupant === resident;
+  }
+
+  function openTownDirectory() {
+    input.left = input.right = input.jump = input.down = false;
+    const rows = [dimension === 'underworld' ? 'Underworld charters' : 'Overworld charters',
+      'Build towns in distinct regions to start new trade routes. A charter needs two occupied homes to stay active.'];
+    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    const pylons = townPylons();
+    for (const device of pylons) {
+      const local = settlements.town(device);
+      const region = local?.region || townRegion(device.x, device.y);
+      const homes = townHomes(device);
+      const routes = pylons.filter(other => other !== device && settlements.route(
+        settlementModule.settlementKey(device), settlementModule.settlementKey(other))).length;
+      rows.push(settlementModule.settlementRole(region).name + ' · ' + townRegionName(region) + ' · Rank '
+        + (local?.rank || 0) + ' · ' + homes + ' homes · ' + routes + ' routes · x ' + device.x + ', y ' + device.y);
+      if (physics.aimTile(state.player, device).inReach) actions.push({
+        label: 'Manage town at x ' + device.x, run: () => openSettlement(device)
+      });
+    }
+    ui.showTown('Town Directory', rows, actions);
+  }
+
+  function openCivicProjects(device) {
+    const local = settlements.town(device);
+    if (!local) return;
+    const townId = settlementModule.settlementKey(device);
+    const rows = ['Build the listed station near the pylon and contribute supplies. Each project pays once per town.'];
+    const actions = [{ label: 'Local Settlement', run: () => openSettlement(device) }];
+    const canBuild = station => craft.stationsNear(world, tiles, device.x, device.y).has(station);
+    for (const [id, name, station, needs, reward] of settlementModule.townProjects(local.region)) {
+      const key = 'civic:' + townId + ':' + id;
+      const complete = settlements.claimed.has(key);
+      rows.push(name + ' · ' + (complete ? 'Complete' : townItems(needs) + ' · Requires ' + craft.nameOf(station, tiles)
+        + ' · Reward ' + townItems(reward)));
+      const staffed = () => local.region !== 'ember-bloom' || residentAt(device, 'kera');
+      if (!complete && !staffed()) rows.push('House Kera near this charter to commission its forge projects.');
+      if (!complete) actions.push({ label: 'Commission ' + name, run() {
+        if (!usableCharter(device) || !staffed() || settlements.claimed.has(key)) return;
+        if (!canBuild(station)) { say('Place ' + craft.nameOf(station, tiles) + ' beside the pylon', 3); return; }
+        if (townExchange(needs, reward)) {
+          settlements.claimed.add(key);
+          openCivicProjects(device);
+        }
+      } });
+    }
+    const hasRoute = () => townPylons().some(partner => partner !== device && townHomes(partner) >= 2
+      && settlementModule.tradeRank(settlements.route(townId, settlementModule.settlementKey(partner))) >= 2);
+    const built = () => settlementModule.townProjects(local.region).every(([id]) => settlements.claimed.has('civic:' + townId + ':' + id));
+    rows.push(local.rank >= 4 ? 'Civic Center chartered' : 'Civic Center · Rank 3, four homes, both projects, and a reciprocal trade route.');
+    if (local.rank === 3) actions.push({ label: 'Charter Civic Center', run() {
+      if (!usableCharter(device, 4) || !built() || !hasRoute() || local.rank !== 3) {
+        say('A Civic Center needs four homes, both projects, and a reciprocal route', 3);
+        return;
+      }
+      if (townExchange([], [['town-pylon', 1], ['storage-crafter', 1], ['coin', 1200]])) {
+        local.rank = 4;
+        openCivicProjects(device);
+      }
+    } });
+    if (local.rank >= 4) {
+      const day = Math.max(0, state.nights - (wasNight ? 1 : 0));
+      const [[key, count]] = settlementModule.settlementRole(local.region).stock;
+      rows.push('Public storehouse · One ration of ' + townItems([[key, count]]) + ' each in-game day while staffed.');
+      if (local.lastCivicRation !== day) actions.push({ label: 'Collect daily public ration', run() {
+        const today = Math.max(0, state.nights - (wasNight ? 1 : 0));
+        if (!usableCharter(device, 4) || !hasRoute() || local.lastCivicRation === today) return;
+        if (townExchange([], [[key, count]])) {
+          local.lastCivicRation = today;
+          openCivicProjects(device);
+        }
+      } });
+    }
+    ui.showTown('Civic Projects', rows, actions);
+  }
+
+  function openTradePartnerships(device) {
+    const local = settlements.town(device);
+    if (!local) return;
+    const townId = settlementModule.settlementKey(device);
+    const rows = ['Deliver shipments to establish a route. Send cargo in both directions to reach rank 2 after three deliveries and rank 3 after six.'];
+    const actions = [{ label: 'Local Settlement', run: () => openSettlement(device) }];
+    for (const partner of townPylons()) {
+      const other = settlements.town(partner);
+      if (partner === device || other?.rank < 2 || !other || other.region === local.region) continue;
+      const partnerId = settlementModule.settlementKey(partner);
+      const route = settlements.route(townId, partnerId);
+      const rank = settlementModule.tradeRank(route);
+      const name = townRegionName(other.region);
+      rows.push(name + ' at x ' + partner.x + ' · Rank ' + rank + ' · ' + (route?.delivered || 0)
+        + ' deliveries · ' + (townHomes(partner) >= 2 ? 'Active' : 'Partner needs two homes'));
+      if (rank >= 2) {
+        const [key, count, price] = settlementModule.settlementRole(other.region).stock[rank - 1];
+        const cost = Math.ceil(price * (rank === 3 ? 0.8 : 0.95));
+        actions.push({ label: 'Import ' + townItems([[key, count]]) + ' from ' + name + ' · ' + cost + ' coin', run() {
+          if (!usableCharter(device) || deviceAt(partner.x, partner.y) !== partner || townHomes(partner) < 2) return;
+          townExchange([['coin', cost]], [[key, count]]);
+        } });
+      }
+      if (rank >= 1 && local.region === 'ember-bloom' && other.region === 'brine-depths') {
+        actions.push({ label: 'Import Brine Cooling Salt ×3 · 360 coin', run() {
+          if (usableCharter(device) && deviceAt(partner.x, partner.y) === partner && townHomes(partner) >= 2) {
+            townExchange([['coin', 360]], [['brine-cooling-salt', 3]]);
+          }
+        } });
+      }
+    }
+    ui.showTown('Trade Partnerships', rows, actions);
+  }
+
+  function openEmberTown(device) {
+    if (dimension !== 'underworld') return;
+    const crucible = worldgen.dungeonSite(seed, tiles.UNDERWORLD_DUNGEONS.find(encounter => encounter.key === 'furnace-mycelium'));
+    const rows = ['Spore Crucible entrance · x ' + crucible.x + ', y ' + crucible.entrance + '.',
+      'Defeat Furnace Mycelium and release Kera from her cell. House her near a chartered pylon in Emberbloom.',
+      'Commission the Banked Kiln for an Ember Forge. Deliver a shipment from Brine Depths to receive cooling salt for the five class weapons.'];
+    const actions = [{ label: 'Underworld journal', run: openUnderworldJournal }, { label: 'Town directory', run: openTownDirectory }];
+    if (settlements.claimed.has('kera-rescued')) rows.push('Kera rescued');
+    if (usableCharter(device) && settlements.town(device).region === 'ember-bloom') {
+      actions.push({ label: 'Civic projects', run: () => openCivicProjects(device) },
+        { label: 'Trade partnerships', run: () => openTradePartnerships(device) });
+    }
+    ui.showTown('Emberbloom Forge Town', rows, actions);
+  }
+
   function openSettlement(device) {
     const local = settlements.town(device);
     const region = local?.region || townRegion(device.x, device.y);
@@ -2081,9 +2216,13 @@ function makeGame(canvas, deps) {
       partners.size + ' distinct active charter regions in the network.',
       'Supply counters and fieldwork need two valid homes. A district needs three.'];
     const actions = [{ label: 'Pylon Network', run: () => openPylon(device) },
-      { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: () => openQuestBoard(device) }];
+      { label: 'Field Journal', run: openFieldJournal }, { label: 'Quest Board', run: () => openQuestBoard(device) },
+      { label: 'Town directory', run: openTownDirectory }];
     if (dimension === 'underworld' && region === 'brine-depths') {
       actions.push({ label: 'Tidekeeper’s Landing', run: () => openBrineQuest(device) });
+    }
+    if (dimension === 'underworld' && region === 'ember-bloom') {
+      actions.push({ label: 'Emberbloom Forge Town', run: () => openEmberTown(device) });
     }
     if (region === 'forest') actions.push({ label: 'A Road Through the Deepwood', run: openRangerTrail });
     const canUse = (homes = 2) => deviceAt(device.x, device.y) === device
@@ -2140,16 +2279,20 @@ function makeGame(canvas, deps) {
           }
         } });
       }
-      if (local.rank === 3) rows.push(residents >= 3
+      if (local.rank >= 3) rows.push(residents >= 3
         ? 'District workshop active · preferred prices and all regional stock.'
         : 'District needs its third resident to restore preferred prices and stock.');
-      const discount = Math.max(0.55, 1 - (local.rank === 3 && residents >= 3 ? 0.18 : 0)
+      const discount = Math.max(0.55, 1 - (local.rank >= 3 && residents >= 3 ? 0.18 : 0)
         - Math.max(0, partners.size - 1) * 0.08);
       for (const [key, count, price] of role.stock.slice(0, residents < 3 ? Math.min(2, local.rank) : local.rank)) {
         const cost = Math.ceil(price * discount);
         actions.push({ label: 'Buy ' + townItems([[key, count]]) + ' · ' + cost + ' coin', run() {
           if (canUse()) townExchange([['coin', cost]], [[key, count]]);
         } });
+      }
+      if (local.rank >= 2) {
+        actions.push({ label: 'Civic projects', run: () => openCivicProjects(device) },
+          { label: 'Trade partnerships', run: () => openTradePartnerships(device) });
       }
       if (local.rank >= 2 && partners.size >= 2) {
         rows.push('Trade shipment · Pack one shipment per town per day. Deliver it at a partner pylon.');
@@ -2181,7 +2324,15 @@ function makeGame(canvas, deps) {
         actions.push({ label: 'Deliver shipment · 420 coin and regional supplies', run() {
           if (!canUse() || settlements.shipment !== shipment) return;
           const [key, count] = role.stock[0];
-          if (townExchange([], [['coin', 420], [key, count]])) {
+          const route = settlements.route(shipment.from, shipment.to);
+          const tier = settlementModule.tradeRank(route);
+          const from = townPylons().find(pylon => settlementModule.settlementKey(pylon) === shipment.from);
+          const forgeRoute = dimension === 'underworld' && settlements.town(from || {})?.region === 'brine-depths'
+            && local.region === 'ember-bloom';
+          const reward = [['coin', 420 + tier * 120], [key, count]];
+          if (forgeRoute) reward.push(['brine-cooling-salt', 3 + tier]);
+          if (townExchange([], reward)) {
+            if (shipment.from !== shipment.to) settlements.recordDelivery(shipment.from, shipment.to);
             const trail = settlements.rangerTrail;
             if (trail.restored && !trail.deliveredTo && shipment.from === trail.town && local.region !== 'forest') {
               trail.deliveredTo = shipment.to;
@@ -2192,10 +2343,14 @@ function makeGame(canvas, deps) {
           }
         } });
       }
-      if (shipment?.from === settlementModule.settlementKey(device)) {
-        rows.push('Shipment awaiting delivery at pylon ' + shipment.to.replace(':', ', ') + '.');
+      const origin = shipment && townPylons().find(pylon => settlementModule.settlementKey(pylon) === shipment.from);
+      const ownShipment = shipment?.from === settlementModule.settlementKey(device);
+      if (shipment && (ownShipment || !origin && local.rank >= 2)) {
+        rows.push(ownShipment ? 'Shipment awaiting delivery at pylon ' + shipment.to.replace(':', ', ') + '.'
+          : 'The origin pylon was removed. Recover the stranded shipment here.');
         actions.push({ label: 'Unpack shipment and recover supplies', run() {
-          if (!canUse() || settlements.shipment !== shipment) return;
+          if (!canUse() || settlements.shipment !== shipment || (!ownShipment
+            && townPylons().some(pylon => settlementModule.settlementKey(pylon) === shipment.from))) return;
           if (townExchange([], [shipment.cargo])) {
             settlements.shipment = null;
             openSettlement(device);
@@ -2610,7 +2765,7 @@ function makeGame(canvas, deps) {
     const rows = ['The Underworld · Return Gate at x 0, y ' + (worldgen.SEA_LEVEL - 1) + '.',
       'Each region has a surface refuge, a cave stronghold and a deep ruin. Challenge the guardians at the two lower seals.'];
     const actions = [{ label: 'Boss campaign', run: openUnderworldCampaign },
-      { label: 'Optional dungeons', run: openUnderworldDungeons }, { label: 'Tidekeeper’s Landing', run: () => openBrineQuest() }, { label: 'Town Hall', run: checkHousing }];
+      { label: 'Optional dungeons', run: openUnderworldDungeons }, { label: 'Emberbloom Forge Town', run: () => openEmberTown() }, { label: 'Tidekeeper’s Landing', run: () => openBrineQuest() }, { label: 'Town Hall', run: checkHousing }];
     for (const biome of worldgen.BIOMES) {
       const centers = [-2, -1, 0, 1, 2].map(band => band * worldgen.bandWidth);
       const center = centers.find(x => worldgen.biomeAt(seed, x).key === biome.key);
@@ -2684,9 +2839,7 @@ function makeGame(canvas, deps) {
     if (dimension !== 'underworld' || !device || deviceAt(device.x, device.y) !== device
       || settlements.town(device)?.region !== 'brine-depths' || settlements.town(device).rank < 2
       || !physics.aimTile(state.player, device).inReach || townHomes(device) < 2) return false;
-    const marra = village.list.find(resident => resident.key === 'marra');
-    if (!marra || Math.hypot(marra.home.x - device.x, marra.home.y - device.y) > PYLON_RADIUS) return false;
-    return village.survey(marra.home.x, marra.home.y + 0.72).occupant === marra;
+    return residentAt(device, 'marra');
   }
 
   function openBrineQuest(selected) {
@@ -2737,6 +2890,14 @@ function makeGame(canvas, deps) {
     const spec = tiles.tile(world.get(aim.x, aim.y));
     if (!spec.brineQuest) return false;
     const flags = settlements.claimed;
+    if (spec.key === 'kilnsmith-cell') {
+      if (!defeatedBosses.has('furnace-mycelium')) say('Defeat Furnace Mycelium to free Kera', 3);
+      else if (!flags.has('kera-rescued')) {
+        flags.add('kera-rescued');
+        say('Kera is free. Invite her to a furnished Emberbloom home.', 4);
+      } else say('Kera’s cell is empty', 2);
+      return true;
+    }
     if (spec.key === 'tidekeeper-cell') {
       if (!defeatedBosses.has('undertow-warden')) say('Defeat the Undertow Warden to free Marra', 3);
       else if (!flags.has('marra-rescued')) {
@@ -4253,7 +4414,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=brine-town-1');
+      const worker = new Worker('workers/chunk.js?v=settlement-network-2');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;

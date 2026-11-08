@@ -57,11 +57,17 @@ function itemExists(key) {
   assert.notEqual(craft.nameOf(key, tiles), key, 'Unknown item ' + key);
 }
 
-for (const region of [...worldgen.BIOMES, ...worldgen.LAYERS, worldgen.HALLOW_BIOME]) {
+for (const region of [...worldgen.BIOMES, ...worldgen.LAYERS, ...tiles.UNDERWORLD_BIOMES, worldgen.HALLOW_BIOME]) {
   const role = settlement.settlementRole(region.key);
   assert.ok(settlement.JOBS[settlement.settlementJob(region.key)]);
   assert.equal(tiles.BY_KEY[role.station].station, role.station);
   for (const [key] of [...role.stock, ...role.supplies]) itemExists(key);
+  const projects = settlement.townProjects(region.key);
+  assert.equal(projects.length, 2);
+  for (const [, , station, needs, reward] of projects) {
+    assert.equal(tiles.BY_KEY[station].station, station);
+    for (const [key] of [...needs, ...reward]) itemExists(key);
+  }
 }
 for (const milestone of [...settlement.MILESTONES, ...settlement.NETWORK]) {
   for (const [key] of milestone.reward) itemExists(key);
@@ -145,3 +151,18 @@ assert.equal(worldgen.worldSettingValues().day, 1440);
   assert.equal(restoredWorld.get(first.x, first.y - 1), seal);
   assert.equal(restoredWorld.get(first.x + 1, first.y - 1), tiles.idOf('stone'));
 }
+
+const tradeLedger = settlement.makeSettlementLedger();
+assert.equal(settlement.tradeRank(tradeLedger.route('10:20', '400:20')), 0);
+for (let i = 0; i < 4; i += 1) tradeLedger.recordDelivery('10:20', '400:20');
+assert.equal(settlement.tradeRank(tradeLedger.route('400:20', '10:20')), 1);
+tradeLedger.recordDelivery('400:20', '10:20');
+assert.equal(settlement.tradeRank(tradeLedger.route('10:20', '400:20')), 2);
+tradeLedger.recordDelivery('10:20', '400:20');
+const savedTrade = settlement.makeSettlementLedger(JSON.parse(JSON.stringify(tradeLedger.serialize())));
+assert.equal(settlement.tradeRank(savedTrade.route('400:20', '10:20')), 3);
+assert.deepEqual(savedTrade.route('400:20', '10:20').directions, ['10:20', '400:20']);
+assert.equal(savedTrade.route('10:20', '500:20'), undefined);
+const forgeWeapons = craft.RECIPES.filter(recipe => recipe.station === 'ember-forge');
+assert.equal(forgeWeapons.length, 5);
+assert.equal(new Set(forgeWeapons.map(recipe => craft.classOf(craft.WEAPONS[recipe.out.key]))).size, 5);
