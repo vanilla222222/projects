@@ -95,3 +95,22 @@ restored.town(devices[0]).daily = { day: 5, start: 2, done: true };
 assert.deepEqual(settlement.makeSettlementLedger(JSON.parse(JSON.stringify(restored.serialize())))
   .town(devices[0]).daily, { day: 5, start: 2, done: true });
 assert.equal(worldgen.worldSettingValues().day, 1440);
+
+{
+  const chapters = settlement.CAMPAIGN;
+  assert.equal(chapters.length, 13);
+  const main = new Set(chapters.flatMap(chapter => chapter.trio ? craft.HARDMODE_TRIO : chapter.bosses || []));
+  const side = Object.keys(settlement.CAMPAIGN_HUNTS);
+  assert.equal(side.length, 35);
+  assert.deepEqual([...main, ...side].sort(), enemy.ENEMIES.filter(spec => spec.boss).map(spec => spec.key).sort());
+  for (const chapter of chapters) for (const [key] of chapter.reward) itemExists(key);
+  const ready = (id, wins, flags) => settlement.campaignChapterReady(
+    chapters.find(chapter => chapter.id === id), new Set(wins), new Set(flags), craft.HARDMODE_TRIO);
+  assert.equal(ready('first-forge', [], []), false);
+  assert.equal(ready('first-forge', [], ['forge']), true);
+  assert.equal(ready('machines', craft.HARDMODE_TRIO.slice(1), []), false);
+  assert.equal(ready('machines', craft.HARDMODE_TRIO, []), true);
+  assert.equal(ready('machines', ['starwyvern'], []), true);
+  assert.equal(ready('astral', ['astralregent'], []), false);
+  assert.equal(ready('astral', ['astralregent'], ['astral']), true);
+}

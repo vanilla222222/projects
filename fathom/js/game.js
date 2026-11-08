@@ -1725,7 +1725,7 @@ function makeGame(canvas, deps) {
     else if (room.valid) rows.unshift('This room is ready for a resident.');
     else rows.unshift(...room.problems);
     const available = new Set(villagerModule.eligible(state.progress).map(v => v.key));
-    const actions = [{ label: 'Progression Journal', run: openProgression },
+    const actions = [{ label: 'Campaign', run: openCampaign }, { label: 'Progression Journal', run: openProgression },
       { label: 'Town Contracts', run: openTownOrders }, { label: 'Quest Board', run: openQuestBoard }, { label: 'Bestiary', run: openBestiary },
       { label: 'Field Journal', run: openFieldJournal },
       { label: 'A Road Through the Deepwood', run: openRangerTrail }];
@@ -1954,7 +1954,12 @@ function makeGame(canvas, deps) {
   }
 
   function recordTownCraft(recipe) {
-    if (recipe.out.kind === 'bar') state.progress.bars += recipe.out.count;
+    if (recipe.out.kind === 'bar') {
+      state.progress.bars += recipe.out.count;
+      if (['lunarium-bar', 'solarium-bar', 'eventide-bar'].includes(recipe.out.key)) {
+        settlements.record('campaign-astral', recipe.out.key);
+      }
+    }
     const key = recipe.out.key;
     if (craft.ITEMS[key]?.use?.meal || key === 'cooked-fish' || key === 'seared-fish') settlements.record('food', key);
     if (tiles.BY_KEY[key]?.circuit) settlements.record('mechanism', key);
@@ -2153,7 +2158,7 @@ function makeGame(canvas, deps) {
       'Claims are available beside any active charter pylon.',
       'Charter regions · ' + ([...regions].map(townRegionName).join(', ') || 'None')];
     const actions = [{ label: 'Town Hall', run: checkHousing },
-      { label: 'A Road Through the Deepwood', run: openRangerTrail }];
+      { label: 'Campaign', run: openCampaign }, { label: 'A Road Through the Deepwood', run: openRangerTrail }];
     if (site) {
       const id = siteMark(site);
       rows.push('Current landmark · ' + site.name);
@@ -2341,6 +2346,122 @@ function makeGame(canvas, deps) {
     }, 'Search creatures and habitats');
   }
 
+  function campaignMilestones() {
+    const goals = new Set();
+    if (state.progress.bars >= 5 || defeatedBosses.has('kingslime')) goals.add('forge');
+    if (settlements.claimed.has('campaign:astral') || settlements.count('campaign-astral') || ['lunarium-bar', 'solarium-bar', 'eventide-bar']
+      .some(key => inventory.countOf(key) > 0)) goals.add('astral');
+    return goals;
+  }
+
+  function campaignBossDetails(key) {
+    const boss = enemyModule.BY_KEY[key];
+    const summon = Object.entries(craft.ITEMS).find(([, item]) => item.use?.summon === key);
+    if (!summon) return [boss.name];
+    const [itemKey, item] = summon;
+    const recipe = craft.RECIPES.find(entry => entry.out.key === itemKey);
+    const rows = [boss.name + ' · ' + item.name + (item.text ? ' · ' + item.text : '')];
+    if (recipe) rows.push('Summon recipe · ' + townItems(recipe.need)
+      + (recipe.station ? ' at ' + craft.nameOf(recipe.station, tiles) : ''));
+    return rows;
+  }
+
+  function campaignLandmark(chapter) {
+    if (chapter.id === 'foundry') {
+      const site = worldgen.foundryLayout(seed);
+      return 'Foundry landing · x ' + (site.x - 30) + ', y ' + site.y;
+    }
+    if (chapter.id === 'regent') {
+      const site = worldgen.siegeLayout(seed);
+      return 'Siege platform · x ' + site.x + ', y ' + (site.y - 3);
+    }
+    return '';
+  }
+
+  function campaignReward(id, reward, refresh) {
+    return { label: 'Claim ' + id.name, run() {
+      if (settlements.claimed.has(id.key)) return;
+      if (townExchange([], reward)) {
+        settlements.claimed.add(id.key);
+        refresh?.();
+      }
+    } };
+  }
+
+  function openCampaign() {
+    input.left = input.right = input.jump = input.down = false;
+    const chapters = settlementModule.CAMPAIGN;
+    const milestones = campaignMilestones();
+    const complete = chapter => settlementModule.campaignChapterReady(chapter, defeatedBosses, milestones, craft.HARDMODE_TRIO);
+    const active = chapters.findIndex(chapter => !complete(chapter));
+    const rows = [active < 0 ? 'Campaign complete · The Astral Siege is over.' :
+      'Act ' + (active + 1) + ' / ' + chapters.length + ' · ' + chapters[active].name,
+      'Objectives follow your world progress. Claim earned supplies here whenever you have room.'];
+    const actions = [{ label: 'Boss Side Quests', run: openCampaignHunts },
+      { label: 'Progression Journal', run: openProgression }, { label: 'Deepwood Town Quest', run: openRangerTrail },
+      { label: 'Town Hall', run: checkHousing }];
+    if (active >= 0) {
+      const chapter = chapters[active];
+      rows.push(chapter.story, chapter.clue);
+      const landmark = campaignLandmark(chapter);
+      if (landmark) rows.push(landmark);
+      for (const key of (chapter.trio ? craft.HARDMODE_TRIO : chapter.bosses || [])) {
+        if (!defeatedBosses.has(key)) rows.push(...campaignBossDetails(key));
+      }
+    }
+    for (const [index, chapter] of chapters.entries()) {
+      if (active >= 0 && index > active) break;
+      const key = 'campaign:' + chapter.id;
+      if (!complete(chapter)) continue;
+      rows.push('Act ' + (index + 1) + ' · ' + chapter.name
+        + (settlements.claimed.has(key) ? ' · Complete' : ' · Reward ' + townItems(chapter.reward)));
+      if (!settlements.claimed.has(key)) actions.push(campaignReward({ key, name: chapter.name }, chapter.reward, openCampaign));
+    }
+    if (world.astral) actions.push({ label: 'Astral Expeditions', run: openExpeditions });
+    ui.showTown('Campaign · From Deepwood to Astral', rows, actions);
+  }
+
+  function openCampaignHunts() {
+    ui.showTown('Campaign · Boss Side Quests', [], [], query => {
+      const rows = ['Optional hunts unlock as you advance. Each pays once in this world.'];
+      const actions = [{ label: 'Campaign', run: openCampaign }];
+      for (const [chapter, bosses] of craft.BOSS_CHAPTERS.entries()) {
+        for (const key of bosses.slice(1)) {
+          if (craft.HARDMODE_TRIO.includes(key)) continue;
+          const boss = enemyModule.BY_KEY[key];
+          const title = settlementModule.CAMPAIGN_HUNTS[key] || boss.name;
+          const label = title + ' · ' + boss.name;
+          const summon = Object.values(craft.ITEMS).find(item => item.use?.summon === key);
+          if (query && ![title, boss.name, summon?.name, summon?.text].join(' ').toLowerCase().includes(query)) continue;
+          const required = craft.bossPrerequisite(key, defeatedBosses);
+          const id = 'campaign-hunt:' + key;
+          const reward = [['coin', 110 + chapter * 60], ['healing-salve', 2 + Math.floor(chapter / 2)]];
+          if (settlements.claimed.has(id)) rows.push(label + ' · Complete');
+          else if (defeatedBosses.has(key)) {
+            rows.push(label + ' · Reward ' + townItems(reward));
+            actions.push(campaignReward({ key: id, name: title }, reward));
+          } else if (required) rows.push(label + ' · Unlocks after ' + enemyModule.BY_KEY[required].name);
+          else {
+            rows.push(title, ...campaignBossDetails(key));
+            if (key === 'dungeonkeeper') {
+              const site = worldgen.dungeonLayout(seed);
+              rows.push('Ossuary entrance · x ' + site.x + '. Ring the bell at night.');
+            }
+            if (key === 'railbreaker' && mineSite) {
+              rows.push('Runaway Mine · x ' + (mineSite.x - 35) + '. Repair the bridge and drain the rail spur.');
+            }
+            if (key === 'ossuarymechanist') rows.push('Open the lower Ossuary after defeating the Keeper in Hardmode.');
+            if (key === 'lenscustodian') rows.push('Defeat the Mechanist, then power the shield sensor beneath its arena.');
+            if (key === 'drownedarchivist' && archiveSite) {
+              rows.push('Tidal Archive airlock · x ' + archiveSite.x + ', y ' + (archiveSite.y - 2) + '. Open the floodgate.');
+            }
+          }
+        }
+      }
+      return { rows, actions };
+    }, 'Search side bosses and summons');
+  }
+
   function openProgression() {
     const picks = Object.entries(mining.TOOLS).filter(([key, spec]) => spec.job === 'pick' && key !== 'meteor-pick')
       .sort((a, b) => a[1].power - b[1].power);
@@ -2449,7 +2570,7 @@ function makeGame(canvas, deps) {
         if (!done) rows.push(item.name + ' · ' + recipeLine(summon) + ' · ' + (mainHints[boss] || item.text));
       }
     }
-    ui.showTown('Progression Journal', rows, [{ label: 'Back to Town Hall', run: checkHousing }]);
+    ui.showTown('Progression Journal', rows, [{ label: 'Campaign', run: openCampaign }, { label: 'Back to Town Hall', run: checkHousing }]);
   }
 
   function showTownDaily(rows, actions, selected) {

@@ -97,6 +97,105 @@ for (const [id, name, key, goals, prize] of [
   })) });
 }
 
+const CAMPAIGN_CHAPTERS = [
+  { id: 'first-forge', name: 'A Fire in the Deepwood', milestone: 'forge',
+    story: 'The Guide needs a working forge before the first expedition.',
+    clue: 'Build a Work Bench and Furnace. Smelt five metal bars, then use copper bars to craft an Anvil.',
+    reward: [['torch', 24], ['rope', 20]] },
+  { id: 'slime', name: 'The Falling Star', bosses: ['kingslime'],
+    story: 'A crowned slime is stirring. Its fall will draw a meteor into the world.',
+    clue: 'Make a Slime Crown at an Anvil, then use it in a clear area with room to fight.',
+    reward: [['healing-salve', 4], ['coin', 150]] },
+  { id: 'eye', name: 'An Eye in the Dark', bosses: ['hollloweye'],
+    story: 'The meteor has left the night sky restless. Put the Hollow Eye down.',
+    clue: 'Collect lenses and silver for the Bloodshot Lens. Use it at night.',
+    reward: [['regen-potion', 3], ['coin', 230]] },
+  { id: 'furnace', name: 'The Furnace Below', bosses: ['furnacewarden'],
+    story: 'The next passage lies beneath the ordinary caverns, in Hell.',
+    clue: 'Upgrade your pick through cobalt and emberite. Bring an Obsidian Charm and use a Cinder Idol in Hell.',
+    reward: [['spelunk-potion', 3], ['healing-salve', 5]] },
+  { id: 'ashvault', name: 'The Ashvault Seal', bosses: ['ashguardian'],
+    story: 'The Furnace Warden’s core can unlock the Ashvaults in the Trench.',
+    clue: 'Forge an Ashvault Key from a Furnace Core. Open an Ashvault and challenge its guardian in the main hall.',
+    reward: [['shine-potion', 4], ['coin', 420]] },
+  { id: 'void', name: 'At the Bottom of Light', bosses: ['voidsovereign'],
+    story: 'Below the Trench, the Void Sovereign guards the route into the Rift.',
+    clue: 'Mine Void Crystals with an Emberite Pickaxe and use a Void Beacon in the Void.',
+    reward: [['clarity-potion', 4], ['coin', 650]] },
+  { id: 'archon', name: 'The Rift Opens', bosses: ['riftarchon'],
+    story: 'Turn the Sovereign’s heart into a way through the Rift.',
+    clue: 'Summon the Archon in the Void. Use its core to forge a Rift Pickaxe for Aetherite beneath the sky islands.',
+    reward: [['feather-potion', 4], ['coin', 850]] },
+  { id: 'prism', name: 'The Sky Breaks', bosses: ['prismsentinel'],
+    story: 'The Prism Sentinel stands between the surface and Hardmode.',
+    clue: 'Gather Aetherite, craft a Prism Sigil, and summon the Sentinel in the sky. Its defeat unlocks new ores.',
+    reward: [['ironskin-potion', 4], ['coin', 1050]] },
+  { id: 'machines', name: 'Three Machines', trio: true,
+    story: 'Three machines hold the keys to space. You can challenge them in any order.',
+    clue: 'Mine Palladium, then Mythril, then Adamantite. Use the Hallow crystals to make the three summons.',
+    reward: [['regen-potion', 5], ['coin', 1500]] },
+  { id: 'wyvern', name: 'Beyond the Sky Islands', bosses: ['starwyvern'],
+    story: 'The machines are quiet. A signal above the islands calls the Star Wyvern.',
+    clue: 'Use the Starcall Horn in space. After the fight, hunt wild wyverns for wing materials.',
+    reward: [['healing-salve', 8], ['coin', 1800]] },
+  { id: 'foundry', name: 'The Starfall Foundry', bosses: ['foundrywarden'],
+    story: 'Follow the landing pads into the foundry and take its prism.',
+    clue: 'Cross to the far platform and use the Warden Igniter there.',
+    reward: [['clarity-potion', 6], ['coin', 2300]] },
+  { id: 'regent', name: 'The Astral Siege', bosses: ['astralregent'],
+    story: 'The Regent has fortified three platforms in space. The last siege begins here.',
+    clue: 'Raise an Astral Standard on the middle platform. Use wings to move away from marked bombardment lanes.',
+    reward: [['regen-potion', 8], ['coin', 4200]] },
+  { id: 'astral', name: 'A World Beyond the Siege', milestone: 'astral',
+    story: 'The Regent is gone. Finish the journey by bringing home an Astral metal.',
+    clue: 'Mine Lunarium, Solarium, or Eventide inside planetoids and smelt a bar at a Furnace.',
+    reward: [['storage-access', 1], ['coin', 2500]] }
+];
+
+const CAMPAIGN_HUNTS = {
+  briarwarden: 'Thorns at the Trailhead',
+  windmillwarden: 'When the Windmill Stops',
+  mirebrood: 'Brood in the Mire',
+  dungeonkeeper: 'The Bell Below',
+  thunderbird: 'A Storm over the Dunes',
+  desertscourge: 'Something under the Sand',
+  rimehorn: 'The Whiteout Hunt',
+  pinemaw: 'The Teeth of Pinewatch',
+  orchidqueen: 'A Crown in the Canopy',
+  reedking: 'The Reed Throne',
+  claybehemoth: 'The Kiln That Walks',
+  sunmane: 'The Acacia Hunt',
+  cragbreaker: 'The Crag Watch Alarm',
+  breakwatercrab: 'Trouble at the Breakwater',
+  railbreaker: 'The Runaway Line',
+  rootcrown: 'The Roots of Deepwood',
+  aurorawraith: 'Light in the Glacier',
+  winterroot: 'The Winterroot Barrow',
+  amberroot: 'The Amberroot Temple',
+  fenwidow: 'A Web over Blackfen',
+  granitecolossus: 'The Mountain Stirs',
+  cairnshade: 'The Shade of the Cairn',
+  ochredrake: 'Fire beneath the Kiln',
+  sunscarab: 'The Sunken Court',
+  buriedstandard: 'The Banner Beneath',
+  sporecrown: 'The Spore Chapel',
+  bloodcrest: 'Wings over the Crimson',
+  reefleviathan: 'The Reef Hunt',
+  saltmarrow: 'The Saltmarrow Catacomb',
+  hollowroot: 'The Hollow Root Vault',
+  veinwarden: 'The Vein Foundry',
+  abyssaleye: 'An Eye in the Abyss',
+  ossuarymechanist: 'The Hidden Workshop',
+  lenscustodian: 'Light through the Vault',
+  drownedarchivist: 'The Sunken Archive'
+};
+
+function campaignChapterReady(chapter, defeated, milestones, trio) {
+  if (chapter.milestone) return milestones.has(chapter.milestone);
+  if (chapter.trio && defeated.has('starwyvern')) return true;
+  return (chapter.trio ? trio : chapter.bosses).every(key => defeated.has(key));
+}
+
 function settlementRole(region) {
   return SETTLEMENT_ROLES[SETTLEMENT_REGIONS[region] || 'trade'];
 }
@@ -190,6 +289,6 @@ function makeSettlementLedger(saved = {}) {
 }
 
 const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey, settlementDaily,
-  QUESTLINES: SETTLEMENT_QUESTLINES, JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
+  CAMPAIGN: CAMPAIGN_CHAPTERS, CAMPAIGN_HUNTS, campaignChapterReady, QUESTLINES: SETTLEMENT_QUESTLINES, JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_settlement;
 else if (typeof FATHOM !== 'undefined') FATHOM.settlement = EXPORTS_settlement;
