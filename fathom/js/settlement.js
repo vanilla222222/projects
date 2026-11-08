@@ -59,6 +59,44 @@ const SETTLEMENT_EXPEDITIONS = [
     rule: 'The Regent returns with full platform bombardment.' }
 ];
 
+// Each regional chain combines a landmark visit, a local assignment and a supply delivery.
+const SETTLEMENT_QUESTLINES = [
+  ['forest', 'Deepwood Watch', 'hunt', 8, 'rope', 18, 'spelunk-potion'],
+  ['desert', 'Caravan Relief', 'hunt', 8, 'glass', 16, 'swift-potion'],
+  ['tundra', 'The Long Winter', 'specimen', 2, 'torch', 20, 'ironskin-potion'],
+  ['jungle', 'Canopy Survey', 'specimen', 3, 'rope', 25, 'regen-potion'],
+  ['marsh', 'Mire Provisioners', 'fish', 3, 'bottle', 8, 'gills-potion'],
+  ['highlands', 'Crag Watch Relief', 'hunt', 10, 'stone', 40, 'feather-potion'],
+  ['badlands', 'Kiln Road', 'hunt', 8, 'copper-bar', 6, 'ironskin-potion'],
+  ['savanna', 'Acacia Crossing', 'specimen', 2, 'rope', 20, 'swift-potion'],
+  ['taiga', 'Winterroot Rangers', 'hunt', 10, 'pinelog', 16, 'regen-potion'],
+  ['plains', 'Windmill Dispatch', 'specimen', 3, 'glass', 12, 'swift-potion'],
+  ['blight', 'Shadebound Patrol', 'hunt', 12, 'torch', 30, 'shine-potion'],
+  ['crimson', 'Crimwood Relief', 'hunt', 12, 'iron-bar', 5, 'rage-potion'],
+  ['ocean', 'Reef Commission', 'fish', 3, 'shell', 10, 'gills-potion'],
+  ['beach', 'Saltmarrow Dispatch', 'fish', 3, 'rope', 20, 'gills-potion']
+].map(([region, name, job, goal, item, amount, prize]) => ({
+  id: region, name, region, steps: [
+    { name: 'Chart a landmark', key: 'survey:' + region, goal: 1, reward: [['coin', 100], ['torch', 12]] },
+    { name: job === 'hunt' ? 'Clear local hostiles' : job === 'fish' ? 'Catch distinct local fish' : 'Net distinct local critters',
+      key: job + ':' + region, goal, reward: [[prize, 3], ['coin', 220]] },
+    { name: 'Deliver supplies', needs: [[item, amount]], reward: [[prize, 5], ['coin', 480]] }
+  ]
+}));
+
+for (const [id, name, key, goals, prize] of [
+  ['anglers', 'Anglers’ Circuit', 'fish', [4, 10, 18], 'gills-potion'],
+  ['naturalists', 'Field Naturalists', 'specimen', [4, 12, 24], 'empty-terrarium'],
+  ['cooks', 'The Traveling Kitchen', 'food', [3, 8, 16], 'regen-potion'],
+  ['mechanists', 'Mechanists’ Guild', 'mechanism', [3, 6, 10], 'wire-spool'],
+  ['cartographers', 'The Grand Atlas', 'survey', [4, 12, 24], 'spelunk-potion']
+]) {
+  SETTLEMENT_QUESTLINES.push({ id, name, steps: goals.map((goal, index) => ({
+    name: ['Apprentice commission', 'Journeyman commission', 'Master commission'][index],
+    key, goal, reward: [[prize, prize === 'wire-spool' ? (index + 1) * 20 : (index + 1) * 3], ['coin', 160 * (index + 1)]]
+  })) });
+}
+
 function settlementRole(region) {
   return SETTLEMENT_ROLES[SETTLEMENT_REGIONS[region] || 'trade'];
 }
@@ -77,6 +115,7 @@ function makeSettlementLedger(saved = {}) {
   const collections = new Map((saved.collections || []).map(([key, values]) => [key, new Set(values)]));
   const claimed = new Set(saved.claimed || []);
   const records = new Map(saved.records || []);
+  const tallies = new Map(saved.tallies || []);
   const prizes = new Map(saved.prizes || []);
   const town = device => towns.get(settlementKey(device));
   function found(device, region) {
@@ -127,12 +166,13 @@ function makeSettlementLedger(saved = {}) {
     shipment: saved.shipment || null,
     rangerTrail: { started: false, town: null, camp: null, restored: false, deliveredTo: null, completed: false,
       ...saved.rangerTrail },
-    count: key => collections.get(key)?.size || 0,
+    increment(key) { tallies.set(key, (tallies.get(key) || 0) + 1); },
+    count: key => tallies.get(key) || collections.get(key)?.size || 0,
     serialize() { return { shipment: this.shipment, rangerTrail: this.rangerTrail, towns: [...towns], collections: [...collections].map(([key, group]) => [key, [...group]]),
-      claimed: [...claimed], records: [...records], prizes: [...prizes] }; } };
+      claimed: [...claimed], records: [...records], prizes: [...prizes], tallies: [...tallies] }; } };
 }
 
 const EXPORTS_settlement = { makeSettlementLedger, settlementRole, settlementJob, settlementKey,
-  JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
+  QUESTLINES: SETTLEMENT_QUESTLINES, JOBS: SETTLEMENT_JOBS, MILESTONES: SETTLEMENT_MILESTONES, NETWORK: SETTLEMENT_NETWORK, EXPEDITIONS: SETTLEMENT_EXPEDITIONS };
 if (typeof module !== 'undefined' && module.exports) module.exports = EXPORTS_settlement;
 else if (typeof FATHOM !== 'undefined') FATHOM.settlement = EXPORTS_settlement;

@@ -72,3 +72,15 @@ for (const contract of settlement.EXPEDITIONS) {
 }
 
 console.log('Settlement checks passed across fieldwork, charters, trade, collections, expedition records and save round trips');
+
+assert.equal(settlement.QUESTLINES.length, 19);
+assert.equal(new Set(settlement.QUESTLINES.map(line => line.id)).size, 19);
+for (const line of settlement.QUESTLINES) {
+  assert.equal(line.steps.length, 3);
+  for (const step of line.steps) {
+    for (const [key] of [...step.reward, ...(step.needs || [])]) itemExists(key);
+  }
+}
+restored.increment('hunt:forest');
+restored.increment('hunt:forest');
+assert.equal(settlement.makeSettlementLedger(restored.serialize()).count('hunt:forest'), 2);
