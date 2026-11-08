@@ -124,6 +124,7 @@ the cost of one small canvas.
 | `js/noise.js` | value noise, fBm, ridged and domain-warped variants |
 | `js/tiles.js` | the tile registry: solidity, opacity, emission, hardness, colour |
 | `js/worldgen.js` | biomes, surface, strata, caves, ores, trees, chunk assembly |
+| `js/underworld.js` | Underworld terrain, biomes, structures and chest generation |
 | `js/chunks.js` | the live world: generated chunks plus the player's edit diff |
 | `js/autotile.js` | eight-neighbour masks to edges and inner corners |
 | `js/texture.js` | procedural tile atlas, twelve variants of every tile |
@@ -182,6 +183,18 @@ Search three in Space, three in Hell, three in the Void, and one in the Sky.
 Challenge each miniboss at its Trial Seal and return to the seal to claim
 its component. Nine structures give distinct fragments. Windlock Citadel
 holds the Portal Activator. Keep all ten components for the first subworld.
+
+### The Underworld
+
+Carry all nine fragments and the activator. Use the Portal Activator on a dry,
+clear tile with solid ground beneath it. Interact with the gate to descend.
+The Return Gate is at the landing camp. Inventory travels with you, while
+building edits, containers, towns, and exploration are saved separately.
+
+Explore Ashwood Wilds, Glass Dunes, Brine Depths, Emberbloom Canopy, and
+Gloomfrost Expanse. Each region has local resources, wildlife, fish, a surface
+refuge, cave strongholds, and deep ruins. Cave and deep seals summon local
+guardians. Use relics and local ore to make class weapons.
 
 ### Progression
 

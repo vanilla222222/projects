@@ -748,7 +748,7 @@ for (const specimen of WILDLIFE_SPECIMENS) {
     biomes: specimen.biomes || undefined, layers: specimen.gem ? ['caves', 'deep'] : ['surface'],
     day: specimen.clock !== 'night', night: specimen.clock !== 'day',
     emit: specimen.rare === 'crystal' || specimen.key.endsWith('firefly') ? 5 : 0,
-    specimen, passive: true, hiddenSpawn: Boolean(specimen.rare),
+    specimen, underworld: !!specimen.underworld, passive: true, hiddenSpawn: Boolean(specimen.rare),
     drops: specimen.rare === 'crystal' ? [[specimen.gem, 2]] : [['wildlife-trace', 1]]
   });
 }
@@ -781,6 +781,31 @@ for (const [index, trial] of ENEMY_PORTAL_TRIALS.entries()) {
     bossDrops: [trial.reward] });
 }
 
+const ENEMY_UNDERWORLD_BIOMES = typeof require === 'function' ? require('./tiles.js').UNDERWORLD_BIOMES : UNDERWORLD_BIOMES;
+for (const [biomeIndex, biome] of ENEMY_UNDERWORLD_BIOMES.entries()) {
+  const shapes = [['walker', 'slime'], ['flyer', 'bird'], ['walker', 'humanoid'], ['walker', 'beetle'],
+    ['flyer', 'bat'], ['crawler', 'spider'], ['walker', 'skeleton'], ['walker', 'golem'], ['flyer', 'eye'], ['worm', 'worm']];
+  biome.enemies.forEach((name, index) => {
+    const aquatic = biome.key === 'brine-depths' && (index === 3 || index === 4);
+    const [kind, body] = aquatic ? ['swimmer', 'fish'] : shapes[index];
+    const layer = index < 4 ? 'surface' : index < 7 ? 'caves' : 'deep';
+    ENEMIES.push({ key: biome.key + '-foe-' + index, name, kind, body, underworld: true, colour: biome.accent,
+      biomes: [biome.key], layers: [layer], wet: aquatic, hp: 1550 + biomeIndex * 100 + index * 210,
+      damage: 115 + biomeIndex * 5 + index * 8, weight: 9 - index % 3, w: 1.15 + index % 3 * 0.25,
+      h: 1.05 + index % 4 * 0.3, drops: [[biome.key + '-relic', 1], ['coin', 120 + index * 12]] });
+  });
+  ENEMIES.push({ key: biome.key + 'mimic', name: biome.name + ' Mimic', kind: 'walker', body: 'mimic',
+    hiddenSpawn: true, underworld: true, colour: biome.accent, hp: 4400, damage: 175, weight: 0, w: 2, h: 1.6,
+    drops: [[biome.key + '-relic', 5], [biome.key + '-ore', 6], ['coin', 720]] });
+  for (const depth of [1, 2]) {
+    ENEMIES.push({ key: biome.key + '-guardian-' + depth, name: biome.structures[depth] + ' Guardian',
+      underworld: true, underworldGuardian: true, boss: true, summonOnly: true, weight: 0,
+      kind: depth === 1 ? 'guardian' : 'archon', body: depth === 1 ? 'golem' : 'bigeye',
+      barrage: depth === 1 ? 'cross' : 'starburst', colour: biome.accent, hp: 18500 + biomeIndex * 1400 + depth * 4500,
+      damage: 165 + biomeIndex * 5 + depth * 15, w: 3.4, h: 3.2, emit: 8, bossDrops: [[biome.key + '-relic', 8 + depth * 4]] });
+  }
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
@@ -795,6 +820,7 @@ function wildlifeVariant(spec, roll) {
 }
 
 function matches(spec, ctx) {
+  if (Boolean(spec.underworld) !== Boolean(ctx.underworld)) return false;
   if (spec.summonOnly || spec.hiddenSpawn || (spec.wyvernsUnlocked && !ctx.wyvernsUnlocked)) return false;
   if (spec.requiresBoss && !ctx.bossDefeated?.(spec.requiresBoss)) return false;
   if ((spec.armory || null) !== (ctx.armory || null) || ctx.armoryLocked) return false;
@@ -960,7 +986,7 @@ function makeSwarm(world, tiles, deps) {
     const lowerOssuary = dungeon && y > site.y + 58 && !!world.hardmode;
     const armory = worldgen.chapterArmoryAt?.(world.seed, Math.floor(x), Math.floor(y));
     const insideArmory = armory && y > armory.y;
-    return { biome, layer, wet, day, dungeon, lowerOssuary,
+    return { biome, layer, wet, day, dungeon, lowerOssuary, underworld: worldgen.realm === 'underworld',
       armory: insideArmory ? armory.key : null,
       armoryLocked: insideArmory && !deps.bossDefeated?.(armory.boss),
       bossDefeated: deps.bossDefeated,
@@ -1025,8 +1051,13 @@ function makeSwarm(world, tiles, deps) {
           const above = Math.floor(player.y) - 9;
           const y = arena ? Math.max(arena.top, Math.min(above, arena.bottom - spec.h)) : above;
           if (arena && (x < arena.left || x + spec.w > arena.right)) continue;
-          if (!arch.burrows && overlaps(probe, x, y)) continue;
-          return createBoss(x, y);
+          if (arch.burrows || !overlaps(probe, x, y)) return createBoss(x, y);
+          if (arena) {
+            for (let row = Math.ceil(arena.top); row <= Math.floor(arena.bottom - spec.h); row += 1) {
+              if (!overlaps(probe, x, row)) return createBoss(x, row);
+            }
+          }
+          continue;
         }
         const y = findFloor(x, Math.floor(player.y) - 14, Math.floor(player.y) + 10, probe);
         if (y === null) continue;

@@ -1782,6 +1782,26 @@ for (const chapter of CRAFT_TILES.ARMORY_CHAPTERS) {
 }
 
 // Starter gear teaches each class. Later weapons have a three-attack rhythm.
+for (const [index, biome] of CRAFT_TILES.UNDERWORLD_BIOMES.entries()) {
+  const { key, accent, oreName, fish } = biome;
+  ITEMS[key + '-bar'] = { name: oreName + ' Bar', kind: 'bar', colour: accent };
+  ITEMS[key + '-relic'] = { name: biome.name + ' Relic', kind: 'loot', colour: accent };
+  ITEMS[fish.key] = { name: fish.name, kind: 'loot', colour: accent };
+  const weapon = [
+    ['pyre-glaive', 'Pyre Glaive', { damage: 348, useTime: 0.23, reach: 5.1, signature: 'lunge' }],
+    ['sun-glass-crossbow', 'Sun Glass Crossbow', { damage: 494, useTime: 0.37, reach: 67, ranged: true, ammo: 'bolt', pierce: 4 }],
+    ['brine-oracle', 'Brine Oracle', { damage: 365, useTime: 0.30, reach: 53, magic: true, mana: 13, bolt: accent, signature: 'rune' }],
+    ['flamebloom-idol', 'Flamebloom Idol', { damage: 342, useTime: 0.31, reach: 28, summon: 'burst' }],
+    ['gloom-quartz-disc', 'Gloom Quartz Disc', { damage: 349, useTime: 0.32, reach: 45, throwStyle: 'returning' }]
+  ][index];
+  WEAPONS[weapon[0]] = { name: weapon[1], colour: accent, underworld: true, ...weapon[2] };
+  RECIPES.push(
+    { out: { key: key + '-bar', kind: 'bar', count: 1 }, need: [[key + '-ore', 3]], station: 'furnace' },
+    { out: { key: weapon[0], kind: 'tool', count: 1 },
+      need: [[key + '-bar', 10], [key + '-relic', 8], ['eventide-bar', 2]], station: 'anvil' }
+  );
+}
+
 const STARTER_COMBAT_WEAPONS = new Set([
   'wood-sword', 'tin-sword', 'copper-sword', 'iron-sword', 'silver-sword',
   'wood-bow', 'tin-bow', 'copper-bow', 'iron-bow', 'tin-handcannon',
@@ -1820,7 +1840,8 @@ for (const [role, order] of Object.entries(BEAT_ORDERS)) {
   }
   const weapons = Object.entries(WEAPONS)
     .filter(([key, weapon]) => classOf(weapon) === role && !STARTER_COMBAT_WEAPONS.has(key))
-    .sort((a, b) => a[1].damage - b[1].damage || a[0].localeCompare(b[0], 'en'));
+    .sort((a, b) => Number(!!a[1].underworld) - Number(!!b[1].underworld)
+      || a[1].damage - b[1].damage || a[0].localeCompare(b[0], 'en'));
   weapons.forEach(([, weapon], index) => {
     weapon.rhythm = rhythms[(index * 37) % rhythms.length];
   });
@@ -1876,10 +1897,11 @@ const TAGS = {
   // Any fish cooks the same way, so the furnace takes a tag rather than nine recipes.
   '#fish': (key) => ['bass', 'goldfish', 'trout', 'icepike', 'perch', 'piranha',
     'oasiscarp', 'shrimp', 'swordfish', 'rotgill', 'cavefish', 'glowfish', 'mudeel',
-    'frostminnow', 'shadowcarp', 'deepshrimp'].includes(key),
+    'frostminnow', 'shadowcarp', 'deepshrimp'].includes(key)
+    || CRAFT_TILES.UNDERWORLD_BIOMES.some(biome => biome.key !== 'ember-bloom' && biome.fish.key === key),
   // Everything out of the lava cooks too, and into something better: hell is further to
   // go, and the fish there are worth the trip.
-  '#lavafish': (key) => ['flarefin', 'obsidifish', 'magmasnail'].includes(key),
+  '#lavafish': (key) => ['flarefin', 'obsidifish', 'magmasnail', 'ember-bloom-fish'].includes(key),
   '#wood': (key) => {
     const spec = CRAFT_TILES.BY_KEY[key];
     return !!(spec && spec.wood && key.endsWith('wood'));

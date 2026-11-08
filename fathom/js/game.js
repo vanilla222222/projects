@@ -7,13 +7,17 @@ const DAY_SECONDS = 1440;
 const PICKUP_RANGE = 2.2;
 
 function makeGame(canvas, deps) {
-  const { rng, tiles, worldgen, chunks, light, texture, render, player: physics,
+  const { rng, tiles, worldgen: overworldGenerator, chunks, light, texture, render, player: physics,
     noise, autotile, mining, craft, liquid: liquidModule, enemy: enemyModule,
     minimap: minimapModule, housing, villager: villagerModule,
     inventory: inventoryModule, stats: statsModule, ui: uiModule,
     profile: profileModule, menu: menuModule, sprite, audio: audioModule,
     buffs: buffModule, fishing: fishModule, settlement: settlementModule } = deps;
 
+  let worldgen = overworldGenerator;
+  let dimension = 'overworld';
+  let portalLink = null;
+  let worldChoice = null;
   craft.registerEnemyBanners(enemyModule.ENEMIES);
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
@@ -152,6 +156,8 @@ function makeGame(canvas, deps) {
     const x = Math.floor(state.player.x);
     const y = Math.floor(state.player.y);
     const naturalLayer = worldgen.layerAt(y).key;
+    if (dimension === 'underworld') return { layer: 'hell', biome: worldgen.biomeAt(seed, x).key,
+      night: true, wet: state.player.submerged };
     const layer = naturalLayer === 'surface' && y > worldgen.surfaceHeight(seed, x) + 14 ? 'caves' : naturalLayer;
     const biome = world.biomeAt(x, y).key;
     const ossuary = worldgen.dungeonAt(seed, x, y);
@@ -256,6 +262,14 @@ function makeGame(canvas, deps) {
 
   function rareDrop(target) {
     recordWildlife(target.spec, 'defeated');
+    if (target.spec.underworldGuardian) {
+      if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
+        settlements.claimed.add('underworld-win:' + target.key);
+        say('Guardian defeated. Recover its relics at the seal.', 4);
+      }
+      activePortalTrial = null;
+      return;
+    }
     if (target.spec.portalTrial) {
       if (activePortalTrial?.boss === target && insidePortalTrial(activePortalTrial.site)) {
         settlements.claimed.add('portal-win:' + target.spec.portalTrial);
@@ -328,6 +342,7 @@ function makeGame(canvas, deps) {
     } else if (use.summon !== undefined) {
       if (!swarm) return true;
       if (expedition) { say('Finish the active expedition first', 2); return true; }
+      if (dimension === 'underworld') { say('Challenge local guardians at their seals', 2); return true; }
       const required = craft.bossPrerequisite(use.summon, defeatedBosses);
       if (required) {
         say('Defeat ' + enemyModule.BY_KEY[required].name + ' first', 2.4);
@@ -472,7 +487,7 @@ function makeGame(canvas, deps) {
     const night = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
     if (night && !wasNight) {
       state.nights += 1;
-      state.bloodMoon = worldgen.bloodMoonAt(seed, state.nights, worldRules.bloodMoon);
+      state.bloodMoon = dimension !== 'underworld' && worldgen.bloodMoonAt(seed, state.nights, worldRules.bloodMoon);
       if (state.bloodMoon) {
         say('The moon is bleeding', 4.2);
         sfx('roar', { gain: 0.7, pitch: 1.3 });
@@ -826,7 +841,9 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial) {
+    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege || spec.chapterArmory || spec.portalTrial
+      || spec.dimensionGate || spec.underworldShrine
+      || (dimension === 'underworld' && Math.abs(aim.x) <= 3 && aim.y === worldgen.SEA_LEVEL)) {
       state.player.mining = null;
       return;
     }
@@ -1803,6 +1820,7 @@ function makeGame(canvas, deps) {
   }
 
   function openRangerTrail() {
+    if (dimension === 'underworld') { openUnderworldJournal(); return; }
     input.left = input.right = input.jump = input.down = false;
     const trail = settlements.rangerTrail;
     const player = state.player;
@@ -2445,6 +2463,7 @@ function makeGame(canvas, deps) {
   }
 
   function openCampaign() {
+    if (dimension === 'underworld') { openUnderworldJournal(); return; }
     input.left = input.right = input.jump = input.down = false;
     const chapters = settlementModule.CAMPAIGN;
     const milestones = campaignMilestones();
@@ -2508,7 +2527,9 @@ function makeGame(canvas, deps) {
     const fragments = sites.filter(site => site.reward !== 'portal-activator' && collected(site)).length;
     const activator = sites.some(site => site.reward === 'portal-activator' && collected(site));
     rows.push('Fragments ' + fragments + ' / 9 · Activator ' + (activator ? 'recovered' : 'missing'));
-    if (fragments === 9 && activator) rows.push('The Scattered Gate hunt is complete. Keep the components for the first subworld portal.');
+    if (fragments === 9 && activator) rows.push(portalLink
+      ? 'Underworld Gate · x ' + portalLink.x + ', y ' + portalLink.y
+      : 'The hunt is complete. Carry all ten components and use the Portal Activator on a clear tile above solid ground.');
     for (const site of sites) {
       const won = settlements.claimed.has('portal-win:' + site.id);
       rows.push(site.name + ' · ' + townRegionName(site.layer) + ' · x ' + site.x + ', y ' + (site.y - 1)
@@ -2544,6 +2565,90 @@ function makeGame(canvas, deps) {
     ui.closeTown();
     say(site.guardian + ' awakens', 3);
     sfx('roar');
+  }
+
+  function openUnderworldJournal() {
+    input.left = input.right = input.jump = input.down = false;
+    const rows = ['The Underworld · Return Gate at x 0, y ' + (worldgen.SEA_LEVEL - 1) + '.',
+      'Each region has a surface refuge, a cave stronghold and a deep ruin. Challenge the guardians at the two lower seals.'];
+    const actions = [{ label: 'Town Hall', run: checkHousing }];
+    for (const biome of worldgen.BIOMES) {
+      const centers = [-2, -1, 0, 1, 2].map(band => band * worldgen.bandWidth);
+      const center = centers.find(x => worldgen.biomeAt(seed, x).key === biome.key);
+      rows.push(biome.name + ' · x ' + center + ' · ' + biome.oreName + ', ' + biome.woodName + ', ' + biome.fish.name);
+      const locations = [[center + 84, worldgen.surfaceHeight(seed, center + 84)],
+        [center - 76, worldgen.SEA_LEVEL + 102], [center + 24, worldgen.SEA_LEVEL + 236]];
+      for (const [index, [x, y]] of locations.entries()) rows.push(biome.structures[index] + ' · x ' + x + ', y ' + y);
+      rows.push('Guardian rewards · ' + [1, 2].filter(depth =>
+        settlements.claimed.has('underworld-loot:' + biome.key + '-guardian-' + depth)).length + '/2 guardians recovered');
+    }
+    ui.showTown('Chapter 2 · The Underworld', rows, actions);
+  }
+
+  function useUnderworldShrine(aim) {
+    if (dimension !== 'underworld' || !aim.inReach || !tiles.tile(world.get(aim.x, aim.y)).underworldShrine) return false;
+    const site = worldgen.biomeSiteAt(seed, aim.x, aim.y);
+    if (!site || !site.layer || aim.x !== site.x || aim.y !== site.floor - 1) return true;
+    const key = site.biome + '-guardian-' + site.layer;
+    const win = 'underworld-win:' + key, loot = 'underworld-loot:' + key;
+    if (settlements.claimed.has(loot)) { say('This seal has been claimed', 2); return true; }
+    if (settlements.claimed.has(win)) {
+      if (townExchange([], enemyModule.BY_KEY[key].bossDrops)) {
+        settlements.claimed.add(loot);
+        say('Guardian relics recovered', 3);
+      }
+      return true;
+    }
+    if (swarm.bossAlive() || activePortalTrial) { say('Finish the current encounter first', 2); return true; }
+    const arena = { ...site, left: site.x - 10, right: site.x + 10, bottom: site.floor, top: site.top + 1 };
+    const boss = swarm.summon(key, state.player, arena);
+    if (!boss) { say('Stand to one side of the seal and try again', 2); return true; }
+    activePortalTrial = { site: arena, boss };
+    say(boss.spec.name + ' awakens', 3);
+    sfx('roar');
+    return true;
+  }
+
+  function travelDimension(destination) {
+    if (swarm.bossAlive() || expedition || activePortalTrial) {
+      say('The gate closes during boss fights', 3);
+      return;
+    }
+    closeChest();
+    releaseHook();
+    if (!save()) { say('The world could not be saved. The gate stays closed.', 3); return; }
+    boot(worldChoice, destination);
+    save();
+  }
+
+  function useDimensionGate(aim, item) {
+    if (!aim.inReach) return false;
+    const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (spec.dimensionGate) {
+      if (spec.key === 'underworld-gate' && dimension === 'overworld' && portalLink) travelDimension('underworld');
+      else if (spec.key === 'underworld-return' && dimension === 'underworld') travelDimension('overworld');
+      return true;
+    }
+    if (item?.key !== 'portal-activator' || dimension !== 'overworld') return false;
+    if (portalLink) { say('The Underworld Gate is already open', 2); return true; }
+    const trials = tiles.PORTAL_TRIALS;
+    if (!world.portalHunt || !trials.every(trial =>
+      settlements.claimed.has('portal-loot:' + trial.id) && inventory.countOf(trial.reward) > 0)) {
+      say('Bring the activator and all nine recovered fragments', 3);
+      return true;
+    }
+    if (swarm.bossAlive() || expedition || activePortalTrial) { say('Finish the current encounter first', 2); return true; }
+    if (world.get(aim.x, aim.y) !== tiles.AIR || world.get(aim.x, aim.y - 1) !== tiles.AIR
+      || !tiles.isSolid(world.get(aim.x, aim.y + 1)) || world.getLevel(aim.x, aim.y)) {
+      say('Choose a dry, clear tile above solid ground', 3);
+      return true;
+    }
+    for (const trial of trials) inventory.take(trial.reward, 1);
+    portalLink = { x: aim.x, y: aim.y };
+    world.set(aim.x, aim.y, tiles.idOf('underworld-gate'));
+    save();
+    say('The Underworld Gate opens. Use it to descend.', 4);
+    return true;
   }
 
   function usePortalSeal(aim) {
@@ -2603,6 +2708,7 @@ function makeGame(canvas, deps) {
   }
 
   function openProgression() {
+    if (dimension === 'underworld') { openUnderworldJournal(); return; }
     const picks = Object.entries(mining.TOOLS).filter(([key, spec]) => spec.job === 'pick' && key !== 'meteor-pick')
       .sort((a, b) => a[1].power - b[1].power);
     const power = Math.max(0, ...Object.entries(mining.TOOLS).filter(([key, spec]) =>
@@ -3553,7 +3659,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useDimensionGate(aim0, item) || useUnderworldShrine(aim0) || usePortalSeal(aim0) || useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -3879,7 +3985,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=portal-trials-1');
+      const worker = new Worker('workers/chunk.js?v=underworld-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -3933,7 +4039,7 @@ function makeGame(canvas, deps) {
     }
     if (next) {
       chunkJob = { ...next, world };
-      chunkWorker.postMessage({ ...next, seed: Number(seed), settings: seed.factors ? worldSettings : undefined });
+      chunkWorker.postMessage({ ...next, dimension, seed: Number(seed), settings: seed.factors ? worldSettings : undefined });
     }
   }
 
@@ -4152,9 +4258,9 @@ function makeGame(canvas, deps) {
   }
 
   function save() {
-    if (!running) return;
+    if (!running) return false;
     const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
-    profiles.saveCharacter(characterId, {
+    const characterSaved = profiles.saveCharacter(characterId, {
       inventory: inventory.serialize(),
       stats: { health: stats.health, maxHealth: stats.maxHealth,
         mana: stats.mana, maxMana: stats.maxMana },
@@ -4164,7 +4270,8 @@ function makeGame(canvas, deps) {
       progress: state.progress,
       playedSeconds: carriedCharacterSeconds + elapsed
     });
-    profiles.saveWorld(worldId, {
+    if (!characterSaved) return false;
+    const realmRecord = {
       world: world.serialize(),
       wiring: wiring.serialize(),
       lowerOssuaryWiring: true,
@@ -4188,9 +4295,11 @@ function makeGame(canvas, deps) {
       settlements: settlements.serialize(),
       defeatedBosses: [...defeatedBosses],
       storageItems,
-      spawn: { x: state.player.x, y: state.player.y },
-      playedSeconds: carriedWorldSeconds + elapsed
-    });
+      position: { x: state.player.x, y: state.player.y }
+    };
+    const patch = dimension === 'underworld' ? { underworld: realmRecord } : realmRecord;
+    return profiles.saveWorld(worldId, { ...patch, activeDimension: dimension, portalLink,
+      playedSeconds: carriedWorldSeconds + elapsed });
   }
 
   function resize() {
@@ -4202,14 +4311,19 @@ function makeGame(canvas, deps) {
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   }
 
-  function boot(choice) {
+  function boot(choice, destination) {
+    worldChoice = choice;
     characterId = choice.character.id;
     worldId = choice.world.id;
     const characterRecord = profiles.loadCharacter(characterId) || {};
     bestiary = Object.assign(Object.create(null), characterRecord.bestiary || {});
     cargoItems = characterRecord.cargoItems || [];
-    const worldRecord = profiles.loadWorld(worldId) || {};
-    worldSettings = worldgen.normalizeWorldSettings(worldRecord.settings || choice.world.settings);
+    const record = profiles.loadWorld(worldId) || {};
+    portalLink = record.portalLink || null;
+    dimension = portalLink && (destination || record.activeDimension) === 'underworld' ? 'underworld' : 'overworld';
+    worldgen = dimension === 'underworld' ? deps.underworld.makeUnderworldGenerator(overworldGenerator) : overworldGenerator;
+    const worldRecord = dimension === 'underworld' ? record.underworld || {} : record;
+    worldSettings = worldgen.normalizeWorldSettings(record.settings || choice.world.settings);
     worldRules = worldgen.worldSettingValues(worldSettings);
     seed = worldgen.generationSeed(choice.world.seed, worldSettings);
 
@@ -4303,7 +4417,9 @@ function makeGame(canvas, deps) {
     state.enemies = swarm.list;
     inventory = inventoryModule.makeInventory();
     stats = statsModule.makeStats();
-    ui = uiModule.makeUI(document.getElementById('hud'),
+    const hud = document.getElementById('hud');
+    if (destination && hud) hud.textContent = '';
+    ui = uiModule.makeUI(hud,
       { tiles, texture, inventory, atlas: renderer.atlas, mining, craft,
         controls: CONTROLS });
     state.itemArt = ui.itemArt;
@@ -4333,8 +4449,8 @@ function makeGame(canvas, deps) {
     }
     if (characterRecord.stats) Object.assign(stats, characterRecord.stats);
 
-    carriedCharacterSeconds = choice.character.playedSeconds || 0;
-    carriedWorldSeconds = choice.world.playedSeconds || 0;
+    carriedCharacterSeconds = characterRecord.playedSeconds || choice.character.playedSeconds || 0;
+    carriedWorldSeconds = record.playedSeconds || choice.world.playedSeconds || 0;
     sessionStart = Date.now();
 
     state.world = world;
@@ -4349,11 +4465,24 @@ function makeGame(canvas, deps) {
     state.spawn = worldRecord.spawn || null;
     state.player = spawnPlayer();
     if (world.hardmode && ossuary) setMechanistShutters(ossuary, -1);
-    if (worldRecord.spawn
-      && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
-        state.player.width, state.player.height)) {
-      state.player.x = worldRecord.spawn.x;
-      state.player.y = worldRecord.spawn.y;
+    const arrival = destination ? dimension === 'underworld'
+      ? { x: 2, y: worldgen.SEA_LEVEL - 3 }
+      : { x: portalLink.x + 0.1, y: portalLink.y + 1 - state.player.height }
+      : worldRecord.position || worldRecord.spawn;
+    if (arrival && !physics.overlapsSolid(world, tiles, arrival.x, arrival.y, state.player.width, state.player.height)) {
+      state.player.x = arrival.x;
+      state.player.y = arrival.y;
+    }
+    if (destination) {
+      state.arrows = [];
+      state.drops = [];
+      state.particles = [];
+      state.stars = [];
+      state.hook = state.bobber = state.spirit = null;
+      boundFocus = spiritMark = talking = null;
+      swingCooldown = 0;
+      lastView = null;
+      input.left = input.right = input.jump = input.down = input.dig = false;
     }
     state.camera.x = state.player.x;
     state.camera.y = state.player.y;
@@ -4364,7 +4493,11 @@ function makeGame(canvas, deps) {
       touchControls.setPlaying(true);
       if (touchControls.active) state.camera.zoom = canvas.clientWidth < 600 ? 1.5 : 2;
     }
-    say(choice.world.name + ' \u2014 seed ' + seed + (touchControls?.active ? '. Tap the world to aim and dig. Bag opens the backpack.' : '. E opens the backpack.'), 7);
+    if (destination) {
+      say(dimension === 'underworld' ? 'The Underworld · The Return Gate is behind you' : 'Returned through the Underworld Gate', 5);
+      return;
+    }
+    say((dimension === 'underworld' ? 'The Underworld' : choice.world.name) + ' \u2014 seed ' + seed + (touchControls?.active ? '. Tap the world to aim and dig. Bag opens the backpack.' : '. E opens the backpack.'), 7);
     setInterval(save, 20000);
     requestAnimationFrame(frame);
   }

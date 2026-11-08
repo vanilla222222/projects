@@ -41,7 +41,7 @@ for (const entry of fishing.CATCHES) {
   }
   // A biome named directly has to be a biome the generator can produce.
   for (const biome of entry.biomes || []) {
-    ok(worldgen.BIOMES.some(b => b.key === biome),
+    ok([...worldgen.BIOMES, ...tiles.UNDERWORLD_BIOMES].some(b => b.key === biome),
       entry.key + ' is restricted to the biome "' + biome + '", which does not exist');
   }
 }

@@ -829,6 +829,66 @@ const PORTAL_TRIALS = [
 pushTile({ key: 'portal-trial-seal', name: 'Trial Seal', colour: '#d1afe9', solid: false,
   opacity: 0, emit: 13, hardness: 10, toughness: 250, drops: null, fixture: 'wire-lamp', portalTrial: true });
 
+const UNDERWORLD_BIOMES = [
+  ['ashwood', 'Ashwood Wilds', '#b87961', '#69494d', '#3b293d', 'Ashbark', 'Ember Amber', 'Ash Hare', 'lizard',
+    ['Charcoal Lodge', 'Rootglass Shrine', 'Ember Reliquary'],
+    ['Ashling', 'Coal Finch', 'Bark Stalker', 'Cinder Beetle', 'Root Bat', 'Soot Weaver', 'Charcoal Husk', 'Kiln Wight', 'Ash Golem', 'Ember Wyrm']],
+  ['glass-dunes', 'Glass Dunes', '#e6a469', '#98675d', '#513849', 'Glassthorn', 'Sun Glass', 'Prism Skink', 'lizard',
+    ['Mirror Waystation', 'Glass Cistern', 'Sunken Prism Court'],
+    ['Glass Scarab', 'Mirage Eye', 'Dune Runner', 'Prism Kite', 'Shard Borer', 'Cistern Stinger', 'Glass Husk', 'Sun Court Golem', 'Prism Shade', 'Splinter Wyrm']],
+  ['brine-depths', 'Brine Depths', '#85c2bc', '#497d7e', '#2d4958', 'Saltroot', 'Brine Pearl', 'Salt Frog', 'lizard',
+    ['Saltlight Jetty', 'Brine Pumpworks', 'Drowned Salt Vault'],
+    ['Salt Crab', 'Brine Gull', 'Tide Stalker', 'Foam Eye', 'Brine Leech', 'Salt Bat', 'Cistern Husk', 'Tide Golem', 'Pearl Shade', 'Brine Wyrm']],
+  ['ember-bloom', 'Emberbloom Canopy', '#f28b6b', '#a65b59', '#592f45', 'Flamebloom', 'Flame Opal', 'Glow Moth', 'bird',
+    ['Bloomkeeper Camp', 'Spore Furnace', 'Heartbloom Temple'],
+    ['Ember Wasp', 'Bloom Jay', 'Flame Crawler', 'Petal Beetle', 'Spore Bat', 'Root Weaver', 'Bloom Husk', 'Heartbloom Golem', 'Cinder Shade', 'Thorn Wyrm']],
+  ['gloom-frost', 'Gloomfrost Expanse', '#b1abec', '#675e97', '#383557', 'Rimewood', 'Gloom Quartz', 'Rime Hare', 'lizard',
+    ['Rimewatch Shelter', 'Gloom Observatory', 'Frozen Bell Crypt'],
+    ['Rime Slime', 'Gloom Owl', 'Ice Stalker', 'Frost Beetle', 'Glacier Bat', 'Rime Weaver', 'Frozen Husk', 'Bell Golem', 'Gloom Shade', 'Rime Wyrm']]
+].map(([key, name, accent, soil, stone, woodName, oreName, critter, body, structures, enemies]) => ({
+  key, name, accent, soil, stone, woodName, oreName, structures, enemies,
+  fish: { key: key + '-fish', name: { ashwood: 'Sootfin', 'glass-dunes': 'Glass Carp', 'brine-depths': 'Brine Eel', 'ember-bloom': 'Flame Koi', 'gloom-frost': 'Rime Perch' }[key] },
+  specimen: { key: key + '-critter', name: critter, body, colour: accent, biomes: [key], underworld: true }
+}));
+
+for (const biome of UNDERWORLD_BIOMES) {
+  for (const [suffix, label, colour, extra] of [
+    ['soil', ' Soil', biome.soil, { material: 'soil' }],
+    ['grass', ' Turf', biome.accent, { grassTop: true, soil: biome.soil, drops: biome.key + '-soil' }],
+    ['stone', ' Stone', biome.stone, { material: 'rock' }],
+    ['wood', ' Wood', biome.soil, { wood: true, trunkOf: biome.key, name: biome.woodName }],
+    ['ore', ' Ore', biome.accent, { ore: true, require: 300, name: biome.oreName + ' Ore' }],
+    ['leaves', ' Leaves', biome.accent, { solid: false, opacity: 8, fixture: 'planter', drops: biome.key + '-wood' }]
+  ]) pushTile({ key: biome.key + '-' + suffix, name: biome.name + label, colour, solid: true,
+    opacity: 32, hardness: 0.65, toughness: 85, grain: 0.22, ...extra });
+  const wood = biome.key + '-wood';
+  workshopFixture(biome.key + '-bench', biome.woodName + ' Work Bench', biome.soil, 'heavy-workbench',
+    [[wood, 10]], null, { station: 'workbench', furniture: 'bench' });
+  workshopFixture(biome.key + '-chair', biome.woodName + ' Chair', biome.soil, 'chair',
+    [[wood, 4]], 'workbench', { furniture: 'chair' });
+  workshopFixture(biome.key + '-table', biome.woodName + ' Table', biome.soil, 'table',
+    [[wood, 6]], 'workbench', { furniture: 'table' });
+  pushTile({ key: biome.key + '-platform', name: biome.woodName + ' Platform', colour: biome.soil,
+    solid: false, platform: true, wood: true, opacity: 0, toughness: 35, hardness: 0.2 });
+  WORKSHOP_PLANS.push({ out: { key: biome.key + '-platform', kind: 'block', count: 4 }, need: [[wood, 1]], station: null });
+  const wall = { id: WALLS.length, key: biome.key + '-wall', name: biome.name + ' Wall', colour: biome.stone, opacity: 9 };
+  WALLS.push(wall);
+  WALL_BY_KEY[wall.key] = wall;
+  WORKSHOP_PLANS.push({ out: { key: biome.key + '-wall', kind: 'wall', count: 4 },
+    need: [[biome.key + '-stone', 1]], station: 'workbench' });
+  CRITTER_SPECIMENS.push(biome.specimen);
+  pushTile({ key: 'terrarium-' + biome.specimen.key, name: biome.specimen.name + ' Terrarium',
+    colour: biome.accent, fixture: 'terrarium', specimen: biome.specimen, solid: false, opacity: 4, toughness: 35, hardness: 0.2 });
+}
+
+for (const [key, name] of [['underworld-gate', 'Underworld Gate'], ['underworld-return', 'Return Gate']]) {
+  pushTile({ key, name, colour: '#c593ee', solid: false, opacity: 0, emit: 16, drops: null,
+    fixture: 'underworld-gate', dimensionGate: true });
+}
+
+pushTile({ key: 'underworld-shrine', name: 'Underworld Challenge Seal', colour: '#efb17f',
+  solid: false, opacity: 0, emit: 12, drops: null, fixture: 'wire-lamp', underworldShrine: true });
+
 const BY_KEY = {};
 for (const tile of TILES) BY_KEY[tile.key] = tile;
 
@@ -857,7 +917,7 @@ function idOf(key) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
+const EXPORTS_tiles = { AIR, TILES, BY_KEY, WOODS, WORKSHOP_PLANS, WORKSHOP_DYES, PORTAL_TRIALS, UNDERWORLD_BIOMES, ARMORY_CHAPTERS, ARMORY_FORMS, ARMORY_PIECE_KEYS, CRITTER_SPECIMENS, WOOD_BY_TREE, shadeHex,
   MULTI, defineMulti, originOf, cellOf, pushTile, CHESTS, tile, isSolid, opacityOf, emitOf, idOf,
     NO_WALL, WALLS, WALL_BY_KEY, wall, wallOpacityOf, wallIdOf };
 

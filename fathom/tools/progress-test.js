@@ -64,6 +64,7 @@ function minableTiles() {
     'meteorite', 'void-crystal', 'aetherite', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal',
     // The everyday materials. Taken from the biome table so a new biome's stone is
     // included without anyone remembering to add it here.
+    ...tiles.UNDERWORLD_BIOMES.flatMap(biome => [biome.key + '-stone', biome.key + '-wood']),
     ...worldgen.BIOMES.flatMap(b => [b.surface, b.filler, b.sub].filter(Boolean)),
     'stone', 'sand', 'crystal', 'glowmoss', 'mushroom', 'obsidian', 'shell',
     // Strata, structure masonry, sky islands and the Hallow overlay.

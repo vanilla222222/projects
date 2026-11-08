@@ -43,7 +43,7 @@ for (const spec of ENEMIES) {
       spec.key + ' spawns in unknown layer ' + layer);
   }
   for (const biome of spec.biomes || []) {
-    ok([...worldgen.BIOMES, worldgen.HALLOW_BIOME].some(b => b.key === biome),
+    ok([...worldgen.BIOMES, ...tiles.UNDERWORLD_BIOMES, worldgen.HALLOW_BIOME].some(b => b.key === biome),
       spec.key + ' spawns in unknown biome ' + biome);
   }
   for (const [key, count] of spec.drops || []) {
@@ -107,7 +107,7 @@ for (const spec of ENEMIES) {
     }
     continue;
   }
-  ok(poolFor(ctx).indexOf(spec) !== -1, spec.key + ' cannot spawn in its own habitat');
+  ok(poolFor({ ...ctx, underworld: !!spec.underworld }).indexOf(spec) !== -1, spec.key + ' cannot spawn in its own habitat');
   if (spec.requiresBoss) {
     ok(!poolFor({ ...ctx, bossDefeated: () => false }).includes(spec), spec.key + ' spawns before its boss');
     if (spec.armory) ok(!poolFor({ ...ctx, armory: null }).includes(spec), spec.key + ' spawns outside its armory');
