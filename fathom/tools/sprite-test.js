@@ -199,5 +199,18 @@ for (const kind of Object.keys(enemy.ARCHETYPES)) {
 console.log('\n' + Object.keys(sprite.BODIES).length + ' body plans across '
   + enemy.ENEMIES.length + ' enemies: '
   + Object.keys(sprite.BODIES).join(', '));
+{
+  const styles = require('../js/profile.js').APPEARANCE_STYLES;
+  const look = { skin: '#e8c39a', shirt: '#4a6fa5', pants: '#2f3b52', hair: '#23304a' };
+  for (const [key, values] of Object.entries(styles)) {
+    const frames = values.map(value => {
+      const ctx = recorder();
+      sprite.drawPerson(ctx, { x: 0, y: 0, w: 30, h: 60 }, { ...look, [key]: value }, { time: 0 });
+      return ctx.calls.join('|');
+    });
+    ok(new Set(frames).size === values.length, key + ' has duplicate rendered options');
+  }
+}
+
 console.log(checks + ' checks, ' + failures + ' failures');
 process.exit(failures ? 1 : 0);

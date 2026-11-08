@@ -50,12 +50,24 @@ function makeMenu(root, deps) {
     const row = el('div', 'swatches', parent);
     el('span', 'swatch-label', row, label);
     const wrap = el('div', 'swatch-wrap', row);
+    const custom = el('input', 'custom-swatch', row);
+    custom.type = 'color';
+    custom.value = pendingColours[key] || colours[0];
+    custom.setAttribute('aria-label', 'Custom ' + label.toLowerCase() + ' color');
+    custom.addEventListener('input', () => {
+      pendingColours[key] = custom.value;
+      for (const dot of wrap.children) dot.classList.toggle('on', dot.dataset.colour === custom.value);
+      refreshPreview();
+    });
     for (const colour of colours) {
       const dot = el('button', 'swatch', wrap);
       dot.style.background = colour;
+      dot.dataset.colour = colour;
+      dot.setAttribute('aria-label', label + ' ' + colour);
       dot.classList.toggle('on', pendingColours[key] === colour);
       dot.addEventListener('click', () => {
         pendingColours[key] = colour;
+        custom.value = colour;
         for (const other of wrap.children) other.classList.remove('on');
         dot.classList.add('on');
         refreshPreview();
@@ -155,14 +167,26 @@ function makeMenu(root, deps) {
     const preview = el('div', 'preview', form);
     previewHost = el('div', 'preview-art', preview);
     const picks = el('div', 'preview-picks', preview);
-    swatchRow(picks, 'Skin', palette.SKIN_TONES, 'skin');
-    swatchRow(picks, 'Hair', palette.HAIR_COLOURS, 'hair');
-    swatchRow(picks, 'Shirt', palette.SHIRT_COLOURS, 'shirt');
-    swatchRow(picks, 'Trousers', palette.PANTS_COLOURS, 'pants');
-    swatchRow(picks, 'Eyes', ['#241e2a', '#527869', '#516e9c', '#ba7447', '#8d588a'], 'eyes');
-    appearanceRow(picks, 'Hairstyle', 'hairstyle', ['swept', 'braid', 'crest', 'curls', 'shaved']);
-    appearanceRow(picks, 'Face detail', 'marking', ['none', 'freckles', 'paint', 'scar']);
-    refreshPreview();
+    function appearanceControls() {
+      picks.textContent = '';
+      for (const [label, key, colours] of [
+        ['Skin', 'skin', palette.SKIN_TONES], ['Hair', 'hair', palette.HAIR_COLOURS],
+        ['Eyes', 'eyes', palette.EYE_COLOURS], ['Shirt', 'shirt', palette.SHIRT_COLOURS],
+        ['Trousers', 'pants', palette.PANTS_COLOURS], ['Boots', 'boots', palette.BOOT_COLOURS],
+        ['Accent', 'accent', palette.ACCENT_COLOURS]
+      ]) swatchRow(picks, label, colours, key);
+      for (const [label, key] of [
+        ['Hairstyle', 'hairstyle'], ['Face detail', 'marking'], ['Facial hair', 'facialHair'],
+        ['Outfit style', 'outfit'], ['Eyewear', 'eyewear']
+      ]) appearanceRow(picks, label, key, palette.APPEARANCE_STYLES[key]);
+      const randomize = el('button', 'ghost', picks, 'Randomize appearance');
+      randomize.addEventListener('click', () => {
+        pendingColours = profiles.pickColours(String(Date.now()) + ':' + Math.random());
+        appearanceControls();
+      });
+      refreshPreview();
+    }
+    appearanceControls();
 
     const row = el('div', 'button-row', body);
     const back = el('button', 'ghost', row, 'Back');
