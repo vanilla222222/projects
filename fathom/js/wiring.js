@@ -3,33 +3,49 @@
 const WIRE_NEIGHBOURS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const WIRE_LIMIT = 1024;
 const WIRE_TIMER_SECONDS = 2;
+const WIRE_CHANNELS = ['copper', 'blue', 'green'];
 const wireKey = (x, y) => x + ':' + y;
+const channelKey = (x, y, channel) => wireKey(x, y) + ':' + channel;
 
 function makeWiring(world, tiles, hooks = {}) {
   const wires = new Map();
   const timers = new Map();
   const cooldowns = new Map();
+  const relayInputs = new Map();
   let pressed = null;
   let pruneAt = 1;
 
-  function add(x, y) {
-    const key = wireKey(x, y);
+  function add(x, y, channel = 'copper') {
+    if (!WIRE_CHANNELS.includes(channel)) return false;
+    const key = channelKey(x, y, channel);
     if (wires.has(key)) return false;
-    wires.set(key, { x, y });
+    wires.set(key, { x, y, channel });
     return true;
   }
 
-  function remove(x, y) { return wires.delete(wireKey(x, y)); }
-  function has(x, y) { return wires.has(wireKey(x, y)); }
+  function remove(x, y, channel = 'copper') { return wires.delete(channelKey(x, y, channel)); }
+  function has(x, y, channel = 'copper') { return wires.has(channelKey(x, y, channel)); }
+  function channelsAt(x, y) { return WIRE_CHANNELS.filter(channel => has(x, y, channel)); }
 
-  function pulse(x, y, time = 0) {
-    if (!has(x, y)) return 0;
-    const seen = new Set([wireKey(x, y)]);
-    const queue = [wires.get(wireKey(x, y))];
+  function pulseAll(x, y, time) {
+    let count = 0;
+    for (const channel of channelsAt(x, y)) {
+      const reached = pulse(x, y, time, channel);
+      if (reached < 0) return -1;
+      count += reached;
+    }
+    return count;
+  }
+
+  function pulse(x, y, time = 0, channel = 'copper') {
+    if (!has(x, y, channel)) return 0;
+    const start = channelKey(x, y, channel);
+    const seen = new Set([start]);
+    const queue = [wires.get(start)];
     for (let i = 0; i < queue.length; i += 1) {
       const point = queue[i];
       for (const [dx, dy] of WIRE_NEIGHBOURS) {
-        const key = wireKey(point.x + dx, point.y + dy);
+        const key = channelKey(point.x + dx, point.y + dy, channel);
         if (!wires.has(key) || seen.has(key)) continue;
         if (queue.length === WIRE_LIMIT) return -1;
         seen.add(key);
@@ -40,10 +56,18 @@ function makeWiring(world, tiles, hooks = {}) {
     const doors = new Set();
     const inlets = [];
     const outlets = [];
+    const outputs = [];
     for (const point of queue) {
       const spec = tiles.tile(world.get(point.x, point.y));
       const key = wireKey(point.x, point.y);
-      if (spec.door) {
+      if (spec.logic) {
+        if (channel === 'copper') continue;
+        const inputs = (relayInputs.get(key) || 0) | (channel === 'blue' ? 1 : 2);
+        if (spec.logic === 'or' || inputs === 3) {
+          relayInputs.delete(key);
+          outputs.push(point);
+        } else relayInputs.set(key, inputs);
+      } else if (spec.door) {
         const origin = tiles.originOf(spec, point.x, point.y);
         const originKey = wireKey(origin.x, origin.y);
         if (!doors.has(originKey)) {
@@ -57,8 +81,8 @@ function makeWiring(world, tiles, hooks = {}) {
         if (next.solid !== spec.solid) hooks.liquid?.(point.x, point.y);
       } else if (spec.circuit === 'inlet') inlets.push(point);
       else if (spec.circuit === 'outlet') outlets.push(point);
-      else if (spec.circuit === 'puzzle-gate') hooks.puzzle?.(point);
-      else if (spec.circuit === 'trap' || spec.statueEnemy) {
+      else if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(spec.circuit)) continue;
+      else if (spec.circuit === 'trap' || spec.circuit === 'arena-trap' || spec.statueEnemy) {
         if ((cooldowns.get(key) || 0) > time) continue;
         const activated = spec.statueEnemy
           ? hooks.statue?.(spec.statueEnemy, point)
@@ -67,6 +91,11 @@ function makeWiring(world, tiles, hooks = {}) {
       }
     }
     for (let i = 0; i < Math.min(inlets.length, outlets.length); i += 1) pump(inlets[i], outlets[i]);
+    for (const point of queue) {
+      const circuit = tiles.tile(world.get(point.x, point.y)).circuit;
+      if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(circuit)) hooks.puzzle?.(point, circuit);
+    }
+    for (const point of outputs) pulse(point.x, point.y, time, 'copper');
     return queue.length;
   }
 
@@ -96,11 +125,12 @@ function makeWiring(world, tiles, hooks = {}) {
     const key = wireKey(x, y);
     timers.delete(key);
     cooldowns.delete(key);
+    relayInputs.delete(key);
   }
 
   function step(time, plate) {
     const key = plate ? wireKey(plate.x, plate.y) : null;
-    if (key && key !== pressed) pulse(plate.x, plate.y, time);
+    if (key && key !== pressed) pulseAll(plate.x, plate.y, time);
     pressed = key;
     for (const [key, timer] of timers) {
       if (time < timer.due) continue;
@@ -109,7 +139,7 @@ function makeWiring(world, tiles, hooks = {}) {
         continue;
       }
       timer.due = time + WIRE_TIMER_SECONDS;
-      pulse(timer.x, timer.y, time);
+      pulseAll(timer.x, timer.y, time);
     }
     // Expired entries are removed on the next one-second boundary.
     if (time >= pruneAt) {
@@ -119,7 +149,8 @@ function makeWiring(world, tiles, hooks = {}) {
   }
 
   function serialize() {
-    return { wires: Array.from(wires.values(), ({ x, y }) => [x, y]),
+    return { wires: Array.from(wires.values(), ({ x, y, channel }) => channel === 'copper' ? [x, y] : [x, y, channel]),
+      relays: [...relayInputs],
       timers: Array.from(timers.values(), ({ x, y }) => [x, y]) };
   }
 
@@ -127,13 +158,15 @@ function makeWiring(world, tiles, hooks = {}) {
     wires.clear();
     timers.clear();
     cooldowns.clear();
+    relayInputs.clear();
     pressed = null;
     pruneAt = time + 1;
-    for (const [x, y] of saved?.wires || []) if (Number.isInteger(x) && Number.isInteger(y)) add(x, y);
+    for (const [x, y, channel] of saved?.wires || []) if (Number.isInteger(x) && Number.isInteger(y)) add(x, y, channel);
+    for (const [key, inputs] of saved?.relays || []) if (inputs === 1 || inputs === 2) relayInputs.set(key, inputs);
     for (const [x, y] of saved?.timers || []) if (Number.isInteger(x) && Number.isInteger(y)) toggleTimer(x, y, time);
   }
 
-  return { add, remove, has, pulse, step, toggleTimer, clearDevice, serialize, restore,
+  return { add, remove, has, channelsAt, pulse, pulseAll, step, toggleTimer, clearDevice, serialize, restore,
     get size() { return wires.size; } };
 }
 

@@ -296,6 +296,15 @@ const ENEMIES = [
   { key: 'voidshade', name: 'Void Shade', kind: 'flyer', body: 'cloud', hp: 295,
     damage: 44, weight: 8, w: 1.5, h: 1.6, colour: '#8273c7', layers: ['void'], emit: 4,
     drops: [['stardust', 3], ['coin', 19]] },
+  { key: 'ossuarymechanist', name: 'Ossuary Mechanist', kind: 'archon', body: 'golem', hp: 15800,
+    damage: 125, weight: 0, w: 4.6, h: 4.4, colour: '#c695e8', boss: true, summonOnly: true,
+    minion: 'ossuary-coil', emit: 9, drops: [['coin', 2850]], bossDrops: ['mechanist-core', ['mechanist-key', 3]] },
+  { key: 'ossuary-sentinel', name: 'Circuit Sentinel', kind: 'walker', body: 'golem', hp: 540,
+    damage: 67, weight: 10, w: 1.2, h: 2.4, colour: '#9573bb', dungeon: true, lowerOssuary: true,
+    drops: [['wire-spool', 4], ['coin', 46]] },
+  { key: 'ossuary-coil', name: 'Arc Coil', kind: 'flyer', body: 'eye', hp: 340,
+    damage: 55, weight: 8, w: 1.3, h: 1.3, colour: '#7da8ed', dungeon: true, lowerOssuary: true, emit: 7,
+    drops: [['wire-spool', 2], ['coin', 32]] },
   { key: 'dungeonkeeper', name: 'Ossuary Keeper', kind: 'guardian', body: 'skeleton', hp: 2350,
     damage: 39, weight: 0, w: 3.8, h: 4, colour: '#c1d9e5', boss: true, summonOnly: true,
     minion: 'ossuary-skull', emit: 5, drops: [['bone', 14], ['coin', 410]], bossDrops: ['dungeon-key'] },
@@ -683,6 +692,7 @@ function matches(spec, ctx) {
   // An event enemy exists only during its event, and an event does not suppress the
   // ordinary roster: a blood moon is the usual night with worse things added to it.
   if (Boolean(spec.dungeon) !== Boolean(ctx.dungeon)) return false;
+  if (Boolean(spec.lowerOssuary) !== Boolean(ctx.lowerOssuary)) return false;
   if (spec.event && ctx.event !== spec.event) return false;
   if (spec.layers && spec.layers.indexOf(ctx.layer) === -1) return false;
   if (spec.biomes && spec.biomes.indexOf(ctx.biome) === -1) return false;
@@ -830,7 +840,8 @@ function makeSwarm(world, tiles, deps) {
     const day = surfaceish ? (dayPhase < 0.25 || dayPhase > 0.75) : false;
     const site = worldgen.dungeonAt?.(world.seed, Math.floor(x), Math.floor(y));
     const dungeon = !!site && y > site.y && !!deps.dungeonOpen?.();
-    return { biome, layer, wet, day, dungeon, event: event || null };
+    const lowerOssuary = dungeon && y > site.y + 58 && !!world.hardmode;
+    return { biome, layer, wet, day, dungeon, lowerOssuary, event: event || null };
   }
 
   // Terraria's rule, and the one that makes building worth doing: a player-placed wall

@@ -135,6 +135,7 @@ function climb() {
     };
     // The Warden is a combat gate. The ladder only assumes victory once its summon
     // is reachable and the player can mine the ore used for its rewards.
+    if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');
     if (was.has('guardian-seal')) gain('vault-relic');
@@ -210,7 +211,9 @@ for (const key of Object.keys(craft.WEAPONS)) {
   const cacheLoot = [16, 36, 56].some((dy, row) =>
     worldgen.baseContainerAt(20260105, ossuary.x + (row % 2 ? -19 : 18), ossuary.y + dy)
       ?.some(item => item.key === key));
-  if (w.drop || cacheLoot) continue;                      // dropped things are not climbed to
+  const armoryLoot = worldgen.MECHANIST_CACHES.some(dx =>
+    worldgen.baseContainerAt(20260105, ossuary.x + dx, ossuary.y + 98)?.some(item => item.key === key));
+  if (w.drop || cacheLoot || armoryLoot) continue;                      // dropped things are not climbed to
   ok(ladder.held.has(key), 'the weapon ' + key + ' is unreachable');
 }
 for (const key of Object.keys(craft.ARMOUR)) {

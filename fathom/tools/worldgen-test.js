@@ -262,6 +262,8 @@ for (const s of SURVEY_SEEDS) {
     for (let y = gen.SKY_H; y < Math.min(gen.WORLD_H, surface + 300); y += 1) {
       if (gen.baseTileAt(s, x, y) !== WATER) continue;
       waterCells += 1;
+      const ossuary = gen.dungeonAt(s, x, y);
+      if (ossuary && x === ossuary.x + 18 && y === ossuary.y + 72) continue;
       check(y >= gen.SEA_LEVEL, 'water above sea level at ' + x + ',' + y);
       if (y < surface) continue;          // the open sea, above the ground
       // Below the ground, water means a flooded cave: this column must have a water

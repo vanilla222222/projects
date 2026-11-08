@@ -561,6 +561,31 @@ for (const tile of TILES) {
   if (enemy) tile.statueEnemy = { slime: 'greenslime', bat: 'cavebat', spider: 'cragstalker', 'demon-eye': 'demoneye' }[enemy] || enemy;
 }
 
+for (const [key, name, colour, circuit, solid] of [
+  ['lower-ossuary-seal', 'Hardmode Ossuary Seal', '#796b9a', 'lower-seal', true],
+  ['ossuary-relay-gate', 'Relay Gate', '#a381d0', 'relay-gate', true],
+  ['ossuary-drain-gate', 'Reservoir Gate', '#6e9abf', 'drain-gate', true],
+  ['ossuary-shutter', 'Mechanist Shutter', '#7761a9', 'arena-shutter', true],
+  ['ossuary-shutter-open', 'Retracted Mechanist Shutter', '#7761a9', 'arena-shutter', false],
+  ['ossuary-dart', 'Mechanist Dart Launcher', '#aa749e', 'arena-trap', false],
+  ['ossuary-reservoir-inlet', 'Reservoir Inlet', '#67b0c7', 'inlet', true],
+  ['ossuary-reservoir-outlet', 'Reservoir Outlet', '#d09264', 'outlet', true],
+  ['ossuary-bulkhead', 'Ossuary Bulkhead', '#514967', 'bulkhead', true]
+]) pushTile({ key, name, colour, circuit, solid, opacity: solid ? 60 : 4, drops: null,
+  fixture: circuit === 'arena-trap' ? 'dart-trap' : circuit === 'inlet' || circuit === 'outlet'
+    ? circuit + '-pump' : 'actuator-block', powered: key === 'ossuary-shutter-open' });
+
+defineMulti('mechanist-armory', 'Sealed Mechanist Armory', 2, 2, () => ({
+  solid: false, opacity: 8, emit: 5, colour: '#b093dd', toughness: 95, chest: 'mechanist-armory', drops: null
+}));
+
+workshopFixture('signal-bench', 'Signal Bench', '#ac90d8', 'wire-timer',
+  [['mechanist-core', 1], ['wire-spool', 12], ['iron-bar', 5]], 'heavy-workbench', { station: 'signal-bench', emit: 5 });
+for (const [key, name, colour, logic] of [
+  ['and-relay', 'AND Relay', '#7fa6d8', 'and'], ['or-relay', 'OR Relay', '#8fcaa4', 'or']
+]) workshopFixture(key, name, colour, 'wire-switch', [['wire-spool', 4], ['silver-bar', 2]],
+  'signal-bench', { logic });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {

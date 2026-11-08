@@ -30,6 +30,7 @@ function makeGame(canvas, deps) {
   let liquid = null;
   let swarm = null;
   let wiring = null;
+  let mechanistPhase = -1;
   let minimap = null;
   let village = null;
   let townDevices = [];
@@ -213,7 +214,7 @@ function makeGame(canvas, deps) {
         dropItem(buried ? state.player.x : x, buried ? state.player.y : target.y, key, craft.kindOf(key), count);
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
-        say('Hardmode begins. The Hallow and new ores await beyond explored ground.', 6);
+        say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
       } else say(target.spec.name + ' is dead', 3.4);
       return;
     }
@@ -267,6 +268,16 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 11, right: site.x + 12, top: site.y - 7, bottom: site.y };
+      }
+      if (use.lowerOssuary) {
+        const site = worldgen.dungeonAt(seed, Math.floor(state.player.x), Math.floor(state.player.y));
+        if (!site || state.player.y < site.y + 87 || state.player.y >= site.y + 100
+          || !defeatedBosses.has('dungeonkeeper')
+          || tiles.tile(world.get(site.x + 14, site.y + 74)).circuit === 'drain-gate') {
+          say('Use this beyond the Reservoir Gate in the lower Ossuary', 2.5);
+          return true;
+        }
+        arena = { left: site.x - 23, right: site.x + 24, top: site.y + 78, bottom: site.y + 100 };
       }
       if (use.vault && !inventory.countOf('ashvault-key')) {
         say('Bring an Ashvault Key forged from a Furnace Core', 2);
@@ -686,6 +697,12 @@ function makeGame(canvas, deps) {
       say('Find the switch for the Mechanist Cache', 1.6);
       return;
     }
+    if ((spec.key.startsWith('ossuary-') && spec.circuit)
+      || spec.circuit === 'lower-seal' || spec.chest === 'mechanist-armory') {
+      state.player.mining = null;
+      say('The lower Ossuary is sealed with mechanisms', 1.4);
+      return;
+    }
     if (spec.key === 'dungeon-gate' || spec.key === 'dungeon-bell'
       || (spec.key === 'dungeon-brick' && !defeatedBosses.has('dungeonkeeper'))
       || (cache && !world.hasStoredContainer(cache.x, cache.y))) {
@@ -889,7 +906,7 @@ function makeGame(canvas, deps) {
       damage: Math.round((weapon.damage + kind.bonus) * (gear.ranged || 1)),
       life: kind.family === 'bullet' ? weapon.reach / speed : 2.6 * (gear.arrowSpeed || 1), colour: kind.colour,
       gravity: kind.family === 'bullet' ? 0 : 26,
-      burns: !!kind.burns });
+      burns: !!kind.burns, hits: weapon.pierce ? new Set() : null });
     return true;
   }
 
@@ -919,7 +936,7 @@ function makeGame(canvas, deps) {
   }
 
   function projectileHit(target, damage) {
-    if (!swarm.damage(target, damage) || target.practice) return;
+    if (target.dead || !swarm.damage(target, damage) || target.practice) return;
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
     }
@@ -1007,6 +1024,12 @@ function makeGame(canvas, deps) {
     target.vx += Math.sign(target.x - cx) * 6;
     target.vy -= 3;
     spawnParticles(target.x, target.y, target.spec.colour, 5);
+    if (weapon?.cleave) {
+      for (const other of swarm.list.slice()) {
+        if (other === target || Math.hypot(other.x - target.x, other.y - target.y) > 3) continue;
+        projectileHit(other, Math.round(hit * 0.55));
+      }
+    }
     if (swarm.damage(target, hit) && !target.practice) {
       for (const [key, count] of target.spec.drops || []) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
@@ -1103,6 +1126,14 @@ function makeGame(canvas, deps) {
     }
     const origin = tiles.originOf(spec, aim.x, aim.y);
     if (!origin) return false;
+    if (spec.chest === 'mechanist-armory' && !world.hasStoredContainer(origin.x, origin.y)) {
+      if (!defeatedBosses.has('ossuarymechanist') || !inventory.countOf('mechanist-key')) {
+        say('Defeat the Mechanist and bring an Armory Key', 2);
+        return true;
+      }
+      inventory.take('mechanist-key', 1);
+      world.setContainer(origin.x, origin.y, world.getContainer(origin.x, origin.y) || []);
+    }
     if (spec.chest === 'dungeon-cache' && !world.hasStoredContainer(origin.x, origin.y)) {
       if (!defeatedBosses.has('dungeonkeeper') || !inventory.countOf('dungeon-key')) {
         say('Defeat the Keeper and bring a Gilded Ossuary Key', 2);
@@ -1307,6 +1338,8 @@ function makeGame(canvas, deps) {
     rows.push('Workshop · Build a Heavy Workbench at a Work Bench to unlock advanced stations and statues.');
     rows.push('Sawmill furniture · Loom textiles · Alchemy Table potions · Cauldron meals');
     rows.push('Mechanisms · Craft Copper Wire and Wire Cutters at an Anvil. Build devices at a Heavy Workbench.');
+    if (world.hardmode) rows.push('Hardmode Ossuary · Defeat the Keeper and use the seal at the bottom of the original galleries.');
+    if (defeatedBosses.has('ossuarymechanist')) rows.push('Signal Bench · Build one from the Mechanist Core for colored wire and logic relays.');
     if (defeatedBosses.has('dungeonkeeper')) rows.push('Ossuary · Find the switch for the Mechanist Cache in the first gallery.');
     rows.push('Smelted bars · ' + state.progress.bars + '    Residents · ' + village.count);
     const summons = new Map(Object.entries(craft.ITEMS)
@@ -1618,33 +1651,131 @@ function makeGame(canvas, deps) {
     return x >= player.x && x < player.x + player.width && y >= player.y && y < player.y + player.height;
   }
 
+  const channelItems = { copper: 'wire-spool', blue: 'blue-wire', green: 'green-wire' };
+  const channelColors = { copper: '#f9ad6ee0', blue: '#80c4ffe0', green: '#7be4aee0' };
+
+  function circuitChannel(item) {
+    return item?.key === 'wire-spool' ? 'copper' : craft.ITEMS[item?.key]?.wireChannel;
+  }
+
+  function playerOccupiesTile(x, y) {
+    const p = state.player;
+    return x + 1 > p.x && x < p.x + p.width && y + 1 > p.y && y < p.y + p.height;
+  }
+
+  function fireMechanismDart(point, direction = 1) {
+    if (state.arrows.length >= 100) return false;
+    state.arrows.push({ x: point.x + (direction > 0 ? 0.8 : 0.2), y: point.y + 0.48,
+      vx: direction * 28, vy: 0, life: 1.2, gravity: 0,
+      damage: point.hard ? 75 : 18, colour: point.hard ? '#d49fe9' : '#d7c0a8', trap: true });
+    return true;
+  }
+
+  function openLowerOssuary(aim) {
+    if (!world.hardmode || !defeatedBosses.has('dungeonkeeper')) {
+      say('The seal requires the Prism Sentinel and the Ossuary Keeper', 2.5);
+      return;
+    }
+    const site = worldgen.dungeonAt(seed, aim.x, aim.y);
+    if (!site) return;
+    for (let dx = -2; dx <= 2; dx += 1) {
+      if (tiles.tile(world.get(site.x + dx, site.y + 58)).circuit === 'lower-seal') {
+        world.set(site.x + dx, site.y + 58, dx === 0 ? tiles.idOf('rope') : tiles.AIR);
+      }
+    }
+    say('The lower Ossuary is open', 2);
+  }
+
+  function openOssuaryCircuit(point, circuit) {
+    const site = worldgen.dungeonAt(seed, point.x, point.y);
+    if (!site || !defeatedBosses.has('dungeonkeeper')) return;
+    if (circuit === 'puzzle-gate') {
+      for (let y = site.y + 14; y <= site.y + 17; y += 1) world.set(point.x, y, tiles.AIR);
+      say('The Mechanist Cache is open', 2.5);
+    } else if (world.hardmode && circuit === 'relay-gate') {
+      for (let y = site.y + 69; y <= site.y + 73; y += 1) world.set(point.x, y, tiles.AIR);
+      if (tiles.tile(world.get(site.x + 6, site.y + 72)).circuit === 'arena-trap') {
+        world.set(site.x + 6, site.y + 72, tiles.AIR);
+      }
+      say('Relay rerouted · dart trap disarmed', 2.5);
+    } else if (world.hardmode && circuit === 'drain-gate' && world.getLevel(site.x + 18, site.y + 72) === 0) {
+      for (let dx = 13; dx <= 15; dx += 1) world.set(site.x + dx, site.y + 74, dx === 14 ? tiles.idOf('rope') : tiles.AIR);
+      say('Reservoir drained · arena unlocked', 2.5);
+    }
+  }
+
+  function setMechanistShutters(site, phase) {
+    const open = tiles.idOf('ossuary-shutter-open');
+    const closed = tiles.idOf('ossuary-shutter');
+    for (const side of [-1, 1]) {
+      const x = site.x + side * 7;
+      const close = phase >= 0 && (phase % 2 === 0 ? side < 0 : side > 0);
+      const blocked = Array.from({ length: 6 }, (_, i) => site.y + 94 + i)
+        .some(y => playerOccupiesTile(x, y) || world.getLevel(x, y));
+      for (let y = site.y + 94; y <= site.y + 99; y += 1) {
+        const current = world.get(x, y);
+        if (current === open || current === closed) world.set(x, y, close && !blocked ? closed : open);
+      }
+    }
+  }
+
+  function stepMechanistArena() {
+    const boss = swarm.bossAlive();
+    if (boss?.key !== 'ossuarymechanist' && mechanistPhase < 0) return;
+    const site = worldgen.dungeonLayout(seed);
+    if (!site) return;
+    if (boss?.key !== 'ossuarymechanist') {
+      setMechanistShutters(site, -1);
+      mechanistPhase = -1;
+      return;
+    }
+    const phase = Math.floor(boss.timer / (boss.hp <= boss.maxHp / 2 ? 3 : 5));
+    if (phase === mechanistPhase) return;
+    mechanistPhase = phase;
+    setMechanistShutters(site, phase);
+    const side = phase % 2 === 0 ? 1 : -1;
+    fireMechanismDart({ x: site.x + side * 13, y: site.y + 98, hard: true }, -side);
+    say(side > 0 ? 'Dart volley from the right' : 'Dart volley from the left', 1.4);
+  }
+
   function useCircuit(aim, item) {
     if (!wiring) return false;
-    if (item?.key === 'wire-spool' || item?.key === 'wire-cutters') {
+    const channel = circuitChannel(item);
+    if (channel || item?.key === 'wire-cutters') {
       if (!aim.inReach) return true;
-      if (item.key === 'wire-spool') {
-        if (wiring.add(aim.x, aim.y)) inventory.take(item.key, 1);
-      } else if (wiring.remove(aim.x, aim.y)) {
-        if (inventory.add({ key: 'wire-spool', kind: 'loot' }, 1)) {
-          dropItem(aim.x, aim.y, 'wire-spool', 'loot', 1);
+      if (channel) {
+        if (wiring.add(aim.x, aim.y, channel)) inventory.take(item.key, 1);
+      } else {
+        const removed = wiring.channelsAt(aim.x, aim.y)[0];
+        if (removed && wiring.remove(aim.x, aim.y, removed)) {
+          const key = channelItems[removed];
+          if (inventory.add({ key, kind: 'loot' }, 1)) dropItem(aim.x, aim.y, key, 'loot', 1);
         }
       }
       return true;
     }
     if (!aim.inReach) return false;
     const spec = tiles.tile(world.get(aim.x, aim.y));
+    if (spec.circuit === 'lower-seal') {
+      openLowerOssuary(aim);
+      return true;
+    }
+    if (spec.logic) {
+      say(spec.logic.toUpperCase() + ' Relay · Blue and green inputs, copper output', 2);
+      return true;
+    }
     if (spec.circuit === 'timer') {
       say(wiring.toggleTimer(aim.x, aim.y, state.time) ? 'Timer running · pulse every 2 seconds' : 'Timer stopped', 1.5);
       return true;
     }
     if (spec.circuit === 'switch') {
-      const connected = wiring.pulse(aim.x, aim.y, state.time);
+      const connected = wiring.pulseAll(aim.x, aim.y, state.time);
       if (connected < 0) say('Circuit exceeds 1,024 wire segments', 2);
       else if (!connected) say('Connect copper wire to this switch', 1.5);
       else sfx('use');
       return true;
     }
-    if (spec.circuit === 'puzzle-gate') {
+    if (['puzzle-gate', 'relay-gate', 'drain-gate'].includes(spec.circuit)) {
       say('Follow the mechanism back to its switch', 2);
       return true;
     }
@@ -1778,9 +1909,10 @@ function makeGame(canvas, deps) {
     const player = state.player;
     const footX = Math.floor(player.x + player.width / 2);
     const footY = Math.floor(player.y + player.height - 0.01);
-    const plate = player.onGround && wiring.has(footX, footY)
+    const plate = player.onGround && wiring.channelsAt(footX, footY).length
       && tiles.tile(world.get(footX, footY)).circuit === 'plate';
     wiring.step(state.time, plate ? { x: footX, y: footY } : null);
+    stepMechanistArena();
     const moving = Math.abs(state.player.x - before) > 1e-4 || !state.player.onGround;
     statsModule.step(stats, dt * (((state.gear && state.gear.regen) || 1)), moving,
       (state.gear && state.gear.manaRegen) || 1);
@@ -1959,7 +2091,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=mechanisms-1');
+      const worker = new Worker('workers/chunk.js?v=mechanist-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2055,18 +2187,20 @@ function makeGame(canvas, deps) {
     const sx = (aim.x - lastView.x0) * size - lastView.offsetX;
     const sy = (aim.y - lastView.y0) * size - lastView.offsetY;
     ctx.save();
-    const held = selectedItem()?.key;
-    if (wiring?.size && (held === 'wire-spool' || held === 'wire-cutters')) {
-      ctx.fillStyle = '#f9ad6ee0';
-      const line = Math.max(2, size / 7);
+    const held = selectedItem();
+    if (wiring?.size && (circuitChannel(held) || held?.key === 'wire-cutters')) {
+      const line = Math.max(2, size / 10);
       for (let y = lastView.y0; y <= lastView.y0 + Math.ceil(canvas.height / size) + 1; y += 1) {
         for (let x = lastView.x0; x <= lastView.x0 + Math.ceil(canvas.width / size) + 1; x += 1) {
-          if (!wiring.has(x, y)) continue;
-          const cx = (x - lastView.x0 + 0.5) * size - lastView.offsetX;
-          const cy = (y - lastView.y0 + 0.5) * size - lastView.offsetY;
-          ctx.fillRect(cx - line, cy - line, line * 2, line * 2);
-          if (wiring.has(x + 1, y)) ctx.fillRect(cx, cy - line / 2, size, line);
-          if (wiring.has(x, y + 1)) ctx.fillRect(cx - line / 2, cy, line, size);
+          for (const channel of wiring.channelsAt(x, y)) {
+            ctx.fillStyle = channelColors[channel];
+            const offset = (channel === 'blue' ? -1 : channel === 'green' ? 1 : 0) * line * 1.4;
+            const cx = (x - lastView.x0 + 0.5) * size - lastView.offsetX + offset;
+            const cy = (y - lastView.y0 + 0.5) * size - lastView.offsetY + offset;
+            ctx.fillRect(cx - line, cy - line, line * 2, line * 2);
+            if (wiring.has(x + 1, y, channel)) ctx.fillRect(cx, cy - line / 2, size, line);
+            if (wiring.has(x, y + 1, channel)) ctx.fillRect(cx - line / 2, cy, line, size);
+          }
         }
       }
     }
@@ -2220,6 +2354,7 @@ function makeGame(canvas, deps) {
     profiles.saveWorld(worldId, {
       world: world.serialize(),
       wiring: wiring.serialize(),
+      lowerOssuaryWiring: true,
       dayPhase: state.dayPhase,
       spawn: state.spawn || null,
       nights: state.nights,
@@ -2260,32 +2395,29 @@ function makeGame(canvas, deps) {
     swarm = enemyModule.makeSwarm(world, tiles, { worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper') });
     wiring = deps.wiring.makeWiring(world, tiles, {
       door: point => useDoor(point),
-      occupied: (x, y) => {
-        const p = state.player;
-        return x + 1 > p.x && x < p.x + p.width && y + 1 > p.y && y < p.y + p.height;
-      },
+      occupied: playerOccupiesTile,
       liquid: (x, y) => liquid.activateAround(x, y),
       statue: (key, point) => swarm.summonPractice(key, point.x, point.y),
       trap: point => {
-        if (state.arrows.length >= 100) return false;
-        state.arrows.push({ x: point.x + 0.8, y: point.y + 0.48, vx: 28, vy: 0,
-          life: 0.9, gravity: 0, damage: 18, colour: '#d7c0a8', trap: true });
-        return true;
-      },
-      puzzle: point => {
         const site = worldgen.dungeonAt(seed, point.x, point.y);
-        if (!site || !defeatedBosses.has('dungeonkeeper')) return;
-        for (let y = site.y + 14; y <= site.y + 17; y += 1) {
-          if (tiles.tile(world.get(point.x, y)).circuit === 'puzzle-gate') world.set(point.x, y, tiles.AIR);
-        }
-        say('The Mechanist Cache is open', 2.5);
-      }
+        const hard = !!site && tiles.tile(world.get(point.x, point.y)).circuit === 'arena-trap';
+        return fireMechanismDart({ ...point, hard }, hard ? -1 : 1);
+      },
+      puzzle: openOssuaryCircuit
     });
+    const ossuary = worldgen.dungeonLayout(seed);
     if (worldRecord.wiring) wiring.restore(worldRecord.wiring, state.time);
-    else {
-      const site = worldgen.dungeonLayout(seed);
-      if (site) for (let dx = 5; dx <= 16; dx += 1) wiring.add(site.x + dx, site.y + 17);
+    else if (ossuary) {
+      for (let dx = 5; dx <= 16; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 17);
     }
+    if (ossuary && !worldRecord.lowerOssuaryWiring) {
+      for (let dx = 2; dx <= 6; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73, 'blue');
+      wiring.add(ossuary.x + 6, ossuary.y + 72, 'blue');
+      for (let dx = 4; dx <= 9; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73);
+      for (let dx = 11; dx <= 21; dx += 1) wiring.add(ossuary.x + dx, ossuary.y + 73);
+      wiring.add(ossuary.x + 14, ossuary.y + 74);
+    }
+    mechanistPhase = -1;
     minimap = minimapModule.makeMinimap(document.getElementById('minimap'),
       { tiles, worldgen });
     village = villagerModule.makeVillage(world, tiles, { housing });
@@ -2347,6 +2479,7 @@ function makeGame(canvas, deps) {
     wasNight = state.dayPhase > NIGHT_FROM && state.dayPhase < NIGHT_TO;
     state.spawn = worldRecord.spawn || null;
     state.player = spawnPlayer();
+    if (world.hardmode && ossuary) setMechanistShutters(ossuary, -1);
     if (worldRecord.spawn
       && !physics.overlapsSolid(world, tiles, worldRecord.spawn.x, worldRecord.spawn.y,
         state.player.width, state.player.height)) {
