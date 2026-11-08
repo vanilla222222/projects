@@ -733,6 +733,23 @@ workshopFixture('railworks-bench', 'Railworks Bench', '#9b9eac', 'heavy-workbenc
 WORKSHOP_PLANS.push({ out: { key: 'powered-rail', kind: 'block', count: 8 },
   need: [['minecart-rail', 8], ['gold-bar', 2], ['wire-spool', 4]], station: 'railworks-bench' });
 
+for (const [key, name, colour, require] of [
+  ['lunarium', 'Lunarium Ore', '#93c9e8', 285],
+  ['solarium', 'Solarium Ore', '#ebad68', 325],
+  ['eventide', 'Eventide Ore', '#b29ae9', 365]
+]) pushTile({ key, name, colour, require, basePowerGate: true, ore: true, solid: true,
+  opacity: 55, hardness: 4, toughness: require * 3, grain: 0.21, emit: 5 });
+
+for (const [key, name, colour, solid] of [
+  ['siege-alloy', 'Astral Siege Alloy', '#77709c', true],
+  ['siege-beacon', 'Astral Siege Pylon', '#b29adf', false]
+]) pushTile({ key, name, colour, solid, opacity: solid ? 55 : 4, emit: solid ? 0 : 10,
+  siege: true, masonry: solid ? 'brick' : undefined, fixture: solid ? undefined : 'wire-timer', drops: null });
+
+workshopFixture('sky-anchor', 'Sky Anchor', '#93d3e9', 'wire-timer',
+  [['siege-core', 1], ['aetherite-bar', 4], ['wire-spool', 4]], 'heavy-workbench',
+  { skyAnchor: true, emit: 7 });
+
 for (const wall of WALLS) WALL_BY_KEY[wall.key] = wall;
 
 function wall(id) {

@@ -32,7 +32,7 @@ const ORES = require('../js/worldgen.js').ORE_BANDS.map(b => b.key);
 const RAW = new Set(['wood', 'stone', 'sand', 'torch', 'crystal', 'glowmoss', 'mushroom',
   'dirt', 'clay', 'ice', 'basalt', 'slate', 'brick', 'mud', 'blight', 'flesh', 'sandstone',
   'saltcrust', 'ash', 'brimstone', 'cinderstone', 'skystone', 'starrock', 'voidstone', 'prismstone',
-  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...ORES,
+  'shell', 'obsidian', 'fallenstar', 'meteorite', 'aetherite', 'vault-relic', 'void-crystal', 'peat', 'palladium', 'mythril', 'adamantite', 'lunarium', 'solarium', 'eventide', 'ray-crystal', 'storm-crystal', 'ward-crystal', ...enemyDrops, ...ORES,
   // Everything that comes out of the water. Fished rather than mined, but raw all the
   // same: no recipe makes a bass.
   ...require('../js/fishing.js').CATCHES.map(c => c.key),
@@ -123,7 +123,7 @@ for (const w of tiles.WOODS) {
 
 // Workshop recipes must have one owner and a reachable station chain.
 {
-  const expected = { 'heavy-workbench': 600, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136 };
+  const expected = { 'heavy-workbench': 601, sawmill: 181, 'alchemy-table': 40, cauldron: 60, loom: 136 };
   const workshop = craft.RECIPES.filter(r => expected[r.station] || r.out.key === 'heavy-workbench');
   ok(new Set(workshop.map(r => r.out.key)).size === workshop.length, 'duplicate workshop output');
   for (const [station, count] of Object.entries(expected)) {

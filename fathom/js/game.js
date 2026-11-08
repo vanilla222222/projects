@@ -33,6 +33,7 @@ function makeGame(canvas, deps) {
   let lensSite = null;
   let archiveSite = null;
   let mineSite = null;
+  let nextSkyAnchor = 0;
   let cargoItems = [];
   let archiveFlooded = false;
   let liquidSensors = new Map();
@@ -233,6 +234,9 @@ function makeGame(canvas, deps) {
       }
       if (target.key === 'prismsentinel' && world.enableHardmode()) {
         say('Hardmode begins. The Hallow rises and the lower Ossuary seal can be opened.', 6);
+      } else if (target.key === 'astralregent') {
+        world.enableAstral();
+        say('The siege is broken · Lunarium, Solarium and Eventide now form inside planetoids.', 6);
       } else if (target.key === 'railbreaker') {
         say('Railbreaker Drive recovered · Build a Railworks Bench for cargo carts and powered rails.', 6);
       } else if (target.key === 'drownedarchivist') {
@@ -323,6 +327,15 @@ function makeGame(canvas, deps) {
           return true;
         }
         arena = { left: site.x - 23, right: site.x + 24, top: site.y + 123, bottom: site.y + 145 };
+      }
+      if (use.siege) {
+        const site = worldgen.siegeAt(seed, state.player.x, state.player.y);
+        if (!site || state.player.x < site.x - 10 || state.player.x > site.x + 9
+          || Math.abs(state.player.y - (site.y - 3)) > 5) {
+          say('Raise the Astral Standard on the middle siege platform', 2.5);
+          return true;
+        }
+        arena = { left: site.x - 35, right: site.x + 35, top: site.y - 27, bottom: site.y - 4 };
       }
       if (use.foundry) {
         const site = worldgen.foundryAt(seed, state.player.x, state.player.y);
@@ -757,7 +770,7 @@ function makeGame(canvas, deps) {
     const tool = mining.isTool(held) ? held : null;
     const spec = diggingWall ? tiles.wall(wallId) : tiles.tile(id);
     const cache = spec.chest === 'dungeon-cache' ? tiles.originOf(spec, aim.x, aim.y) : null;
-    if (spec.foundry || spec.vault || spec.archive || spec.mine) {
+    if (spec.foundry || spec.vault || spec.archive || spec.mine || spec.siege) {
       state.player.mining = null;
       return;
     }
@@ -1032,7 +1045,7 @@ function makeGame(canvas, deps) {
         else if (a.hostile) {
           if (!solid) {
             a.escapeTerrain = false;
-            if (pointHitsPlayer(a.x, a.y)) {
+            if (pointHitsPlayer(a.x, a.y, a.radius || 0)) {
               if (statsModule.damage(stats, a.damage) > 0) lastHurt = a.hostile;
               hit = true;
             }
@@ -1459,7 +1472,13 @@ function makeGame(canvas, deps) {
     if (defeatedBosses.has('lenscustodian') && archiveSite) {
       rows.push('Tidal Archive · Airlock beneath the ocean at x ' + archiveSite.x + ', y ' + (archiveSite.y - 2) + '.');
     }
-    if (defeatedBosses.has('foundrywarden')) rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
+    if (defeatedBosses.has('foundrywarden')) {
+      const siege = worldgen.siegeLayout(seed);
+      rows.push('Astral Siege · Space platform at x ' + siege.x + ', y ' + (siege.y - 3) + '. Raise an Astral Standard in the middle.');
+      rows.push('Lens Vault · The seal is beneath the Mechanist arena rope.');
+    }
+    if (world.astral) rows.push('Planetoid ores · Lunarium 750–1,030, Solarium 1,030–1,260, Eventide above 1,260 tiles over sea level.');
+
     rows.push('Minecarts · Craft at an Anvil. Repair abandoned rail gaps or lay your own route.');
     if (mineSite && defeatedBosses.has('furnacewarden')) {
       rows.push('Runaway Mine · Optional lift at x ' + (mineSite.x - 35) + ', y ' + mineSite.mouth + '. Bring three rails.');
@@ -1483,7 +1502,8 @@ function makeGame(canvas, deps) {
       foundrywarden: 'Cross the Starfall Foundry and use the igniter on the far platform.',
       lenscustodian: 'After the Mechanist and Starfall Warden, enter the Lens Vault and power its shield sensor.',
       drownedarchivist: 'After the Lens Custodian, open the Tidal Archive floodgate and summon the Archivist below.',
-      railbreaker: 'Repair the bridge, switch the junction, and drain the spur to reach the rail arena.'
+      railbreaker: 'Repair the bridge, switch the junction, and drain the spur to reach the rail arena.',
+      astralregent: 'Use wings to avoid marked bombardment lanes across the three Space platforms.'
     };
     for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
       rows.push('Chapter ' + (index + 1) + ' · ' + enemyModule.BY_KEY[main].name);
@@ -1776,9 +1796,9 @@ function makeGame(canvas, deps) {
     return true;
   }
 
-  function pointHitsPlayer(x, y) {
+  function pointHitsPlayer(x, y, radius = 0) {
     const player = state.player;
-    return x >= player.x && x < player.x + player.width && y >= player.y && y < player.y + player.height;
+    return x + radius >= player.x && x - radius < player.x + player.width && y >= player.y && y < player.y + player.height;
   }
 
   const channelItems = { copper: 'wire-spool', blue: 'blue-wire', green: 'green-wire' };
@@ -1791,6 +1811,14 @@ function makeGame(canvas, deps) {
   function playerOccupiesTile(x, y) {
     const p = state.player;
     return x + 1 > p.x && x < p.x + p.width && y + 1 > p.y && y < p.y + p.height;
+  }
+
+  function fireSiegeStrike(boss, marks) {
+    for (const mark of marks) {
+      state.arrows.push({ x: mark.x, y: mark.y - 18, vx: 0, vy: 32, life: 0.58,
+        gravity: 0, radius: 1.15, damage: boss.enraged ? 152 : 132, colour: '#d7c5ff', hostile: boss.spec.name });
+    }
+    sfx('roar');
   }
 
   function fireBossBarrage(boss, shot) {
@@ -2047,6 +2075,20 @@ function makeGame(canvas, deps) {
       return true;
     }
     if (spec.archive && useArchive(aim, spec)) return true;
+    if (spec.skyAnchor) {
+      const player = state.player;
+      if (player.onGround || !player.flight || player.cart) say('Use a Sky Anchor in midair while wearing wings', 2);
+      else if (state.time < nextSkyAnchor) say('Sky Anchor recharging', 1.4);
+      else {
+        releaseHook();
+        player.flightUsed = Math.max(0, player.flightUsed - 0.55);
+        player.vy = -6;
+        nextSkyAnchor = state.time + 5;
+        sfx('upgrade');
+        say('Sky Anchor restored a burst of flight', 1.5);
+      }
+      return true;
+    }
     if (spec.liquidSensor) {
       say(wetSensors.has(aim.x + ':' + aim.y) ? 'Liquid sensor wet' : 'Liquid sensor dry', 1.5);
       return true;
@@ -2432,7 +2474,7 @@ function makeGame(canvas, deps) {
     stats.defense = gear.defense + (state.wardUntil > state.time ? 14 : 0);
     state.player.speedScale = gear.speed;
     state.player.canDoubleJump = gear.doubleJump;
-    state.player.flight = gear.flight;
+    state.player.flight = gear.flight ? gear.flight + gear.flightBonus : 0;
 
     if (swarm) {
       swarm.step(state.player, dt, state.dayPhase, eventKey());
@@ -2531,7 +2573,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=runaway-mine-1');
+      const worker = new Worker('workers/chunk.js?v=astral-siege-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -2864,7 +2906,7 @@ function makeGame(canvas, deps) {
     liquid = liquidModule.makeLiquid(world, tiles);
     swarm = enemyModule.makeSwarm(world, tiles, {
       worldgen, dungeonOpen: () => defeatedBosses.has('dungeonkeeper'), bossBarrage: fireBossBarrage,
-      wyvernsUnlocked: () => defeatedBosses.has('starwyvern'), lensLit: lensSensorLit
+      wyvernsUnlocked: () => defeatedBosses.has('starwyvern'), lensLit: lensSensorLit, siegeStrike: fireSiegeStrike
     });
     wiring = deps.wiring.makeWiring(world, tiles, {
       door: point => useDoor(point),
@@ -2919,6 +2961,8 @@ function makeGame(canvas, deps) {
     completedOrders = new Set(worldRecord.completedOrders || []);
     defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
     if (defeatedBosses.has('prismsentinel') && !world.hardmode) world.enableHardmode();
+    if (defeatedBosses.has('astralregent') && !world.astral) world.enableAstral();
+    nextSkyAnchor = 0;
     state.wardUntil = 0;
     storageItems = worldRecord.storageItems || [];
     state.villagers = village.list;

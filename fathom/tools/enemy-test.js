@@ -462,6 +462,28 @@ ok(victim.dead, 'a killed enemy is not marked dead');
   }
 }
 
+{
+  const site = { x: 200, y: FLOOR + 3 };
+  const pads = [[-33, -18, 0], [-10, 9, -3], [17, 33, -1]];
+  const strikes = [];
+  const worldgen = { biomeAt: () => ({ key: 'forest' }), layerAt: () => ({ key: 'space' }),
+    siegeAt: () => site, SIEGE_PADS: pads };
+  const swarm = enemyModule.makeSwarm(makeTestWorld(FLOOR), tiles, {
+    worldgen, siegeStrike: (boss, marks) => strikes.push(marks)
+  });
+  const player = { x: site.x, y: FLOOR - 2, width: 0.8, height: 1.8 };
+  const boss = swarm.summon('astralregent', player);
+  let telegraph = false;
+  for (let i = 0; i < 360; i += 1) {
+    swarm.step(player, 1 / 60, 0.5);
+    telegraph ||= !!boss.siegeMarks?.length;
+  }
+  ok(telegraph && strikes[0]?.every(mark => mark.y === site.y - 3), 'Regent did not telegraph the occupied platform');
+  swarm.damage(boss, boss.maxHp * 0.6);
+  for (let i = 0; i < 300; i += 1) swarm.step(player, 1 / 60, 0.5);
+  ok(new Set(strikes.at(-1).map(mark => mark.y)).size === 2, 'Regent enrage did not leave exactly one safe platform');
+}
+
 // --- 6c. the charge is a charge ------------------------------------------------------------------
 // The Hollow Eye's whole fight is that it commits to a line before it starts and cannot
 // steer afterwards. If it tracked the player mid-charge there would be nothing to dodge.

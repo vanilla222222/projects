@@ -689,6 +689,9 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'astralregent', name: 'Astral Regent', kind: 'archon', body: 'bird', hp: 47200,
+    damage: 189, weight: 0, w: 6.5, h: 5.1, colour: '#b2b9f1', boss: true, summonOnly: true,
+    emit: 10, barrage: 'siege', drops: [['coin', 9200]], bossDrops: [['siege-core', 4]] },
   { key: 'railbreaker', name: 'Railbreaker', kind: 'railbreaker', body: 'golem', hp: 3600,
     damage: 55, weight: 0, w: 4.3, h: 3.2, colour: '#c1876d', boss: true, summonOnly: true,
     emit: 5, drops: [['coin', 650]], bossDrops: ['railbreaker-drive'] },
@@ -1096,7 +1099,8 @@ function makeSwarm(world, tiles, deps) {
       else if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
       else if (arch.flies && !(enemy.spec.barrage === 'foundry' && enemy.beams)) stepHoverBoss(enemy, arch, player, dt, toward);
       else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);
-      if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
+      if (enemy.spec.barrage === 'siege') stepSiege(enemy, player, dt);
+      else if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
       return;
     }
 
@@ -1273,6 +1277,31 @@ function makeSwarm(world, tiles, deps) {
 
   // A boss that flies, hovers out of reach, and charges in a straight line it chooses
   // before it starts and cannot change afterwards.
+  function stepSiege(enemy, player, dt) {
+    const site = worldgen.siegeAt?.(world.seed, player.x, player.y);
+    if (!site) { enemy.siegeMarks = null; enemy.siegeTimer = 0; return; }
+    const delay = enemy.enraged ? 2.7 : 3.6;
+    enemy.siegeTimer = (enemy.siegeTimer || 0) + dt;
+    if (enemy.siegeTimer < delay) return;
+    if (!enemy.siegeMarks) {
+      const pads = worldgen.SIEGE_PADS;
+      const target = pads.reduce((best, pad, index) =>
+        Math.abs(site.x + (pad[0] + pad[1]) / 2 - player.x) <
+        Math.abs(site.x + (pads[best][0] + pads[best][1]) / 2 - player.x) ? index : best, 0);
+      const threatened = enemy.enraged ? [target, (target + 1) % pads.length] : [target];
+      enemy.siegeMarks = threatened.flatMap(index => {
+        const [left, right, floor] = pads[index];
+        const lanes = [];
+        for (let dx = left + 1; dx < right; dx += 3) lanes.push({ x: site.x + dx + 0.5, y: site.y + floor });
+        return lanes;
+      });
+    }
+    if (enemy.siegeTimer < delay + (enemy.enraged ? 0.95 : 1.3)) return;
+    deps.siegeStrike?.(enemy, enemy.siegeMarks);
+    enemy.siegeMarks = null;
+    enemy.siegeTimer = 0;
+  }
+
   function stepRailbreaker(enemy, player, dt) {
     const site = worldgen.runawayMineAt?.(world.seed, enemy.x, enemy.y)
       || worldgen.runawayMineAt?.(world.seed, player.x, player.y);

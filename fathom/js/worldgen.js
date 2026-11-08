@@ -1842,7 +1842,39 @@ function foundryTile(site, x, y) {
   return AIR;
 }
 
+const SIEGE_PADS = [[-33, -18, 0], [-10, 9, -3], [17, 33, -1]];
+
+function siegeLayout(seed) {
+  return { x: foundryLayout(seed).x * -2, y: SEA_LEVEL - 1050 };
+}
+
+function siegeAt(seed, x, y) {
+  if (Math.abs(x) < 730 || Math.abs(x) > 806 || y < SEA_LEVEL - 1082 || y > SEA_LEVEL - 1047) return null;
+  const site = siegeLayout(seed);
+  return Math.abs(x - site.x) <= 38 ? site : null;
+}
+
+function siegeTile(site, x, y) {
+  const dx = x - site.x, dy = y - site.y;
+  for (const [left, right, floor] of SIEGE_PADS) {
+    if (dx < left || dx > right) continue;
+    if (dy === floor || (dy === floor + 1 && dx > left && dx < right)) return idOf('siege-alloy');
+    if (dy === floor - 1 && (dx === left + 2 || dx === right - 2)) return idOf('siege-beacon');
+  }
+  return AIR;
+}
+
+function astralTileAt(seed, x, y, id) {
+  const altitude = altitudeOf(y);
+  if (altitude >= -750 || tile(id).key !== 'starrock') return id;
+  const vein = unit(seed, Math.floor(x / 2), Math.floor(y / 2), 9311);
+  if (vein < 0.32) return id;
+  return idOf(altitude >= -1030 ? 'lunarium' : altitude >= -1260 ? 'solarium' : 'eventide');
+}
+
 function skyTileAt(seed, x, y) {
+  const siege = siegeAt(seed, x, y);
+  if (siege) return siegeTile(siege, x, y);
   const foundry = foundryAt(seed, x, y);
   if (foundry) return foundryTile(foundry, x, y);
   const alt = altitudeOf(y);
@@ -2179,7 +2211,7 @@ const EXPORTS_worldgen = {
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
-    runawayMineLayout, runawayMineAt, RUNAWAY_BRIDGE_GAPS, archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
+    siegeLayout, siegeAt, SIEGE_PADS, astralTileAt, runawayMineLayout, runawayMineAt, RUNAWAY_BRIDGE_GAPS, archiveLayout, archiveAt, foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, localCave, longCaveLayout, longCaveAt, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,
