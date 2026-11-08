@@ -154,6 +154,14 @@ the cost of one small canvas.
 | `js/wiring.js` | Circuit propagation, timers, pump transfers and wire persistence |
 | `js/game.js` | loop, input, camera, mining, placing, drops, events, save |
 
+### Campaign
+
+Open **Campaign** from Town Hall or the Field Journal. Thirteen acts guide
+you from building a forge to defeating the Astral Regent and smelting
+Astral metal. The campaign recognizes prior world progress and gives each
+act a one-time reward. **Boss Side Quests** lists optional bosses, their
+unlock requirements, and summon recipes.
+
 ### Progression
 
 Start with tin tools and work through copper, iron, silver, gold, cobalt, and emberite.
