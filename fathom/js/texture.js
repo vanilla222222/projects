@@ -1049,7 +1049,33 @@ function paintMasonry(ctx, spec, variant, ox, oy) {
   }
 }
 
+function paintTerrarium(ctx, spec, ox, oy) {
+  ctx.fillStyle = '#7eb4be44';
+  ctx.fillRect(ox + 1, oy + 3, 14, 11);
+  ctx.fillStyle = '#b6dbe0';
+  ctx.fillRect(ox + 1, oy + 3, 14, 1);
+  ctx.fillRect(ox + 1, oy + 4, 1, 9);
+  ctx.fillRect(ox + 14, oy + 4, 1, 9);
+  ctx.fillStyle = '#65534f';
+  ctx.fillRect(ox, oy + 13, 16, 3);
+  if (!spec.specimen) return;
+  ctx.fillStyle = '#6c8d69';
+  ctx.fillRect(ox + 2, oy + 10, 2, 3);
+  ctx.fillRect(ox + 12, oy + 9, 1, 4);
+  ctx.fillStyle = spec.colour;
+  const winged = ['bird', 'wasp'].includes(spec.specimen.body);
+  ctx.fillRect(ox + 5, oy + (winged ? 8 : 10), 6, 3);
+  ctx.fillRect(ox + 9, oy + (winged ? 7 : 9), 3, 2);
+  if (winged) ctx.fillRect(ox + 5, oy + 6, 2, 3);
+  if (spec.specimen.rare) {
+    ctx.fillStyle = '#fff8da';
+    ctx.fillRect(ox + 4, oy + 5, 1, 1);
+    ctx.fillRect(ox + 12, oy + 6, 1, 1);
+  }
+}
+
 function paintWorkshopFixture(ctx, spec, ox, oy) {
+  if (spec.fixture === 'terrarium') return paintTerrarium(ctx, spec, ox, oy);
   if (spec.glyph) return paintGlyphStatue(ctx, spec, ox, oy);
   if (WORKSHOP_SILHOUETTES[spec.fixture]) return paintWorkshopSilhouette(ctx, spec, ox, oy);
   const pixels = WORKSHOP_PIXELS[spec.fixture];

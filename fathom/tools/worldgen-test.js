@@ -945,6 +945,15 @@ for (const seed of [SEED, 0, -777, 4242, 90210, -98765]) {
   }), 'spawn forest has no safe starter ground');
 }
 
+for (const seed of [SEED, SEED + 1, SEED + 2]) {
+  const site = gen.foundryLayout(seed);
+  check(gen.layerAt(site.y).key === 'space', 'Foundry did not generate in Space');
+  for (const [left, right, floor] of gen.FOUNDRY_PADS) {
+    check(gen.baseTileAt(seed, site.x + left, site.y + floor) === tiles.idOf('foundry-pad'), 'Foundry landing pad missing');
+    check(gen.baseTileAt(seed, site.x + right + 1, site.y + floor) === tiles.AIR, 'Foundry gap is blocked');
+  }
+  check(gen.baseTileAt(seed, site.x + 31, site.y - 9) === tiles.idOf('foundry-console'), 'Foundry shortcut console missing');
+}
 console.log('Worldgen: ' + checks + ' checks passed; ' + seamTiles.toLocaleString()
   + ' block and wall cells agree between chunked and one-piece generation; ' + oresSeen
   + ' ore tiles all inside their depth bands; ' + walled.toLocaleString()

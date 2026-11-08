@@ -697,7 +697,8 @@ const ORE_BANDS = [
 function oreAt(seed, x, y, depth) {
   for (const band of ORE_BANDS) {
     if (depth < band.from || depth > band.to) continue;
-    const blob = fbm2(seed, x * band.size, y * band.size, band.salt, 2, 2, 0.5);
+    const scale = band.size * 1.28;
+    const blob = fbm2(seed, x * scale, y * scale, band.salt, 2, 2, 0.5);
     if (blob > band.rarity) return band.key;
   }
   return null;
@@ -1606,7 +1607,34 @@ function planetoidTile(seed, body, x, y) {
   return dist < edge * 0.55 ? idOf('starrock') : idOf('skystone');
 }
 
+const FOUNDRY_PADS = [[-36, -23, 0], [-14, -2, -3], [7, 20, -6], [29, 63, -8]];
+
+function foundryLayout(seed) {
+  return { x: unit(seed, 2388, 901) < 0.5 ? -384 : 384, y: SEA_LEVEL - 870 };
+}
+
+function foundryAt(seed, x, y) {
+  if (y < SEA_LEVEL - 908 || y > SEA_LEVEL - 864 || Math.abs(x) > 455) return null;
+  const site = foundryLayout(seed);
+  return x >= site.x - 39 && x <= site.x + 66 ? site : null;
+}
+
+function foundryTile(site, x, y) {
+  const dx = x - site.x, dy = y - site.y;
+  if (dx === 31 && dy === -9) return idOf('foundry-console');
+  for (const [left, right, floor] of FOUNDRY_PADS) {
+    if (dx < left || dx > right) continue;
+    if (dy === floor) return idOf(dx === left || dx === right ? 'foundry-pad' : 'foundry-alloy');
+    if (dy > floor && dy <= floor + 3 && dx >= left + dy - floor && dx <= right - dy + floor) return idOf('foundry-alloy');
+    if (dy === floor - 1 && (dx === left + 2 || dx === right - 2)) return idOf('foundry-pylon');
+  }
+  if (dy === -9 && [38, 47, 56].includes(dx)) return idOf('foundry-pylon');
+  return AIR;
+}
+
 function skyTileAt(seed, x, y) {
+  const foundry = foundryAt(seed, x, y);
+  if (foundry) return foundryTile(foundry, x, y);
   const alt = altitudeOf(y);
   if (alt >= -250) return AIR;
 
@@ -1886,13 +1914,13 @@ function hardmodeTileAt(seed, x, y, id) {
   if (HALLOW_SURFACES.has(key) && isHallowRegion(seed, x)
     && y === surfaceHeight(seed, x)) return idOf('hallowgrass');
   if (!HARDMODE_STONE.has(key)) return id;
-  const vein = unit(seed, Math.floor(x / 4), Math.floor(y / 4), 8819);
+  const vein = unit(seed, Math.floor(x / 3), Math.floor(y / 3), 8819);
   if (altitude >= 1950 && vein > 0.972) return idOf('adamantite');
   if (altitude >= 850 && altitude < 1950 && vein > 0.969) return idOf('mythril');
   if (altitude >= 160 && altitude < 850 && vein > 0.966) return idOf('palladium');
   if (!isHallowRegion(seed, x) || altitude < 25 || altitude > 740) return id;
   if (vein > 0.94) {
-    return idOf(HALLOW_CRYSTALS[Math.floor(unit(seed, Math.floor(x / 4), Math.floor(y / 4), 8821) * 3)]);
+    return idOf(HALLOW_CRYSTALS[Math.floor(unit(seed, Math.floor(x / 3), Math.floor(y / 3), 8821) * 3)]);
   }
   return vein > 0.55 ? idOf('prismstone') : id;
 }
@@ -1939,7 +1967,7 @@ const EXPORTS_worldgen = {
     climateX, smoothWeights, regionalBiome, CLIMATE_REGION_WIDTH, CLIMATE_JOSTLE, JOSTLE_FIELD,
     homeFactor, HOME_FLAT, HOME_FADE, START_FOREST_CHUNKS, START_FOREST_EDGE,
     lavaFloor, submergedVoid, hallTileAt, inHall, HALL_TOP, HALL_PERIOD, HALL_RESUME, skyTileAt,
-    skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
+    foundryLayout, foundryAt, FOUNDRY_PADS, skyIslandAt, planetoidAt, islandTile, planetoidTile, SKY_SPACING, PLANETOID_SPACING, SPACE_FLOOR,
     SEA_LEVEL, BEACH_BAND, BY_BIOME, CLIMATE_BIOMES,
     temperature, moisture, continent, climateWeights, columnOf, blightAt, climateAt,
     CAVE_PROFILES, caveProfile, caveThreshold, floodFloor, FLORA, pickProp, canStamp, GROWS_IN_WATER, WET_ONLY,

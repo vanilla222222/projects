@@ -17,6 +17,9 @@
 // Behaviour lives in archetypes rather than per-enemy code: a slime hops, a bat flies, a
 // worm swims through rock. Thirty-odd enemies share six behaviours.
 
+const WILDLIFE_SPECIMENS = typeof require === 'function'
+  ? require('./tiles.js').CRITTER_SPECIMENS : CRITTER_SPECIMENS;
+
 const ARCHETYPES = {
   // Hops toward the player on a timer. Harmless on open ground, awful on a ledge.
   slime: { gravity: 46, maxFall: 40, hop: 10.6, hopEvery: 1.05, speed: 3.1, air: 0.5 },
@@ -685,6 +688,15 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'foundrywarden', name: 'Starfall Warden', kind: 'archon', body: 'golem', hp: 32800,
+    damage: 162, weight: 0, w: 5.7, h: 4.9, colour: '#bd9dea', boss: true, summonOnly: true,
+    emit: 10, barrage: 'foundry', minion: 'foundry-drone', drops: [['coin', 5800]], bossDrops: ['foundry-prism'] },
+  { key: 'foundry-drone', name: 'Repulsor Drone', kind: 'flyer', body: 'eye', hp: 680,
+    damage: 85, weight: 9, w: 1.1, h: 1.05, colour: '#ae95ea', layers: ['space'], foundry: true, push: 1.7,
+    drops: [['stardust', 3], ['coin', 60]] },
+  { key: 'foundry-sentry', name: 'Landing Sentry', kind: 'walker', body: 'golem', hp: 1050,
+    damage: 105, weight: 7, w: 1.5, h: 2.5, colour: '#9fa5cb', layers: ['space'], foundry: true, push: 1.35,
+    drops: [['stardust', 2], ['coin', 80]] },
   { key: 'starwyvern', name: 'Astraeus, the Star Wyvern', kind: 'starwyvern', body: 'worm', hp: 26400,
     damage: 146, weight: 0, w: 8.2, h: 4.4, colour: '#b9c9fa', boss: true, summonOnly: true,
     emit: 9, barrage: 'starburst', drops: [['coin', 4750]], bossDrops: ['starwyvern-plume'] },
@@ -708,10 +720,38 @@ const ENEMIES = [
     w: 1.0, h: 1.0, colour: '#8f9ce8', layers: ['space'], emit: 6, drops: [['stardust', 1], ['coin', 6]] }
 ];
 
+for (const specimen of WILDLIFE_SPECIMENS) {
+  const existing = ENEMIES.find(spec => spec.key === specimen.key);
+  if (existing) {
+    existing.specimen = specimen;
+    existing.neutral = true;
+    continue;
+  }
+  const flying = ['bird', 'wasp'].includes(specimen.body) || specimen.key.endsWith('firefly');
+  ENEMIES.push({
+    key: specimen.key, name: specimen.name, kind: flying ? 'flyer' : 'walker',
+    body: specimen.body, hp: 12, damage: 0, weight: 3,
+    w: flying ? 0.85 : 0.73, h: flying ? 0.66 : 0.6, colour: specimen.colour,
+    biomes: specimen.biomes || undefined, layers: specimen.gem ? ['caves', 'deep'] : ['surface'],
+    day: specimen.clock !== 'night', night: specimen.clock !== 'day',
+    emit: specimen.rare === 'crystal' || specimen.key.endsWith('firefly') ? 5 : 0,
+    specimen, passive: true, hiddenSpawn: Boolean(specimen.rare),
+    drops: specimen.rare === 'crystal' ? [[specimen.gem, 2]] : []
+  });
+}
+
 const ENEMY_BY_KEY = {};
 for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 
 // --- spawn selection --------------------------------------------------------------------
+
+function wildlifeVariant(spec, roll) {
+  if (!spec.specimen || spec.specimen.rare) return spec;
+  const gem = spec.specimen.gem;
+  const variant = gem && roll < 1 / 1100 ? gem + '-' + spec.key
+    : roll < 1 / 180 ? 'gold-' + spec.key : spec.key;
+  return ENEMY_BY_KEY[variant] || spec;
+}
 
 function matches(spec, ctx) {
   if (spec.summonOnly || spec.hiddenSpawn || (spec.wyvernsUnlocked && !ctx.wyvernsUnlocked)) return false;
@@ -719,6 +759,7 @@ function matches(spec, ctx) {
   // ordinary roster: a blood moon is the usual night with worse things added to it.
   if (Boolean(spec.dungeon) !== Boolean(ctx.dungeon)) return false;
   if (Boolean(spec.lowerOssuary) !== Boolean(ctx.lowerOssuary)) return false;
+  if (Boolean(spec.foundry) !== Boolean(ctx.foundry)) return false;
   if (spec.event && ctx.event !== spec.event) return false;
   if (spec.layers && spec.layers.indexOf(ctx.layer) === -1) return false;
   if (spec.biomes && spec.biomes.indexOf(ctx.biome) === -1) return false;
@@ -872,6 +913,7 @@ function makeSwarm(world, tiles, deps) {
     const dungeon = !!site && y > site.y && !!deps.dungeonOpen?.();
     const lowerOssuary = dungeon && y > site.y + 58 && !!world.hardmode;
     return { biome, layer, wet, day, dungeon, lowerOssuary,
+      foundry: layer === 'space' && !!deps.wyvernsUnlocked?.() && !!worldgen.foundryAt?.(world.seed, x, y),
       wyvernsUnlocked: layer === 'space' && !!deps.wyvernsUnlocked?.(), event: event || null };
   }
 
@@ -969,9 +1011,13 @@ function makeSwarm(world, tiles, deps) {
     // ordinary spawns while one is alive: the fight is the fight.
     if (list.some(e => e.boss)) return null;
     if (list.length >= (event ? EVENT_ALIVE : MAX_ALIVE)) return null;
-    const inOssuary = contextAt(player.x, player.y, dayPhase, event).dungeon;
-    const spawnMin = inOssuary ? 12 : SPAWN_MIN;
-    const spawnMax = inOssuary ? 27 : SPAWN_MAX;
+    const habitat = contextAt(player.x, player.y, dayPhase, event);
+    const inOssuary = habitat.dungeon;
+    const surface = habitat.layer === 'surface' && !event;
+    if (surface && list.filter(enemy => !enemy.spec.specimen).length >= 4
+      && list.filter(enemy => enemy.spec.specimen).length >= 5) return null;
+    const spawnMin = inOssuary || habitat.foundry ? 12 : SPAWN_MIN;
+    const spawnMax = inOssuary || habitat.foundry ? 27 : SPAWN_MAX;
     // A few columns per attempt, so one unlucky column does not cost a whole tick.
     for (let attempt = 0; attempt < 4; attempt += 1) {
       const side = rng() < 0.5 ? -1 : 1;
@@ -982,7 +1028,14 @@ function makeSwarm(world, tiles, deps) {
       // The pool is decided at the player's own altitude band for this column, so a
       // surface spawn is chosen from the surface roster even if the scan reaches deeper.
       const ctx = contextAt(x, player.y, dayPhase, event);
-      const spec = chooseFrom(poolFor(ctx), rng());
+      let pool = poolFor(ctx);
+      if (surface && !inOssuary) {
+        const wildlife = list.filter(enemy => enemy.spec.specimen).length;
+        const hostile = list.length - wildlife;
+        pool = pool.filter(spec => spec.specimen ? wildlife < 5 : hostile < 4);
+        if (rng() < 0.6) pool = pool.filter(spec => spec.specimen);
+      }
+      const spec = chooseFrom(pool, rng());
       if (!spec) continue;
 
       const spots = candidatesIn(x, y0, y1, spec);
@@ -993,7 +1046,11 @@ function makeSwarm(world, tiles, deps) {
       const here = contextAt(x, y, dayPhase, event);
       if (!matches(spec, here)) continue;
 
-      const enemy = makeEnemy(spec, x, y);
+      const variant = spec.specimen ? wildlifeVariant(spec, rng()) : spec;
+      const enemy = makeEnemy(variant, x, y);
+      enemy.homeX = x;
+      enemy.homeY = y;
+      if (variant.body === 'bird' && here.biome === 'forest' && here.layer === 'surface') enemy.neutral = true;
       list.push(enemy);
       return enemy;
     }
@@ -1004,6 +1061,7 @@ function makeSwarm(world, tiles, deps) {
     const plated = enemy.spec.barrage === 'shatter' && enemy.hp > enemy.maxHp / 2 && !enemy.beams;
     enemy.hp -= plated ? Math.max(1, Math.round(amount * 0.74)) : amount;
     enemy.hurt = 0.18;
+    enemy.provoked = true;
     if (enemy.hp <= 0) enemy.dead = true;
     return enemy.dead;
   }
@@ -1020,9 +1078,23 @@ function makeSwarm(world, tiles, deps) {
     // never ran at all: the Hollow Eye hovered like a bat and never charged once.
     if (arch.boss) {
       if (enemy.key === 'prismsentinel') stepPrismBoss(enemy, arch, player, dt, toward);
-      else if (arch.flies) stepHoverBoss(enemy, arch, player, dt, toward);
+      else if (arch.flies && !(enemy.spec.barrage === 'foundry' && enemy.beams)) stepHoverBoss(enemy, arch, player, dt, toward);
       else if (!enemy.beams) stepBoss(enemy, arch, player, dt, toward);
       if (enemy.spec.barrage) stepHardmodeBarrage(enemy, player, dt);
+      return;
+    }
+
+    if (enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) {
+      const direction = enemy.provoked ? -toward : Math.sin(enemy.timer * 0.86 + (enemy.homeX || 0));
+      enemy.facing = direction < 0 ? -1 : 1;
+      moveAxis(enemy, direction * (enemy.provoked ? 3.2 : 1.35) * dt, 0);
+      if (arch.gravity) {
+        enemy.vy = Math.min(12, enemy.vy + arch.gravity * dt);
+        moveAxis(enemy, 0, enemy.vy * dt);
+      } else {
+        const targetY = (enemy.homeY ?? enemy.y) + Math.sin(enemy.timer * 1.8) * 1.7;
+        moveAxis(enemy, 0, Math.max(-2, Math.min(2, (targetY - enemy.y) * 2)) * dt);
+      }
       return;
     }
 
@@ -1194,6 +1266,15 @@ function makeSwarm(world, tiles, deps) {
     if (elapsed < cooldown || (pattern === 'shatter' && !enemy.beams && !enemy.onGround)) {
       enemy.barrageTime = Math.min(elapsed, cooldown);
       return;
+    }
+    if (pattern === 'foundry' && !enemy.beams) {
+      const site = worldgen.foundryAt?.(world.seed, player.x, player.y);
+      if (site) {
+        const pad = [38, 47, 56][(enemy.foundryVolley || 0) % 3];
+        enemy.x = site.x + pad - enemy.width / 2;
+        enemy.y = site.y - 17;
+        enemy.foundryVolley = (enemy.foundryVolley || 0) + 1;
+      }
     }
     const x = enemy.x + enemy.width / 2;
     const y = pattern === 'shatter' ? enemy.y + enemy.height - 0.35 : enemy.y + enemy.height / 2;
@@ -1407,6 +1488,7 @@ function makeSwarm(world, tiles, deps) {
 
   function touching(player) {
     for (const enemy of list) {
+      if (enemy.dead || enemy.spec.passive || ((enemy.spec.neutral || enemy.neutral) && !enemy.provoked)) continue;
       if (prismHit(enemy, player)) return enemy;
       if (enemy.x + enemy.width <= player.x) continue;
       if (enemy.x >= player.x + player.width) continue;
@@ -1419,7 +1501,7 @@ function makeSwarm(world, tiles, deps) {
 
   function at(x, y) {
     for (const enemy of list) {
-      if (x >= enemy.x && x <= enemy.x + enemy.width
+      if (!enemy.dead && x >= enemy.x && x <= enemy.x + enemy.width
         && y >= enemy.y && y <= enemy.y + enemy.height) return enemy;
     }
     return null;
@@ -1437,7 +1519,7 @@ function makeSwarm(world, tiles, deps) {
 // The module's public surface, declared once. index.html used to repeat these
 // names by hand, and three separate times a new export was added here and
 // forgotten there, which broke the game at runtime while every test passed.
-const EXPORTS_enemy = { ENEMIES, BY_KEY: ENEMY_BY_KEY, ARCHETYPES, GAIT, poolFor, chooseFrom, matches,
+const EXPORTS_enemy = { ENEMIES, BY_KEY: ENEMY_BY_KEY, ARCHETYPES, GAIT, poolFor, wildlifeVariant, chooseFrom, matches,
   makeEnemy, makeSwarm, SPAWN_MIN, SPAWN_MAX, DESPAWN, MAX_ALIVE, EVENT_ALIVE, SPAWN_EVERY };
 
 if (typeof module !== 'undefined' && module.exports) {

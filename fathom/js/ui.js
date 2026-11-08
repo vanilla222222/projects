@@ -539,7 +539,7 @@ function makeUI(root, deps) {
     els.town.textContent = '';
   }
 
-  function showTown(title, rows, actions, searchView) {
+  function showTown(title, rows, actions, searchView, placeholder = 'Search items and recipes') {
     hideTip();
     townOpen = true;
     els.town.hidden = false;
@@ -552,7 +552,7 @@ function makeUI(root, deps) {
     let search;
     if (searchView) {
       search = el('input', 'town-search', els.town);
-      search.placeholder = 'Search items and recipes';
+      search.placeholder = placeholder;
       search.setAttribute('aria-label', search.placeholder);
     }
     const body = el('div', 'town-body', els.town);

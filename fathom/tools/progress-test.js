@@ -42,7 +42,7 @@ const STARTING = ['tin-pick', 'tin-axe', 'tin-hammer', 'tin-sword'];
 // it. Loot is a shortcut, and a shortcut cannot be what makes the route passable.
 const MADE = new Set(craft.RECIPES.map(r => r.out.key));
 const FROM_THE_WORLD = new Set([
-  ...enemies.ENEMIES.flatMap(e => (e.drops || []).map(([k]) => k)),
+  ...enemies.ENEMIES.filter(e => e.specimen?.rare !== 'crystal').flatMap(e => (e.drops || []).map(([k]) => k)),
   ...enemies.ENEMIES.flatMap(e => (e.bossDrops || []).map(drop => Array.isArray(drop) ? drop[0] : drop)),
   ...loot.allLootKeys(),
   ...worldgen.POT_TABLE.map(e => e.key),
@@ -142,6 +142,7 @@ function climb() {
       gain('starwyvern-plume');
       gain('wyvern-essence');
     }
+    if (was.has('warden-igniter')) gain('foundry-prism');
     if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');

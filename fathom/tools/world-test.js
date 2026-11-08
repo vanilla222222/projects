@@ -88,4 +88,14 @@ for (const spec of tiles.WALLS) {
   }
 }
 
+{
+  const exhibit = tiles.idOf('terrarium-amethyst-cave-moth');
+  const exhibitWorld = makeWorld(SEED, gen);
+  exhibitWorld.set(7, 100, exhibit);
+  const restored = makeWorld(SEED, gen);
+  restored.restore(JSON.parse(JSON.stringify(exhibitWorld.serialize())));
+  check(restored.get(7, 100) === exhibit, 'terrarium lost its specimen during world reload');
+  check(tiles.tile(exhibit).specimen.gem === 'amethyst', 'crystal terrarium lost its matching gemstone');
+}
+
 console.log('World: ' + checks + ' checks passed across both layers, the edit diff and the safe-wall rule');
