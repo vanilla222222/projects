@@ -597,7 +597,7 @@ const EFFECT_FIELDS = {
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul', thrower: 'mul',
-  meleeReach: 'add', spiritInterval: 'mul', throwBlast: 'mul',
+  meleeReach: 'add', spiritReach: 'add', spiritInterval: 'mul', throwBlast: 'mul', throwSpeed: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
@@ -1579,6 +1579,53 @@ for (const [key, name, enemy, material, effect, text] of [
   ACCESSORIES[key] = { name, colour: '#dec0a5', text, ...effect, ...(enemy ? { drop: enemy } : {}) };
   if (material) RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
     need: [[material, material === 'wyvern-essence' ? 6 : 1], ['silver-bar', 3]], station: 'anvil' });
+}
+
+const EXPEDITION_ACCESSORIES = [
+  // Rare drops from ordinary enemies.
+  ['moss-magnet', 'Moss Magnet', 'greenslime', '#91c76c', { pickup: 1.3 }, 'Pickup range +30%'],
+  ['grave-torc', 'Grave Torc', 'zombie', '#a2a77d', { melee: 1.07, defense: 2 }, 'Melee damage +7% and defence +2'],
+  ['frostglass-eye', 'Frostglass Eye', 'frostwight', '#a8ddec', { manaCost: 0.91, glow: 3 }, 'Mana cost −9% and emits light'],
+  ['carrion-fletch', 'Carrion Fletch', 'vulture', '#d2ad7c', { ranged: 1.08, fallMul: 0.85 }, 'Ranged damage +8% and fall damage −15%'],
+  ['crag-tether', 'Crag Tether', 'cragstalker', '#c8a88a', { meleeReach: 0.2, fallMul: 0.76 }, 'Melee reach +0.2 tiles and fall damage −24%'],
+  ['wasp-whistle', 'Wasp Whistle', 'hornet', '#f0c860', { spiritReach: 3, summoner: 1.05 }, 'Spirit targeting range +3 tiles and damage +5%'],
+  ['reed-lanyard', 'Reed Lanyard', 'boglurker', '#9ab373', { breathMul: 1.35, pickup: 1.16 }, 'Breath lasts 35% longer and pickup range +16%'],
+  ['breaker-claw', 'Breaker Claw', 'crab', '#f5987a', { thrower: 1.09, defense: 2 }, 'Throwing damage +9% and defence +2'],
+  ['tidewick', 'Tidewick', 'jellyfish', '#82d1d4', { glow: 7, breathMul: 1.2 }, 'Emits light and breath lasts 20% longer'],
+  ['bloodsilk-cord', 'Bloodsilk Cord', 'bloodcrawler', '#db808c', { throwSpeed: 1.11, thrower: 1.06 }, 'Throw speed +11% and throwing damage +6%'],
+  ['burrowers-loop', 'Burrower’s Loop', 'giantworm', '#bc9a7c', { power: 1.12, pickup: 1.15 }, 'Mining power +12% and pickup range +15%'],
+  ['salamander-seal', 'Salamander Seal', 'salamander', '#f1a477', { lavaDamage: 0.8, throwBlast: 1.12 }, 'Lava damage −20% and throwing blast radius +12%'],
+  ['golem-knuckle', 'Golem Knuckle', 'rockgolem', '#c1b8a8', { melee: 1.11, defense: 3 }, 'Melee damage +11% and defence +3'],
+  ['ashflight-pin', 'Ashflight Pin', 'hellbat', '#e1a0a1', { arrowSpeed: 1.15, lavaDamage: 0.86 }, 'Projectile speed +15% and lava damage −14%'],
+  ['furnace-gland', 'Furnace Gland', 'magmacrawler', '#ef9066', { throwBlast: 1.15, lavaDamage: 0.82 }, 'Throwing blast radius +15% and lava damage −18%'],
+  ['cloudspun-loop', 'Cloudspun Loop', 'clouddrifter', '#c4e3f3', { fallMul: 0.58, speed: 1.05 }, 'Fall damage −42% and movement speed +5%'],
+  ['trench-lantern', 'Trench Lantern', 'ashsentinel', '#eac08e', { glow: 9, manaRegen: 1.12 }, 'Emits light and mana regeneration +12%'],
+  ['shade-thread', 'Shade Thread', 'voidshade', '#c29ce8', { spiritReach: 4, spiritInterval: 0.95 }, 'Spirit range +4 tiles and attack interval −5%'],
+  ['void-fletching', 'Void Fletching', 'voidwyrm', '#a999e5', { ranged: 1.09, arrowSpeed: 1.12 }, 'Ranged damage +9% and projectile speed +12%'],
+  ['drone-lens', 'Drone Lens', 'foundry-drone', '#9cd6e9', { magic: 1.10, manaCost: 0.93 }, 'Magic damage +10% and mana cost −7%'],
+
+  // Crafted alternatives use reliable enemy materials or guaranteed boss rewards.
+  ['gel-lined-boots', 'Gel-Lined Boots', [['gel', 12], ['leather', 3]], '#a0c280', { speed: 1.07, fallMul: 0.84 }, 'Movement speed +7% and fall damage −16%'],
+  ['bone-votive', 'Bone Votive', [['bone', 12], ['gel', 8]], '#dfcda7', { summoner: 1.08, spiritReach: 2 }, 'Spirit damage +8% and targeting range +2 tiles'],
+  ['lens-sheath', 'Lens Sheath', [['lens', 5], ['leather', 4]], '#cc83af', { magic: 1.08, manaRegen: 1.11 }, 'Magic damage +8% and mana regeneration +11%'],
+  ['chitin-sling', 'Chitin Sling', [['chitin', 8], ['rope', 4]], '#d9b875', { throwSpeed: 1.13 }, 'Throw speed +13%'],
+  ['feather-sight', 'Feather Sight', [['feather', 8], ['lens', 3]], '#d5c9a6', { ranged: 1.08, arrowSpeed: 1.06 }, 'Ranged damage +8% and projectile speed +6%'],
+  ['shellbound-torc', 'Shellbound Torc', [['shell', 10], ['bone', 6]], '#d3a392', { meleeReach: 0.22, breathMul: 1.25 }, 'Melee reach +0.22 tiles and breath lasts 25% longer'],
+  ['cinder-votive', 'Cinder Votive', [['cinder', 10], ['bone', 8]], '#ec9e71', { summoner: 1.10, glow: 5 }, 'Spirit damage +10% and emits light'],
+  ['ember-counterweight', 'Ember Counterweight', [['cinder', 12], ['iron-bar', 3]], '#e09c6c', { thrower: 1.10, throwSpeed: 1.08 }, 'Throwing damage +10% and throw speed +8%'],
+  ['warden-pauldrons', 'Warden Pauldrons', [['furnace-core', 1], ['bone', 12]], '#d99373', { melee: 1.11, defense: 5 }, 'Melee damage +11% and defence +5'],
+  ['ashvault-sextant', 'Ashvault Sextant', [['guardian-seal', 1], ['lens', 5]], '#e6bd8c', { pickup: 1.3, glow: 8 }, 'Pickup range +30% and emits light'],
+  ['void-compass', 'Void Compass', [['void-heart', 1], ['stardust', 10]], '#bfaae7', { speed: 1.08, glow: 9 }, 'Movement speed +8% and emits light'],
+  ['rift-splinter', 'Rift Splinter', [['rift-core', 1], ['lens', 8]], '#9ebde7', { magic: 1.13, manaRegen: 1.1 }, 'Magic damage +13% and mana regeneration +10%'],
+  ['prismatic-quiver', 'Prismatic Quiver', [['prism-heart', 1], ['feather', 12]], '#e0acd9', { ranged: 1.13, arrowSpeed: 1.1 }, 'Ranged damage +13% and projectile speed +10%'],
+  ['wyvern-bell', 'Wyvern Bell', [['wyvern-essence', 9], ['stardust', 8]], '#b4ddec', { summoner: 1.12, spiritReach: 4 }, 'Spirit damage +12% and targeting range +4 tiles'],
+  ['foundry-gyroscope', 'Foundry Gyroscope', [['foundry-prism', 1], ['wyvern-essence', 5]], '#d3a9e6', { throwSpeed: 1.16, throwBlast: 1.12 }, 'Throw speed +16% and blast radius +12%'],
+  ['regents-gorget', 'Regent’s Gorget', [['siege-core', 1], ['wyvern-essence', 8]], '#f3c798', { melee: 1.15, meleeReach: 0.35 }, 'Melee damage +15% and reach +0.35 tiles']
+];
+for (const [key, name, source, colour, effect, text] of EXPEDITION_ACCESSORIES) {
+  const drop = typeof source === 'string' ? source : null;
+  ACCESSORIES[key] = { name, colour, text, ...effect, ...(drop ? { drop } : {}) };
+  if (!drop) RECIPES.push({ out: { key, kind: 'accessory', count: 1 }, need: source, station: 'anvil' });
 }
 
 function stationsNear(world, tiles, px, py) {

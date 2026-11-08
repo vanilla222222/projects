@@ -1087,10 +1087,11 @@ function makeGame(canvas, deps) {
     const x = player.x + player.width / 2, y = player.y + player.height * 0.4;
     const angle = Math.atan2(pointer.y - y, pointer.x - x);
     const style = weapon.throwStyle;
-    const speed = style === 'blast' ? 31 : style === 'pierce' ? 51 : 39;
+    const speedScale = state.gear?.throwSpeed || 1;
+    const speed = (style === 'blast' ? 31 : style === 'pierce' ? 51 : 39) * speedScale;
     for (const spread of style === 'fan' ? [-0.18, 0, 0.18] : [0]) {
       state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
-        life: weapon.reach / speed, colour: weapon.colour, throwStyle: style,
+        life: weapon.reach / speed, colour: weapon.colour, throwStyle: style, returnSpeed: 49 * speedScale,
         gravity: style === 'blast' ? 24 : 11, blastRadius: 4 * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
         hits: style === 'pierce' || style === 'returning' ? new Set() : null,
         damage: Math.round(weapon.damage * (state.gear?.thrower || 1) * (spread ? 0.38 : 1)) });
@@ -1118,8 +1119,8 @@ function makeGame(canvas, deps) {
         const dy = state.player.y + state.player.height * 0.4 - a.y;
         const distance = Math.hypot(dx, dy);
         if (distance < 0.7 || a.life <= 0) { state.arrows.splice(i, 1); continue; }
-        a.vx = dx / distance * 49;
-        a.vy = dy / distance * 49;
+        a.vx = dx / distance * a.returnSpeed;
+        a.vy = dy / distance * a.returnSpeed;
       }
       a.vy += (a.gravity === undefined ? 26 : a.gravity) * dt;
       const steps = Math.ceil(Math.hypot(a.vx, a.vy) * dt / 0.3) || 1;
@@ -1213,7 +1214,7 @@ function makeGame(canvas, deps) {
     state.spirit = { x, y, colour: weapon.colour };
     if (state.time < nextSpiritStrike) return;
     nextSpiritStrike = state.time + weapon.useTime * Math.max(0.6, state.gear?.spiritInterval || 1);
-    let target = null, distance = weapon.reach;
+    let target = null, distance = weapon.reach + (state.gear?.spiritReach || 0);
     for (const enemy of swarm.list) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
       const ex = enemy.x + enemy.width / 2, ey = enemy.y + enemy.height / 2;
