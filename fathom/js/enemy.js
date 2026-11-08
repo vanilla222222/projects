@@ -117,6 +117,9 @@ const ARCHETYPES = {
     chargeEvery: 3.8, windUp: 1.05, chargeSpeed: 27, chargeFor: 0.82, spawnEvery: 5,
     minion: 'chalksentry', minions: 2, enrageAt: 0.47, enrageSpeed: 1.27,
     enrageCharge: 0.59, enrageWindUp: 0.66, followUp: 0.46 },
+  starwyvern: { gravity: 0, boss: true, flies: true, speed: 9.4, hoverAbove: 4.4, drift: 8,
+    chargeEvery: 4.1, windUp: 1.1, chargeSpeed: 31, chargeFor: 0.82, enrageAt: 0.5,
+    enrageSpeed: 1.24, enrageCharge: 0.72, enrageWindUp: 0.67, followUp: 0.45 },
   glasscolossus: { gravity: 50, maxFall: 42, hop: 11.5, hopEvery: 1.7, speed: 6.5, air: 0.64,
     boss: true, teleportAfter: 3.4, teleportRange: 30, spawnEvery: 7, minions: 0, shrinkTo: 0.72 },
   coilserpent: { gravity: 0, boss: true, flies: true, burrows: true, speed: 7.2, hoverAbove: -3, drift: 5,
@@ -682,6 +685,12 @@ const ENEMIES = [
   { key: 'prismcrawler', name: 'Prism Crawler', kind: 'crawler', body: 'beetle', hp: 490, damage: 56,
     weight: 9, w: 1.25, h: 1.1, colour: '#8dd9d9', layers: ['caves', 'deep'], biomes: ['hallow'],
     drops: [['crystal', 3], ['coin', 30]] },
+  { key: 'starwyvern', name: 'Astraeus, the Star Wyvern', kind: 'starwyvern', body: 'worm', hp: 26400,
+    damage: 146, weight: 0, w: 8.2, h: 4.4, colour: '#b9c9fa', boss: true, summonOnly: true,
+    emit: 9, barrage: 'starburst', drops: [['coin', 4750]], bossDrops: ['starwyvern-plume'] },
+  { key: 'wildwyvern', name: 'Wild Wyvern', kind: 'flyer', body: 'worm', hp: 840,
+    damage: 91, weight: 15, w: 4.2, h: 2.2, colour: '#91c6ea', layers: ['space'], wyvernsUnlocked: true,
+    emit: 5, drops: [['wyvern-essence', 3], ['stardust', 2], ['coin', 70]] },
   { key: 'glasscolossus', name: 'Glass Colossus', kind: 'glasscolossus', body: 'golem', hp: 18500,
     damage: 126, weight: 0, w: 5.4, h: 5.6, colour: '#91d9d7', boss: true, summonOnly: true,
     barrage: 'shatter', emit: 8, drops: [['coin', 3300]], bossDrops: [['colossus-core', 2]] },
@@ -705,7 +714,7 @@ for (const e of ENEMIES) ENEMY_BY_KEY[e.key] = e;
 // --- spawn selection --------------------------------------------------------------------
 
 function matches(spec, ctx) {
-  if (spec.summonOnly || spec.hiddenSpawn) return false;
+  if (spec.summonOnly || spec.hiddenSpawn || (spec.wyvernsUnlocked && !ctx.wyvernsUnlocked)) return false;
   // An event enemy exists only during its event, and an event does not suppress the
   // ordinary roster: a blood moon is the usual night with worse things added to it.
   if (Boolean(spec.dungeon) !== Boolean(ctx.dungeon)) return false;
@@ -777,6 +786,7 @@ function makeEnemy(spec, x, y) {
 // Gait speed per archetype: how much animation one tile of travel buys, and how much is
 // added per second regardless.
 const GAIT = {
+  starwyvern: { perTile: 1.3, perSecond: 6.2 },
   glasscolossus: { perTile: 1.5, perSecond: 1.4 },
   coilserpent: { perTile: 1.2, perSecond: 3.8 },
   zenithengine: { perTile: 0.5, perSecond: 9.2 },
@@ -861,7 +871,8 @@ function makeSwarm(world, tiles, deps) {
     const site = worldgen.dungeonAt?.(world.seed, Math.floor(x), Math.floor(y));
     const dungeon = !!site && y > site.y && !!deps.dungeonOpen?.();
     const lowerOssuary = dungeon && y > site.y + 58 && !!world.hardmode;
-    return { biome, layer, wet, day, dungeon, lowerOssuary, event: event || null };
+    return { biome, layer, wet, day, dungeon, lowerOssuary,
+      wyvernsUnlocked: layer === 'space' && !!deps.wyvernsUnlocked?.(), event: event || null };
   }
 
   // Terraria's rule, and the one that makes building worth doing: a player-placed wall
@@ -1190,7 +1201,9 @@ function makeSwarm(world, tiles, deps) {
       const aim = Math.atan2(player.y + player.height / 2 - y, player.x + player.width / 2 - x);
       const fan = enraged ? [-0.66, -0.44, -0.22, 0, 0.22, 0.44, 0.66] : [-0.48, -0.24, 0, 0.24, 0.48];
       const angles = pattern === 'shatter' ? [0, Math.PI]
-        : pattern === 'cross' ? [aim - 0.25, aim + 0.25, aim - 1.12, aim + 1.12] : fan.map(offset => aim + offset);
+        : pattern === 'cross' ? [aim - 0.25, aim + 0.25, aim - 1.12, aim + 1.12]
+          : pattern === 'starburst' ? Array.from({ length: enraged ? 12 : 8 }, (_, i) =>
+            aim + i * Math.PI * 2 / (enraged ? 12 : 8)) : fan.map(offset => aim + offset);
       enemy.beams = { live: false, range: pattern === 'shatter' ? 17 : 23, angles, origin: pattern === 'shatter' ? 'feet' : null,
         colour: enemy.spec.colour };
     }

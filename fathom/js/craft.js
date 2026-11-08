@@ -268,6 +268,11 @@ const ITEMS = {
   'rift-sigil': { name: 'Rift Sigil', kind: 'use', colour: '#b493e9',
     use: { summon: 'riftarchon', layer: 'void' }, text: 'Summon the Rift Archon in the Void' },
   'ashvault-key': { name: 'Ashvault Key', kind: 'use', colour: '#dda677' },
+  'wyvern-essence': { name: 'Wyvern Essence', kind: 'loot', colour: '#a7dff6',
+    text: 'Dropped by wild wyverns in Space. Used to craft wings.' },
+  'starwyvern-plume': { name: 'Star Wyvern Plume', kind: 'loot', colour: '#c0b4ff' },
+  'starcall-horn': { name: 'Starcall Horn', kind: 'use', colour: '#b8b0ec',
+    use: { summon: 'starwyvern', layer: 'space' }, text: 'Sound the horn in Space above the sky islands' },
   'colossus-core': { name: 'Colossus Core', kind: 'loot', colour: '#91d9d7' },
   'serpent-core': { name: 'Serpent Core', kind: 'loot', colour: '#d5a26a' },
   'zenith-core': { name: 'Zenith Core', kind: 'loot', colour: '#c596e8' },
@@ -400,6 +405,10 @@ function setBonusFor(worn) {
 // Accessories. The slots have been there since the inventory was built and nothing has
 // ever filled them; each of these changes one number the player can feel.
 const ACCESSORIES = {
+  'wyvern-wings': { name: 'Wyvern Wings', colour: '#9dd7ee', flight: 1.15, fallMul: 0,
+    text: 'Hold Jump to fly and glide. Negates fall damage.' },
+  'starweave-wings': { name: 'Starweave Wings', colour: '#c2a8ff', flight: 1.7, fallMul: 0, glow: 4,
+    text: 'Hold Jump to fly and glide. Negates fall damage.' },
   'triune-emblem': { name: 'Triune Emblem', colour: '#d6b9e8',
     text: 'Defence +9 and all weapon damage +10%', effect: { defense: 9, melee: 1.1, ranged: 1.1, magic: 1.1 } },
   'beach-clasp': { name: 'Shore Clasp', colour: '#a9b89e', text: 'Move 8% faster and pick up items from farther away', speed: 1.08, pickup: 1.4 },
@@ -519,7 +528,7 @@ const EFFECT_FIELDS = {
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
-  glow: 'max',
+  glow: 'max', flight: 'max',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
 };
 
@@ -735,6 +744,7 @@ function describe(key, tilesModule) {
   if (acc) {
     lines.push('Accessory');
     if (acc.text) lines.push(acc.text);
+    if (acc.flight) lines.push(acc.flight + 's of flight per takeoff');
     if (acc.drop) lines.push('Only dropped, never made');
     return { name: nameOf(key, tilesModule), kind, lines };
   }
@@ -837,6 +847,12 @@ function dropOnly() {
 // out: what you get. need: what it costs. station: null means by hand, anywhere.
 // A need key starting with '#' is a tag: '#wood' is any species' wood.
 const RECIPES = [
+  { out: { key: 'starcall-horn', kind: 'use', count: 1 },
+    need: [['aetherite-bar', 5], ['stardust', 12], ['adamantite-bar', 4]], station: 'anvil' },
+  { out: { key: 'wyvern-wings', kind: 'accessory', count: 1 },
+    need: [['wyvern-essence', 14], ['feather', 12], ['aetherite-bar', 5]], station: 'anvil' },
+  { out: { key: 'starweave-wings', kind: 'accessory', count: 1 },
+    need: [['wyvern-wings', 1], ['wyvern-essence', 12], ['starwyvern-plume', 1], ['stardust', 8]], station: 'anvil' },
   ...[
     ['glass-effigy', 'ray-crystal'], ['induction-coil', 'storm-crystal'], ['zenith-beacon', 'ward-crystal']
   ].map(([key, crystal]) => ({ out: { key, kind: 'use', count: 1 },
@@ -1403,7 +1419,8 @@ const BOSS_CHAPTERS = [
   ['ashguardian', 'hollowroot', 'veinwarden', 'abyssaleye'],
   ['voidsovereign'],
   ['riftarchon'],
-  ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO]
+  ['prismsentinel', 'ossuarymechanist', ...HARDMODE_TRIO],
+  ['starwyvern']
 ];
 
 const BOSS_PREREQUISITES = new Map();
@@ -1414,7 +1431,9 @@ for (const [index, [main, ...optional]] of BOSS_CHAPTERS.entries()) {
 
 function bossPrerequisite(key, defeated) {
   const required = BOSS_PREREQUISITES.get(key);
-  return required && !defeated.has(required) ? required : null;
+  if (required && !defeated.has(required)) return required;
+  if (key === 'starwyvern') return HARDMODE_TRIO.find(boss => !defeated.has(boss)) || null;
+  return null;
 }
 
 function restoreBossProgress(saved) {

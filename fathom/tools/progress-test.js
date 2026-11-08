@@ -138,6 +138,10 @@ function climb() {
     for (const [summon, core] of [
       ['glass-effigy', 'colossus-core'], ['induction-coil', 'serpent-core'], ['zenith-beacon', 'zenith-core']
     ]) if (was.has(summon)) gain(core);
+    if (was.has('starcall-horn') && ['colossus-core', 'serpent-core', 'zenith-core'].every(key => was.has(key))) {
+      gain('starwyvern-plume');
+      gain('wyvern-essence');
+    }
     if (was.has('clockwork-heart')) gain('mechanist-core');
     if (was.has('cinder-idol') && power >= mining.TOOLS['cobalt-pick'].power) gain('furnace-core');
     if (was.has('ashvault-key') && was.has('guardian-effigy')) gain('guardian-seal');
@@ -311,6 +315,12 @@ for (const metal of ['tin', 'copper', 'iron', 'silver', 'gold', 'cobalt', 'ember
     && summoned.every(key => ordered.includes(key)), 'boss order must cover each summon once');
   const defeated = new Set();
   for (const [index, [main, ...optional]] of craft.BOSS_CHAPTERS.entries()) {
+    if (main === 'starwyvern') {
+      for (const boss of craft.HARDMODE_TRIO) {
+        ok(craft.bossPrerequisite(main, defeated) === boss, 'Star Wyvern bypasses ' + boss);
+        defeated.add(boss);
+      }
+    }
     ok(craft.bossPrerequisite(main, defeated) === null, main + ' cannot be reached in order');
     for (const boss of optional) ok(craft.bossPrerequisite(boss, defeated) === main, boss + ' unlocks too early');
     const next = craft.BOSS_CHAPTERS[index + 1]?.[0];

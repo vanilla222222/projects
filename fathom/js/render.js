@@ -790,6 +790,7 @@ function makeRenderer(canvas, deps) {
       swingArm: state.swingArm === null ? undefined : state.swingArm,
       held: state.held,
       gear: state.wornAppearance,
+      wingsSpread: p.wingsSpread,
       time: state.time,
       phase: 0
     });

@@ -831,6 +831,14 @@ function drawPerson(ctx, box, look, pose) {
   const g = geometry(box);
   const skin = look.skin || '#e8c39a';
   const gear = pose.gear || {};
+  const wings = gear.accessories?.filter(item => item.flight).sort((a, b) => b.flight - a.flight)[0];
+  if (wings) {
+    const span = pose.wingsSpread ? 0.73 + Math.sin((pose.time || 0) * 18) * 0.12 : 0.43;
+    const tip = pose.wingsSpread ? -0.83 : -0.38;
+    poly(ctx, g, [-0.1, -0.66, -span, tip, -span * 0.78, -0.48, -0.34, -0.31, -0.12, -0.43],
+      spriteShade(wings.colour, -0.46));
+    poly(ctx, g, [-0.12, -0.66, -span, tip, -span * 0.65, -0.51, -0.27, -0.4], wings.colour);
+  }
   const shirt = gear.chest?.colour || look.shirt || '#4a6fa5';
   const pants = gear.legs?.colour || look.pants || '#2f3b52';
   const hair = look.hair || '#23304a';
@@ -1111,7 +1119,13 @@ function paintCreatureInlay(ctx, g, body, c) {
 function paintHardmodeMachine(ctx, g, c) {
   const alloy = spriteShade(c.colour, -0.42);
   const glow = spriteShade(c.colour, 0.5);
-  if (c.key === 'glasscolossus') {
+  if (c.key === 'starwyvern' || c.key === 'wildwyvern') {
+    const flap = Math.sin(c.anim || 0) * 0.17;
+    for (const x of [-0.24, 0.04]) {
+      poly(ctx, g, [x, -0.48, x - 0.21, -0.94 + flap, x + 0.12, -0.75, x + 0.19, -0.44], alloy);
+      poly(ctx, g, [x, -0.51, x - 0.18, -0.89 + flap, x + 0.11, -0.73, x + 0.15, -0.5], glow);
+    }
+  } else if (c.key === 'glasscolossus') {
     for (const x of c.enraged ? [-0.19, 0.19] : [-0.28, -0.12, 0.12, 0.28]) {
       poly(ctx, g, [x - 0.09, -0.67, x - 0.02, -0.96, x + 0.06, -0.71, x + 0.08, -0.54], alloy);
       poly(ctx, g, [x - 0.04, -0.69, x - 0.02, -0.9, x + 0.03, -0.65], glow);
@@ -1142,7 +1156,7 @@ function drawCreature(ctx, box, body, c) {
   }
   plan(ctx, g, c);
   paintCreatureInlay(ctx, g, body, c);
-  if (['glasscolossus', 'coilserpent', 'zenithengine'].includes(c.key)) paintHardmodeMachine(ctx, g, c);
+  if (['glasscolossus', 'coilserpent', 'zenithengine', 'starwyvern', 'wildwyvern'].includes(c.key)) paintHardmodeMachine(ctx, g, c);
   ctx.restore();
 }
 
