@@ -282,10 +282,58 @@ const NIGHT_BIOME_SCORES = Object.fromEntries(Object.entries(BIOME_SCORES).map((
   key, makeScore('night:' + key, score.root - 7, 'dark', score.beat * 1.45, score.motif.slice().reverse(), 'sine')
 ]));
 
+const REALM_SCORES = Object.fromEntries([
+  ['sky', 72, 'bright', 0.72, [0, 2, 4, 6, null, 4, 3, 1], 'triangle', 'sky'],
+  ['space', 61, 'bright', 0.97, [0, null, 5, 2, 7, null, 4, 2], 'sine', 'space'],
+  ['hell', 41, 'dark', 0.57, [0, 0, 3, 1, 4, 2, 0, 1], 'sawtooth', 'infernal'],
+  ['hellcaves', 38, 'dark', 0.78, [0, 2, null, 1, 0, null, 4, 1], 'triangle', 'infernal'],
+  ['trench', 43, 'dark', 1.05, [0, null, 4, 2, null, 3, 1, null], 'sine', 'water-dungeon'],
+  ['void', 34, 'dark', 1.34, [0, null, null, 6, 1, null, 4, null], 'sine', 'void']
+].map(([key, ...data]) => [key, makeScore('realm:' + key, ...data)]));
+
+const CAVE_ARRANGEMENTS = {
+  forest: [54, 0.73, 'triangle'], plains: [51, 0.87, 'triangle'],
+  desert: [48, 0.67, 'square'], badlands: [47, 0.76, 'triangle'],
+  savanna: [53, 0.61, 'triangle'], jungle: [49, 0.58, 'triangle'],
+  marsh: [46, 0.98, 'sine'], highlands: [52, 0.71, 'square'],
+  taiga: [55, 0.85, 'sine'], tundra: [62, 1.07, 'sine'],
+  beach: [56, 0.79, 'triangle'], ocean: [47, 1.12, 'sine'],
+  blight: [41, 0.87, 'triangle'], crimson: [44, 0.7, 'sawtooth'],
+  hallow: [65, 0.68, 'sine']
+};
+const GEOLOGY_ARRANGEMENTS = {
+  marble: [57, 0.76, [0, 2, 4, null, 3, 1, 4, null], 'triangle'],
+  granite: [43, 0.69, [0, 0, 3, 1, null, 4, 2, 0], 'square'],
+  aquifer: [51, 0.93, [0, null, 3, 2, 4, null, 1, 2], 'sine'],
+  rail: [48, 0.51, [0, 1, 0, 3, 2, 0, 4, 2], 'triangle']
+};
+const SUBTERRANEAN_SCORES = {};
+for (const layer of ['caves', 'deep']) {
+  const deep = layer === 'deep';
+  const scores = SUBTERRANEAN_SCORES[layer] = {};
+  for (const [key, [root, beat, voice]] of Object.entries(CAVE_ARRANGEMENTS)) {
+    const original = BIOME_SCORES[key].motif;
+    const motif = deep ? [original[0], original[5], original[3], null, original[1], original[7], original[4], null]
+      : [original[0], original[3], original[6], original[1], null, original[4], original[2], original[7]];
+    const wet = key === 'ocean' || key === 'marsh';
+    scores[key] = makeScore(layer + ':' + key, root - (deep ? 7 : 0), key === 'hallow' ? 'bright' : 'dark',
+      beat * (deep ? 1.37 : 1), motif, deep && voice === 'square' ? 'triangle' : voice,
+      wet ? 'water-dungeon' : deep ? 'deep-caves' : 'cave');
+  }
+  for (const [key, [root, beat, motif, voice]] of Object.entries(GEOLOGY_ARRANGEMENTS)) {
+    scores['rock:' + key] = makeScore(layer + ':rock:' + key, root - (deep ? 5 : 0), key === 'marble' ? 'bright' : 'dark',
+      beat * (deep ? 1.3 : 1), deep ? motif.slice().reverse() : motif, voice,
+      key === 'aquifer' ? 'water-dungeon' : key === 'rail' ? 'rail' : deep ? 'deep-caves' : 'cave');
+  }
+}
+
 function scoreFor(layer, night, scene = {}) {
   if (scene.boss) return AUTHORED_BOSSES[scene.boss] || keyedScore('boss', scene.boss);
-  if (scene.event === 'bloodmoon') return BLOOD_MOON_SCORE;
   if (scene.dungeon) return DUNGEON_SCORES[scene.dungeon] || keyedScore('dungeon', scene.dungeon);
+  if (layer === 'surface' && scene.event === 'bloodmoon') return BLOOD_MOON_SCORE;
+  const underground = SUBTERRANEAN_SCORES[layer];
+  if (underground) return underground['rock:' + scene.geology] || underground[scene.biome] || moodFor(layer, night);
+  if (REALM_SCORES[layer]) return REALM_SCORES[layer];
   if (layer === 'surface' && BIOME_SCORES[scene.biome]) return (night ? NIGHT_BIOME_SCORES : BIOME_SCORES)[scene.biome];
   return moodFor(layer, night);
 }
@@ -537,6 +585,9 @@ function makeAudio(win) {
     const note = scoreNoteAt(mood, step, Math.random());
     const aquatic = mood.style === 'aquatic-boss' || mood.style === 'water-dungeon';
     const urgent = mood.style === 'boss' || mood.style === 'aquatic-boss';
+    const floating = mood.style === 'sky' || mood.style === 'space';
+    const infernal = mood.style === 'infernal';
+    const hollow = mood.style === 'void' || mood.style === 'deep-caves';
     const bar = Math.floor(step / 8) % 4;
     const harmony = mood.motif ? (mood.scale === 'dark' ? [0, 8, 3, 10] : [0, 9, 5, 7])[bar] : 0;
     const third = mood.motif ? (mood.scale === 'dark' ? [3, 4, 4, 4] : [4, 3, 4, 4])[bar] : mood.chord[1];
@@ -547,6 +598,14 @@ function makeAudio(win) {
       musicVoice('sine', note - 12, 0.045, at + beat * 0.48, 0.09, beat * 1.6);
       musicVoice('sine', note, 0.021, at + beat * 0.83, 0.04, beat * 1.2);
     }
+    if (floating && note !== null && step % 4 === 0) {
+      musicVoice('sine', note + 12, 0.035, at + beat * 0.45, 0.16, beat * 1.8);
+    }
+    if (hollow && step % 8 === 4) {
+      musicVoice('sine', mood.root - 12, 0.042, at, 0.42, beat * 2.4);
+    }
+    if (mood.style === 'rail' && step % 2 === 1) musicVoice('triangle', 78, 0.026, at, 0.008, 0.09);
+    if (infernal && step % 4 === 0) musicVoice('sine', 31, 0.092, at, 0.018, 0.22);
     if (urgent && !aquatic) {
       if (step % 4 === 0) musicVoice('sine', 32, 0.19, at, 0.007, 0.12);
       if (step % 4 === 2) musicVoice('triangle', 77, 0.045, at, 0.006, 0.075);
@@ -590,7 +649,7 @@ function makeAudio(win) {
     get running() { return ready(); } };
 }
 
-const EXPORTS_audio = { SOUNDS, AMBIENCE, SCALES, MOODS, BIOME_SCORES, DUNGEON_SCORES, noteAt, moodFor, scoreFor, scoreNoteAt, midiToHz,
+const EXPORTS_audio = { SOUNDS, AMBIENCE, SCALES, MOODS, BIOME_SCORES, DUNGEON_SCORES, REALM_SCORES, SUBTERRANEAN_SCORES, noteAt, moodFor, scoreFor, scoreNoteAt, midiToHz,
   makeAudio, tone, hiss };
 
 if (typeof module !== 'undefined' && module.exports) {
