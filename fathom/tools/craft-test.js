@@ -446,3 +446,23 @@ rangerAssert.equal(craft.bestAmmo(rangerAmmo, 'arrow', ['bolt']), null);
 rangerAssert.equal(craft.WEAPONS['wood-crossbow'].pierce, 2);
 rangerAssert.equal(craft.AMMO['bodkin-bolt'].pierce, 4);
 rangerAssert.ok(craft.WEAPONS['silver-scattergun'].scatter > 0);
+
+{
+  const assert = require('node:assert/strict');
+  const { ENEMIES } = require('../js/enemy');
+  const drops = new Set(ENEMIES.flatMap(enemy => [...(enemy.drops || []), ...(enemy.bossDrops || [])])
+    .map(entry => Array.isArray(entry) ? entry[0] : entry));
+  for (const stage of ['trail', 'cinder', 'rift', 'astral']) {
+    for (const role of ['melee', 'ranged', 'magic', 'summoner', 'thrower']) {
+      const tier = 'hunt-' + stage + '-' + role;
+      const pieces = craft.ARMOUR_PIECES.map(piece => tier + '-' + piece.suffix);
+      assert.ok(craft.equipEffects(pieces, [])[role] > 1);
+      for (const key of pieces) {
+        const recipe = craft.RECIPES.find(entry => entry.out.key === key);
+        assert.ok(recipe?.need.some(([ingredient]) => drops.has(ingredient)), key + ' has no enemy material');
+      }
+    }
+  }
+  assert.equal(craft.equipEffects([], ['batwing-idol']).spiritInterval, 0.92);
+  assert.equal(craft.equipEffects([], ['imp-fuse']).throwBlast, 1.16);
+}

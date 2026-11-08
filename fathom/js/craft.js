@@ -396,6 +396,32 @@ const ARMOUR_TIERS = [
     bonus: { key: 'brawler', name: 'Brawler', text: 'Melee hits 25% harder', melee: 1.25 } }
 ];
 
+const HUNTER_GEAR_ROLES = [
+  ['melee', 'Vanguard', '#c3896d', 1, 'meleeReach', 0.5, 'melee reach'],
+  ['ranged', 'Sharpshooter', '#a0bf76', 0.87, 'arrowSpeed', 1.1, 'projectile speed'],
+  ['magic', 'Spellbinder', '#a796da', 0.74, 'manaCost', 0.9, 'mana cost'],
+  ['summoner', 'Spiritkeeper', '#82c9c3', 0.78, 'spiritInterval', 0.9, 'spirit attack interval'],
+  ['thrower', 'Skirmisher', '#ddb67a', 0.85, 'throwBlast', 1.18, 'blast radius']
+];
+
+for (const [stage, name, base, metal, power, materials] of [
+  ['trail', 'Trail', 5, 'copper-bar', 1.10, ['chitin', 'feather', 'lens', 'gel', 'leather']],
+  ['cinder', 'Cinder', 15, 'emberite-bar', 1.13, ['bone', 'cinder', 'cinder', 'gel', 'cinder']],
+  ['rift', 'Rift', 25, 'mythril-bar', 1.16, ['bone', 'feather', 'stardust', 'stardust', 'cinder']],
+  ['astral', 'Astral', 45, 'eventide-bar', 1.19, ['wyvern-essence', 'stardust', 'stardust', 'wyvern-essence', 'stardust']]
+]) {
+  HUNTER_GEAR_ROLES.forEach(([role, title, colour, defense, field, value, effect], index) => {
+    const key = 'hunt-' + stage + '-' + role;
+    const detail = field === 'meleeReach' ? '+0.5 tiles ' + effect
+      : (value > 1 ? '+' : '') + Math.round((value - 1) * 100) + '% ' + effect;
+    ARMOUR_TIERS.push({ key, name: name + ' ' + title, colour, base: Math.round(base * defense),
+      craft: [[materials[index], ['wyvern-essence', 'lens'].includes(materials[index]) ? 3 : 6], [metal, 4]],
+      station: 'anvil',
+      bonus: { key, name: title, text: '+' + Math.round((power - 1) * 100) + '% ' + role + ' damage, ' + detail,
+        [role]: power, [field]: value } });
+  });
+}
+
 // Each piece carries a share of the tier's defence: the breastplate most, the boots least.
 const ARMOUR_PIECES = [
   { slot: 'head', suffix: 'helmet', label: 'Helm', share: 0.9, woodCost: 20 },
@@ -571,6 +597,7 @@ const EFFECT_FIELDS = {
   speed: 'mul', power: 'mul', swing: 'mul', regen: 'mul', pickup: 'mul',
   breathMul: 'mul', fallMul: 'mul', lavaDamage: 'mul',
   melee: 'mul', ranged: 'mul', magic: 'mul', summoner: 'mul', thrower: 'mul',
+  meleeReach: 'add', spiritInterval: 'mul', throwBlast: 'mul',
   manaCost: 'mul', manaRegen: 'mul', arrowSpeed: 'mul',
   glow: 'max', flight: 'max', flightBonus: 'add',
   doubleJump: 'flag', fireproof: 'flag', slimeFriend: 'flag'
@@ -1535,6 +1562,23 @@ for (const [key, name, material, bonus] of [
 ]) {
   ACCESSORIES[key] = { name, colour: '#d9ac79', text: 'Throwing damage +' + bonus + '%', thrower: 1 + bonus / 100 };
   RECIPES.push({ out: { key, kind: 'accessory', count: 1 }, need: [[material, 5], ['rope', 6]], station: 'anvil' });
+}
+
+for (const [key, name, enemy, material, effect, text] of [
+  ['scarab-grip', 'Scarab Grip', 'antlion', null, { meleeReach: 0.35 }, 'Melee reach +0.35 tiles'],
+  ['harpy-fletching', 'Harpy Fletching', 'harpy', null, { arrowSpeed: 1.13 }, 'Projectile speed +13%'],
+  ['watcher-prism', 'Watcher Prism', 'demoneye', null, { manaRegen: 1.18 }, 'Mana regeneration +18%'],
+  ['batwing-idol', 'Batwing Idol', 'cavebat', null, { spiritInterval: 0.92 }, 'Spirit attacks 8% sooner'],
+  ['imp-fuse', 'Imp Fuse', 'fireimp', null, { throwBlast: 1.16 }, 'Throwing blast radius +16%'],
+  ['vault-grip', 'Vault Grip', null, 'guardian-seal', { melee: 1.12, meleeReach: 0.25 }, 'Melee damage +12% and reach +0.25 tiles'],
+  ['wyvern-sight', 'Wyvern Sight', null, 'wyvern-essence', { ranged: 1.12, arrowSpeed: 1.08 }, 'Ranged damage +12% and projectile speed +8%'],
+  ['regent-prism', 'Regent Prism', null, 'siege-core', { magic: 1.14, manaCost: 0.94 }, 'Magic damage +14% and mana cost −6%'],
+  ['sovereign-idol', 'Sovereign Idol', null, 'void-heart', { summoner: 1.12, spiritInterval: 0.94 }, 'Spirit damage +12% and attacks 6% sooner'],
+  ['regent-fuse', 'Regent Fuse', null, 'siege-core', { thrower: 1.14, throwBlast: 1.1 }, 'Throwing damage +14% and blast radius +10%']
+]) {
+  ACCESSORIES[key] = { name, colour: '#dec0a5', text, ...effect, ...(enemy ? { drop: enemy } : {}) };
+  if (material) RECIPES.push({ out: { key, kind: 'accessory', count: 1 },
+    need: [[material, material === 'wyvern-essence' ? 6 : 1], ['silver-bar', 3]], station: 'anvil' });
 }
 
 function stationsNear(world, tiles, px, py) {

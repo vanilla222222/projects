@@ -1091,7 +1091,7 @@ function makeGame(canvas, deps) {
     for (const spread of style === 'fan' ? [-0.18, 0, 0.18] : [0]) {
       state.arrows.push({ x, y, vx: Math.cos(angle + spread) * speed, vy: Math.sin(angle + spread) * speed,
         life: weapon.reach / speed, colour: weapon.colour, throwStyle: style,
-        gravity: style === 'blast' ? 24 : 11, hitLimit: style === 'pierce' ? 3 : Infinity,
+        gravity: style === 'blast' ? 24 : 11, blastRadius: 4 * (state.gear?.throwBlast || 1), hitLimit: style === 'pierce' ? 3 : Infinity,
         hits: style === 'pierce' || style === 'returning' ? new Set() : null,
         damage: Math.round(weapon.damage * (state.gear?.thrower || 1) * (spread ? 0.38 : 1)) });
     }
@@ -1103,7 +1103,7 @@ function makeGame(canvas, deps) {
     for (const enemy of swarm.list) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
       const x = enemy.x + enemy.width / 2, y = enemy.y + enemy.height / 2;
-      if (Math.hypot(a.x - x, a.y - y) <= 4 && spiritLine(a.x, a.y, x, y)) {
+      if (Math.hypot(a.x - x, a.y - y) <= a.blastRadius && spiritLine(a.x, a.y, x, y)) {
         projectileHit(enemy, Math.round(a.damage * 0.7));
       }
     }
@@ -1212,7 +1212,7 @@ function makeGame(canvas, deps) {
     const y = player.y + 0.3 + Math.sin(state.time * 4) * 0.25;
     state.spirit = { x, y, colour: weapon.colour };
     if (state.time < nextSpiritStrike) return;
-    nextSpiritStrike = state.time + weapon.useTime;
+    nextSpiritStrike = state.time + weapon.useTime * Math.max(0.6, state.gear?.spiritInterval || 1);
     let target = null, distance = weapon.reach;
     for (const enemy of swarm.list) {
       if (enemy.dead || enemy.spec.passive || enemy.spec.specimen) continue;
@@ -1269,7 +1269,7 @@ function makeGame(canvas, deps) {
       return true;
     }
     if (!swarm) return false;
-    const reach = weapon ? weapon.reach : 2.2;
+    const reach = weapon ? weapon.reach + (state.gear?.meleeReach || 0) : 2.2;
     const target = swarm.at(pointer.x, pointer.y);
     if (!target) return false;
     const cx = state.player.x + state.player.width / 2;
