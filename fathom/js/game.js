@@ -14,6 +14,7 @@ function makeGame(canvas, deps) {
     profile: profileModule, menu: menuModule, sprite, audio: audioModule,
     buffs: buffModule, fishing: fishModule, settlement: settlementModule } = deps;
 
+  craft.registerEnemyBanners(enemyModule.ENEMIES);
   const profiles = profileModule.makeProfiles(window.localStorage);
   const menu = menuModule.makeMenu(document.getElementById('menu'),
     { profiles, palette: profileModule, parseSeed: profileModule.parseSeed, sprite, worldgen });
@@ -56,6 +57,7 @@ function makeGame(canvas, deps) {
   let expedition = null;
   let defeatedBosses = new Set();
   let bestiary = Object.create(null);
+  let enemyBanners = new Map();
   let storageItems = [];
   const PYLON_RADIUS = 45;
   const STORAGE_RADIUS = 24;
@@ -933,7 +935,10 @@ function makeGame(canvas, deps) {
       }
       spawnParticles(aim.x, aim.y, spec.colour, 9);
       sfxAt('break', aim.x, aim.y);
-      const leaves = mining.dropsOf(spec);
+      const bannerKey = aim.x + ':' + aim.y;
+      const banner = spec.enemyBanner && enemyBanners.get(bannerKey);
+      if (banner) enemyBanners.delete(bannerKey);
+      const leaves = banner ? 'banner-' + banner.species : mining.dropsOf(spec);
       if (leaves) dropItem(aim.x, aim.y, leaves, craft.kindOf(leaves), 1);
       // Cutting rock can open a reservoir, so every neighbour of the hole is woken.
       if (liquid) liquid.activateAround(aim.x, aim.y);
@@ -1121,7 +1126,7 @@ function makeGame(canvas, deps) {
   function projectileHit(target, damage, beat) {
     if (target.dead) return;
     damage = applyCombatBeat(beat, target, damage);
-    if (!swarm.damage(target, damage) || target.practice) return;
+    if (!swarm.damage(target, bannerDamage(target, damage)) || target.practice) return;
     if (target.expedition) { target.expeditionDefeated = true; return; }
     for (const [key, count] of target.spec.drops || []) {
       dropItem(target.x, target.y, key, craft.kindOf(key), count);
@@ -1459,7 +1464,7 @@ function makeGame(canvas, deps) {
       }
     }
     hit = applyCombatBeat(weapon && nextCombatBeat(weapon), target, hit);
-    if (swarm.damage(target, hit) && !target.practice) {
+    if (swarm.damage(target, bannerDamage(target, hit)) && !target.practice) {
       if (target.expedition) { target.expeditionDefeated = true; return true; }
       for (const [key, count] of target.spec.drops || []) {
         dropItem(target.x, target.y, key, craft.kindOf(key), count);
@@ -2324,25 +2329,66 @@ function makeGame(canvas, deps) {
       + Math.ceil(run.contract.seconds - elapsed) + 's';
   }
 
+  function bannerDamage(target, damage) {
+    if (target.practice || target.expedition) return damage;
+    for (const banner of enemyBanners.values()) {
+      if (banner.species !== target.key || Math.hypot(banner.x - state.player.x, banner.y - state.player.y) > 24
+        || world.get(banner.x, banner.y) !== tiles.idOf('enemy-banner')) continue;
+      return Math.round(damage * 1.15);
+    }
+    return damage;
+  }
+
+  function useEnemyBanner(aim, item) {
+    if (!aim.inReach) return false;
+    const key = aim.x + ':' + aim.y;
+    const existing = enemyBanners.get(key);
+    if (existing && world.get(aim.x, aim.y) === tiles.idOf('enemy-banner')) {
+      say(enemyModule.BY_KEY[existing.species].name + ' Banner · +15% damage to this species nearby', 3);
+      return true;
+    }
+    const species = craft.ITEMS[item?.key]?.banner;
+    if (!species) return false;
+    if (world.get(aim.x, aim.y) !== tiles.AIR) return true;
+    if (!world.getWall(aim.x, aim.y) && !tiles.isSolid(world.get(aim.x, aim.y - 1))) {
+      say('Hang banners from a background wall or a ceiling', 2);
+      return true;
+    }
+    if (!inventory.take(item.key, 1)) return true;
+    enemyBanners.set(key, { x: aim.x, y: aim.y, species, colour: enemyModule.BY_KEY[species].colour });
+    world.set(aim.x, aim.y, tiles.idOf('enemy-banner'));
+    sfxAt('place', aim.x, aim.y);
+    return true;
+  }
+
   function openBestiary() {
     const known = enemyModule.ENEMIES.filter(spec => bestiary[spec.key]).sort((a, b) => a.name.localeCompare(b.name));
     const summary = known.length + ' / ' + enemyModule.ENEMIES.length + ' creatures discovered';
     ui.showTown('Bestiary', [], [], query => {
-      const rows = [summary];
+      const rows = [summary, 'Banners · 50 defeats, 25 catches for passive wildlife, or one boss win.'];
+      const actions = [{ label: 'Back to Town Hall', run: checkHousing }];
       for (const spec of known) {
         const record = bestiary[spec.key];
         const type = spec.boss ? 'Boss' : spec.specimen ? spec.specimen.rare || 'Critter' : 'Enemy';
         const habitat = spec.foundry ? 'Starfall Foundry' : spec.dungeon ? 'Ossuary'
           : [...(spec.biomes || []), ...(spec.layers || [])].join(', ') || 'Special encounter';
-        const drops = record.defeated > 0 ? [...(spec.drops || []), ...(spec.bossDrops || [])]
-          .map(entry => craft.nameOf(Array.isArray(entry) ? entry[0] : entry, tiles)).join(', ') : '';
+        const loot = [...(spec.drops || []), ...(spec.bossDrops || []),
+          ...(spec.bossDrops ? [] : (RARE_BY_ENEMY[spec.key] || []).map(entry => entry.key))];
+        const drops = record.defeated > 0 ? [...new Set(loot.map(entry => Array.isArray(entry) ? entry[0] : entry))]
+          .map(key => craft.nameOf(key, tiles)).join(', ') : '';
         const search = [spec.name, type, habitat, drops].join(' ').toLowerCase();
         if (query && !search.includes(query)) continue;
         rows.push(spec.name + ' · ' + type + ' · ' + habitat + ' · ' + record.defeated + ' defeated'
           + (spec.specimen ? ' · ' + record.caught + ' caught' : '') + (drops ? ' · Drops: ' + drops : ''));
+        const earned = () => craft.earnedEnemyBanners(spec, record.defeated, record.caught, defeatedBosses.has(spec.key));
+        const available = earned() - (record.banners || 0);
+        if (available > 0) actions.push({ label: 'Claim ' + spec.name + ' Banner (' + available + ')', run() {
+          if (earned() <= (record.banners || 0)) return;
+          if (townExchange([], [['banner-' + spec.key, 1]])) record.banners = (record.banners || 0) + 1;
+        } });
       }
-      if (rows.length === 1) rows.push(query ? 'No discovered entries match.' : 'Encounter creatures or catch them with a net.');
-      return { rows, actions: [{ label: 'Back to Town Hall', run: checkHousing }] };
+      if (rows.length === 2) rows.push(query ? 'No discovered entries match.' : 'Encounter creatures or catch them with a net.');
+      return { rows, actions };
     }, 'Search creatures and habitats');
   }
 
@@ -3413,7 +3459,7 @@ function makeGame(canvas, deps) {
   function place() {
     const aim0 = physics.aimTile(state.player, pointer);
     const item = selectedItem();
-    if (useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
+    if (useEnemyBanner(aim0, item) || useWildlife(aim0, item) || useCircuit(aim0, item) || useRail(aim0, item)) return;
     if (aim0.inReach && (useRangerCounter(aim0) || useFoundryShortcut(aim0))) return;
     if (aim0.inReach && (useDungeonEntrance(aim0) || unlockAshvault(aim0) || useTownDevice(aim0))) return;
     if (talkTo()) return;
@@ -3734,7 +3780,7 @@ function makeGame(canvas, deps) {
     lastChunkBounds = '';
     if (typeof Worker !== 'function') return;
     try {
-      const worker = new Worker('workers/chunk.js?v=tinkers-workshop-1');
+      const worker = new Worker('workers/chunk.js?v=enemy-banners-1');
       chunkWorker = worker;
       worker.onmessage = ({ data }) => {
         if (chunkWorker !== worker || !chunkJob) return;
@@ -4038,6 +4084,7 @@ function makeGame(canvas, deps) {
       buffs: buffs ? buffs.serialize() : {},
       villagers: village ? village.serialize() : [],
       townDevices,
+      enemyBanners: [...enemyBanners.values()],
       completedOrders: [...completedOrders],
       settlements: settlements.serialize(),
       defeatedBosses: [...defeatedBosses],
@@ -4129,11 +4176,18 @@ function makeGame(canvas, deps) {
     village = villagerModule.makeVillage(world, tiles, { housing });
     if (worldRecord.villagers) village.restore(worldRecord.villagers);
     townDevices = worldRecord.townDevices || [];
+    enemyBanners = new Map((worldRecord.enemyBanners || []).filter(banner => enemyModule.BY_KEY[banner.species])
+      .map(banner => [banner.x + ':' + banner.y, banner]));
+    state.enemyBanners = enemyBanners;
     completedOrders = new Set(worldRecord.completedOrders || []);
     settlements = settlementModule.makeSettlementLedger(worldRecord.settlements);
     expedition = null;
     state.expeditionStatus = '';
     defeatedBosses = craft.restoreBossProgress(worldRecord.defeatedBosses);
+    for (const key of worldRecord.defeatedBosses || []) {
+      const spec = enemyModule.BY_KEY[key];
+      if (spec?.boss) recordWildlife(spec);
+    }
     if (defeatedBosses.has('prismsentinel') && !world.hardmode) world.enableHardmode();
     if (defeatedBosses.has('astralregent') && !world.astral) world.enableAstral();
     nextSkyAnchor = 0;

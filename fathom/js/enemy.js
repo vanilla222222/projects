@@ -749,7 +749,7 @@ for (const specimen of WILDLIFE_SPECIMENS) {
     day: specimen.clock !== 'night', night: specimen.clock !== 'day',
     emit: specimen.rare === 'crystal' || specimen.key.endsWith('firefly') ? 5 : 0,
     specimen, passive: true, hiddenSpawn: Boolean(specimen.rare),
-    drops: specimen.rare === 'crystal' ? [[specimen.gem, 2]] : []
+    drops: specimen.rare === 'crystal' ? [[specimen.gem, 2]] : [['wildlife-trace', 1]]
   });
 }
 

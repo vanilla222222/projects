@@ -154,6 +154,17 @@ the cost of one small canvas.
 | `js/wiring.js` | Circuit propagation, timers, pump transfers and wire persistence |
 | `js/game.js` | loop, input, camera, mining, placing, drops, events, save |
 
+### Enemy loot and banners
+
+Every creature has a drop. Rotten Flesh can fuel torches, Shadow Scales make
+lanterns, and Wildlife Traces can furnish a terrarium. Check the Bestiary to
+see loot after defeating a species.
+
+Claim a species banner in the Bestiary after 50 defeats, one boss win, or
+25 catches for passive wildlife. Hang it from a background wall or ceiling.
+While within 24 tiles, you deal 15% more damage to that species. Matching
+banners share one bonus, and expeditions use their normal difficulty.
+
 ### Campaign
 
 Open **Campaign** from Town Hall or the Field Journal. Thirteen acts guide

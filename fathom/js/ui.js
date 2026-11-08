@@ -64,6 +64,18 @@ function makeUI(root, deps) {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     if (!item) return canvas;
+    const banner = craft?.ITEMS[item.key];
+    if (banner?.banner) {
+      const u = size / 16;
+      ctx.fillStyle = '#322335';
+      ctx.fillRect(2 * u, 2 * u, 12 * u, 2 * u);
+      ctx.fillRect(4 * u, 4 * u, 8 * u, 11 * u);
+      ctx.fillStyle = banner.colour;
+      ctx.fillRect(5 * u, 4 * u, 6 * u, 9 * u);
+      ctx.fillStyle = '#f4d8ac';
+      ctx.fillRect(7 * u, 6 * u, 2 * u, 4 * u);
+      return canvas;
+    }
     if (mining && mining.isTool(item)) {
       paintToolIcon(ctx, mining.toolSpec(item.key).job, mining.tierColour(item), size);
       return canvas;

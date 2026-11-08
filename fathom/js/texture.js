@@ -1117,7 +1117,7 @@ function bakeAtlas(document, tiles) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   for (const spec of tiles.TILES) {
-    if (!spec.colour) continue;
+    if (!spec.colour || spec.enemyBanner) continue;
     for (let v = 0; v < VARIANTS; v += 1) {
       const ox = atlasX(spec.id, v);
       const oy = atlasY(spec.id);
