@@ -5,7 +5,7 @@ const CAMERA_W = CAMERA_TILES * TILE;
 const CAMERA_H = CAMERA_TILES * TILE;
 const ROOM_FREEZE_TIME = 0.4;
 const ROOM_FADE_TIME = 0.4;
-const MAX_DPR = 2;
+const MAX_DPR = 4;
 
 const ROOM_LABELS = {
   boss: 'Boss Chamber', treasure: 'Treasure Room', shop: 'Shop', secret: 'Secret Room!',
@@ -416,19 +416,19 @@ class Game {
     const maxH = Math.max(50, wrap.clientHeight - 8);
 
     const scale = Math.min(maxW / CAMERA_W, maxH / CAMERA_H, 2.2);
-    this.canvas.style.width = (CAMERA_W * scale) + 'px';
-    this.canvas.style.height = (CAMERA_H * scale) + 'px';
     // Paint text at display resolution instead of enlarging a smaller canvas in CSS.
     const density = Math.min(window.devicePixelRatio || 1, MAX_DPR);
     const width = Math.max(1, Math.round(CAMERA_W * scale * density));
     const height = Math.max(1, Math.round(CAMERA_H * scale * density));
+    this.canvas.style.width = (width / density) + 'px';
+    this.canvas.style.height = (height / density) + 'px';
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
       this._ctxTuned = false;
     }
     this.dpr = width / CAMERA_W;
-    this._positionHudPanels(wrap, CAMERA_W * scale);
+    this._positionHudPanels(wrap, width / density);
   }
 
   _positionHudPanels(wrap, canvasPxW){

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -151,6 +151,10 @@
       <div id="skillTreeList" class="achv-list"></div>
     </div>
         <canvas id="skillTreeMinimap" width="240" height="180" title="Click to jump — dots show every node you can currently see; unowned dots are tinted by branch"></canvas>
+    <div class="skilltree-touch-zoom">
+      <button id="skillTreeTouchZoomOut" type="button" aria-label="Zoom out">−</button>
+      <button id="skillTreeTouchZoomIn" type="button" aria-label="Zoom in">+</button>
+    </div>
     <span id="skillTreeZoomReadout" class="skilltree-zoom-readout" title="Current zoom — scroll wheel or +/- to change"></span>
         <div id="skillTreeDetailPanel" class="skilltree-detail hidden">
       <div class="skilltree-detail-head">
@@ -159,6 +163,10 @@
       </div>
       <div id="skillTreeDetailDesc" class="skilltree-detail-desc"></div>
       <div id="skillTreeDetailEffects" class="skilltree-detail-effects"></div>
+      <div class="skilltree-touch-detail-actions">
+        <button id="skillTreeDetailAction" type="button" class="hidden"></button>
+        <button id="skillTreeDetailClose" type="button">Close Details</button>
+      </div>
     </div>
         <div id="skillTreeOverviewPanel" class="skilltree-overview hidden">
       <div class="skilltree-overview-head">
@@ -269,24 +277,6 @@
     <div id="canvasWrap">
       <canvas id="game" width="320" height="320"></canvas>
 
-            <div id="touchJoystick" class="touch-only touch-joystick" aria-hidden="true">
-        <div class="touch-joystick-ring"></div>
-        <div id="touchJoystickKnob" class="touch-joystick-knob"></div>
-      </div>
-      <div id="touchActionBar" class="touch-only touch-action-bar">
-        <button type="button" id="touchBombBtn" class="touch-action-btn" title="Place Bomb (B)">💣</button>
-        <button type="button" id="touchActiveBtn" class="touch-action-btn touch-action-btn-lg" title="Use Active Item (E)">✨</button>
-        <button type="button" id="touchPillBtn" class="touch-action-btn" title="Take Pill (Q)">💊</button>
-        <button type="button" id="touchStarBtn" class="touch-action-btn" title="Use Star (R)">⭐</button>
-        <button type="button" id="touchTurretBtn" class="touch-action-btn touch-only-turret hidden" title="Hold to Build Turret (V)">🔧</button>
-      </div>
-      <div id="touchUtilityBar" class="touch-only touch-utility-bar">
-        <button type="button" id="touchDonateBtn" class="touch-util-btn" title="Donate (F)">💰</button>
-        <button type="button" id="touchRerollBtn" class="touch-util-btn" title="Reroll (G)">🎲</button>
-        <button type="button" id="touchArcadeBtn" class="touch-util-btn" title="Arcade Interact (H)">🕹️</button>
-        <button type="button" id="touchPauseBtn" class="touch-util-btn" title="Pause">⏸️</button>
-      </div>
-
             <div id="sideActionBar" class="side-action-bar">
         <button type="button" id="sideActionPill" class="side-action-btn" title="Consume Pill (Q)">💊</button>
         <button type="button" id="sideActionStar" class="side-action-btn" title="Consume Star (R)">⭐</button>
@@ -341,6 +331,36 @@
       <div id="toast"></div>
     </div>
 
+    <div id="touchControls" class="touch-only">
+      <div class="touch-stick-panel">
+        <div id="touchJoystick" class="touch-joystick" role="group" aria-label="Move joystick">
+          <div class="touch-joystick-ring"></div><div id="touchJoystickKnob" class="touch-joystick-knob"></div>
+        </div>
+        <span>Move</span>
+      </div>
+      <div class="touch-buttons">
+        <button type="button" id="touchBombBtn" aria-label="Place bomb">💣</button>
+        <button type="button" id="touchActiveBtn" aria-label="Use active item">✨</button>
+        <button type="button" id="touchPillBtn" aria-label="Take pill">💊</button>
+        <button type="button" id="touchStarBtn" aria-label="Use star">⭐</button>
+        <button type="button" id="touchPocketBtn" class="hidden" aria-label="Use pocket ability">❄️</button>
+        <button type="button" id="touchTurretBtn" class="hidden" aria-label="Hold to build turret">🔧</button>
+        <button type="button" id="touchDestroyTurretBtn" class="hidden" aria-label="Destroy nearest turret">💥</button>
+        <button type="button" id="touchDropTrinketBtn" class="hidden" aria-label="Drop trinket">🗑️</button>
+        <button type="button" id="touchDonateBtn" class="hidden" aria-label="Choose treasure or donate">🤝</button>
+        <button type="button" id="touchRerollBtn" class="hidden" aria-label="Reroll or upgrade">🎲</button>
+        <button type="button" id="touchArcadeBtn" class="hidden" aria-label="Arcade or wave arena control">🕹️</button>
+        <button type="button" id="touchMapBtn" aria-label="Show or hide map" aria-expanded="false">🗺️</button>
+        <button type="button" id="touchPauseBtn" aria-label="Pause">⏸️</button>
+      </div>
+      <div class="touch-stick-panel">
+        <div id="touchAim" class="touch-joystick" role="group" aria-label="Hold to attack, drag to aim">
+          <div class="touch-joystick-ring"></div><div id="touchAimKnob" class="touch-joystick-knob"></div>
+        </div>
+        <span>Aim / Fire</span>
+      </div>
+    </div>
+
         <div id="statPanel" class="hudPanel">
       <div class="hudPanelSection">
         <div class="hudPanelTitle">Run Stats</div>
@@ -366,6 +386,7 @@
     <div id="pauseScreen" class="screen hidden overlay">
     <h2>Paused</h2>
     <p id="pauseStats"></p>
+        <p id="touchPauseHelp">Left stick moves. Hold the right stick to attack and drag it to aim. The center buttons use gear and interact with the room.</p>
         <div id="pauseKeybinds" class="pause-keybinds">
       <span class="pause-keybind"><kbd>WASD</kbd> Move</span>
       <span class="pause-keybind"><kbd>Click</kbd> Attack</span>
@@ -659,6 +680,7 @@
 <script src="js/ui/menu-backdrop.js?v=pixel-1"></script>
 <script src="js/ui/music-test.js"></script>
 <script src="js/ui/settings.js"></script>
+<script src="js/ui/touch-input.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

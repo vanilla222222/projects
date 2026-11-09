@@ -372,7 +372,7 @@ const Util = {
       ctx.lineWidth = 1;
       const studBaseR = ob.radius * 0.75, studLen = ob.radius + 5, studBw = 2.4;
 
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       for (const a of studs) {
         const dx = Math.cos(a), dy = Math.sin(a);
         const px = -dy, py = dx;
@@ -430,7 +430,7 @@ const Util = {
           }
         }
 
-        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6;
+        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0;
         ctx.strokeStyle = ob.def.dark; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(ob.x, ob.y, 9, 0, Math.PI * 2); ctx.stroke();
         ctx.shadowBlur = 0;
@@ -447,7 +447,7 @@ const Util = {
       ctx.beginPath(); ctx.ellipse(ob.x, ob.y + 9, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = flash ? HIT : Util.bodyShade(ctx, ob.x, ob.y, 11, ob.def.color);
 
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.beginPath(); ctx.arc(ob.x, ob.y, 11, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = flash ? HIT : ob.def.dark; ctx.lineWidth = 1.5;
@@ -500,7 +500,7 @@ const Util = {
         : lcV === 4 ? [{ dx:-1, dy:0, s:1.05 }, { dx:7, dy:-4, s:0.45 }, { dx:6, dy:5, s:0.4 }]
         : [{ dx:0, dy:-2, s:1 }, { dx:-6, dy:3, s:0.7 }, { dx:6, dy:3, s:0.75 }];
 
-      if (!flash) { ctx.save(); ctx.shadowColor = ob.def.color; ctx.shadowBlur = 8; }
+      if (!flash) { ctx.save(); ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       for (const f of facets) {
         const fx = ob.x + f.dx, fy = ob.y + f.dy, r = 11 * f.s;
         ctx.fillStyle = flash ? HIT : ob.def.dark;
@@ -609,7 +609,7 @@ const Util = {
       ctx.strokeStyle = Theme.fx.fuseCord; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(ob.x, ob.y - 12); ctx.quadraticCurveTo(ob.x + 4 * fz, ob.y - 17, ob.x + 1 * fz, ob.y - 20); ctx.stroke();
 
-      if (!flash) { ctx.shadowColor = Theme.fx.fuseSpark; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = Theme.fx.fuseSpark; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : Theme.fx.fuseSpark;
       ctx.beginPath(); ctx.arc(ob.x + 1 * fz, ob.y - 20, 2.5, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
@@ -627,7 +627,7 @@ const Util = {
       ctx.strokeStyle = flash ? HIT_SOFT : (ob.def.boltColor || ob.def.color);
       ctx.lineWidth = 2;
 
-      if (!flash) { ctx.shadowColor = ob.def.boltColor || ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.boltColor || ob.def.color; ctx.shadowBlur = 0; }
       for (const ang of (ob.def.angles || [])) {
         ctx.beginPath();
         ctx.moveTo(ob.x + Math.cos(ang) * 4, ob.y + Math.sin(ang) * 4);
@@ -658,7 +658,7 @@ const Util = {
       ctx.strokeStyle = ob.def.boltColor || Theme.projectile.turretBolt;
       ctx.lineWidth = 3;
 
-      if (!flash) { ctx.shadowColor = ob.def.boltColor || Theme.projectile.turretBolt; ctx.shadowBlur = 7; }
+      if (!flash) { ctx.shadowColor = ob.def.boltColor || Theme.projectile.turretBolt; ctx.shadowBlur = 0; }
       for (const ang of (ob.def.angles || [])) {
         ctx.beginPath();
         ctx.moveTo(ob.x + Math.cos(ang) * 6, ob.y + Math.sin(ang) * 6);
@@ -710,7 +710,7 @@ const Util = {
       }
       const tipX = ob.x + curl * 2, tipY = ob.y - 10;
       const glow = ob.def.boltColor || Theme.projectile.turretEye;
-      if (!flash) { ctx.shadowColor = glow; ctx.shadowBlur = lhV === 4 ? 9 : 5; }
+      if (!flash) { ctx.shadowColor = glow; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : glow;
       ctx.beginPath(); ctx.arc(tipX, tipY, lhV === 4 ? 3 : 2.2, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
@@ -726,7 +726,7 @@ const Util = {
         : grV === 2 ? [[-5, -8, 2.6], [0, -12, 3], [5, -8, 2.6]]
         : grV === 3 ? [[-6, -6, 5], [4, -7, 4]]
         : [[-3, -11, 3], [3, -6, 2.5]];
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT_SOFT : ob.def.color;
       for (const [sx, sy, sr] of shards) {
         ctx.beginPath();
@@ -756,7 +756,7 @@ const Util = {
         : fvV === 2 ? [[-4, -5], [-1, -9], [2, -6], [5, -9]]
         : fvV === 3 ? [[0, -10]]
         : [[-6, -4], [-2, -8], [1, -5], [4, -9], [6, -4]];
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : ob.def.color;
       for (const [mx, my] of motes) {
         ctx.beginPath(); ctx.arc(ob.x + mx, ob.y + my, 1.4, 0, Math.PI * 2); ctx.fill();
@@ -776,7 +776,7 @@ const Util = {
       const tsV = Math.floor(tileRand(vtx, vty, 308) * 5);
       const lean = tsV === 1 ? -4 : tsV === 2 ? 4 : tsV === 4 ? 2 : 0;
       const wide = tsV === 3 ? 5 : 3;
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : ob.def.color;
       ctx.beginPath();
       ctx.moveTo(ob.x - wide, ob.y + 6);
@@ -815,7 +815,7 @@ const Util = {
 
       ctx.strokeStyle = ob.def.dark; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(ob.x, ob.y - 9); ctx.lineTo(ob.x + 2, ob.y - 14); ctx.stroke();
-      if (!flash) { ctx.shadowColor = Theme.fx.fuseSpark; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = Theme.fx.fuseSpark; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : Theme.fx.fuseSpark;
       ctx.beginPath(); ctx.arc(ob.x + 2, ob.y - 14, 1.6, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
@@ -836,7 +836,7 @@ const Util = {
         : ssV === 2 ? [[-4, -8], [-1, -12], [2, -9], [5, -12]]
         : ssV === 3 ? [[0, -12]]
         : [[-6, -6], [-2, -10], [1, -7], [4, -11], [6, -6]];
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 5; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : ob.def.color;
       for (const [px, py] of spores) {
         ctx.beginPath(); ctx.arc(ob.x + px, ob.y + py, 1.2, 0, Math.PI * 2); ctx.fill();
@@ -870,7 +870,7 @@ const Util = {
         ctx.stroke();
       }
       if (!flash) {
-        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6;
+        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0;
         ctx.strokeStyle = ob.def.dark; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(ob.x, ob.y, 9, 0, Math.PI * 2); ctx.stroke();
         ctx.shadowBlur = 0;
@@ -889,7 +889,7 @@ const Util = {
       ctx.beginPath(); ctx.moveTo(ob.x - 5, ob.y + 9); ctx.lineTo(ob.x - 4, ob.y - 13); ctx.lineTo(ob.x + 4, ob.y - 13); ctx.lineTo(ob.x + 5, ob.y + 9); ctx.closePath(); ctx.stroke();
 
       const gcV = Math.floor(tileRand(vtx, vty, 312) * 5);
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 5; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.strokeStyle = flash ? HIT_SOFT : Util.shadeColor(ob.def.dark, 0.3); ctx.lineWidth = 1;
       if (gcV === 1) { ctx.beginPath(); ctx.moveTo(ob.x - 3, ob.y - 10); ctx.lineTo(ob.x + 2, ob.y + 6); ctx.stroke(); }
       else if (gcV === 2) { ctx.beginPath(); ctx.moveTo(ob.x - 2, ob.y - 10); ctx.lineTo(ob.x + 2, ob.y - 2); ctx.lineTo(ob.x - 2, ob.y + 6); ctx.stroke(); }
@@ -913,7 +913,7 @@ const Util = {
         : sbV === 2 ? [[-8, -4], [0, -9], [8, -4]]
         : sbV === 3 ? [[-7, -7], [-1, -9], [3, -5]]
         : [[-3, -5], [1, -9], [7, -7]];
-      if (!flash) { ctx.shadowColor = ob.def.boltColor || ob.def.color; ctx.shadowBlur = 6; }
+      if (!flash) { ctx.shadowColor = ob.def.boltColor || ob.def.color; ctx.shadowBlur = 0; }
       ctx.fillStyle = flash ? HIT : (ob.def.boltColor || ob.def.color);
       for (const [bx, by] of buds) {
         ctx.beginPath(); ctx.arc(ob.x + bx, ob.y + by, 1.8, 0, Math.PI * 2); ctx.fill();
@@ -931,7 +931,7 @@ const Util = {
       ctx.beginPath(); ctx.arc(ob.x, ob.y, 9, 0, Math.PI * 2); ctx.fill();
 
       const mpV = Math.floor(tileRand(vtx, vty, 314) * 5);
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 7; }
+      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0; }
       ctx.strokeStyle = flash ? HIT : ob.def.color; ctx.lineWidth = 1.6;
       if (mpV === 0) { ctx.beginPath(); ctx.moveTo(ob.x - 4, ob.y - 5); ctx.lineTo(ob.x + 1, ob.y); ctx.lineTo(ob.x - 2, ob.y + 6); ctx.stroke(); }
       else if (mpV === 1) { ctx.beginPath(); ctx.moveTo(ob.x, ob.y - 6); ctx.lineTo(ob.x, ob.y); ctx.lineTo(ob.x - 4, ob.y + 5); ctx.moveTo(ob.x, ob.y); ctx.lineTo(ob.x + 4, ob.y + 5); ctx.stroke(); }
@@ -960,7 +960,7 @@ const Util = {
 
       if (!flash) {
 
-        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6;
+        ctx.shadowColor = ob.def.color; ctx.shadowBlur = 0;
         ctx.strokeStyle = Theme.shadow.rim; ctx.lineWidth = tall ? 2 : 1.4;
         const a0 = Math.PI * (rkV === 1 ? 1.22 : rkV === 2 ? 1.02 : rkV === 3 ? 0.92 : rkV === 4 ? 1.35 : 1.1);
         ctx.beginPath(); ctx.arc(ob.x, cy, ob.radius * (tall ? 0.6 : 0.72), a0, a0 + Math.PI * 0.6); ctx.stroke();
@@ -1097,7 +1097,7 @@ const Util = {
     ctx.fillRect(x - w / 2, y - h / 2, w, h);
 
     ctx.save();
-    ctx.shadowColor = Theme.icon.batteryCharge; ctx.shadowBlur = 4;
+    ctx.shadowColor = Theme.icon.batteryCharge; ctx.shadowBlur = 0;
     ctx.fillStyle = Theme.icon.batteryCharge;
     ctx.fillRect(x - w / 2 + 2, y - h / 2 + 2, w - 4, Math.max(0, h - 4));
     ctx.restore();
