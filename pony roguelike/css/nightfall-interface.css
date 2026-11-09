@@ -1,0 +1,131 @@
+/* Night Watch interface. Keep controls in their original DOM IDs for keyboard and touch. */
+:root {
+  --bg: #14111c;
+  --panel: #221c2c;
+  --panel-hi: #31263b;
+  --panel2: #302538;
+  --panel-glass: #241d2d;
+  --ink: #f8eedc;
+  --muted: #c4b5cd;
+  --muted-dim: #a997b2;
+  --border: #78627d;
+  --border-soft: #4c3d54;
+  --accent: #c19be2;
+  --accent2: #8bceb4;
+  --gold: #f2c580;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+}
+
+html, body { font-family: system-ui, sans-serif; }
+body::before, body::after { display: none; }
+#mainMenu { padding: 62px clamp(14px, 4vw, 48px) 40px; gap: 16px; }
+.nightfall-masthead, .nightfall-front, .nightfall-records, .nightfall-navigation { width: min(100%, 1120px); }
+.nightfall-masthead {
+  position: relative;
+  padding: 24px clamp(16px, 4vw, 44px);
+  border: 1px solid #7f6683;
+  background: linear-gradient(100deg, #2d2236 35%, #382840 80%, #4a3044);
+  box-shadow: 0 4px 0 #16111d, inset 0 0 0 3px #221a2b;
+  text-align: left;
+}
+.nightfall-masthead::after {
+  position: absolute;
+  right: 5%;
+  top: 24%;
+  width: 58px;
+  height: 58px;
+  content: "";
+  opacity: .8;
+  background: #f5cf91;
+  clip-path: polygon(29% 0,71% 0,71% 14%,86% 14%,86% 29%,100% 29%,100% 71%,86% 71%,86% 86%,71% 86%,71% 100%,29% 100%,29% 86%,14% 86%,14% 71%,0 71%,0 29%,14% 29%,14% 14%,29% 14%,29% 0);
+  pointer-events: none;
+}
+.nightfall-kicker, .nightfall-section-title, .title, .trophyTitle, .overlay h2 {
+  font-family: ui-monospace, "Courier New", monospace;
+}
+.nightfall-kicker { color: var(--gold); text-transform: uppercase; font-size: 12px; font-weight: 800; letter-spacing: .16em; }
+.nightfall-masthead .title { font-size: clamp(25px, 5vw, 58px); letter-spacing: .055em; line-height: 1.16; text-shadow: 3px 3px #17111f; }
+.nightfall-masthead .title, .nightfall-masthead .title span { animation: none; }
+.nightfall-masthead .title span { color: var(--gold); text-shadow: 3px 3px #17111f; }
+.nightfall-masthead .subtitle { margin-top: 7px; }
+.nightfall-masthead .menu-tip { text-align: left; margin: 8px 0 0; }
+.nightfall-navigation { justify-content: flex-start; gap: 8px; margin: 0; }
+.nightfall-front { display: grid; grid-template-columns: minmax(0, 1fr) minmax(215px, 265px); gap: 16px; align-items: start; }
+.nightfall-roster, .nightfall-run-panel, .nightfall-records {
+  min-width: 0;
+  padding: 12px;
+  background: #221a2beF;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 4px 0 #15101a, inset 0 1px #574361;
+}
+.nightfall-section-title { padding: 3px 4px 10px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
+.nightfall-section-title span { margin-right: 7px; color: var(--gold); }
+.nightfall-run-panel .achv-filter { justify-content: flex-start; margin: 0 0 12px; }
+#seedInput { max-width: 100%; }
+#controlsHint { margin: 0; text-align: left; line-height: 1.65; color: var(--muted); }
+#mainMenu .class-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  padding: 0;
+  margin: 0;
+  gap: 9px;
+  max-width: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.class-card, .best-card, .achv-row, .trophy, .panel, .hudPanel, #hud, #minimapWrap {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  box-shadow: 0 3px 0 #140f19, inset 0 1px #53435c;
+  backdrop-filter: none;
+}
+.class-card { padding: 8px; animation: none; }
+.class-card::before { display: none; }
+.class-card canvas { background: #181421; border: 1px solid #45374d; }
+.class-card:hover:not(.locked), .best-card:hover, .achv-row:hover { border-color: var(--gold); }
+.nightfall-records .trophy-routes { max-width: none; align-items: flex-start; }
+.nightfall-records .trophyTitle { justify-content: flex-start; }
+.nightfall-records .trophy-row { justify-content: flex-start; }
+button, .achv-open-btn, .overlay button, .achv-filter button {
+  border-radius: 2px;
+  border: 1px solid #7b6483;
+  background: #382b43;
+  color: var(--ink);
+  box-shadow: 0 3px #16111c, inset 0 1px #6b5474;
+  text-shadow: none;
+}
+button:hover, .achv-open-btn:hover, .overlay button:hover, .achv-filter button:hover { color: #fff2d7; background: #513b58; }
+button.active, .achv-filter button.active { background: #625036; color: #fff1d0; border-color: var(--gold); }
+button:focus-visible, .class-card:focus-visible { outline: 2px solid #f2c580; outline-offset: 3px; }
+.overlay { background: #16111deF; backdrop-filter: none; }
+.overlay h2 { color: var(--gold); text-shadow: 2px 2px #100c16; }
+.overlay h2, .overlay p, .overlay button, .best-grid .best-card { animation: none; }
+#hud { padding: 7px 9px; }
+.hud-resources .res, .active-icon, .pill-icon, .star-icon, .trinket-icon, .pip {
+  border-radius: 2px;
+  border-color: #65506e;
+  background: #17131f;
+}
+.hud-resources .res:hover { transform: none; }
+.pip.full { background: var(--accent2); box-shadow: inset 0 -3px #4f927d; animation: none; }
+#canvasWrap { border: 2px solid #53435b; background: #15101a; }
+.nightfall-res-glyph { width: 12px; height: 12px; display: inline-block; background: var(--gold); }
+.glyph-coin { clip-path: polygon(25% 0,75% 0,75% 17%,100% 17%,100% 83%,75% 83%,75% 100%,25% 100%,25% 83%,0 83%,0 17%,25% 17%); }
+.glyph-key { background: #c0dbc8; clip-path: polygon(0 0,60% 0,60% 35%,42% 35%,42% 60%,100% 60%,100% 82%,72% 82%,72% 100%,52% 100%,52% 82%,20% 82%,20% 48%,0 48%); }
+.glyph-bomb { background: #d6a5cc; clip-path: polygon(65% 0,91% 0,91% 20%,71% 20%,71% 35%,91% 35%,91% 83%,76% 83%,76% 100%,24% 100%,24% 83%,8% 83%,8% 45%,28% 45%,28% 32%,58% 32%,58% 15%,65% 15%); }
+.glyph-tool { background: #b7b2d9; clip-path: polygon(0 0,35% 0,35% 20%,55% 20%,55% 0,80% 0,80% 45%,59% 45%,59% 100%,38% 100%,38% 45%,0 45%); }
+.glyph-wing { background: #95d5bc; clip-path: polygon(0 10%,28% 10%,50% 36%,72% 10%,100% 10%,100% 55%,68% 80%,50% 65%,32% 80%,0 55%); }
+
+@media (max-width: 720px) {
+  #mainMenu { padding: 58px 12px 26px; }
+  .nightfall-front { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .nightfall-run-panel { order: -1; }
+  .nightfall-masthead::after { opacity: .22; }
+  #mainMenu .class-grid { grid-template-columns: repeat(auto-fit, minmax(126px, 1fr)); }
+  .nightfall-navigation { gap: 5px; }
+  .nightfall-navigation button { padding: 7px 9px; font-size: 12px; }
+}

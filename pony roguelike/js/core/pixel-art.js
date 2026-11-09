@@ -232,45 +232,115 @@ const NightfallArt = (() => {
     ctx.restore();
   }
 
-  function dnb(ctx, e, flash) {
-    const scale = e.radius / 8;
-    const seed = hash(e.type?.id || e.behavior || 'dnb');
-    const body = flash ? '#ffddbd' : ['#9d6247','#b27853','#83533f','#a96e4d'][seed & 3];
-    const dark = flash ? '#dba991' : '#633a32';
-    const light = flash ? paper : '#d2a278';
-    const accent = flash ? paper : e.color || '#cc8a63';
-    ctx.save();
-    ctx.translate(Math.round(e.x), Math.round(e.y));
-    ctx.scale(scale, scale);
-    if (e.behavior === 'turret') {
-      rect(ctx, ink, -6, -5, 12, 11);
-      rect(ctx, dark, -5, -4, 10, 9);
-      rect(ctx, body, -4, -4, 8, 6);
-      rect(ctx, ink, -3, -8, 6, 6);
-      rect(ctx, body, -2, -7, 4, 5);
-      rect(ctx, accent, -1, -7, 2, 2);
-      rect(ctx, light, -5, 3, 10, 1);
-      ctx.restore();
-      return;
-    }
-    // Broad head, narrow neck, shoulders, hands and boots: DNBs are humanoid.
-    rect(ctx, ink, -5, -10, 10, 8); rect(ctx, ink, -7, -3, 14, 8);
-    rect(ctx, ink, -8, 0, 4, 7); rect(ctx, ink, 4, 0, 4, 7);
-    rect(ctx, ink, -5, 4, 4, 5); rect(ctx, ink, 1, 4, 4, 5);
-    rect(ctx, dark, -4, 4, 3, 4); rect(ctx, dark, 1, 4, 3, 4);
-    rect(ctx, dark, -6, -2, 12, 6); rect(ctx, body, -4, -2, 8, 5);
-    rect(ctx, body, -7, 1, 2, 4); rect(ctx, body, 5, 1, 2, 4);
-    rect(ctx, body, -4, -9, 8, 7); rect(ctx, light, -3, -9, 6, 1);
-    rect(ctx, dark, -4, -4, 8, 2); rect(ctx, accent, -4, 2, 8, 1);
-    rect(ctx, ink, -3, -7, 2, 2); rect(ctx, ink, 1, -7, 2, 2);
-    rect(ctx, paper, -3, -7, 1, 1); rect(ctx, paper, 2, -7, 1, 1);
-    if (e.isBoss) {
-      rect(ctx, ink, -6, -12, 12, 4);
-      for (let i = -5; i <= 5; i += 5) rect(ctx, accent, i, -13, 2, 4);
+  const enemySprites = new Map();
+
+  function enemyRole(def) {
+    const style = ((def.id || '') + ' ' + (def.behavior || '')).toLowerCase();
+    if (/turret|cannon/.test(style)) return 'turret';
+    if (/shield|guard|knight|plate|shell|warden/.test(style)) return 'guard';
+    if (/bonecall|summon|witch|mage|oracle|chant|priest|heal/.test(style)) return 'caster';
+    if (/archer|sniper|marksman|sling|gun|ranged|spit/.test(style)) return 'ranged';
+    if (def.flies || /moth|wisp|fly|bat|wing|aerial/.test(style)) return 'winged';
+    if (/charge|ram|brute|warlord|hulking|crusher|golem/.test(style)) return 'brute';
+    if (/grub|mite|crawl|skitter|ambush|burrow/.test(style)) return 'stalker';
+    return 'runner';
+  }
+
+  function enemyAsset(def, flash, boss) {
+    const identity = def.id || def.name || def.behavior || 'dnb';
+    const tint = /^#[\da-f]{6}$/i.test(def.color || '') ? def.color : '#b99066';
+    const key = [identity, tint, flash, boss].join(':');
+    if (enemySprites.has(key)) return enemySprites.get(key);
+    const seed = hash(identity);
+    const role = enemyRole(def);
+    const canvas = surface(30, 32);
+    const c = canvas.getContext('2d');
+    const outline = '#1d1520';
+    const light = flash ? '#fff5da' : ['#d7a375','#bd875d','#d39d72','#bf8b6a'][seed & 3];
+    const skin = flash ? '#f4d8c2' : ['#a86d4e','#926044','#a46e51','#95664f'][seed & 3];
+    const shadow = flash ? '#bc9e93' : '#5d3d3a';
+    const cloth = flash ? '#ebd5bc' : Util.shadeColor(tint, -0.32);
+    const trim = flash ? paper : Util.shadeColor(tint, 0.28);
+    const draw = (color, x, y, w, h) => rect(c, color, x, y, w, h);
+    if (role === 'turret') {
+      draw(outline, 8, 12, 14, 14); draw(shadow, 9, 13, 12, 12);
+      draw(cloth, 10, 14, 10, 9); draw(outline, 11, 8, 8, 7);
+      draw(skin, 12, 9, 6, 5); draw(trim, 14, 9, 2, 2);
+      draw(light, 9, 24, 12, 1); draw(outline, 6, 26, 18, 2);
     } else {
-      for (let i = 0; i < 4; i++) if ((seed >>> (4 + i)) & 1) rect(ctx, accent, -4 + i * 2, -10, 1, 2);
+      const broad = role === 'guard' || role === 'brute' || boss;
+      const crouch = role === 'stalker' ? 3 : 0;
+      const shoulders = broad ? 8 : role === 'caster' ? 5 : 6;
+      const headY = (broad ? 4 : 5) + crouch;
+      const bodyY = 13 + crouch;
+      const headWidth = broad ? 6 : 5;
+      // Offset hands and stepped jaw give each humanoid weight at native scale.
+      if (role === 'winged') {
+        for (const side of [-1, 1]) {
+          const x = side < 0 ? 3 : 20;
+          draw(outline, x, 9, 8, 8); draw(cloth, x + 1, 10, 6, 6);
+          draw(trim, x + (side < 0 ? 1 : 4), 9, 3, 3);
+          draw(outline, x + 2, 16, 4, 3);
+        }
+      }
+      draw(outline, 15 - shoulders, bodyY, shoulders * 2, 9 - crouch);
+      draw(outline, 13 - shoulders, bodyY + 2, 4, 7 - crouch);
+      draw(outline, 14 + shoulders, bodyY + 1, 4, 7 - crouch);
+      draw(skin, 14 - shoulders, bodyY + 3, 2, 4 - Math.min(crouch, 2));
+      draw(shadow, 15 + shoulders, bodyY + 2, 2, 5 - Math.min(crouch, 2));
+      draw(cloth, 16 - shoulders, bodyY + 1, shoulders * 2 - 2, 7 - crouch);
+      draw(trim, 17 - shoulders, bodyY + 1, shoulders * 2 - 4, 1);
+      draw(shadow, 10, 22, 4, 5); draw(shadow, 17, 22, 4, 5);
+      draw(outline, 9, 26, 6, 2); draw(outline, 16, 26, 6, 2);
+      draw(trim, 11, 22, 2, 2); draw(trim, 18, 22, 2, 1);
+      draw(outline, 15 - headWidth, headY + 1, headWidth * 2, 9);
+      draw(outline, 16 - headWidth, headY, headWidth * 2 - 2, 11);
+      draw(skin, 16 - headWidth, headY + 1, headWidth * 2 - 2, 8);
+      draw(light, 17 - headWidth, headY + 1, headWidth * 2 - 4, 2);
+      draw(shadow, 16 - headWidth, headY + 7, headWidth * 2 - 2, 2);
+      draw(outline, 12, headY + 4, 2, 2); draw(outline, 17, headY + 4, 2, 2);
+      draw(paper, 12, headY + 4, 1, 1); draw(paper, 17, headY + 4, 1, 1);
+      draw(light, 14, headY + 6, 2, 1);
+      draw(trim, 11 + seed % 3, bodyY + 4, 5, 1);
+      if (role === 'guard') {
+        draw(outline, 20, 14, 8, 10); draw(cloth, 21, 15, 6, 8);
+        draw(trim, 22, 16, 4, 1); draw(trim, 23, 18, 2, 3);
+      } else if (role === 'caster') {
+        draw(outline, 22, 8, 3, 17); draw(light, 23, 10, 1, 14);
+        draw(trim, 22, 6, 3, 3); draw(outline, 11, headY - 1, 8, 2);
+      } else if (role === 'ranged') {
+        draw(outline, 3, 15, 11, 4); draw(light, 4, 16, 8, 1);
+        draw(trim, 5, 17, 7, 1); draw(cloth, 10, 20, 3, 3);
+      } else if (role === 'brute') {
+        draw(trim, 5, 12, 5, 3); draw(trim, 20, 12, 5, 3);
+        draw(light, 8, headY - 1, 2, 3); draw(light, 20, headY - 1, 2, 3);
+      } else if (role === 'stalker') {
+        draw(cloth, 9, headY - 1, 12, 3); draw(trim, 10, headY + 1, 10, 1);
+        draw(shadow, 6, 20, 4, 2); draw(shadow, 21, 20, 4, 2);
+      } else {
+        draw(cloth, 10, headY, 10, 2); draw(trim, 9, headY + 2, 12, 1);
+      }
+      if (boss) {
+        draw(outline, 8, 2, 14, 3);
+        for (let x = 9; x <= 19; x += 5) draw(trim, x, x === 14 ? 0 : 1, 2, 4);
+        draw(paper, 14, bodyY + 3, 2, 2);
+      }
     }
-    ctx.restore();
+    if (enemySprites.size >= 768) enemySprites.delete(enemySprites.keys().next().value);
+    enemySprites.set(key, canvas);
+    return canvas;
+  }
+
+  function dnb(ctx, enemy, flash) {
+    const def = enemy.type ? { ...enemy.type, behavior: enemy.behavior, color: enemy.color, flies: enemy.flies } : enemy;
+    const scale = enemy.radius / 11;
+    const wide = enemy.behavior === 'turret' ? 0.76 : 1;
+    blit(ctx, enemyAsset(def, flash, enemy.isBoss), enemy.x - 15 * scale * wide, enemy.y - 16 * scale * wide,
+      30 * scale * wide, 32 * scale * wide);
+  }
+
+  function enemyImage(def, boss) {
+    return '<img class="nightfall-pixel-icon" alt="" src="' + enemyAsset(def, false, boss).toDataURL() + '">';
   }
 
   const materials = {
@@ -406,5 +476,5 @@ const NightfallArt = (() => {
     blit(ctx, panorama, 0, 0, width, height);
   }
 
-  return { icon, image, mount, pony, dnb, tile, backdrop };
+  return { icon, image, mount, pony, dnb, enemyImage, tile, backdrop };
 })();

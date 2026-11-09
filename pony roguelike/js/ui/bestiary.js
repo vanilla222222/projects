@@ -100,7 +100,9 @@ function bestiaryCard(opts){
   head.className = 'best-card-head';
   const icon = document.createElement('div');
   icon.className = 'best-card-icon';
-  if (opts.seen && opts.art) {
+  if (opts.seen && opts.enemyArt) {
+    icon.innerHTML = NightfallArt.enemyImage(opts.enemyArt, opts.enemyBoss);
+  } else if (opts.seen && opts.art) {
     icon.innerHTML = NightfallArt.image(opts.art, opts.artKind);
   } else if (opts.seen && opts.dotColor) {
     icon.classList.add('best-dot');
@@ -325,7 +327,7 @@ function renderBestiaryEnemies(wrap){
         const k = kills[e.id] || 0, d = deaths[e.id] || 0;
         const tally = 'Defeated ' + Util.formatNum(k) + ' time' + (k === 1 ? '' : 's') + ' · Killed you ' + Util.formatNum(d) + ' time' + (d === 1 ? '' : 's');
         grid.appendChild(bestiaryCard({
-          seen, icon: e.icon || '💀', dotColor: e.icon ? null : e.color, name: e.name,
+          seen, enemyArt: e, enemyBoss: g.tierCat !== 'enemy', icon: e.icon || '💀', name: e.name,
           lines: [e.desc || null], chips: enemyChips(e), extra: tally,
           tier: bestiaryTierFor(g.tierCat, k), category: g.tierCat, count: k,
         }));

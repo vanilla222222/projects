@@ -139,35 +139,26 @@ const Util = {
   },
 
   drawHeart(ctx, x, y, size, fillFrac, fillColor, outlineColor){
-    ctx.save();
-    ctx.translate(x, y);
-    const s = size / 16;
-    ctx.scale(s, s);
-
-    const path = new Path2D(
-      'M8 14 C8 14 1 9.6 1 5.2 C1 2.4 3 0.8 5.2 0.8 C6.8 0.8 7.6 1.6 8 2.4 ' +
-      'C8.4 1.6 9.2 0.8 10.8 0.8 C13 0.8 15 2.4 15 5.2 C15 9.6 8 14 8 14 Z'
-    );
-
-    ctx.lineWidth = 1.1;
-    ctx.strokeStyle = outlineColor || Theme.ui.onIcon;
-    ctx.fillStyle = Theme.shadow.outline;
-    ctx.fill(path);
-    ctx.stroke(path);
-
-    if (fillFrac > 0) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, 16 * Util.clamp(fillFrac, 0, 1), 16);
-      ctx.clip();
-      ctx.fillStyle = fillColor;
-      ctx.fill(path);
-
-      ctx.fillStyle = 'rgba(255,255,255,.35)';
-      ctx.beginPath(); ctx.ellipse(4.4, 4.2, 1.5, 0.9, -0.6, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+    const rows = ['.##..##.','########','########','.######.','..####..','...##...'];
+    const unit = size / 8;
+    const filled = Math.round(Util.clamp(fillFrac, 0, 1) * 8);
+    for (const [row, line] of rows.entries()) {
+      for (let col = 0; col < line.length; col++) {
+        if (line[col] !== '#') continue;
+        const edge = line[col - 1] !== '#' || line[col + 1] !== '#'
+          || rows[row - 1]?.[col] !== '#' || rows[row + 1]?.[col] !== '#';
+        ctx.fillStyle = edge ? outlineColor || Theme.ui.onIcon : col < filled ? fillColor : Theme.shadow.outline;
+        ctx.fillRect(x + col * unit, y + (row + 1) * unit, unit, unit);
+        if (edge && col < filled && row < rows.length - 1 && rows[row + 1]?.[col] === '#') {
+          ctx.fillStyle = fillColor;
+          ctx.fillRect(x + col * unit + unit * 0.25, y + (row + 1) * unit + unit * 0.25, unit * 0.5, unit * 0.5);
+        }
+      }
     }
-    ctx.restore();
+    if (filled >= 3) {
+      ctx.fillStyle = '#fff3dc';
+      ctx.fillRect(x + unit * 2, y + unit * 2, unit, unit * 0.55);
+    }
   },
 
   drawRoundedRect(ctx, x, y, w, h, r){
