@@ -412,6 +412,16 @@ class Game {
     const scale = Math.min(maxW / CAMERA_W, maxH / CAMERA_H, 2.2);
     this.canvas.style.width = (CAMERA_W * scale) + 'px';
     this.canvas.style.height = (CAMERA_H * scale) + 'px';
+    // Paint text at display resolution instead of enlarging a smaller canvas in CSS.
+    const density = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const width = Math.max(1, Math.round(CAMERA_W * scale * density));
+    const height = Math.max(1, Math.round(CAMERA_H * scale * density));
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this._ctxTuned = false;
+    }
+    this.dpr = width / CAMERA_W;
     this._positionHudPanels(wrap, CAMERA_W * scale);
   }
 

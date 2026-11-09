@@ -1160,57 +1160,6 @@ function tileRand(x, y, salt){
 
 Object.assign(Game.prototype, {
 
-  drawPixelRoomPass(target, offsetX, offsetY){
-    // The world layer shares the same 2 px grid as the hand-drawn tile stamps.
-    // Keep lighting, combat text and UI on the native-resolution canvas.
-    if (!this._pixelRoomCanvas) {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.ceil(CAMERA_W / 2);
-      canvas.height = Math.ceil(CAMERA_H / 2);
-      this._pixelRoomCanvas = canvas;
-    }
-    const canvas = this._pixelRoomCanvas;
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
-    ctx.setTransform(0.5, 0, 0, 0.5, Math.round(offsetX / 2), Math.round(offsetY / 2));
-    this.ctx = ctx;
-    try {
-      this.drawRoomDecor(this.currentRoom);
-      this.drawLockedDoorPulse();
-      this.drawGroundObstacles();
-      this.drawCreep();
-      this.drawDustDevils();
-      this.drawItemPedestal();
-      this.drawShop();
-      this.drawDonationMachineFixture();
-      this.drawRerollAltarFixture();
-      this.drawUpgradeStationFixture();
-      this.drawWdControlButton();
-      this.drawKarmaFixtures();
-      this.drawArcadeFixtures();
-      this.drawPlayerTurrets();
-      this.drawStairs();
-      this.drawGreenFireZone();
-      this.drawChangelingMinions();
-      this.drawWorldSorted();
-      this.drawProjectiles();
-      this.drawBombsExplosions();
-      this.drawSwingFX();
-      this.drawLaserFX();
-      FX.draw(ctx);
-      Ambient.draw(ctx);
-    } finally {
-      this.ctx = target;
-    }
-    target.save();
-    target.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    target.imageSmoothingEnabled = false;
-    target.drawImage(canvas, 0, 0, canvas.width * 2, canvas.height * 2);
-    target.restore();
-  },
-
   artFloorKey(){
     return this.waveDefenseMode ? 'defense:' + this.wdPaletteIndex
       : [this.floorPath, this.floorBranch, this.dungeon.floorNum].join(':');
@@ -1246,16 +1195,40 @@ Object.assign(Game.prototype, {
     NightfallArt.backdrop(ctx, CAMERA_W, CAMERA_H, floorPalette, this.artFloorKey(), paletteFlavor(floorPalette));
     ctx.save();
 
-    ctx.translate(-Math.round(this.camX) + Math.round(FX.shakeX), -Math.round(this.camY) + Math.round(FX.shakeY));
+    const screenX = Math.round((-this.camX + FX.shakeX) * this.dpr) / this.dpr;
+    const screenY = Math.round((-this.camY + FX.shakeY) * this.dpr) / this.dpr;
+    ctx.translate(screenX, screenY);
     this.drawTiles();
-    this.drawPixelRoomPass(ctx, -Math.round(this.camX) + Math.round(FX.shakeX),
-      -Math.round(this.camY) + Math.round(FX.shakeY));
+    this.drawRoomDecor(this.currentRoom);
+    this.drawLockedDoorPulse();
+    this.drawGroundObstacles();
+    this.drawCreep();
+    this.drawDustDevils();
+    this.drawItemPedestal();
+    this.drawShop();
+    this.drawDonationMachineFixture();
+    this.drawRerollAltarFixture();
+    this.drawUpgradeStationFixture();
+    this.drawWdControlButton();
+    this.drawKarmaFixtures();
+    this.drawArcadeFixtures();
+    this.drawPlayerTurrets();
+    this.drawStairs();
+    this.drawGreenFireZone();
+    this.drawChangelingMinions();
+    this.drawWorldSorted();
+    this.drawProjectiles();
+    this.drawBombsExplosions();
+    this.drawSwingFX();
+    this.drawLaserFX();
+    FX.draw(ctx);
+    Ambient.draw(ctx);
     this.drawFloatTexts();
     ctx.restore();
 
     this.drawVignette();
-    this.drawPlayerLight();
-    this.drawFireLight();
+    this.drawPlayerLight(screenX, screenY);
+    this.drawFireLight(screenX, screenY);
     if (this.currentRoom.type === 'boss' && !this.currentRoom.cleared) this.drawBossHealthBar();
     if (this.roomFadeTimer > 0) {
       const a = Util.clamp(this.roomFadeTimer / ROOM_FADE_TIME, 0, 1);
@@ -1273,12 +1246,12 @@ Object.assign(Game.prototype, {
     }
   },
 
-  drawPlayerLight(){
+  drawPlayerLight(screenX, screenY){
     const p = this.player;
     if (!p) return;
     const ctx = this.ctx;
-    const sx = p.x - Math.round(this.camX) + Math.round(FX.shakeX);
-    const sy = p.y - Math.round(this.camY) + Math.round(FX.shakeY);
+    const sx = p.x + screenX;
+    const sy = p.y + screenY;
     if (sx < -LIGHT_R || sy < -LIGHT_R || sx > CAMERA_W + LIGHT_R || sy > CAMERA_H + LIGHT_R) return;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1286,18 +1259,16 @@ Object.assign(Game.prototype, {
     ctx.restore();
   },
 
-  drawFireLight(){
+  drawFireLight(screenX, screenY){
     const node = this.currentRoom;
     if (!node || !node.obstacles) return;
     const ctx = this.ctx;
-    const ox = Math.round(this.camX) - Math.round(FX.shakeX);
-    const oy = Math.round(this.camY) - Math.round(FX.shakeY);
     let opened = false;
     for (const ob of node.obstacles) {
       if (ob.destroyed || !ob.isHazard || ob.kind.indexOf('fire') === -1) continue;
       const col = ob.def && ob.def.color;
       if (!col) continue;
-      const sx = ob.x - ox, sy = ob.y - oy;
+      const sx = ob.x + screenX, sy = ob.y + screenY;
       if (sx < -FIRE_LIGHT_R || sy < -FIRE_LIGHT_R || sx > CAMERA_W + FIRE_LIGHT_R || sy > CAMERA_H + FIRE_LIGHT_R) continue;
       if (!opened) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; opened = true; }
       ctx.drawImage(fireLightSprite(col), sx - FIRE_LIGHT_R, sy - FIRE_LIGHT_R);
@@ -1475,6 +1446,7 @@ Object.assign(Game.prototype, {
       this.rebuildPlanetariumTiles(node, pal, ctx);
       node._tileLayerDoorsOpen = node.doorsOpen;
       node._tileLayerPalette = pal;
+      node._tileLayerDpr = this.dpr;
       node.tileLayerDirty = false;
       return;
     }
@@ -1678,6 +1650,7 @@ Object.assign(Game.prototype, {
 
     node._tileLayerDoorsOpen = node.doorsOpen;
     node._tileLayerPalette = pal;
+    node._tileLayerDpr = this.dpr;
     node.tileLayerDirty = false;
   },
 
@@ -1685,7 +1658,7 @@ Object.assign(Game.prototype, {
     const node = this.currentRoom;
     const pal = this.currentPalette();
     const stale = !node._tileCanvas || node.tileLayerDirty ||
-      node._tileLayerDoorsOpen !== node.doorsOpen || node._tileLayerPalette !== pal;
+      node._tileLayerDoorsOpen !== node.doorsOpen || node._tileLayerPalette !== pal || node._tileLayerDpr !== this.dpr;
 
     const justUnlocked = node._tileLayerDoorsOpen === false && node.doorsOpen === true;
     if (stale) this.rebuildTileLayer(node, pal);
@@ -2108,7 +2081,7 @@ Object.assign(Game.prototype, {
     for (const en of list) {
       switch (en.kind) {
         case 0: Util.drawObstacle(ctx, en.ref, this.now); break;
-        case 1: Util.drawPickupIcon(ctx, en.ref, Math.sin(this.now / 300 + en.ref.bobPhase) * 2); break;
+        case 1: Util.drawPickupIcon(ctx, en.ref, 0); break;
         case 2: Util.drawChestIcon(ctx, en.ref); break;
         case 3: this.drawEnemy(en.ref); break;
         case 4: this.drawFamiliar(en.ref); break;

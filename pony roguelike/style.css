@@ -1576,6 +1576,6 @@ button:focus-visible, .class-card:focus-visible{
   width: 100%;
   height: 100%;
 }
-#game, #menuBackdrop, .class-card canvas {
+#menuBackdrop, .class-card canvas {
   image-rendering: pixelated;
 }

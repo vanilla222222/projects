@@ -29,7 +29,7 @@ const NightfallArt = (() => {
   function blit(ctx, canvas, x, y, w, h) {
     const smoothing = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(canvas, Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    ctx.drawImage(canvas, x, y, w, h);
     ctx.imageSmoothingEnabled = smoothing;
   }
 
@@ -176,7 +176,7 @@ const NightfallArt = (() => {
     const height = opts.build === 'lanky' ? 1 : 0;
     const head = up ? 8 : 10;
     ctx.save();
-    ctx.translate(Math.round(x), Math.round(y));
+    ctx.translate(x, y);
     ctx.scale(unit * mirror, unit);
     if (opts.ghostly) ctx.globalAlpha *= 0.72;
     if (opts.aura && !opts.flash) Util._ponyAura(ctx, 21, now, opts);
