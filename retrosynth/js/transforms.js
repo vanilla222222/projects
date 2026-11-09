@@ -290,10 +290,13 @@ const TRANSFORMS = [
       const out = [];
       for (const amine of g.amines) {
         for (const c of amine.carbons) {
-          if (mol.atoms[c].arom) continue;
+          if (mol.atoms[c].arom || mol.hydrogens(c) < 1
+            || mol.adjacency[c].some(l => l.bond.order !== 1)) continue;
           out.push({
             pieces: cut(mol, c, amine.n, (copy, carbon) => {
-              attach(copy, carbon, 'Br', 1); return true;
+              const bromine = attach(copy, carbon, 'Br', 1);
+              copy.invertSubstitution(carbon, amine.n, bromine);
+              return true;
             }),
           });
         }
@@ -575,24 +578,20 @@ const TRANSFORMS = [
         .map(([c]) => ({ pieces:cut(mol, c, o, copy => { attach(copy, c, 'Cl', 1); }) }))),
   },
   {
-    id: 'epoxide-opening', name: 'Epoxide opening', family: 'addition',
-    note: 'A 1,2-aminoalcohol or diol from the epoxide and a nucleophile.',
+    id: 'epoxide-opening', name: 'Amine opening of an epoxide', family: 'addition',
+    note: 'A vicinal amino alcohol from an epoxide and an amine, with inversion at the attacked carbon.',
     reagents: [], conditions: { solvent: 'ethanol', temperature: 60 },
     find: (mol, g) => {
       const out = [];
       for (const alcohol of g.alcohols) {
-        for (const link of mol.adjacency[alcohol.c]) {
-          const other = link.other;
-          if (mol.atoms[other].el === 'C') continue;
-          if (!['N', 'O', 'S'].includes(mol.atoms[other].el)) continue;
-          out.push({ pieces: cut(mol, alcohol.c, other, (copy, carbon) => {
-            // close the oxygen onto the neighbouring carbon to make the ring
-            const neighbour = copy.adjacency[carbon]
-              .find((l) => copy.atoms[l.other].el === 'C' && l.other !== alcohol.o);
-            if (!neighbour) return false;
-            copy.addBond(alcohol.o, neighbour.other, 1);
-            return true;
-          }) });
+        for (const amine of g.amines) {
+          for (const carbon of amine.carbons) {
+            if (mol.bondBetween(alcohol.c, carbon)?.order !== 1 || mol.hydrogens(carbon) < 1) continue;
+            out.push({ pieces:cut(mol, carbon, amine.n, copy => {
+              copy.addBond(carbon, alcohol.o, 1);
+              copy.invertSubstitution(carbon, amine.n, alcohol.o);
+            }) });
+          }
         }
       }
       return out;

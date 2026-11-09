@@ -31,6 +31,9 @@ separate a cyclohexene ring into diene and alkene partners, including some bridg
 adducts. Forward checks cover acetal formation, Diels–Alder, epoxidation and
 halohydrin closure. Where a modelled reaction leaves a newly formed stereocentre
 unresolved, warning mode shows the uncertainty and strict mode excludes the step.
+Amine SN2 substitution and amine opening of epoxides track inversion when the
+reacting centre is specified. Epoxide opening enumerates both eligible attack
+sites, so the model can flag competing regioisomers.
 
 Run `node tools/literature-test.js` for a small published-route benchmark.
 It reports route recovery, elapsed time and the search stop reason per example.
