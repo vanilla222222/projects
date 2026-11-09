@@ -115,6 +115,7 @@ function makeEngine(settings, options) {
     maxHeavyAtoms: settings.catalogue === 'inventory' ? 0 : undefined,
   });
   const stepCost = costModel(settings);
+  const ranking = settings.routeRanking || 'balanced';
   const expansions = new Map();
   const stats = { expanded: 0, cached: 0, reused: 0, rejected: 0 };
 
@@ -152,6 +153,24 @@ function makeEngine(settings, options) {
   }
 
   function buyable(smiles) { return stock.has(smiles); }
+
+  function selectRoutes(routes) {
+    const order = ranking;
+    if (order !== 'balanced') {
+      const metric = { shortest:r => r.depth, confidence:r => r.ranking.uncertain,
+        stock:r => r.ranking.assumed }[order];
+      routes.sort((a, b) => metric(a) - metric(b) || a.cost - b.cost || a.depth - b.depth);
+    }
+    const seen = new Set();
+    const distinct = [], variants = [];
+    for (const route of routes) {
+      const final = route.steps.at(-1);
+      const key = JSON.stringify([final.product, final.precursors.slice().sort()]);
+      (seen.has(key) ? variants : distinct).push(route);
+      seen.add(key);
+    }
+    return distinct.concat(variants).slice(0, settings.maxRoutes);
+  }
 
   // A minimal binary heap, because sorting the frontier every push is what
   // makes a naive best-first search slow enough to look like a depth limit.
@@ -203,7 +222,8 @@ function makeEngine(settings, options) {
     const labels = new Map();
     const routes = [];
     const completed = new Set();
-    const routeLimit = settings.maxRoutes;
+    const routeLimit = settings.maxRoutes === 1 && ranking === 'balanced'
+      ? 1 : settings.maxRoutes * 2;
     const maxLabels = Math.min(6, settings.maxRoutes);
     const depthLimit = config?.depthLimit ?? settings.maxDepth;
     const maxStates = config?.stateLimit ?? 40000;
@@ -245,13 +265,19 @@ function makeEngine(settings, options) {
         if (!completed.has(node.signature)) {
           completed.add(node.signature);
           const startsFrom = node.pending.slice().sort();
+          const sources = startsFrom.map(smiles => ({ smiles, source:config?.namedStart === smiles
+            ? 'named start' : stock.source?.(smiles) || 'stock' }));
           routes.push({
             steps:node.steps.slice().reverse(),
             cost:Number(node.cost.toFixed(3)),
             depth:node.steps.length,
             startsFrom,
-            sources:startsFrom.map(smiles => ({ smiles, source:config?.namedStart === smiles
-              ? 'named start' : stock.source?.(smiles) || 'stock' })),
+            sources,
+            ranking:{
+              preference:ranking,
+              uncertain:node.steps.filter(step => !step.verdict?.selective).length,
+              assumed:sources.filter(entry => entry.source === 'assumed small molecule').length,
+            },
           });
         }
         if (routes.length >= routeLimit) break;
@@ -311,7 +337,10 @@ function makeEngine(settings, options) {
   }
 
   function search(target, terminal, goalTest, guide, config, expandStock) {
-    if (settings.strategy !== 'iterative') return run(target, terminal, goalTest, guide, config, expandStock);
+    if (settings.strategy !== 'iterative') {
+      const found = run(target, terminal, goalTest, guide, config, expandStock);
+      return { ...found, routes:selectRoutes(found.routes) };
+    }
     const started = Date.now();
     const deadline = Math.min(started + settings.budgetMs, config?.deadline ?? Infinity);
     let explored = 0, queued = 0, found;
@@ -327,10 +356,10 @@ function makeEngine(settings, options) {
       explored += found.explored;
       queued += found.queued;
       for (const route of found.routes) routes.set(routeKey(route.steps), route);
-      if (routes.size >= settings.maxRoutes || found.stop !== 'depth-limit') break;
+      if (found.stop !== 'depth-limit') break;
     }
     const ordered = [...routes.values()].sort((a, b) => a.depth - b.depth || a.cost - b.cost);
-    return { ...found, explored, queued, routes:ordered.slice(0, settings.maxRoutes),
+    return { ...found, explored, queued, routes:selectRoutes(ordered),
       seconds:Number(((Date.now() - started) / 1000).toFixed(2)) };
   }
 

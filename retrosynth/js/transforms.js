@@ -567,6 +567,14 @@ const TRANSFORMS = [
     })),
   },
   {
+    id: 'halohydrin-closure', name: 'Halohydrin ring closure', family: 'cyclization',
+    note: 'Open the epoxide to a vicinal chlorohydrin. The model does not assign relative stereochemistry.',
+    find: (mol, g) => g.epoxides.flatMap(({ a, b, o }) =>
+      [[a, b], [b, a]].filter(([c]) => mol.hydrogens(c) > 0
+        && !mol.atoms[a].chiral && !mol.atoms[b].chiral)
+        .map(([c]) => ({ pieces:cut(mol, c, o, copy => { attach(copy, c, 'Cl', 1); }) }))),
+  },
+  {
     id: 'epoxide-opening', name: 'Epoxide opening', family: 'addition',
     note: 'A 1,2-aminoalcohol or diol from the epoxide and a nucleophile.',
     reagents: [], conditions: { solvent: 'ethanol', temperature: 60 },
@@ -751,23 +759,24 @@ const TRANSFORMS = [
   },
   {
     id:'diels-alder', name:'Diels–Alder cycloaddition', family:'cyclization',
-    note:'Open an unbridged cyclohexene to a conjugated diene and an alkene. Stereochemical outcomes are unchecked.',
+    note:'Open a cyclohexene ring to separate conjugated diene and alkene partners.',
     find:(mol) => {
       const out = [];
       const rings = mol.rings();
       for (const ring of rings) {
         if (ring.length !== 6 || ring.some(c => mol.atoms[c].el !== 'C' || mol.atoms[c].arom
-          || mol.atoms[c].chiral || rings.some(other => other !== ring && other.includes(c)))) continue;
+          || mol.atoms[c].chiral)) continue;
         const bonds = ring.map((c, i) => mol.bondBetween(c, ring[(i + 1) % 6]));
         const double = bonds.findIndex(bond => bond?.order === 2);
         if (double < 0 || bonds.some((bond, i) => !bond || bond.dir || bond.order !== (i === double ? 2 : 1))) continue;
         const [a, b, c, d, e, f] = Array.from({ length:6 }, (_, i) => ring[(i + double + 5) % 6]);
-        out.push({ pieces:cutBonds(mol, [[d, e], [f, a]], copy => {
+        const pieces = cutBonds(mol, [[d, e], [f, a]], copy => {
           setOrder(copy, b, c, 1);
           setOrder(copy, a, b, 2);
           setOrder(copy, c, d, 2);
           setOrder(copy, e, f, 2);
-        }) });
+        });
+        if (pieces?.length === 2) out.push({ pieces });
       }
       return out;
     },

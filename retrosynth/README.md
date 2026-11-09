@@ -26,12 +26,24 @@ produced them.
 | Depth | Continues down deeper branches first |
 | Iterative | Raises the step limit one pass at a time under one time and size budget |
 
-The rule library includes reduction and oxidation alternatives, alcohol
-dehydration, imine and acetal formation, and a limited Diels–Alder disconnection
-for unbridged cyclohexenes. Acetal formation and Diels–Alder remain unchecked
-by the forward model.
+The rule library includes halohydrin ring closure and Diels–Alder cuts that
+separate a cyclohexene ring into diene and alkene partners, including some bridged
+adducts. Forward checks cover acetal formation, Diels–Alder, epoxidation and
+halohydrin closure. Where a modelled reaction leaves a newly formed stereocentre
+unresolved, warning mode shows the uncertainty and strict mode excludes the step.
+
+Run `node tools/literature-test.js` for a small published-route benchmark.
+It reports route recovery, elapsed time and the search stop reason per example.
+The comparisons use structures and disconnections. They do not reproduce the
+experimental conditions or validate stereochemical outcomes.
 
 ## Reading results
+
+The search samples extra complete routes within the same time and state budget.
+It shows one route per final disconnection before showing variants with the same
+immediate precursors. In Ranking, choose the balanced score, fewer steps, fewer
+uncertain steps, or fewer assumed starting materials. These preferences order
+the sampled routes.
 
 Route steps appear in forward order. Starting materials are labelled as entered
 inventory, built-in stock, assumed small molecules, or the named start. The

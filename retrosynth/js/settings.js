@@ -77,7 +77,7 @@ const SCHEMA = [
     help: 'How many reactions deep to search. chem lab stops at 3; real routes run 8 to 15.' },
   { key: 'maxRoutes', group: 'Search', type: 'int', min: 1, max: 50, def: 5,
     alias: ['routes', 'n'], label: 'Routes to return',
-    help: 'Stop once this many complete routes have been found.' },
+    help: 'Maximum number of routes to display. The search samples extra candidates to diversify these results.' },
   { key: 'budgetMs', group: 'Search', type: 'int', min: 100, max: 600000, def: 15000,
     alias: ['budget', 'time'], label: 'Time budget (ms)',
     help: 'Wall-clock limit for one search.' },
@@ -93,6 +93,10 @@ const SCHEMA = [
   // Weights rather than one "priority" enum, so two concerns can be traded off
   // instead of one winning outright. They are normalised before use, so only
   // their ratios matter.
+  { key: 'routeRanking', group: 'Ranking', type: 'enum', def: 'balanced',
+    values: ['balanced', 'shortest', 'confidence', 'stock'],
+    label: 'Rank routes by',
+    help: 'Prefer shorter routes, more forward-model support, or fewer assumed starting materials. The balanced option follows the search strategy and weights.' },
   { key: 'weightSteps', group: 'Ranking', type: 'number', min: 0, max: 10, def: 1,
     alias: ['wsteps'], label: 'Weight: fewer steps',
     help: 'How much a short route is preferred.' },

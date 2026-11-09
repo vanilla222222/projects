@@ -19,7 +19,7 @@
     'time-limit':'Time limit reached.',
     'state-limit':'Search size limit reached.',
     'depth-limit':'Step limit reached on at least one branch.',
-    'route-limit':'Requested route count reached.',
+    'route-limit':'Candidate sampling limit reached.',
     'analogue-limit':'Requested analogue count reached.',
     exhausted:'Search frontier exhausted.',
   };
@@ -65,7 +65,7 @@
     const verdict = step.verdict;
     const label = !verdict?.checked ? 'Forward check unavailable or off'
       : verdict.selective ? 'Forward model reproduced the target without alternatives'
-        : 'Forward model also predicts alternatives';
+        : verdict.note;
     const check = element('div', 'rcheck ' + (!verdict?.checked ? 'unchecked' : verdict.selective ? 'good' : 'mixed'), label);
     if (verdict?.alternatives?.length) check.append(document.createTextNode(' · ' + verdict.alternatives.join(', ')));
     body.append(check);
@@ -80,7 +80,14 @@
     const checked = route.steps.filter(step => step.verdict?.checked).length;
     const mixed = route.steps.filter(step => step.verdict?.checked && !step.verdict.selective).length;
     card.append(element('p', 'rwhy', checked + '/' + route.steps.length + ' steps checked by the forward model'
-      + (mixed ? ' · ' + mixed + ' with alternatives' : '')));
+      + (mixed ? ' · ' + mixed + ' with selectivity or stereo warnings' : '')));
+    if (route.ranking) {
+      const ranking = route.ranking;
+      const preference = { balanced:'search strategy and weighted score', shortest:'fewest steps',
+        confidence:'fewest uncertain steps', stock:'fewest assumed starting materials' };
+      card.append(element('p', 'rwhy', 'Ranked by ' + preference[ranking.preference]
+        + ' · ' + ranking.uncertain + ' uncertain steps · ' + ranking.assumed + ' assumed starting materials'));
+    }
     route.steps.forEach((step, i) => card.append(stepRow(step, i)));
     card.append(element('h3', null, 'Starting materials'));
     const sources = route.sources || route.startsFrom.map(smiles => ({ smiles, source:'stock' }));

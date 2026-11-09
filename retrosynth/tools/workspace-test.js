@@ -36,6 +36,21 @@ for (const route of answer.routes) {
 }
 assert.equal(engine.path(target, named, { deadline:Date.now() - 1 }).stop, 'time-limit');
 
+const alternatives = [
+  step(target, [leaf], 'finish-a'), step(target, [leaf], 'finish-b'),
+  { ...step(target, [other], 'finish-c'), family:'protection' },
+];
+const comparison = {
+  stock:{ has:m => m === leaf || m === other,
+    source:m => m === leaf ? 'assumed small molecule' : 'inventory' },
+  disconnect:() => alternatives,
+};
+const diverse = search.makeEngine(settings.normalize({ verify:'off', maxRoutes:2 }), comparison).route(target);
+assert.deepEqual(diverse.routes.map(route => route.steps[0].transform), ['finish-a', 'finish-c']);
+const stockComparison = search.makeEngine(settings.normalize({ verify:'off', maxRoutes:2, routeRanking:'stock' }),
+  comparison).route(target);
+assert.equal(stockComparison.routes[0].steps[0].transform, 'finish-c');
+
 const limited = search.makeEngine(settings.normalize({ catalogue:'inventory', inventory:['CCCC'] }));
 assert.equal(limited.buyable(leaf), false);
 assert.equal(limited.stock.source(named), 'inventory');
@@ -53,8 +68,8 @@ for (const [id, product, precursors, checked] of [
   ['amide-reduction','CCCN',['CCC(N)=O'],true],
   ['alcohol-dehydration','CC=C',['CCCO'],true],
   ['imine-condensation','CC=NC',['CC=O','CN'],true],
-  ['acetal-formation','COC(C)OC',['CC=O','CO','CO'],false],
-  ['diels-alder','C1=CCCCC1',['C=CC=C','C=C'],false],
+  ['acetal-formation','COC(C)OC',['CC=O','CO','CO'],true],
+  ['diels-alder','C1=CCCCC1',['C=CC=C','C=C'],true],
 ]) {
   const expected = precursors.map(canonical).sort();
   const options = transforms.disconnect(smiles.parse(product));
