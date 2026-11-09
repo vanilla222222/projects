@@ -92,6 +92,7 @@ class Game {
     };
 
     this.runLog = [];
+    this.lootOffers = new Map();
     bumpStat('runsStarted', 1, this);
 
     beginRunUnlocks();
@@ -107,7 +108,11 @@ class Game {
   startFloor(floorNum){
 
     if (this.runStats) this.runStats.floorsReached = Math.max(this.runStats.floorsReached, floorNum);
+    this.floorKeyRelief = false;
+    this.player.shinyShellKills = 0;
     this.dungeon = generateDungeon(floorNum);
+    this.player.storyDepth = floorNum;
+    recalcPlayerStats(this.player);
 
     if (this.floorPath === 'C') {
 
@@ -546,12 +551,14 @@ class Game {
       this.floatTexts.push(new FloatText(this.player.x, this.player.y - 30, '+½ heart', '#e35b6a'));
     }
 
-    if (this.player.trinketId === 'tithebell' && Util.chance(0.2)) {
+    if (this.player.trinketId === 'tithebell' && !this.player.tookDamageThisRoom) {
       const node = this.currentRoom;
       const spot = findClearFloorSpot(node, Math.floor(this.player.x / TILE), Math.floor(this.player.y / TILE));
-      node.pickups.push(new Pickup('coin', spot.x, spot.y, Util.weighted(COIN_TYPES)));
+      node.pickups.push(new Pickup('coin', spot.x, spot.y, COIN_TYPES.find(coin => coin.id === 'penny') || COIN_TYPES[0]));
     }
-    if (this.player.trinketId === 'mendingchime' && Util.chance(0.1) && this.player.redCurrent < this.player.redMax) {
+    if (this.player.trinketId === 'mendingchime' && !this.player.tookDamageThisRoom
+        && this.player.redCurrent < this.player.redMax && ++this.player.mendingClears >= 3) {
+      this.player.mendingClears = 0;
       this.player.heal(0.5);
       Sound.play('heart');
       this.floatTexts.push(new FloatText(this.player.x, this.player.y - 30, '+\u00bd heart', '#e35b6a'));

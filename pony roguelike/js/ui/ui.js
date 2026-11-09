@@ -124,7 +124,7 @@ function drawLootMarkers(ctx, entries, cx, cy){
   ctx.restore();
 }
 
-const _hudCache = { hearts: null, coins: null, keys: null, bombs: null, leftPanel: null, familiars: null, turrets: null, minions: null, synergy: null, floor: null, hitFlash: null, statSec: null, proxItem: undefined };
+const _hudCache = { technique: undefined, hearts: null, coins: null, keys: null, bombs: null, leftPanel: null, familiars: null, turrets: null, minions: null, synergy: null, floor: null, hitFlash: null, statSec: null, proxItem: undefined };
 
 function _hudBump(el, cls){
   if (!el) return;
@@ -166,8 +166,30 @@ function hudPillReadout(game){
   return html;
 }
 
+function updateTechniqueHUD(game){
+  const technique = game.player.technique;
+  const el = document.getElementById('resTechnique');
+  if (!el) return;
+  let text = '';
+  if (technique) {
+    const [name, trigger, threshold, , , action, , description, upgrade] = technique.config;
+    const remaining = Math.max(0, technique.readyAt - game.runElapsed);
+    const progress = action === 'syncopate' && game.runElapsed - (technique.lastHitAt || 0) > 1.15 ? 0 : technique.progress;
+    const state = remaining > 0 ? Math.ceil(remaining) + 's'
+      : trigger === 'hurt' || progress >= threshold ? 'Ready'
+      : Math.floor(progress) + '/' + threshold + (trigger === 'move' ? ' px' : '');
+    text = name + ' · ' + state;
+    if (text !== _hudCache.technique) el.title = description + (technique.rank === 2 ? ' ' + upgrade : '');
+  }
+  if (text === _hudCache.technique) return;
+  _hudCache.technique = text;
+  el.classList.toggle('hidden', !technique);
+  el.querySelector('b').textContent = text;
+}
+
 function updateHUD(game){
   const player = game.player;
+  updateTechniqueHUD(game);
 
   let canvas = document.getElementById('heartsCanvas');
   let freshCanvas = false;

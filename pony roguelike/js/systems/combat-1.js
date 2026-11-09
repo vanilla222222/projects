@@ -8,7 +8,7 @@ const CONTACT_DMG_DEFAULT = 1;
 const CURRENT_PUSH_SPEED = 90;
 function playerDamageAmount(game, isBoss, dmgHalves){
   let halves = dmgHalves > 0 ? dmgHalves : CONTACT_DMG_DEFAULT;
-  if (game.dungeon.floorNum >= 6) halves += 1;
+  if (isBoss && game.dungeon.floorNum >= 10) halves += 1;
   let amount = halves * 0.5;
 
   if (isBoss) amount *= game.player.bossDamageTakenMult;
@@ -22,12 +22,15 @@ function playerDamageAmount(game, isBoss, dmgHalves){
 function damagePlayer(game, amount, source){
   const player = game.player;
   const invulnBefore = player.invulnTimer;
-  player.takeDamage(amount, source);
+  const guarded = player.techniqueGuardUntil > game.runElapsed;
+  player.takeDamage(guarded ? Math.max(0.5, amount - 0.5) : amount, source);
   const hitLanded = player.invulnTimer > invulnBefore;
 
   if (hitLanded && 'vibrate' in navigator) {
     try { navigator.vibrate(45); } catch (e) {  }
   }
+  if (hitLanded && guarded) player.techniqueGuardUntil = 0;
+  if (hitLanded) triggerSkillTechnique(game, 'hurt', player);
   if (hitLanded && player.stubbornGround) gainGritStack(game);
   if (hitLanded && player.emberMolt) gainMoltStack(game);
   if (hitLanded && player.scrappySurge && player.scrappySurgeCooldown <= 0 && player.redCurrent <= SCRAPPY_SURGE_HP_THRESHOLD) triggerScrappySurge(game);
@@ -308,7 +311,9 @@ function updatePlayer(game, input, dt){
       }
     }
     tryPushObstacles(node, player, stepX, stepY);
+    const previousX = player.x, previousY = player.y;
     tryMoveEntity(player, node, node.obstacles, stepX, stepY);
+    if (player.moving) triggerSkillTechnique(game, 'move', player, Math.hypot(player.x - previousX, player.y - previousY));
 
     if (player.galeStep && player.moving) {
       player.galeDistance = (player.galeDistance || 0) + Math.hypot(stepX, stepY);
@@ -1211,6 +1216,7 @@ function updateGreenFireAttack(game, input, dt){
       runHitLayers(game, 'firezone', { x: e.x, y: e.y, ang: Math.atan2(player.facing.y, player.facing.x), hits: [e], dmg: dps * player.fireCooldown });
     }
     if (e.isDead) { bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
+    if (feedback) triggerSkillTechnique(game, 'hit', e);
   }
   if (feedback) runCastLayers(game, 'firezone', { x: zone.x, y: zone.y, ang: Math.atan2(player.facing.y, player.facing.x), hits: layerHits, dmg: dps * player.fireCooldown });
 
@@ -1465,6 +1471,7 @@ function playerLaserAttack(game){
       applyOnHitStatuses(game, e);
       game.floatTexts.push(new FloatText(e.x, e.y - 20, (crit ? 'CRIT ' : '') + dmg, crit ? '#ffcf5c' : '#fff', true));
       if (e.isDead) { bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
+      triggerSkillTechnique(game, 'hit', e);
       layerHits.push(e);
       runHitLayers(game, 'laser', { x: e.x, y: e.y, ang, hits: [e], dmg });
     }

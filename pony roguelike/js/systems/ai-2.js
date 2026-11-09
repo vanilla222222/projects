@@ -22,9 +22,9 @@ function aiLobber(game, e, dt){
     tryMoveEntity(e, node, node.obstacles, -v.x * e.speed * dt, -v.y * e.speed * dt);
   }
   e.attackTimer -= dt;
-  if (e.attackTimer <= 0 && d < range) {
+  if (e.attackTimer <= 0 && d < range && reserveEnemyWindup(game, e)) {
     e.lobX = player.x; e.lobY = player.y;
-    e.lobTime = t.lobTime || 1.0;
+    e.lobTime = Math.max(0.72, t.lobTime || 1.0);
     e.lobTimer = e.lobTime;
   }
 }
@@ -52,6 +52,8 @@ function aiSentry(game, e, dt){
       fireSpread(game, e, player.x, player.y, t.boltSpeed || 200, e.dmg,
         { color: t.boltColor || '#8ab0c9', radius: t.boltRadius || 5 });
     }
+  } else if (e.dashRecovery > 0) {
+    e.dashRecovery -= dt;
   } else {
     chaseSeek(game, e, player.x, player.y, 1, dt);
     e.fireTimer = Math.max(e.fireTimer, 0.25);
@@ -62,6 +64,8 @@ function aiSkirmisher(game, e, dt){
   const node = game.currentRoom, player = game.player, t = e.type;
   const d = Util.dist(e.x, e.y, player.x, player.y);
   const engageRange = t.engageRange || 260, retreatRange = t.retreatRange || 140;
+  if (updateEnemyAim(game, e, dt, engageRange, 0.32, t.boltSpeed || 260,
+    t.boltColor || '#c9895a', t.boltRadius || 5)) return;
   if (d > engageRange) {
     chaseSeek(game, e, player.x, player.y, t.dashSpeed || 1.6, dt);
   } else if (d < retreatRange) {
@@ -69,12 +73,7 @@ function aiSkirmisher(game, e, dt){
     const v = seekVector(e, player.x, player.y);
     tryMoveEntity(e, node, node.obstacles, -v.x * e.speed * dt, -v.y * e.speed * dt);
   }
-  e.fireTimer -= dt;
-  if (e.fireTimer <= 0) {
-    e.fireTimer = t.fireCooldown || 1.4;
-    fireSpread(game, e, player.x, player.y, t.boltSpeed || 260, e.dmg,
-      { color: t.boltColor || '#c9895a', radius: t.boltRadius || 5 });
-  }
+
 }
 
 function aiWhiplash(game, e, dt){
@@ -102,20 +101,7 @@ function aiWhiplash(game, e, dt){
 
 function aiBossWarlord(game, e, dt){
   const node = game.currentRoom, player = game.player;
-  if (e.dashing) {
-    tryMoveEntity(e, node, node.obstacles, e.dashVX * dt, e.dashVY * dt);
-    e.dashTimer -= dt;
-    if (e.dashTimer <= 0) e.dashing = false;
-  } else {
-    e.attackTimer -= dt;
-    chaseSeek(game, e, player.x, player.y, 1, dt);
-    if (e.attackTimer <= 0) {
-      e.attackTimer = Util.rand(2.2, 3.2);
-      const v = seekVector(e, player.x, player.y);
-      e.dashing = true; e.dashTimer = 0.45;
-      e.dashVX = v.x * e.speed * 4.4; e.dashVY = v.y * e.speed * 4.4;
-    }
-  }
+  updateCommittedDash(game, e, dt, false);
   if (!e.minionsSpawned && e.hp < e.maxHp * 0.5) {
     e.minionsSpawned = true;
     for (let i = 0; i < 2; i++) {
@@ -131,7 +117,9 @@ function aiBossColossus(game, e, dt){
   if (e.telegraph > 0) {
     e.telegraph -= dt;
     if (e.telegraph <= 0) {
-      const R = 150;
+      const R = e.attackWarningRadius;
+      e.attackWarningRadius = 0;
+      e.dashRecovery = 0.75;
       game.explosions.push(new Explosion(e.x, e.y, R));
       if (Util.dist(e.x, e.y, player.x, player.y) < R + player.radius) damagePlayer(game, playerDamageAmount(game, true, e.dmg), e.type.id);
     }
@@ -140,7 +128,7 @@ function aiBossColossus(game, e, dt){
     e.attackTimer -= dt;
     if (e.attackTimer <= 0) {
       e.attackTimer = Util.rand(3, 4);
-      if (RNG.random() < 0.5) e.telegraph = 0.7;
+      if (Util.dist(e.x, e.y, player.x, player.y) < 155) { e.telegraph = 0.8; e.attackWarningRadius = 132; }
       else fireProjectileAt(game, e, player.x, player.y, 140, 2, { color:'#8a8578', radius:9 });
     }
   }
@@ -149,19 +137,24 @@ function aiBossColossus(game, e, dt){
 function aiBossHiveMother(game, e, dt){
   const node = game.currentRoom, player = game.player;
   const d = Util.dist(e.x, e.y, player.x, player.y);
-  if (d < 220) {
-    const v = seekVector(e, player.x, player.y);
-    tryMoveEntity(e, node, node.obstacles, -v.x * e.speed * dt, -v.y * e.speed * dt);
+  if (!e.attackAim) {
+    if (d < 205) {
+      const v = seekVector(e, player.x, player.y);
+      tryMoveEntity(e, node, node.obstacles, -v.x * e.speed * dt * 0.7, -v.y * e.speed * dt * 0.7);
+    } else {
+      chaseSeek(game, e, player.x, player.y, 0.6, dt);
+    }
+    e.attackTimer -= dt;
+    if (e.attackTimer <= 0 && hasLineOfSight(node, e, player.x, player.y)) startEnemyAim(e, player, 0.6, 320);
   } else {
-    chaseSeek(game, e, player.x, player.y, 0.6, dt);
-  }
-  e.attackTimer -= dt;
-  if (e.attackTimer <= 0) {
-    e.attackTimer = Util.rand(1.8, 2.6);
-    const baseAng = Math.atan2(player.y - e.y, player.x - e.x);
+    e.attackAim.remaining -= dt;
+    if (e.attackAim.remaining > 0) return;
+    const aim = e.attackAim;
+    e.attackAim = null;
+    e.attackTimer = Util.rand(2.1, 2.8);
+    const baseAng = Math.atan2(aim.y, aim.x);
     for (let i = -2; i <= 2; i++) {
-      const ang = baseAng + i * 0.18;
-      game.projectiles.push(new Projectile(e.x, e.y, Math.cos(ang)*180, Math.sin(ang)*180, 2, 'enemy', { color:'#c9668a', radius:5, fromBoss:true, source: e }));
+      fireProjectileAngle(game, e, baseAng + i * 0.24, 180, e.dmg, { color:'#c9668a', radius:5 });
     }
     if (!e.minionsSpawned && e.hp < e.maxHp * 0.6) {
       e.minionsSpawned = true;
@@ -178,24 +171,18 @@ function aiBossBoneSentinel(game, e, dt){
   const node = game.currentRoom, player = game.player;
   if (e.shielded) {
     e.telegraph -= dt;
-    chaseSeek(game, e, player.x, player.y, 0.3, dt);
-    if (e.telegraph <= 0) { e.shielded = false; e.pattern = 0; e.attackTimer = 0.25; }
-  } else if (e.dashing) {
-    tryMoveEntity(e, node, node.obstacles, e.dashVX * dt, e.dashVY * dt);
-    e.dashTimer -= dt;
-    if (e.dashTimer <= 0) { e.dashing = false; e.pattern++; e.attackTimer = 0.35; }
-  } else {
-    e.attackTimer -= dt;
-    if (e.attackTimer <= 0) {
-      if (e.pattern >= 3) { e.shielded = true; e.telegraph = 2.4; e.pattern = 0; }
-      else {
-        const v = seekVector(e, player.x, player.y);
-        e.dashing = true; e.dashTimer = 0.35;
-        e.dashVX = v.x * e.speed * 4.6; e.dashVY = v.y * e.speed * 4.6;
-      }
-    } else {
-      chaseSeek(game, e, player.x, player.y, 0.5, dt);
+    if (e.telegraph <= 0) {
+      e.shielded = false;
+      e.pattern = 0;
+      e.attackTimer = 0.95;
     }
+  } else if (e.pattern >= 2 && !e.dashing && !e.attackAim && e.dashRecovery <= 0 && e.attackTimer < 1.2) {
+    e.shielded = true;
+    e.telegraph = 1.1;
+  } else {
+    const wasDashing = e.dashing;
+    updateCommittedDash(game, e, dt, false);
+    if (wasDashing && !e.dashing) e.pattern++;
   }
   if (!e.minionsSpawned && e.hp < e.maxHp * 0.5) {
     e.minionsSpawned = true;
@@ -209,27 +196,38 @@ function aiBossBoneSentinel(game, e, dt){
 
 function aiBossBrambleQueen(game, e, dt){
   const node = game.currentRoom, player = game.player;
-  if (e.telegraph > 0) {
+  if (e.attackAim) {
+    const aim = e.attackAim;
+    aim.remaining -= dt;
+    if (aim.remaining <= 0) {
+      e.attackAim = null;
+      const angle = Math.atan2(aim.y, aim.x);
+      for (const offset of [-0.31, 0, 0.31]) {
+        fireProjectileAngle(game, e, angle + offset, 185, e.dmg, { color:'#5ba050', radius:5 });
+      }
+      e.attackTimer = 1.35;
+    }
+  } else if (e.telegraph > 0) {
     e.telegraph -= dt;
     if (e.telegraph <= 0) {
-      const n = 10;
-      for (let i = 0; i < n; i++) {
-        const ang = (i / n) * Math.PI * 2;
-        game.projectiles.push(new Projectile(e.x, e.y, Math.cos(ang)*150, Math.sin(ang)*150, 2, 'enemy', { color:'#5ba050', radius:5, fromBoss:true, source: e }));
+      e.attackWarningRadius = 0;
+      for (let i = 1; i < 9; i++) {
+        fireProjectileAngle(game, e, e.brambleGap + i * Math.PI * 2 / 10, 150, e.dmg,
+          { color:'#5ba050', radius:5 });
       }
+      e.attackTimer = 2.15;
     }
   } else {
     chaseSeek(game, e, player.x, player.y, 0.5, dt);
     e.attackTimer -= dt;
     if (e.attackTimer <= 0) {
-      e.attackTimer = Util.rand(3.2, 4);
-      if (RNG.random() < 0.5) { e.telegraph = 0.6; }
-      else {
-        const baseAng = Math.atan2(player.y - e.y, player.x - e.x);
-        for (let i = -1; i <= 1; i++) {
-          const ang = baseAng + i * 0.22;
-          game.projectiles.push(new Projectile(e.x, e.y, Math.cos(ang)*170, Math.sin(ang)*170, 2, 'enemy', { color:'#5ba050', radius:5, fromBoss:true, source: e }));
-        }
+      e.pattern = (e.pattern + 1) % 2;
+      if (e.pattern === 1) {
+        startEnemyAim(e, player, 0.55, 350);
+      } else {
+        e.brambleGap = Math.atan2(player.y - e.y, player.x - e.x);
+        e.telegraph = 0.8;
+        e.attackWarningRadius = e.radius + 16;
       }
     }
   }

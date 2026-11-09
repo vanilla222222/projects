@@ -436,30 +436,39 @@ function aiBossFurnaceHeart(game, e, dt){
 
 function aiBossEclipseWraith(game, e, dt){
   const node = game.currentRoom, player = game.player;
-  if (e.telegraph > 0) {
-    e.telegraph -= dt;
-    if (e.telegraph <= 0) {
-      const ang = RNG.random() * Math.PI * 2;
-      const spot = findNearestFloor(node, Math.floor((player.x + Math.cos(ang) * 70) / TILE), Math.floor((player.y + Math.sin(ang) * 70) / TILE));
-      e.x = spot.x * TILE + TILE / 2; e.y = spot.y * TILE + TILE / 2;
-      if (e.pattern === 0) {
-        const n = 9;
-        for (let i = 0; i < n; i++) {
-          const a2 = (i / n) * Math.PI * 2;
-          game.projectiles.push(new Projectile(e.x, e.y, Math.cos(a2) * 200, Math.sin(a2) * 200, 2, 'enemy', { color:'#2c2440', radius:5, fromBoss:true, source: e }));
-        }
-      } else {
-        const baseAng = Math.atan2(player.y - e.y, player.x - e.x);
-        game.projectiles.push(new Projectile(e.x, e.y, Math.cos(baseAng) * 150, Math.sin(baseAng) * 150, 4, 'enemy', { color:'#6a2c8a', radius:9, fromBoss:true, source: e }));
+  if (e.lobTimer > 0) {
+    e.lobTimer -= dt;
+    if (e.lobTimer > 0) return;
+    e.x = e.lobX;
+    e.y = e.lobY;
+    e.submerged = false;
+    if (e.pattern === 0) {
+      for (let i = 0; i < 8; i++) {
+        fireProjectileAngle(game, e, (i + 0.5) * Math.PI / 4, 165, e.dmg, { color:'#8c72b7', radius:5 });
       }
-      e.pattern = (e.pattern + 1) % 2;
-      e.attackTimer = Util.rand(1.6, 2.0);
+    } else {
+      const angle = Math.atan2(e.eclipseAimY - e.y, e.eclipseAimX - e.x);
+      fireProjectileAngle(game, e, angle, 175, e.dmg + 1, { color:'#aa5bc4', radius:8 });
     }
-  } else {
-    chaseSeek(game, e, player.x, player.y, 0.9, dt);
-    e.attackTimer -= dt;
-    if (e.attackTimer <= 0) e.telegraph = (e.pattern === 0) ? 0.6 : 1.0;
+    e.pattern = 1 - e.pattern;
+    e.attackTimer = Util.rand(1.9, 2.4);
+    e.dashRecovery = 0.58;
+    return;
   }
+  if (e.dashRecovery > 0) { e.dashRecovery -= dt; return; }
+  chaseSeek(game, e, player.x, player.y, 0.75, dt);
+  e.attackTimer -= dt;
+  if (e.attackTimer > 0) return;
+  const angle = RNG.random() * Math.PI * 2;
+  const spot = findClearFloorSpot(node, Math.floor((player.x + Math.cos(angle) * 112) / TILE),
+    Math.floor((player.y + Math.sin(angle) * 112) / TILE));
+  e.lobX = tileToPx(spot.x);
+  e.lobY = tileToPx(spot.y);
+  e.eclipseAimX = player.x;
+  e.eclipseAimY = player.y;
+  e.lobTime = e.lobTimer = e.pattern === 0 ? 0.65 : 0.85;
+  e.lobWarningRadius = 34;
+  e.submerged = true;
 }
 
 function aiBossIronBastion(game, e, dt){

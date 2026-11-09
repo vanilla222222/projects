@@ -82,7 +82,7 @@ function updateEnemy(game, e, dt){
   if (collidesAt(e, e.x, e.y, node, node.obstacles)) {
     e.stuckTimer += dt;
     if (e.stuckTimer > 0.75) {
-      const spot = findNearestFloor(node, Math.floor(e.x / TILE), Math.floor(e.y / TILE));
+      const spot = findClearFloorSpot(node, Math.floor(e.x / TILE), Math.floor(e.y / TILE));
       e.x = spot.x * TILE + TILE / 2; e.y = spot.y * TILE + TILE / 2;
       e.stuckTimer = 0;
 
@@ -146,6 +146,7 @@ function updateEnemy(game, e, dt){
   const origSpeed = e.speed;
   if (creepSpeedMult < 1) e.speed = origSpeed * creepSpeedMult;
 
+  if (e.freezeTimer > 0 || e.stunTimer > 0 || e.charmTimer > 0 || e.fearTimer > 0) e.attackAim = null;
   if (e.freezeTimer > 0) {
 
   } else if (e.stunTimer > 0) {
@@ -262,7 +263,7 @@ function updateEnemy(game, e, dt){
   const player = game.player;
   const rr = e.radius + player.radius;
 
-  const suppressPlayerContact = e.submerged || e.freezeTimer > 0 || e.charmTimer > 0 || e.type.harmless || e.spent;
+  const suppressPlayerContact = e.submerged || e.freezeTimer > 0 || e.stunTimer > 0 || !!e.attackAim || e.dashRecovery > 0 || e.charmTimer > 0 || e.type.harmless || e.spent;
   if (!e.isDead && !suppressPlayerContact && Util.dist2(e.x, e.y, player.x, player.y) < rr * rr && e.contactCooldown <= 0) {
     damagePlayer(game, playerDamageAmount(game, e.isBoss, e.dmg), e.type.id);
     e.contactCooldown = e.isBoss ? 0.6 : (e.type.contactCooldown || 0.7);
@@ -331,6 +332,7 @@ function updateStatusEffects(game, e, dt){
 function updateProjectiles(game, dt){
   const node = game.currentRoom, player = game.player;
   for (const pr of game.projectiles) {
+    if (pr.dead) continue;
 
     const prShape = TEAR_SHAPES[pr.shape] || null;
     if (prShape && prShape.onUpdate) prShape.onUpdate(pr, dt, game);
@@ -485,6 +487,7 @@ function updateProjectiles(game, dt){
             if (e.isDead) { if (isPlayerBolt) bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
 
             if (isPlayerBolt && pr.attackTrigger) runHitLayers(game, pr.attackTrigger, { x: e.x, y: e.y, ang: Math.atan2(pr.vy, pr.vx), hits: [e], dmg });
+            if (isPlayerBolt && !pr.isSplitChild) triggerSkillTechnique(game, 'hit', e);
           }
 
           pr.hitEnemies.push(e);
@@ -569,8 +572,10 @@ function detonateExplosiveProjectile(game, pr){
 function detonateBomb(game, bomb){
   const R = 92 * (game.player.bombRadiusMult || 1);
 
-  const dmgMult = bomb.owner === 'player' ? (game.player.bombDamageMult || 1) : 1;
+  const playerOwned = bomb.owner === 'player' || bomb.owner === 'player-free';
+  const dmgMult = playerOwned ? (game.player.bombDamageMult || 1) : 1;
   explodeAt(game, bomb.x, bomb.y, R, dmgMult);
+  if (playerOwned) triggerSkillTechnique(game, 'blast', bomb);
 }
 
 const ARCANE_ECHO_INTERVAL = 4;

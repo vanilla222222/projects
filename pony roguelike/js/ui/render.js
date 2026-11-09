@@ -1514,8 +1514,29 @@ Object.assign(Game.prototype, {
     }
     e._fxHit = hit;
 
+    if (e.attackAim || e.attackWarningRadius > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.strokeStyle = Theme.fx.fuseHot;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (e.attackAim) {
+        const aim = e.attackAim;
+        let reach = 0;
+        while (reach + 8 <= aim.range && !isTileSolidForEntity(this.currentRoom,
+          Math.floor((e.x + aim.x * (reach + 8)) / TILE), Math.floor((e.y + aim.y * (reach + 8)) / TILE))) reach += 8;
+        ctx.setLineDash([6, 5]);
+        ctx.moveTo(Math.round(e.x), Math.round(e.y));
+        ctx.lineTo(Math.round(e.x + aim.x * reach), Math.round(e.y + aim.y * reach));
+      } else {
+        ctx.arc(e.x, e.y, e.attackWarningRadius, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
     if (e.lobTimer > 0) {
-      const R = (e.type && e.type.burstRadius) || 44;
+      const R = e.lobWarningRadius || (e.type && e.type.burstRadius) || 44;
       const frac = 1 - Util.clamp(e.lobTimer / (e.lobTime || 1), 0, 1);
       ctx.save();
       ctx.globalAlpha = 0.3 + 0.4 * frac;

@@ -387,6 +387,8 @@ function wdRegenerateObstacles(game){
 
 function startWaveDefense(game){
   game.mode = 'wavedefense';
+  game.player.storyDepth = 0;
+  recalcPlayerStats(game.player);
   game.waveDefenseMode = true;
   game.wdWave = 0;
   game.wdStageIndex = 0;
