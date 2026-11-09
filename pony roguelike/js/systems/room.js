@@ -1597,19 +1597,19 @@ function spawnClearRoomPickup(game){
 
   if (tier === 'common') {
 
-    const cat = Util.weighted(applySkillTreePoolNudge(COMMON_CATEGORY_POOL, 'COMMON_CATEGORY_POOL')).id;
+    const cat = Util.weighted(COMMON_CATEGORY_POOL).id;
     if (cat === 'penny') {
       const pennyPool = wdCoinPool(game, COMMON_PENNY_POOL);
-      const coin = Util.weighted(applySkillTreePoolNudge(pennyPool, 'COMMON_PENNY_POOL')).id;
+      const coin = Util.weighted(pennyPool).id;
 
       spawnResolvedPickup(node, coin === 'cursedpenny' ? 'cursedpenny' : 'coin:' + coin, spot.x, spot.y);
     } else if (cat === 'heart') {
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(COMMON_HEART_POOL, 'COMMON_HEART_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(COMMON_HEART_POOL).id, spot.x, spot.y);
     } else if (cat === 'bomb') {
 
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(BOMB_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id)), 'BOMB_TIER_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(BOMB_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id))).id, spot.x, spot.y);
     } else {
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(KEY_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id)), 'KEY_TIER_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(KEY_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id))).id, spot.x, spot.y);
     }
     return;
   }
@@ -1618,11 +1618,11 @@ function spawnClearRoomPickup(game){
 
     const candidates = RARE_POOL.filter(t => !ACHIEVEMENT_PICKUP_KINDS.includes(t.id) || isPickupKindUnlocked(t.id));
     if (!candidates.length) return;
-    spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(candidates, 'RARE_POOL')).id, spot.x, spot.y);
+    spawnResolvedPickup(node, Util.weighted(candidates).id, spot.x, spot.y);
     return;
   }
 
-  const leg = Util.weighted(applySkillTreePoolNudge(LEGENDARY_POOL, 'LEGENDARY_POOL')).id;
+  const leg = Util.weighted(LEGENDARY_POOL).id;
   if (leg === 'trinket') {
     const trinket = pickTrinketFromPool();
 
@@ -1632,5 +1632,5 @@ function spawnClearRoomPickup(game){
     if (familiar) { addFamiliar(game, familiar); return; }
   }
 
-  node.chests.push(new Chest(Util.weighted(applySkillTreePoolNudge(CHEST_TYPE_POOL, 'CHEST_TYPE_POOL')).id, spot.x, spot.y));
+  node.chests.push(new Chest(Util.weighted(CHEST_TYPE_POOL).id, spot.x, spot.y));
 }

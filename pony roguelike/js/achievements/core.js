@@ -28,15 +28,6 @@ function isStarUnlocked(starId){
   return !!currentUnlocks().unlockedStars[starId];
 }
 
-function getStarRoomChanceBonus(){
-  const unlocks = currentUnlocks();
-  let bonus = 0;
-  if (isSkillNodeOwned(unlocks, 'unlock_starroom_1')) bonus += 0.25;
-  if (isSkillNodeOwned(unlocks, 'unlock_starroom_2')) bonus += 0.25;
-  if (isSkillNodeOwned(unlocks, 'unlock_starroom_3')) bonus += 0.25;
-  return bonus;
-}
-
 function isPillColorUnlocked(colorId){
   return !!currentUnlocks().unlockedPillColors[colorId];
 }
