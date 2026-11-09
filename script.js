@@ -100,6 +100,8 @@ function setTheme(theme) {
     } catch {}
 }
 
+// Dark is the default, set on <body>. A saved choice still wins, so anyone who
+// has already picked light keeps it.
 try {
     const saved = localStorage.getItem("project-index-theme");
     if (saved) document.body.dataset.theme = saved;

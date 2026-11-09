@@ -16,6 +16,8 @@ tools/build-templates.py    mine retro templates from atom-mapped reactions
 tools/import-catalogue.py   load a supplier catalogue as purchasable stock
 tools/build-stock.py        derive a stand-in stock when no catalogue is at hand
 tools/engine.py             best-first route search over the template library
+tools/path.py               propose a route from a given starting material
+tools/build-network.py      the corpus's connected core, for the page's path finder
 tools/benchmark.py          measure the engine on reactions it has never seen
 data/                       the built library, stock and held-out test set
 ```
@@ -110,6 +112,41 @@ model from molecule fingerprint to a ranked shortlist. That is what
 AiZynthFinder's policy network does, it is a plain supervised problem, and the
 training pairs already exist in `data/templates.json` — every template carries
 the product it came from.
+
+## Paths between two molecules
+
+Two different questions, answered two different ways.
+
+**"Propose a route from X to Y"** — `tools/path.py`, which searches the mined
+templates, so it works on molecules nobody has made. The goal is stricter than
+plain route search: the starting material has to actually appear among the
+leaves, so a route cannot quietly buy its way around it. And the search is
+*pulled* toward the start rather than filtered at the end — candidates are
+scored on Morgan-fingerprint similarity to it, because without that the search
+wanders off into the cheapest chemistry it can find and never arrives.
+
+```
+$ python3 -I tools/path.py 'CC(=O)Oc1ccccc1C(=O)O' 'OC(=O)c1ccccc1O'
+1 step, 0.0s
+
+  1. CC(=O)O + O=C(O)c1ccccc1O
+     -> CC(=O)Oc1ccccc1C(=O)O
+```
+
+On held-out reactions, given the product and its largest recorded reactant, it
+finds a path for 7 of 12. A route it returns is a hypothesis, not precedent.
+
+**"Has anyone actually gone from X to Y"** — the path finder on the web page,
+which searches a graph of real patent reactions, so every edge is documented.
+No chemistry runs at page load, only a bidirectional breadth-first search.
+
+Building that graph turned up the more interesting fact. Of the corpus's
+100,508 molecules, only **1,924** are ever both made by one reaction and used by
+another; everything else is a dead end. USPTO-50k is largely a bag of
+unconnected single steps rather than a synthesis graph. The searchable core is
+7,044 molecules and 6,538 reactions, holding 4,838 two-step routes, 354
+three-step, 30 four-step and exactly one of five steps — which is why the page
+says plainly that most pairs will have no path.
 
 ## Running it
 

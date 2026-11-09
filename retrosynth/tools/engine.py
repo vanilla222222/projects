@@ -229,3 +229,135 @@ class Engine:
                 'routes': routes,
                 'expansions': expansions,
                 'seconds': round(time.time() - started, 2)}
+
+    def search_path(self, target, start, max_depth=10, max_expansions=600,
+                    budget_s=120.0, pull=1.4):
+        """Find a route from a particular starting material up to a target.
+
+        Different question from `search`, which asks "how do I make this out of
+        anything buyable". This asks "how do I get from *this* to *that*", which
+        is what you want when the starting material is the thing you have, the
+        thing that is cheap, or the thing a paper used.
+
+        Two changes make it work. The goal is stricter: `start` must actually
+        appear among the leaves, so a route that quietly buys its way around it
+        does not count. And the search is pulled towards the start rather than
+        merely filtered at the end - every candidate precursor is scored on
+        Morgan-fingerprint similarity to it, and the search prefers intermediates
+        that look like where it is trying to land. Without that pull the search
+        wanders off into the cheapest chemistry it can find and never arrives.
+
+        `pull` is how hard to steer. Zero is plain cost-first search; higher
+        values trade route quality for actually reaching the start.
+        """
+        from rdkit.Chem import rdFingerprintGenerator
+        from rdkit import DataStructs
+
+        target = canon(target)
+        start = canon(start)
+        if target is None or start is None:
+            return {'ok': False, 'reason': 'target or start could not be parsed',
+                    'routes': []}
+        if target == start:
+            return {'ok': True, 'reason': 'target is the starting material',
+                    'routes': [{'steps': [], 'cost': 0.0, 'depth': 0}]}
+
+        generator = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+        start_mol = Chem.MolFromSmiles(start)
+        if start_mol is None:
+            return {'ok': False, 'reason': 'starting material could not be parsed',
+                    'routes': []}
+        start_fp = generator.GetFingerprint(start_mol)
+        similarity_cache = {}
+
+        def closeness(smiles):
+            """1.0 when a molecule is the start, falling off with dissimilarity."""
+            hit = similarity_cache.get(smiles)
+            if hit is not None:
+                return hit
+            if smiles == start:
+                similarity_cache[smiles] = 1.0
+                return 1.0
+            mol = Chem.MolFromSmiles(smiles)
+            score = 0.0
+            if mol is not None:
+                score = DataStructs.TanimotoSimilarity(start_fp,
+                                                       generator.GetFingerprint(mol))
+            similarity_cache[smiles] = score
+            return score
+
+        def solved(pending):
+            # Every leaf has to be obtainable and the start has to be one of
+            # them. The target still counts as unsolved while it is the only
+            # thing there, so "buy the target" is never the answer.
+            if start not in pending:
+                return False
+            if pending == begin:
+                return False
+            return all(m == start or m in self.stock for m in pending)
+
+        started = time.time()
+        counter = 0
+        begin = frozenset([target])
+        frontier = [(0.0, counter, begin, (), 0.0)]
+        visited = {begin: 0.0}
+        routes = []
+        expansions = 0
+
+        while frontier:
+            if time.time() - started > budget_s:
+                self.stats['path_timeout'] += 1
+                break
+            if expansions >= max_expansions:
+                self.stats['path_expansion_cap'] += 1
+                break
+
+            _, _, pending, steps, cost = heapq.heappop(frontier)
+
+            if solved(pending):
+                routes.append({'steps': [s.as_dict() for s in steps],
+                               'cost': round(cost, 3), 'depth': len(steps),
+                               'uses_start': True})
+                break
+
+            if len(steps) >= max_depth:
+                continue
+
+            # Work on whichever pending molecule is least like the start: that is
+            # the one still standing between here and there. Anything already
+            # close to the start, or already buyable, can wait.
+            #
+            # The target is exempt from the buyable test. Plenty of targets are
+            # themselves on a shelf somewhere, and refusing to take one apart on
+            # that basis answered "you can just buy it" to a question that was
+            # explicitly about making it from something else.
+            open_set = [m for m in pending
+                        if m != start and (m == target or m not in self.stock)]
+            if not open_set:
+                continue
+            open_set.sort(key=closeness)
+            focus = open_set[0]
+
+            expansions += 1
+            for step in self.expand(focus):
+                rest = frozenset(m for m in pending if m != focus)
+                nxt = rest | frozenset(step.precursors)
+                new_cost = cost + step.cost
+                if nxt in visited and visited[nxt] <= new_cost:
+                    continue
+                visited[nxt] = new_cost
+                # Reward getting closer to the start, and count what is still
+                # neither buyable nor the start as work remaining.
+                best = max((closeness(m) for m in step.precursors), default=0.0)
+                remaining = sum(1 for m in nxt if m != start and m not in self.stock)
+                priority = new_cost + remaining - pull * best
+                counter += 1
+                heapq.heappush(frontier,
+                               (priority, counter, nxt, steps + (step,), new_cost))
+
+        return {'ok': bool(routes),
+                'reason': 'found' if routes else 'no path within budget',
+                'target': target, 'start': start,
+                'routes': routes,
+                'expansions': expansions,
+                'seconds': round(time.time() - started, 2)}
