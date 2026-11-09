@@ -1,0 +1,20 @@
+{
+ "built": "2026-11-09",
+ "source_rows": 50016,
+ "seconds": 372.1,
+ "stats": {
+  "reactions": 50016,
+  "extracted": 44913,
+  "roundtrip_ok": 43997,
+  "held_out": 5103,
+  "roundtrip_miss": 912,
+  "apply_error": 4
+ },
+ "templates_total": 11188,
+ "templates_usable": 10947,
+ "templates_dropped": 241,
+ "recovery_rate": 97.96,
+ "seen_once": 7077,
+ "covers_half_of_reactions": 311,
+ "holdout_reactions": 5103
+}
