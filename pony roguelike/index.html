@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#0b0a13">
 <title>Nightfall Charge — A Bat Pony's Stand</title>
 <link rel="stylesheet" href="style.css?v=pixel-1">
+<link rel="stylesheet" href="css/nightfall-interface.css?v=1">
 </head>
 <body>
 
@@ -23,11 +24,27 @@
     <button id="settingsBtn" class="mute-btn settings-btn" title="Settings">⚙</button>
 
     <div id="mainMenu" class="screen">
-    <h1 class="title">NIGHTFALL <span>CHARGE</span></h1>
-    <p class="subtitle">Equestria is under siege by the DNBs. Choose your hero.</p>
-    <p id="lifetimeStats" class="lifetime-stats"></p>
-    <p id="mainMenuTip" class="menu-tip"></p>
-    <div id="classSelect" class="class-grid"></div>
+    <header class="nightfall-masthead">
+      <div class="nightfall-kicker">Equestria Night Watch</div>
+      <h1 class="title">NIGHTFALL <span>CHARGE</span></h1>
+      <p class="subtitle">Equestria is under siege by the DNBs. Choose your hero.</p>
+      <p id="lifetimeStats" class="lifetime-stats"></p>
+      <p id="mainMenuTip" class="menu-tip"></p>
+    </header>
+    <nav class="menu-btn-row nightfall-navigation" aria-label="Nightfall records and modes">
+      <button id="achievementsBtn" class="achv-open-btn">Achievements<span id="achievementsNewBadge" class="new-badge hidden">NEW</span></button>
+      <button id="bestiaryBtn" class="achv-open-btn">Bestiary<span id="bestiaryNewBadge" class="new-badge hidden">NEW</span></button>
+      <button id="skillTreeBtn" class="achv-open-btn">Skill Tree<span id="skillTreePointsBadge" class="new-badge hidden"></span></button>
+      <button id="musicTestBtn" class="achv-open-btn">Music Test</button>
+      <button id="waveDefenseBtn" class="achv-open-btn">Wave Defense</button>
+    </nav>
+    <div class="nightfall-front">
+      <section class="nightfall-roster" aria-label="Pony roster">
+        <div class="nightfall-section-title"><span>01</span> Choose your pony</div>
+        <div id="classSelect" class="class-grid"></div>
+      </section>
+      <aside class="nightfall-run-panel" aria-label="Run setup">
+        <div class="nightfall-section-title"><span>02</span> Set up your run</div>
         <div id="difficultySelect" class="achv-filter" role="group" aria-label="Difficulty">
       <span class="hint">Difficulty</span>
       <button type="button" data-difficulty="easy">Easy</button>
@@ -40,15 +57,13 @@
       <span id="seedReadout" class="hint"></span>
     </div>
         <p id="controlsHint" class="hint">Move: WASD / Arrows &nbsp;·&nbsp; Attack: Left Click or Space &nbsp;·&nbsp; Bomb: B &nbsp;·&nbsp; Build Turret (hold): V &nbsp;·&nbsp; Active Item: E &nbsp;·&nbsp; Pill: Q &nbsp;·&nbsp; Star: R &nbsp;·&nbsp; Donate: F &nbsp;·&nbsp; Reroll: G &nbsp;·&nbsp; Arcade: H &nbsp;·&nbsp; Bestiary: C &nbsp;·&nbsp; Achievements: T &nbsp;·&nbsp; Pause: Esc</p>
-    <h2 class="trophyTitle">Superbosses</h2>
-    <div id="trophyRow" class="trophy-routes"></div>
-    <div class="menu-btn-row">
-      <button id="achievementsBtn" class="achv-open-btn">🏆 Achievements<span id="achievementsNewBadge" class="new-badge hidden">NEW</span></button>
-      <button id="bestiaryBtn" class="achv-open-btn">📖 Bestiary<span id="bestiaryNewBadge" class="new-badge hidden">NEW</span></button>
-      <button id="skillTreeBtn" class="achv-open-btn">🌳 Skill Tree<span id="skillTreePointsBadge" class="new-badge hidden"></span></button>
-      <button id="musicTestBtn" class="achv-open-btn">🎵 Music Test</button>
-      <button id="waveDefenseBtn" class="achv-open-btn">🌊 Wave Defense</button>
+      </aside>
     </div>
+    <section class="nightfall-records" aria-label="Superboss records">
+      <h2 class="trophyTitle">Superboss records</h2>
+      <div id="trophyRow" class="trophy-routes"></div>
+    </section>
+
   </div>
 
     <div id="achievementsScreen" class="screen hidden overlay achv-overlay">
@@ -222,11 +237,11 @@
     <div id="hud">
       <div id="hearts" class="hud-row"></div>
       <div class="hud-row hud-resources">
-        <span class="res" id="resCoins">🪙 <b>0</b></span>
-        <span class="res" id="resKeys">🔑 <b>0</b></span>
-        <span class="res" id="resBombs">💣 <b>0</b></span>
-        <span class="res hidden" id="resTurrets" title="Built turrets in this room (Engineer Pony).">🔧 <b>0/3</b></span>
-        <span class="res hidden" id="resMinions" title="Summoned changeling minions (Changeling Queen).">🦋 <b>0/2</b></span>
+        <span class="res" id="resCoins"><span class="nightfall-res-glyph glyph-coin" aria-label="Coins"></span> <b>0</b></span>
+        <span class="res" id="resKeys"><span class="nightfall-res-glyph glyph-key" aria-label="Keys"></span> <b>0</b></span>
+        <span class="res" id="resBombs"><span class="nightfall-res-glyph glyph-bomb" aria-label="Bombs"></span> <b>0</b></span>
+        <span class="res hidden" id="resTurrets" title="Built turrets in this room (Engineer Pony)."><span class="nightfall-res-glyph glyph-tool" aria-label="Turrets"></span> <b>0/3</b></span>
+        <span class="res hidden" id="resMinions" title="Summoned changeling minions (Changeling Queen)."><span class="nightfall-res-glyph glyph-wing" aria-label="Minions"></span> <b>0/2</b></span>
         <span class="res" id="resFloor">Floor <b>1</b></span>
       </div>
       <div class="hud-row hud-resources">
@@ -402,8 +417,8 @@
 
 <script src="js/core/theme.js"></script>
 <script src="js/core/rng.js"></script>
-<script src="js/core/pixel-art.js?v=1"></script>
-<script src="js/core/utils-1.js?v=pixel-1"></script>
+<script src="js/core/pixel-art.js?v=nightwatch-2"></script>
+<script src="js/core/utils-1.js?v=nightwatch-2"></script>
 <script src="js/core/utils-2.js?v=pixel-1"></script>
 <script src="js/core/audio.js"></script>
 
@@ -571,7 +586,7 @@
 <script src="js/achievements/skilltree-unlocks-trinkets.js"></script>
 <script src="js/achievements/skilltree-unlocks-starroom.js"></script>
 
-<script src="js/ui/bestiary.js?v=pixel-1"></script>
+<script src="js/ui/bestiary.js?v=nightwatch-2"></script>
 
 <script src="js/data/roomTemplates/core.js"></script>
 <script src="js/data/roomTemplates/wavearena.js"></script>
@@ -683,7 +698,7 @@
 <script src="js/ui/ui.js?v=pixel-1"></script>
 <script src="js/ui/minimap-pins.js"></script>
 <script src="js/game.js"></script>
-<script src="js/ui/render.js?v=pixel-1"></script>
+<script src="js/ui/render.js?v=nightwatch-2"></script>
 <script src="js/ui/menu-backdrop.js?v=pixel-1"></script>
 <script src="js/ui/music-test.js"></script>
 <script src="js/ui/settings.js"></script>

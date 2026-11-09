@@ -1160,6 +1160,57 @@ function tileRand(x, y, salt){
 
 Object.assign(Game.prototype, {
 
+  drawPixelRoomPass(target, offsetX, offsetY){
+    // The world layer shares the same 2 px grid as the hand-drawn tile stamps.
+    // Keep lighting, combat text and UI on the native-resolution canvas.
+    if (!this._pixelRoomCanvas) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(CAMERA_W / 2);
+      canvas.height = Math.ceil(CAMERA_H / 2);
+      this._pixelRoomCanvas = canvas;
+    }
+    const canvas = this._pixelRoomCanvas;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.setTransform(0.5, 0, 0, 0.5, Math.round(offsetX / 2), Math.round(offsetY / 2));
+    this.ctx = ctx;
+    try {
+      this.drawRoomDecor(this.currentRoom);
+      this.drawLockedDoorPulse();
+      this.drawGroundObstacles();
+      this.drawCreep();
+      this.drawDustDevils();
+      this.drawItemPedestal();
+      this.drawShop();
+      this.drawDonationMachineFixture();
+      this.drawRerollAltarFixture();
+      this.drawUpgradeStationFixture();
+      this.drawWdControlButton();
+      this.drawKarmaFixtures();
+      this.drawArcadeFixtures();
+      this.drawPlayerTurrets();
+      this.drawStairs();
+      this.drawGreenFireZone();
+      this.drawChangelingMinions();
+      this.drawWorldSorted();
+      this.drawProjectiles();
+      this.drawBombsExplosions();
+      this.drawSwingFX();
+      this.drawLaserFX();
+      FX.draw(ctx);
+      Ambient.draw(ctx);
+    } finally {
+      this.ctx = target;
+    }
+    target.save();
+    target.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    target.imageSmoothingEnabled = false;
+    target.drawImage(canvas, 0, 0, canvas.width * 2, canvas.height * 2);
+    target.restore();
+  },
+
   artFloorKey(){
     return this.waveDefenseMode ? 'defense:' + this.wdPaletteIndex
       : [this.floorPath, this.floorBranch, this.dungeon.floorNum].join(':');
@@ -1197,30 +1248,8 @@ Object.assign(Game.prototype, {
 
     ctx.translate(-Math.round(this.camX) + Math.round(FX.shakeX), -Math.round(this.camY) + Math.round(FX.shakeY));
     this.drawTiles();
-    this.drawRoomDecor(this.currentRoom);
-    this.drawLockedDoorPulse();
-    this.drawGroundObstacles();
-    this.drawCreep();
-    this.drawDustDevils();
-    this.drawItemPedestal();
-    this.drawShop();
-    this.drawDonationMachineFixture();
-    this.drawRerollAltarFixture();
-    this.drawUpgradeStationFixture();
-    this.drawWdControlButton();
-    this.drawKarmaFixtures();
-    this.drawArcadeFixtures();
-    this.drawPlayerTurrets();
-    this.drawStairs();
-    this.drawGreenFireZone();
-    this.drawChangelingMinions();
-    this.drawWorldSorted();
-    this.drawProjectiles();
-    this.drawBombsExplosions();
-    this.drawSwingFX();
-    this.drawLaserFX();
-    FX.draw(ctx);
-    Ambient.draw(ctx);
+    this.drawPixelRoomPass(ctx, -Math.round(this.camX) + Math.round(FX.shakeX),
+      -Math.round(this.camY) + Math.round(FX.shakeY));
     this.drawFloatTexts();
     ctx.restore();
 
@@ -1782,9 +1811,15 @@ Object.assign(Game.prototype, {
         continue;
       }
       ctx.fillStyle = Theme.shadow.pedestal;
-      ctx.beginPath(); ctx.ellipse(px, py + 12, 17, 5, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = Theme.world.pedestalBase; Util.drawRoundedRect(ctx, px - 16, py + 6, 32, 10, 2); ctx.fill();
-      ctx.fillStyle = Util.bodyShade(ctx, px, py + 3, 14, Theme.world.pedestalTop); Util.drawRoundedRect(ctx, px - 12, py - 2, 24, 10, 2); ctx.fill();
+      ctx.fillRect(px - 16, py + 10, 32, 6);
+      ctx.fillStyle = '#302231';
+      ctx.fillRect(px - 14, py - 2, 28, 15);
+      ctx.fillStyle = '#8b6d78';
+      ctx.fillRect(px - 12, py, 24, 4);
+      ctx.fillStyle = '#594456';
+      ctx.fillRect(px - 10, py + 4, 20, 7);
+      ctx.fillStyle = '#e0aa78';
+      ctx.fillRect(px - 3, py + 5, 6, 2);
       if (!ped.taken) {
         const bob = Math.sin(this.now / 260 + px) * 3;
         if (ped.isStar) NightfallArt.icon(ctx, px, py - 16 + bob, ped.item, 'star', 28);
@@ -1984,18 +2019,20 @@ Object.assign(Game.prototype, {
   },
 
   drawStairsPit(ctx, px, py, rx, ry, ringColor){
-    const pulse = 0.5 + Math.sin(this.now / 340) * 0.5;
-    const grad = ctx.createRadialGradient(px, py, 1, px, py, Math.max(rx, ry));
-    grad.addColorStop(0, Theme.world.pitFill);
-    grad.addColorStop(0.7, Theme.world.stairsPit);
-    grad.addColorStop(1, Util.shadeColor(ringColor, -0.5));
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.save();
-    ctx.shadowColor = ringColor; ctx.shadowBlur = 6 + pulse * 6;
-    ctx.strokeStyle = ringColor; ctx.lineWidth = 2 + pulse * 0.6;
-    ctx.stroke();
-    ctx.restore();
+    ctx.fillStyle = Util.shadeColor(ringColor, -0.54);
+    ctx.fillRect(px - rx, py - ry + 4, rx * 2, ry * 2 - 8);
+    ctx.fillRect(px - rx + 4, py - ry, rx * 2 - 8, ry * 2);
+    ctx.fillStyle = '#201521';
+    ctx.fillRect(px - rx + 5, py - ry + 4, rx * 2 - 10, ry * 2 - 8);
+    for (let step = 0; step < 4; step++) {
+      const width = (rx - 7) * 2 - step * 4;
+      const y = py - ry + 7 + step * 6;
+      ctx.fillStyle = Util.shadeColor(ringColor, -0.12 - step * 0.15);
+      ctx.fillRect(px - width / 2, y, width, 3);
+    }
+    ctx.fillStyle = ringColor;
+    ctx.fillRect(px - rx + 5, py - ry + 3, rx * 2 - 10, 2);
+
   },
 
   drawStairs(){
@@ -2299,27 +2336,31 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     for (const pr of this.projectiles) {
 
-      if (pr.shape === 'needle') {
-
-        const ang = Math.atan2(pr.vy, pr.vx);
-        ctx.save();
-        ctx.translate(pr.x, pr.y); ctx.rotate(ang); ctx.scale(1.9, 0.6);
-        ctx.shadowColor = pr.color; ctx.shadowBlur = Theme.projectile.glowBlur;
+      const x = Math.round(pr.x), y = Math.round(pr.y);
+      const radius = Math.max(2, Math.round(pr.radius));
+      const heavy = pr.explosive || pr.shape === 'heavy';
+      const needle = pr.shape === 'needle';
+      ctx.save();
+      ctx.translate(x, y);
+      if (needle) ctx.rotate(Math.atan2(pr.vy, pr.vx));
+      ctx.fillStyle = '#251923';
+      if (needle) {
+        ctx.fillRect(-radius - 1, -2, radius * 3 + 2, 4);
+        ctx.fillRect(radius - 1, -3, radius + 2, 6);
         ctx.fillStyle = pr.color;
-        ctx.beginPath(); ctx.arc(0, 0, pr.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        ctx.fillRect(-radius, -1, radius * 3, 2);
+        ctx.fillRect(radius, -2, radius, 4);
       } else {
-        ctx.save();
-        ctx.shadowColor = pr.color;
-        ctx.shadowBlur = (pr.explosive || pr.shape === 'heavy') ? Theme.projectile.glowBlurBig : Theme.projectile.glowBlur;
+        ctx.fillRect(-radius - 1, -radius, radius * 2 + 2, radius * 2);
+        ctx.fillRect(-radius, -radius - 1, radius * 2, radius * 2 + 2);
         ctx.fillStyle = pr.color;
-        ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-        ctx.fillStyle = Theme.projectile.glint;
-
-        const gl = pr.shape === 'heavy' ? 0.5 : 0.35;
-        ctx.beginPath(); ctx.arc(pr.x - pr.radius * 0.3, pr.y - pr.radius * 0.3, pr.radius * gl, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-radius, -radius + 1, radius * 2, radius * 2 - 2);
+        ctx.fillRect(-radius + 1, -radius, radius * 2 - 2, radius * 2);
       }
+      ctx.fillStyle = heavy ? '#fff0ba' : Theme.projectile.glint;
+      ctx.fillRect(needle ? radius + 1 : -radius + 1, needle ? -1 : -radius + 1,
+        heavy ? 3 : 2, heavy ? 3 : 2);
+      ctx.restore();
 
       if (pr.statusColor) {
         ctx.save();
@@ -2354,14 +2395,19 @@ Object.assign(Game.prototype, {
       const r = ex.radius * Util.clamp(t * 1.4, 0, 1);
       const alpha = ex.life / ex.maxLife;
       if (!isFinite(ex.x) || !isFinite(ex.y) || !isFinite(r) || r <= 0) continue;
-      const grad = ctx.createRadialGradient(ex.x, ex.y, Math.max(0.1, r * 0.1), ex.x, ex.y, r);
-      grad.addColorStop(0, `rgba(${Theme.fx.blastCore},${alpha * 0.9})`);
-      grad.addColorStop(0.45, `rgba(${Theme.fx.blastMidR},${Theme.fx.blastMidG + Math.floor(Theme.fx.blastMidGRamp * (1 - t))},${Theme.fx.blastMidB},${alpha * 0.6})`);
-      grad.addColorStop(1, Theme.fx.blastEdge);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(ex.x, ex.y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = `rgba(${Theme.fx.blastRing},${alpha * 0.5})`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(ex.x, ex.y, r * 0.96, 0, Math.PI * 2); ctx.stroke();
+      ctx.save();
+      ctx.globalAlpha *= alpha;
+      const unit = 3;
+      for (let dy = -r; dy <= r; dy += unit) {
+        const extent = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)) / unit) * unit;
+        ctx.fillStyle = Math.abs(dy) < r * 0.44 ? '#ffc477' : '#e6815c';
+        ctx.fillRect(Math.round(ex.x - extent), Math.round(ex.y + dy), extent * 2, unit);
+        if (extent > r * 0.48) {
+          ctx.fillStyle = '#ffe7a6';
+          ctx.fillRect(Math.round(ex.x - extent * 0.42), Math.round(ex.y + dy), Math.round(extent * 0.84), unit);
+        }
+      }
+      ctx.restore();
     }
   },
 
