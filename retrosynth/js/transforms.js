@@ -678,6 +678,11 @@ const TRANSFORMS = [
 // every caller.
 function disconnect(mol, settings) {
   const groups = TX.groups.groupsOf(mol);
+  // What these disconnections are *of*. Set here rather than left for the
+  // caller to attach: forward verification compares against it, and a caller
+  // that forgot made every step look unverifiable instead of unverified.
+  let product;
+  try { product = TX.smiles.canonicalWrite(mol); } catch (err) { void err; return []; }
   const allowed = (t) => {
     if (!settings) return true;
     if (settings.banTransforms && settings.banTransforms.includes(t.id)) return false;
@@ -713,6 +718,7 @@ function disconnect(mol, settings) {
       if (seen.has(key)) continue;
       seen.add(key);
       out.push({
+        product,
         transform: transform.id,
         name: transform.name,
         family: transform.family,

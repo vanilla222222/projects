@@ -18,9 +18,11 @@ const SE = (typeof require === 'function' && typeof module !== 'undefined')
     smiles: require('./smiles.js'),
     transforms: require('./transforms.js'),
     stock: require('./stock.js'),
+    forward: require('./forward.js'),
   }
   : (typeof RETRO !== 'undefined'
-    ? { smiles: RETRO.smiles, transforms: RETRO.transforms, stock: RETRO.stock } : null);
+    ? { smiles: RETRO.smiles, transforms: RETRO.transforms, stock: RETRO.stock,
+      forward: RETRO.forward } : null);
 
 // --- fingerprints, for "how alike are these two" --------------------------
 // Circular atom environments to radius two, hashed. Enough to rank analogues
@@ -79,6 +81,11 @@ function costModel(settings) {
       const balance = sizes[1] / sizes[0];
       cost -= w.convergence * balance;
     }
+    // A step that would give a mixture is worth having and worth charging for:
+    // in practice it means a protecting group, which is an extra two steps.
+    if (step.verdict && step.verdict.checked && step.verdict.selective === false) {
+      cost += w.protection * 1.5;
+    }
     // Making the problem bigger has to cost something, or the search wanders.
     const grew = step.precursors.join('').length - step.product.length;
     cost += w.cost * Math.max(0, grew) / 40;
@@ -96,7 +103,7 @@ function makeEngine(settings, options) {
   });
   const stepCost = costModel(settings);
   const expansions = new Map();
-  const stats = { expanded: 0, cached: 0, reused: 0 };
+  const stats = { expanded: 0, cached: 0, reused: 0, rejected: 0 };
 
   function expand(smiles) {
     const hit = expansions.get(smiles);
@@ -104,9 +111,26 @@ function makeEngine(settings, options) {
     let steps = [];
     try {
       const mol = SE.smiles.parse(smiles);
-      steps = SE.transforms.disconnect(mol, settings)
-        .map((step) => ({ ...step, product: smiles }));
+      steps = SE.transforms.disconnect(mol, settings);
     } catch (err) { void err; steps = []; }
+    // Run each one forwards before trusting it. A disconnection looks at one
+    // site; the reaction sees every site, and the difference is the whole
+    // reason a route can be chemically literate and still wrong.
+    if (settings.verify !== 'off' && SE.forward) {
+      const kept = [];
+      for (const step of steps) {
+        const verdict = SE.forward.verify(step);
+        step.verdict = verdict;
+        if (settings.verify === 'strict' && verdict.checked
+            && (!verdict.ok || verdict.selective === false)) {
+          stats.rejected += 1;
+          continue;
+        }
+        if (verdict.checked && !verdict.ok) { stats.rejected += 1; continue; }
+        kept.push(step);
+      }
+      steps = kept;
+    }
     // Keep only the best few per molecule, or the frontier explodes.
     steps.sort((a, b) => stepCost(a) - stepCost(b));
     steps = steps.slice(0, settings.beamWidth);

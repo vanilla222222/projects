@@ -220,6 +220,81 @@ for (const [smiles, id, what] of MUST_NOT) {
      >= found.analogues.length, 'dropping the route filter returned fewer analogues');
 }
 
+// --- running the step forwards -------------------------------------------
+// The check that matters: not "can the cut be undone" - it always can, that
+// verifies only bookkeeping - but "if you ran this on these precursors, what
+// would you actually get".
+{
+  const F = require('../js/forward.js');
+  ok(F.VERIFIABLE.size >= 15,
+    'only ' + F.VERIFIABLE.size + ' transforms have a forward rule');
+
+  const find = (smiles, id) => T.disconnect(S.parse(smiles)).find((d) => d.transform === id);
+
+  // A clean, unambiguous step passes and says it is the only product.
+  const clean = find('CC(=O)Nc1ccccc1', 'amide-coupling');
+  ok(!!clean, 'the acetanilide amide coupling disappeared');
+  const cleanVerdict = F.verify(clean);
+  ok(cleanVerdict.checked && cleanVerdict.ok, 'acetanilide should verify forwards');
+  ok(cleanVerdict.selective === true, 'acetanilide should be the only product');
+
+  // A step with a second nucleophile present is right and ambiguous. Catching
+  // this is the whole point: acylate an amino alcohol and the oxygen is there
+  // too, so the route needs a protecting group rather than optimism.
+  const amino = find('CC(=O)NCCO', 'amide-coupling');
+  ok(!!amino, 'the ethanolamine coupling disappeared');
+  const ambiguous = F.verify(amino);
+  ok(ambiguous.ok, 'acylating ethanolamine does give the amide');
+  ok(ambiguous.selective === false, 'but it is not the only product');
+  ok(ambiguous.alternatives.some((a) => a === S.canonical('CC(=O)OCCN')),
+    'the competing ester should be named, got ' + ambiguous.alternatives.join(', '));
+
+  // Aspirin from the acid is the textbook example of the same problem.
+  const aspirin = find('CC(=O)Oc1ccccc1C(=O)O', 'esterification');
+  ok(!!aspirin && F.verify(aspirin).selective === false,
+    'esterifying salicylic acid should be flagged as giving a mixture');
+
+  // A transform with no forward rule says so rather than claiming to pass.
+  const unchecked = T.disconnect(S.parse('CC(=O)NCCN'))
+    .find((d) => !F.VERIFIABLE.has(d.transform));
+  if (unchecked) {
+    const verdict = F.verify(unchecked);
+    ok(verdict.checked === false, 'an unverifiable transform claimed to be checked');
+    ok(verdict.ok === true, 'an unverifiable transform should not be treated as failing');
+  }
+
+  // Every verifiable transform must survive its own example, or the forward
+  // rule and the retro cut disagree about what the reaction is.
+  const EXAMPLES = [
+    ['CC(=O)Nc1ccccc1', 'amide-coupling'],
+    ['CC(=O)Nc1ccccc1', 'amide-from-acyl-chloride'],
+    ['c1ccccc1-c1ccncc1', 'suzuki'],
+    ['CCNc1ccccc1', 'buchwald'],
+    ['CC(O)c1ccccc1', 'carbonyl-reduction'],
+    ['Cc1ccc(S(=O)(=O)Nc2ccccc2)cc1', 'sulfonamide'],
+    ['CCOCC', 'williamson'],
+  ];
+  for (const [smiles, id] of EXAMPLES) {
+    const step = find(smiles, id);
+    ok(!!step, id + ' proposed nothing for ' + smiles);
+    if (!step) continue;
+    const verdict = F.verify(step);
+    ok(verdict.checked, id + ' has no forward rule but was listed as verifiable');
+    ok(verdict.ok, id + ' does not survive its own forward check on ' + smiles
+      + ': ' + verdict.note);
+  }
+
+  // And the setting has to bite.
+  const strict = SET.normalize({ budgetMs: 4000, verify: 'strict' });
+  const loose = SET.normalize({ budgetMs: 4000, verify: 'off' });
+  const strictRun = E.makeEngine(strict).route('CC(=O)Oc1ccccc1C(=O)O');
+  const looseRun = E.makeEngine(loose).route('CC(=O)Oc1ccccc1C(=O)O');
+  ok(looseRun.ok, 'aspirin should solve when nothing is checked');
+  ok(!strictRun.ok,
+    'strict checking should refuse aspirin from salicylic acid, which really would '
+    + 'self-esterify; that is why the real preparation uses the anhydride');
+}
+
 console.log('\n' + T.TRANSFORMS.length + ' transforms over '
   + new Set(T.TRANSFORMS.map((t) => t.family)).size + ' families, '
   + K.makeStock(S).size + ' compounds in the catalogue');

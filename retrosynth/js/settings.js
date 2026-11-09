@@ -125,6 +125,12 @@ const SCHEMA = [
   { key: 'banElements', group: 'Chemistry', type: 'list', of: 'element', def: [],
     alias: ['noelement'], label: 'Banned elements',
     help: 'Elements that may not appear in any reagent, e.g. Cr,Os,Hg.' },
+  { key: 'verify', group: 'Chemistry', type: 'enum', def: 'warn',
+    values: ['strict', 'warn', 'off'],
+    alias: ['check'], label: 'Check steps forwards',
+    help: 'Run each proposed step in the forward direction and see what it would '
+      + 'really give. strict throws away anything that does not give the product '
+      + 'or that would give a mixture; warn keeps them and says so; off skips the check.' },
   { key: 'stereo', group: 'Chemistry', type: 'enum', def: 'exact',
     values: ['exact', 'mixtures', 'ignore'],
     label: 'Stereochemistry',

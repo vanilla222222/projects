@@ -72,6 +72,74 @@ const STOCK_SMILES = (
   + 'CCC=O CCCC=O CC(C)C=O O=CC1CC1 CC(=O)CC '
   // alkyl halides and sulfonates
   + 'CCCCBr BrCCBr BrCCCBr ICC CCOS(C)(=O)=O BrCC(=O)OCC BrCC#N '
+  // --- a wider shelf -------------------------------------------------------
+  // The catalogue was the binding constraint, not the chemistry: targets came
+  // back unsolvable because a perfectly ordinary starting material was absent.
+  // These are the racks a synthetic lab actually orders from.
+  // anhydrides and activated acyl donors, which is how acylations really run
+  + 'CC(=O)OC(C)=O O=C(OC(=O)C1CC1)C1CC1 ClC(=O)OCC ClC(=O)OC(C)C O=C(Cl)C(Cl)=O '
+  + 'ClC(=O)c1ccc(Cl)cc1 ClC(=O)c1ccc(OC)cc1 ClC(=O)CCl ClC(=O)C(C)(C)C '
+  // aliphatic acids and diacids
+  + 'CC(C)C(O)=O CC(C)(C)C(O)=O OC(=O)C1CC1 OC(=O)C1CCC1 OC(=O)C1CCCCC1 '
+  + 'OC(=O)CC(C)C OC(=O)CCc1ccccc1 OC(=O)Cc1ccccc1 OC(=O)CCl OC(=O)CBr OC(=O)C(F)(F)F '
+  + 'OC(=O)CCC(O)=O OC(=O)CCCC(O)=O OC(=O)c1ccccc1F OC(=O)c1ccccc1Cl OC(=O)c1ccccc1OC '
+  // amines: primary, secondary, cyclic, benzylic
+  + 'CC(C)N CC(C)(C)N NC1CC1 NC1CCC1 NC1CCCC1 NC1CCCCC1 NCC1CC1 NCCc1ccccc1 '
+  + 'CN(C)C CCN(CC)CC C1CCNC1 C1CNC1 CN1CCNCC1 OC1CCN(C)CC1 NCCN(C)C NCCOC '
+  + 'NCc1ccncc1 NCc1cccnc1 NCc1ccco1 NCc1cccs1 Nc1ncccn1 Nc1ccccn1 Nc1cccnc1 '
+  // alcohols and diols
+  + 'OCC1CC1 OCc1ccncc1 OC1CCCCC1 OC1CCNCC1 OCCOC OCCN OCC(F)(F)F OC(C)(C)C '
+  + 'OCCCCO OCC(O)CO C1CCC(O)CC1 '
+  // aryl halides across the substitution patterns a coupling needs
+  + 'Brc1ccc(OC(F)(F)F)cc1 Brc1ccc(C(F)(F)F)cc1 Brc1ccc(S(C)(=O)=O)cc1 '
+  + 'Brc1cccc(C(O)=O)c1 Brc1cccc(N)c1 Brc1cccc(O)c1 Brc1cccc(OC)c1 Brc1cccc(C#N)c1 '
+  + 'Brc1ccc(N(C)C)cc1 Brc1ccc(O)cc1 Brc1ccc(CO)cc1 Brc1ccc(C=O)cc1 Brc1ccc(C(C)=O)cc1 '
+  + 'Ic1ccccc1 Ic1ccc(OC)cc1 Ic1ccncc1 Clc1ccccc1Cl Clc1ccc(C(F)(F)F)cc1 '
+  + 'Brc1ccncn1 Brc1cnccn1 Brc1ccc2ncccc2c1 Brc1ccc2[nH]ccc2c1 Brc1cc2ccccc2o1 '
+  // boronic acids and esters, the other half of every Suzuki
+  + 'OB(O)c1ccc(F)c(F)c1 OB(O)c1ccc(OC(F)(F)F)cc1 OB(O)c1ccc(C(F)(F)F)cc1 '
+  + 'OB(O)c1cccc(C(O)=O)c1 OB(O)c1cccc(N)c1 OB(O)c1cccc(OC)c1 OB(O)c1ccc(O)cc1 '
+  + 'OB(O)c1ccncn1 OB(O)c1cnccn1 OB(O)c1cc[nH]c1 OB(O)c1ccc2[nH]ccc2c1 '
+  + 'OB(O)C1CC1 OB(O)C1CCCCC1 CC1(C)OB(OC1(C)C)c1ccccc1 '
+  // heteroaryl cores
+  + 'c1ccc2ncccc2c1 c1cnc2ccccc2c1 c1ccc2nccnc2c1 c1cnccn1 c1cncnc1 c1cc2ccccc2[nH]1 '
+  + 'c1cc2ccccc2o1 c1cc2ccccc2s1 c1cnn[nH]1 c1cn[nH]c1 c1cnoc1 c1cnsc1 c1ncco1 c1nccs1 '
+  + 'Clc1ncccn1 Clc1ccncn1 Clc1nccs1 Clc1ncco1 Clc1ccc2ncccc2c1 Nc1nccs1 Nc1ncco1 '
+  + 'Oc1ncccn1 O=c1cc[nH]cn1 O=c1[nH]cnc2[nH]cnc12 '
+  // saturated rings: the fragments modern medicinal chemistry is built from
+  + 'C1COCCO1 C1CCOC1 C1CCSC1 C1CNCCO1 C1CN(C)CCN1 O=C1CCCN1 O=C1CCNC1 O=C1CCCCN1 '
+  + 'OC1CCOCC1 NC1COC1 NC1CCOCC1 OC1CCC(N)CC1 OC(=O)C1CCNCC1 OC(=O)C1CCOCC1 '
+  + 'OC(=O)C1CC1 CC1(C)CCNCC1 FC1(F)CCNCC1 N1CCC2(CC1)CCOCC2 '
+  // sulfonyl chlorides and sulfonamides
+  + 'CS(=O)(=O)Cl CCS(=O)(=O)Cl ClS(=O)(=O)c1ccccc1 ClS(=O)(=O)c1ccc(C)cc1 '
+  + 'ClS(=O)(=O)c1ccc(F)cc1 NS(=O)(=O)c1ccccc1 CS(C)=O '
+  // aldehydes and ketones
+  + 'O=Cc1ccc(F)cc1 O=Cc1ccc(C#N)cc1 O=Cc1ccc(N(C)C)cc1 O=Cc1cccnc1 O=Cc1cccs1 '
+  + 'O=Cc1ccc2ccccc2c1 O=CC1CCCCC1 CC(=O)c1ccc(F)cc1 CC(=O)c1ccc(OC)cc1 '
+  + 'O=C1CCN(C)CC1 O=C1CCOCC1 O=C1CCC(=O)C1 CC(=O)CC(=O)OCC '
+  // alkyl halides, tosylates, and other electrophiles
+  + 'CCCCCBr BrCCCCBr ClCCCl BrCC(F)(F)F ICCI CCCI BrC1CCCCC1 BrCc1ccncc1 '
+  + 'ClCc1ccccc1Cl BrCC(=O)c1ccccc1 CC(Br)C(O)=O '
+  // alkenes, alkynes and nitriles
+  + 'C=CCN C=CCO C=CC1CC1 C#CCO C#CCN C#CC(C)(C)O C#Cc1ccncc1 CCC#N CC(C)C#N '
+  + 'N#CCC#N N#Cc1ccncc1 N#Cc1ccc(F)cc1 '
+  // amino acids and chiral pool
+  + 'C[C@@H](N)C(O)=O N[C@@H](CC(O)=O)C(O)=O N[C@@H](Cc1ccccc1)C(O)=O '
+  + 'N[C@@H](CO)C(O)=O N[C@@H](C(C)C)C(O)=O OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O '
+  + 'C[C@H](O)C(O)=O O[C@H](C(O)=O)[C@@H](O)C(O)=O '
+  // protecting groups and coupling reagents that appear as precursors
+  + 'O=C(OCc1ccccc1)Cl CC(C)(C)[Si](Cl)(c1ccccc1)c1ccccc1 CC(C)[Si](Cl)(C(C)C)C(C)C '
+  + 'COc1ccc(CCl)cc1 O=C1c2ccccc2C(=O)N1O '
+  // substituted saturated rings. Every one of these turned up as the missing
+  // half of a route that was otherwise complete, which is the shape the gap
+  // always takes: not absent chemistry, an absent shelf.
+  + 'c1ccc(C2CCNCC2)cc1 OC(=O)C1CCN(C(=O)OC(C)(C)C)CC1 OC(=O)C1CCNCC1 '
+  + 'CC(C)(C)OC(=O)N1CCNCC1 CC(C)(C)OC(=O)N1CCC(N)CC1 CC(C)(C)OC(=O)N1CCC(O)CC1 '
+  + 'CC(C)(C)OC(=O)N1CCC(=O)CC1 CC(C)(C)OC(=O)N1CCC(C(O)=O)CC1 '
+  + 'c1ccc(N2CCNCC2)cc1 CN1CCC(N)CC1 OC1CCN(Cc2ccccc2)CC1 '
+  // the aryl propanoic acids and their precursors
+  + 'CC(C)Cc1ccccc1 CC(C)Cc1ccc(C(C)=O)cc1 CC(C)Cc1ccc(C=O)cc1 CC(c1ccccc1)C(O)=O '
+  + 'CC(C)Cc1ccc(C(C)O)cc1 CC(=O)c1ccc(C)cc1 '
 ).trim().split(/\s+/);
 
 function makeStock(smilesModule, options) {

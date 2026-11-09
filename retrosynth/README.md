@@ -15,10 +15,11 @@ js/molecule.js      the graph: charges, aromaticity, stereochemistry, rings
 js/smiles.js        reader and canonical writer
 js/groups.js        functional-group perception
 js/transforms.js    40 disconnections across 11 families
+js/forward.js       run each step the other way and see what you would get
 js/stock.js         where a route is allowed to stop
 js/search.js        best-first route and path search
 js/analogues.js     close relatives, and whether you could make them
-tools/*-test.js     883 checks
+tools/*-test.js     930 checks
 tools/corpus-check.js   the large run against 20,000 patent structures
 ```
 
@@ -40,6 +41,7 @@ A question is settings like any other, so it travels in a link:
 | 9 elements: C N O S P F Cl Br I | 31, with valence *lists* |
 | `maxDepth: 3`, 1.5 s budget | depth to 20, budget to 10 min |
 | 58 transforms, none of them couplings | 40, including Suzuki, Buchwald, Sonogashira, Heck |
+| forward check confirms the product | forward check also asks whether anything *else* forms |
 | tree expansion, no ordering between branches | best-first over a cost model |
 | stops at a depth limit | stops at a catalogue |
 | 27 settings, one hand-written validator | 38, declared once |
@@ -74,15 +76,29 @@ patent structures: all 20,000 agree, none fail to parse, none drift on a second
 pass, and 44 (0.22%) still write differently after their atoms are renumbered.
 `node tools/corpus-check.js <uspto.csv> 20000` reproduces it.
 
-**The catalogue is the limit, not the chemistry.** 187 compounds, written out
-by hand. Most targets that fail do so because a starting material is not on the
-shelf, not because no disconnection exists. A real supplier catalogue would
-move this more than any other single change.
+**The catalogue is the limit, not the chemistry.** 366 compounds, written out
+by hand. On a set of twelve drug-like targets it solves 9 with checking on and
+8 on strict; all three failures were a missing starting material rather than a
+missing disconnection. A real supplier catalogue would still move this more
+than any other single change.
 
-**Nothing is verified forwards yet.** chem lab checks each candidate by running
-the reaction in the forward direction and confirming it gives the target back.
-That is the right check and it is not written here, so a route is a suggestion
-that has not been argued with.
+**Every step is run forwards, and the useful question is the second one.**
+Inverting a cut verifies only that the bookkeeping is consistent, which it
+always is. So the forward rules start from the precursors and find *every*
+site the reaction could touch, then ask two things: does the intended product
+come out, and does anything else come out with it.
+
+The second question is where it earns its place. Acylating an amino alcohol
+gives the amide and the ester; esterifying salicylic acid gives aspirin and
+the lactone. Both are flagged, and an ambiguous step is charged for, so a
+route whose steps are all clean outranks a shorter one that would give a
+mixture. On `verify:strict` the engine refuses aspirin from salicylic acid
+and acetic acid outright — which is correct, and why the real preparation
+uses the anhydride.
+
+17 of the 40 transforms have a forward rule. The rest say *not checked* rather
+than passing quietly, because a route made of unchecked steps should not look
+like a route made of checked ones.
 
 **And it is not chemistry advice.** No model of yield, selectivity, order of
 addition or safety.
@@ -90,6 +106,6 @@ addition or safety.
 ## Running the tests
 
 ```
-node tools/all.js                 # 883 checks, under a second
+node tools/all.js                 # 930 checks, under a second
 node tools/corpus-check.js <csv>  # the slow confirmation
 ```

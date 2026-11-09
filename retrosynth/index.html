@@ -69,6 +69,10 @@ td code{font-family:var(--mono);font-size:12.5px}
 .rmol{font-family:var(--mono);font-size:12.5px;word-break:break-all}
 .rarrow{color:var(--accent);font-weight:700}
 .rwhy{color:var(--dim);font-size:12px;margin-top:3px}
+.rcheck{font-size:12px;margin-top:3px}
+.rcheck.good{color:var(--accent)}
+.rcheck.mixed{color:var(--warn)}
+.rcheck.unchecked{color:var(--dim);opacity:.75}
 .verdict{padding:11px 14px;border-radius:10px;margin-bottom:10px;font-size:14px;
   background:var(--accent-soft);color:var(--accent);font-weight:600}
 .verdict.bad{background:var(--panel);border:1px solid var(--line);color:var(--dim);font-weight:500}
@@ -197,6 +201,7 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:v
 <script src="js/groups.js"></script>
 <script src="js/transforms.js"></script>
 <script src="js/stock.js"></script>
+<script src="js/forward.js"></script>
 <script src="js/search.js"></script>
 <script src="js/analogues.js"></script>
 <script src="js/settings-ui.js"></script>
@@ -242,6 +247,20 @@ function showRoute(route, title) {
       why += '  \u00b7  ' + step.conditions.solvent + ', ' + step.conditions.temperature + '\u00b0C';
     }
     body.append(el('div', 'rwhy', why));
+    // What running the step forwards actually gives. An unchecked step and a
+    // checked one should not look alike.
+    if (step.verdict) {
+      var v = step.verdict;
+      var tag = !v.checked ? 'not checked forwards'
+        : (v.selective ? 'checked forwards \u00b7 the only product'
+          : 'checked forwards \u00b7 ' + v.note);
+      var mark = el('div', 'rcheck ' + (!v.checked ? 'unchecked'
+        : (v.selective ? 'good' : 'mixed')), tag);
+      if (v.alternatives && v.alternatives.length) {
+        mark.append(document.createTextNode(': ' + v.alternatives.join(', ')));
+      }
+      body.append(mark);
+    }
     row.append(body);
     box.append(row);
   });
