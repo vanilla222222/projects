@@ -2039,24 +2039,18 @@ Object.assign(Util, {
       facing: { x: 0, y: 1 }, now: now || 0,
     });
 
-    const signY = y - 30;
+    const signY = Math.round(y) - 30;
+    const px = Math.round(x);
+    ctx.fillStyle = Theme.machine.fillySignEdge;
+    ctx.fillRect(px - 10, signY - 8, 20, 16);
+    ctx.fillRect(px - 8, signY - 10, 16, 20);
     ctx.fillStyle = Theme.machine.fillySign;
-    Util.drawRoundedRect(ctx, x - 9, signY - 9, 18, 18, 3); ctx.fill();
-    ctx.strokeStyle = Theme.machine.fillySignEdge; ctx.lineWidth = 1.5;
-    Util.drawRoundedRect(ctx, x - 9, signY - 9, 18, 18, 3); ctx.stroke();
-    switch (kind) {
-      case 'coin':
-        ctx.fillStyle = Util.bodyShade(ctx, x, signY, 6, '#e3c15b');
-        ctx.beginPath(); ctx.arc(x, signY, 6, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = Theme.shadow.groundHard; ctx.stroke();
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(x - 2, signY - 2, 1.5, 0, Math.PI * 2); ctx.fill();
-        break;
-      case 'bomb': Util.drawBombIcon(ctx, x, signY, Theme.icon.bombBody, Theme.icon.bombFuse); break;
-      case 'key': Util.drawKeyIcon(ctx, x, signY, Theme.icon.key); break;
-      case 'heart': Util.drawHeart(ctx, x - 6, signY - 6, 12, 1, Theme.icon.heartRed, Theme.icon.heartRedLine); break;
-      case 'battery': Util.drawBatteryIcon(ctx, x, signY, 1); break;
-    }
+    ctx.fillRect(px - 8, signY - 8, 16, 16);
+    ctx.save();
+    ctx.translate(px, signY);
+    ctx.scale(0.55, 0.55);
+    Util.drawPickupIcon(ctx, { x:0, y:0, kind:kind === 'heart' ? 'heartRed' : kind }, 0);
+    ctx.restore();
   },
 
   drawFriendshipMachine(ctx, x, y, machine, now){

@@ -274,13 +274,33 @@ const Util = {
 
   drawObstacle(ctx, ob, now){
     const flash = ob.hitFlash > 0;
-    const HIT = Theme.obstacle.flash, HIT_SOFT = Theme.obstacle.flashSoft;
-
     const vtx = ob.tx | 0, vty = ob.ty | 0;
     if (/^(rock|hardrock|tallrock|tallhardrock|tintedrock)$/.test(ob.kind)) {
       NightfallArt.rock(ctx, ob, Math.floor(tileRand(vtx, vty, 211) * 5), flash);
       return;
     }
+    if (/^(yellow|red|blue|purple|green|white|black)fire$/.test(ob.kind)) {
+      const health = ob.def.maxHp ? Util.clamp(ob.hp / ob.def.maxHp, 0.25, 1) : 1;
+      const frame = (Math.floor((now || 0) / 115) + Math.floor(tileRand(vtx, vty, 202) * 3)) % 3;
+      NightfallArt.fire(ctx, ob.x, ob.y, ob.def.color, ob.def.dark, frame, health, false, flash);
+      return;
+    }
+    if (ob.def.current) {
+      NightfallArt.current(ctx, ob, now || 0, flash);
+      return;
+    }
+    if (ob.kind === 'cactus' || ob.kind === 'spike' || ob.kind === 'spiketrap' || ob.kind === 'movingspike') {
+      NightfallArt.hazard(ctx, ob, Math.floor(tileRand(vtx, vty, 221) * 5), flash);
+      return;
+    }
+    const unit = ob.kind === 'pit' || ob.kind === 'mud' || ob.kind === 'sandtrap' ? 2 : 3;
+    NightfallArt.rasterProp(ctx, ob.x, ob.y, pixel => Util.drawObstacleShape(pixel, ob, now), unit);
+  },
+
+  drawObstacleShape(ctx, ob, now){
+    const flash = ob.hitFlash > 0;
+    const HIT = Theme.obstacle.flash, HIT_SOFT = Theme.obstacle.flashSoft;
+    const vtx = ob.tx | 0, vty = ob.ty | 0;
     if (ob.kind === 'pit') {
       const x0 = ob.x - TILE / 2, y0 = ob.y - TILE / 2;
       const m = ob._pitMask;
@@ -329,77 +349,6 @@ const Util = {
           ctx.fillStyle = Theme.shadow.glint;
           ctx.beginPath(); ctx.arc(x0 + TILE * 0.5, y0 + 1, 1, 0, Math.PI * 2); ctx.fill();
         }
-      }
-    } else if (ob.kind === 'cactus') {
-      ctx.fillStyle = Theme.shadow.ground;
-      ctx.beginPath(); ctx.ellipse(ob.x, ob.y + 9, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = flash ? HIT : Util.bodyShade(ctx, ob.x, ob.y, 10, ob.def.color);
-
-      const cacV = Math.floor(tileRand(vtx, vty, 201) * 5);
-      const armL = cacV === 1 ? -2 : cacV === 4 ? -6 : 2, armR = cacV === 1 ? 4 : cacV === 4 ? -6 : 2;
-      const noArms = cacV === 3;
-
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
-      ctx.beginPath(); ctx.ellipse(ob.x, ob.y, cacV === 3 ? 9 : 7, cacV === 2 ? 11 : cacV === 3 ? 12 : 13, 0, 0, Math.PI * 2); ctx.fill();
-      if (!noArms) {
-        ctx.beginPath(); ctx.ellipse(ob.x - 9, ob.y + armL, 4, 8, 0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(ob.x + 9, ob.y + armR, 4, 8, -0.3, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = flash ? HIT : ob.def.dark; ctx.lineWidth = 1;
-      const ribs = cacV === 2 ? 0 : cacV === 4 ? 3 : 1;
-      const ribTop = cacV === 3 ? -16 : -10, ribBot = cacV === 3 ? -6 : -6;
-      for (let i = -ribs; i <= ribs; i++) { ctx.beginPath(); ctx.moveTo(ob.x + i * 4, ob.y + ribTop); ctx.lineTo(ob.x + i * 4, ob.y + ribBot); ctx.stroke(); }
-      if (!flash) {
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(ob.x - 2, ob.y + ribTop + 1, 1, 0, Math.PI * 2); ctx.fill();
-      }
-
-    } else if (/^(yellow|red|blue|purple|green|white|black)fire$/.test(ob.kind)) {
-      const health = ob.def.maxHp ? Util.clamp(ob.hp / ob.def.maxHp, 0.25, 1) : 1;
-      const frame = (Math.floor((now || 0) / 115) + Math.floor(tileRand(vtx, vty, 202) * 3)) % 3;
-      NightfallArt.fire(ctx, ob.x, ob.y, ob.def.color, ob.def.dark, frame, health, false, flash);
-    } else if (ob.kind === 'spike' || ob.kind === 'spiketrap' || ob.kind === 'movingspike') {
-
-      ctx.fillStyle = Theme.shadow.groundSoft;
-      ctx.beginPath(); ctx.ellipse(ob.x, ob.y + 8, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = flash ? HIT : ob.def.dark;
-      ctx.beginPath(); ctx.arc(ob.x, ob.y, 5.5, 0, Math.PI * 2); ctx.fill();
-
-      const spkV = Math.floor(tileRand(vtx, vty, 300) * 5);
-      const baseR = 4.5, bw = 2.1;
-      let spikes;
-      if (spkV === 0) {
-        spikes = []; for (let i = 0; i < 8; i++) spikes.push({ a: (i / 8) * Math.PI * 2, l: 13 });
-      } else if (spkV === 1) {
-        spikes = []; for (let i = 0; i < 6; i++) spikes.push({ a: (i / 6) * Math.PI * 2 + 0.2, l: 14 });
-      } else if (spkV === 2) {
-        spikes = []; for (let i = 0; i < 5; i++) spikes.push({ a: -1.3 + i * 0.65, l: 13 });
-      } else if (spkV === 3) {
-        spikes = []; for (let i = 0; i < 10; i++) spikes.push({ a: (i / 10) * Math.PI * 2, l: 9 });
-      } else {
-        spikes = []; for (let i = 0; i < 8; i++) spikes.push({ a: (i / 8) * Math.PI * 2 + 0.39, l: i % 2 === 0 ? 14 : 8 });
-      }
-      ctx.fillStyle = flash ? HIT_SOFT : ob.def.color;
-      ctx.strokeStyle = flash ? Theme.shadow.outlineHard : ob.def.dark;
-      ctx.lineWidth = 1;
-
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 6; }
-      let longest = spikes[0];
-      for (const sp of spikes) {
-        if (sp.l > longest.l) longest = sp;
-        const dx = Math.cos(sp.a), dy = Math.sin(sp.a);
-        const px = -dy, py = dx;
-        const bx1 = ob.x + dx * baseR + px * bw, by1 = ob.y + dy * baseR + py * bw;
-        const bx2 = ob.x + dx * baseR - px * bw, by2 = ob.y + dy * baseR - py * bw;
-        const tipX = ob.x + dx * sp.l, tipY = ob.y + dy * sp.l;
-        ctx.beginPath(); ctx.moveTo(bx1, by1); ctx.lineTo(tipX, tipY); ctx.lineTo(bx2, by2); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-      }
-      ctx.shadowBlur = 0;
-      if (!flash) {
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(ob.x + Math.cos(longest.a) * longest.l, ob.y + Math.sin(longest.a) * longest.l, 1, 0, Math.PI * 2); ctx.fill();
       }
     } else if (ob.kind === 'spikedrock') {
 
@@ -668,42 +617,6 @@ const Util = {
         ctx.fillStyle = Theme.shadow.glint;
         ctx.beginPath(); ctx.arc(ob.x - 3, ob.y - 8, 1, 0, Math.PI * 2); ctx.fill();
       }
-    } else if (ob.def && ob.def.current) {
-
-      const ang = Math.atan2(ob.def.pushY, ob.def.pushX);
-      ctx.save();
-
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 8; }
-      ctx.fillStyle = ob.def.color; ctx.globalAlpha = 0.35;
-      ctx.beginPath(); ctx.ellipse(ob.x, ob.y, 15, 15, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
-      ctx.translate(ob.x, ob.y); ctx.rotate(ang);
-      const scroll = ((now || 0) / 260) % 12;
-
-      ctx.strokeStyle = flash ? HIT : ob.def.dark;
-      const curV = Math.floor(tileRand(vtx, vty, 210) * 5);
-      ctx.lineWidth = curV === 1 ? 2 : curV === 2 ? 3 : curV === 4 ? 3.4 : 2.5;
-      for (let i = -1; i <= 1; i++) {
-        const cx = -12 + ((i * 12 + scroll) % 24 + 24) % 24 - 12;
-        ctx.beginPath();
-        ctx.moveTo(cx - 4, -6); ctx.lineTo(cx + 4, 0); ctx.lineTo(cx - 4, 6);
-        ctx.stroke();
-        if (curV === 3) {
-          ctx.fillStyle = flash ? HIT : ob.def.dark;
-          ctx.beginPath(); ctx.arc(cx + 4, 0, 1.2, 0, Math.PI * 2); ctx.fill();
-        } else if (curV === 4) {
-          ctx.strokeStyle = flash ? HIT_SOFT : Util.shadeColor(ob.def.dark, 0.3); ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(cx - 4, -3); ctx.lineTo(cx + 1.5, 0); ctx.lineTo(cx - 4, 3); ctx.stroke();
-          ctx.strokeStyle = flash ? HIT : ob.def.dark; ctx.lineWidth = 3.4;
-        }
-      }
-
-      if (!flash) {
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(9, -3, 1, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.restore();
     } else if (ob.kind === 'dustvent') {
 
       ctx.fillStyle = Theme.shadow.groundSoft;
@@ -1030,6 +943,8 @@ const Util = {
         ctx.fillStyle = Theme.shadow.glint;
         ctx.beginPath(); ctx.arc(ob.x - 3, ob.y - 4, 1, 0, Math.PI * 2); ctx.fill();
       }
+    } else if (ob.def.hazard || ob.def.freeze || ob.kind === 'floorswitch') {
+      NightfallArt.hazard(ctx, ob, Math.floor(tileRand(vtx, vty, 221) * 5), flash);
     } else {
 
       const tall = ob.tall;
