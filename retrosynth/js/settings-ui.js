@@ -65,6 +65,7 @@ function settingsUI(host, schemaModule, onChange) {
   function setError(message) {
     error.textContent = message;
     error.hidden = !message;
+    if (onChange) onChange(current, message);
   }
 
   // --- the panel ----------------------------------------------------------
@@ -124,11 +125,15 @@ function settingsUI(host, schemaModule, onChange) {
       if (!control.className) control.className = 'set-input';
       control.setAttribute('aria-label', entry.label);
       control.addEventListener('change', () => changed(entry, control));
+      if (entry.key === 'target' || entry.key === 'start') {
+        control.addEventListener('input', event => { if (!event.isComposing) changed(entry, control); });
+      }
       controls.set(entry.key, control);
 
       row.append(label, control);
-      if (entry.help) {
-        const help = el('p', 'set-help', entry.help);
+      if (entry.help || S.UNAPPLIED.has(entry.key)) {
+        const help = el('p', 'set-help', S.UNAPPLIED.has(entry.key)
+          ? 'Reserved for a future engine version. This setting is not applied to searches.' : entry.help);
         row.append(help);
       }
       // A setting that only applies in some modes says so itself, so the panel
@@ -144,7 +149,7 @@ function settingsUI(host, schemaModule, onChange) {
   command.type = 'text';
   command.className = 'set-mirror';
   command.setAttribute('aria-label', 'Typed settings');
-  command.placeholder = 'depth:12 beam:60 noelement:Cr,Os !cryo scale:kilogram';
+  command.placeholder = 'depth:12 beam:60 check:strict';
   command.addEventListener('change', () => {
     // A text input fires `change` again when focus leaves it, with whatever it
     // holds. Without this guard, typing here and then touching any other
@@ -195,7 +200,7 @@ function settingsUI(host, schemaModule, onChange) {
     }
     const query = S.toQuery(current);
     const base = typeof location !== 'undefined'
-      ? location.origin + location.pathname : '';
+      ? location.href.split(/[?#]/)[0] : '';
     link.value = query ? base + '?' + query : base;
     if (document.activeElement !== json) {
       json.value = JSON.stringify(current, null, 1);
@@ -288,16 +293,17 @@ function settingsUI(host, schemaModule, onChange) {
 
   const row = (...nodes) => { const r = el('div', 'set-inline'); r.append(...nodes); return r; };
 
-  host.append(
-    question,
-    error,
-    channel('Type it', 'One line, same names as the URL. A bare word turns a switch on; !word turns it off.', command),
-    channel('Share it', 'Every setting that differs from the default, encoded in the address.', row(link, copyBtn)),
-    channel('Save it', 'Profiles are kept in this browser.', row(profileName, saveBtn, profileList, deleteBtn)),
+  const advanced = el('details', 'settings-advanced');
+  advanced.append(
+    el('summary', null, 'Advanced search settings'),
     groups,
-    channel('Or hand it JSON', 'The same object the engine takes when called directly.', json),
+    channel('Type it', 'One line, same names as the URL. A bare word turns a switch on; !word turns it off.', command),
+    channel('Share it', 'Non-default settings encoded in a link.', row(link, copyBtn)),
+    channel('Save it', 'Profiles are kept in this browser.', row(profileName, saveBtn, profileList, deleteBtn)),
+    channel('JSON settings', 'The same settings object the engine accepts.', json),
     row(resetBtn),
   );
+  host.append(question, error, advanced);
 
   refreshProfiles();
 
@@ -312,7 +318,8 @@ function settingsUI(host, schemaModule, onChange) {
 
   return {
     read() { return current; },
-    set(next) { apply(S.normalize(next)); },
+    valid() { return error.hidden; },
+    set(next) { apply(S.normalize(next)); setError(''); },
     element: host,
   };
 }

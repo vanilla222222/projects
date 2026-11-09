@@ -147,17 +147,21 @@ function makeStock(smilesModule, options) {
   const smallEnough = o.maxHeavyAtoms === undefined ? 3 : o.maxHeavyAtoms;
   const canonical = new Set();
   const failed = [];
+  const inventory = new Set();
 
-  function add(text) {
+  function add(text, owned) {
     try {
       const key = smilesModule.canonical(text);
-      if (key) canonical.add(key);
+      if (key) {
+        canonical.add(key);
+        if (owned) inventory.add(key);
+      }
       return true;
     } catch (err) { failed.push(text); return false; }
   }
 
   for (const entry of (o.catalogue || STOCK_SMILES)) add(entry);
-  for (const entry of (o.inventory || [])) add(entry);
+  for (const entry of (o.inventory || [])) add(entry, true);
 
   const cache = new Map();
 
@@ -172,12 +176,18 @@ function makeStock(smilesModule, options) {
       if (!found && smallEnough > 0) {
         // Anything this small is a commodity. The alternative is a search that
         // patiently takes methanol apart.
-        const atoms = mol ? mol.atoms.length
-          : (key.match(/[A-Za-z]/g) || []).length;
-        found = atoms <= smallEnough;
+        try {
+          const atoms = (mol || smilesModule.parse(key)).atoms;
+          found = atoms.filter(atom => atom.el !== 'H').length <= smallEnough;
+        } catch (err) { void err; }
       }
       cache.set(key, found);
       return found;
+    },
+    source(key) {
+      if (inventory.has(key)) return 'inventory';
+      if (canonical.has(key)) return 'built-in stock';
+      return this.has(key) ? 'assumed small molecule' : null;
     },
     list() { return [...canonical].sort(); },
   };

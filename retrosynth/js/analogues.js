@@ -46,10 +46,11 @@ function bond(mol, from, element, order) {
   return atom.index;
 }
 
-function proposals(mol, vary) {
+function proposals(mol, vary, deadline = Infinity) {
   const out = [];
   const seen = new Set();
   const add = (copy, how) => {
+    if (Date.now() >= deadline) return;
     let smiles;
     try { smiles = AN.smiles.canonicalWrite(copy); } catch (err) { void err; return; }
     if (!smiles || seen.has(smiles)) return;
@@ -59,7 +60,7 @@ function proposals(mol, vary) {
 
   // 1. Hang something new on an aromatic CH.
   if (vary === 'substituents' || vary === 'any' || vary === 'rings') {
-    for (let i = 0; i < mol.atoms.length; i += 1) {
+    for (let i = 0; i < mol.atoms.length && Date.now() < deadline; i += 1) {
       const atom = mol.atoms[i];
       if (!atom.arom || atom.el !== 'C' || mol.hydrogens(i) < 1) continue;
       for (const substituent of AROMATIC_SUBSTITUENTS) {
@@ -73,7 +74,7 @@ function proposals(mol, vary) {
   // 2. Take a small substituent off again, which is as much a part of a
   //    series as adding one.
   if (vary === 'substituents' || vary === 'any') {
-    for (let i = 0; i < mol.atoms.length; i += 1) {
+    for (let i = 0; i < mol.atoms.length && Date.now() < deadline; i += 1) {
       if (mol.degree(i) !== 1) continue;
       const anchor = mol.adjacency[i][0];
       if (!mol.atoms[anchor.other].arom) continue;
@@ -84,7 +85,7 @@ function proposals(mol, vary) {
 
   // 3. Swap one atom for a near neighbour in the periodic table.
   if (vary === 'substituents' || vary === 'rings' || vary === 'any') {
-    for (let i = 0; i < mol.atoms.length; i += 1) {
+    for (let i = 0; i < mol.atoms.length && Date.now() < deadline; i += 1) {
       for (const [from, to] of ATOM_SWAPS) {
         if (mol.atoms[i].el !== from) continue;
         if (mol.atoms[i].arom && !['O', 'S', 'N'].includes(to)) continue;
@@ -97,7 +98,7 @@ function proposals(mol, vary) {
 
   // 4. Grow or shrink a saturated chain by one carbon - the homologue.
   if (vary === 'any' || vary === 'scaffold') {
-    for (let i = 0; i < mol.atoms.length; i += 1) {
+    for (let i = 0; i < mol.atoms.length && Date.now() < deadline; i += 1) {
       const atom = mol.atoms[i];
       if (atom.el !== 'C' || atom.arom || mol.degree(i) !== 1) continue;
       const copy = mol.clone();
@@ -109,13 +110,16 @@ function proposals(mol, vary) {
   return out;
 }
 
-function analogues(target, settings, engine) {
+function analogues(target, settings, engine, config = {}) {
+  const started = Date.now();
+  const deadline = Math.min(config.deadline ?? Infinity, started + settings.budgetMs);
   const want = AN.smiles.canonical(target);
   const mol = AN.smiles.parse(want);
   const reference = AN.search.fingerprint(mol);
 
   const scored = [];
-  for (const candidate of proposals(mol, settings.analogueVary)) {
+  for (const candidate of proposals(mol, settings.analogueVary, deadline)) {
+    if (Date.now() >= deadline) break;
     if (candidate.smiles === want) continue;
     let score;
     try {
@@ -130,14 +134,16 @@ function analogues(target, settings, engine) {
   const out = [];
   let checked = 0;
   for (const candidate of scored) {
-    if (out.length >= settings.analogueCount) break;
+    if (out.length >= settings.analogueCount || Date.now() >= deadline) break;
     if (!settings.analogueRoutable) { out.push(candidate); continue; }
     // Only the ones a route can actually reach. This is the expensive half,
     // so it runs on a short budget per analogue rather than the full one.
     checked += 1;
-    const found = engine.route(candidate.smiles);
+    config.onProgress?.({ checked, candidates:scored.length, found:out.length, elapsedMs:Date.now() - started });
+    const slice = Math.max(100, Math.min(1500, Math.ceil(settings.budgetMs / Math.max(3, settings.analogueCount))));
+    const found = engine.route(candidate.smiles, { deadline:Math.min(deadline, Date.now() + slice) });
     if (!found.ok) continue;
-    out.push({ ...candidate, route: found.routes[0] });
+    out.push({ ...candidate, route:found.routes[0], source:found.source || null });
   }
 
   return {
@@ -147,7 +153,9 @@ function analogues(target, settings, engine) {
     proposed: scored.length,
     routeChecked: checked,
     analogues: out,
-    reason: out.length ? 'found' : 'nothing close enough survived',
+    seconds:Number(((Date.now() - started) / 1000).toFixed(2)),
+    stop:out.length >= settings.analogueCount ? 'analogue-limit' : Date.now() >= deadline ? 'time-limit' : 'exhausted',
+    reason:out.length ? 'found' : Date.now() >= deadline ? 'Time limit reached without finding a qualifying analogue' : 'No analogue met the current filters',
   };
 }
 

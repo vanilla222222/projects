@@ -97,11 +97,11 @@ const SCHEMA = [
     alias: ['wsteps'], label: 'Weight: fewer steps',
     help: 'How much a short route is preferred.' },
   { key: 'weightCost', group: 'Ranking', type: 'number', min: 0, max: 10, def: 1,
-    alias: ['wcost'], label: 'Weight: cheaper materials',
-    help: 'How much the price of the starting materials matters.' },
+    alias: ['wcost'], label: 'Weight: precursor size',
+    help: 'Penalises growth in precursor size. Market prices are unavailable.' },
   { key: 'weightPrecedent', group: 'Ranking', type: 'number', min: 0, max: 10, def: 1,
-    alias: ['wprec'], label: 'Weight: well-precedented',
-    help: 'How much to prefer transforms with more recorded examples.' },
+    alias: ['wprec'], label: 'Weight: forward-model support',
+    help: 'Penalises unchecked or ambiguous steps. This does not use published precedent counts.' },
   { key: 'weightConvergence', group: 'Ranking', type: 'number', min: 0, max: 10, def: 0.5,
     alias: ['wconv'], label: 'Weight: convergent',
     help: 'Prefer routes that join two prepared halves over one long linear sequence.' },
@@ -128,9 +128,7 @@ const SCHEMA = [
   { key: 'verify', group: 'Chemistry', type: 'enum', def: 'warn',
     values: ['strict', 'warn', 'off'],
     alias: ['check'], label: 'Check steps forwards',
-    help: 'Run each proposed step in the forward direction and see what it would '
-      + 'really give. strict throws away anything that does not give the product '
-      + 'or that would give a mixture; warn keeps them and says so; off skips the check.' },
+    help: 'Strict requires a forward rule that reproduces the target without modelled alternatives. Warn allows unchecked and ambiguous steps, and rejects model mismatches. Off skips checks.' },
   { key: 'stereo', group: 'Chemistry', type: 'enum', def: 'exact',
     values: ['exact', 'mixtures', 'ignore'],
     label: 'Stereochemistry',
@@ -168,7 +166,7 @@ const SCHEMA = [
     values: ['builtin', 'inventory', 'both'],
     alias: ['stock'], label: 'What counts as buyable',
     needs: { inventory: ['CCO'] },
-    help: 'inventory searches only what you say you already have.' },
+    help: 'Inventory mode uses only the entered compounds. Built-in modes also accept a small-molecule heuristic.' },
   { key: 'inventory', group: 'Stock', type: 'list', of: 'text', def: [],
     alias: ['have'], label: 'Material you already have',
     help: 'SMILES, one per line. Always treated as free.' },
@@ -188,6 +186,13 @@ const SCHEMA = [
     alias: ['maxchrom'], label: 'Most chromatography steps',
     help: 'Caps how many purifications by column a route may need.' },
 ];
+
+// Preserve older profiles and shared links, but do not claim the engine enforces these.
+const UNAPPLIED = new Set([
+  'strategy', 'banElements', 'stereo', 'protection', 'allowCryogenic', 'allowPressure',
+  'allowPhotochemistry', 'allowElectrochemistry', 'allowAirSensitive', 'maxPricePerGram',
+  'scale', 'banHazards', 'maxChromatography',
+]);
 
 const BY_KEY = new Map(SCHEMA.map((entry) => [entry.key, entry]));
 const BY_ALIAS = new Map();
@@ -482,7 +487,7 @@ function resolve(layers) {
 
 const EXPORTS_settings = {
   SCHEMA, GROUPS, FAMILIES, HAZARDS, BY_KEY, BY_ALIAS,
-  defaults, normalize, parse, toCommand, toQuery, fromQuery, resolve, ready,
+  defaults, normalize, parse, toCommand, toQuery, fromQuery, resolve, ready, UNAPPLIED,
 };
 
 if (typeof module !== 'undefined' && module.exports) {
