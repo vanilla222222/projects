@@ -135,10 +135,14 @@ for (const [classId, [signature, alternate]] of Object.entries(SKILL_SPECIALIZAT
     let parent = 'char_hub_' + classId;
     path.forEach(([name, ...effects], tier) => {
       const id = 'spec_' + classId + '_' + route + '_' + tier + (tier === 2 ? '_capstone' : '');
+      const technique = SKILL_TECHNIQUES[classId][route];
+      if (tier === 1 || tier === 2) {
+        effects.push({ type:'technique', technique, rank:tier, label:technique[tier === 1 ? 7 : 8] });
+      }
       const node = {
-        id, parent, classId, name, effects, cost:SKILL_SPECIALIZATION_COSTS[tier],
+        id, parent, classId, name: tier === 1 ? technique[0] : name, effects, cost:SKILL_SPECIALIZATION_COSTS[tier],
         pathName: route === 0 ? title : alternate[0],
-        tradeoff: route === 1 && effects.length > 1,
+        tradeoff: route === 1 && effects.filter(effect => effect.type !== 'technique').length > 1,
         desc: (route === 0 ? title : alternate[0]) + ' · ' + (tier + 1) + '/3',
       };
       if (tier === 0) node.excludes = ['spec_' + classId + '_' + (1 - route) + '_0'];

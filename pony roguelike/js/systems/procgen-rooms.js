@@ -90,7 +90,7 @@ function procgenTileBlocked(node, x, y, obstacleKeys){
 
 function roomIsFullyConnected(node, obstacles){
   const slots = procgenActiveDoorSlots(node);
-  if (slots.length < 2) return true;
+  if (!slots.length) return true;
   const obstacleKeys = procgenObstacleBlockKeys(obstacles);
   const targets = [];
   for (const slot of slots) {
@@ -98,22 +98,26 @@ function roomIsFullyConnected(node, obstacles){
     if (procgenTileBlocked(node, t.x, t.y, obstacleKeys)) return false;
     targets.push(t.x + ',' + t.y);
   }
-  const start = targets[0].split(',').map(Number);
-  const visited = new Set();
-  const queue = [{ x: start[0], y: start[1] }];
-  visited.add(targets[0]);
-  while (queue.length) {
-    const cur = queue.shift();
-    const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-    for (const [dx, dy] of steps) {
-      const nx = cur.x + dx, ny = cur.y + dy;
-      const k = nx + ',' + ny;
-      if (visited.has(k)) continue;
-      if (procgenTileBlocked(node, nx, ny, obstacleKeys)) continue;
-      visited.add(k);
-      queue.push({ x: nx, y: ny });
-    }
-  }
+  const visited = roomReachableTiles(node, doorInteriorTile(slots[0]), obstacleKeys);
   for (const k of targets) if (!visited.has(k)) return false;
   return true;
+}
+
+function roomReachableTiles(node, start, obstacleKeys){
+  const visited = new Set();
+  if (procgenTileBlocked(node, start.x, start.y, obstacleKeys)) return visited;
+  const queue = [start];
+  const steps = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  visited.add(start.x + ',' + start.y);
+  for (let i = 0; i < queue.length; i++) {
+    const { x, y } = queue[i];
+    for (const [dx, dy] of steps) {
+      const nx = x + dx, ny = y + dy;
+      const key = nx + ',' + ny;
+      if (visited.has(key) || procgenTileBlocked(node, nx, ny, obstacleKeys)) continue;
+      visited.add(key);
+      queue.push({ x:nx, y:ny });
+    }
+  }
+  return visited;
 }

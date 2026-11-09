@@ -1,10 +1,8 @@
 'use strict';
 
-const FAMILIAR_DMG_GROWTH = 1.15;
-
 function familiarDamage(baseDmg, floorNum, player){
   const mult = (player && player.familiarDamageMult) || 1;
-  return Math.max(1, Math.round((baseDmg || 1) * Math.pow(FAMILIAR_DMG_GROWTH, floorNum || 0) * mult));
+  return Math.max(1, Math.round((baseDmg || 1) * encounterGrowth(floorNum, 1.14, 0.12) * mult));
 }
 
 function familiarRateMult(player){

@@ -4,6 +4,7 @@ class Player {
   constructor(classId){
     const def = CLASSES[classId];
     this.classId = classId;
+    this.storyDepth = 0;
     this.def = def;
     this.x = 0; this.y = 0;
     this.radius = 12;
@@ -268,6 +269,9 @@ class Player {
     this.dodgeChance = 0;
     this.critMultiplier = 2;
     this.shieldHits = 0;
+    this.mendingClears = 0;
+    this.shinyShellKills = 0;
+    this.nextLifestealAt = 0;
 
     this.eternalHeart = false;
 
@@ -361,7 +365,10 @@ class Player {
 
   onHitLanded(game){
     if (game && game.runStats) game.runStats.hitsLanded++;
-    if (this.lifestealChance && RNG.random() < this.lifestealChance && this.redCurrent < this.redMax) {
+    const now = (game && game.runElapsed) || 0;
+    if (this.lifestealChance && now >= this.nextLifestealAt && this.redCurrent < this.redMax
+        && RNG.random() < this.lifestealChance) {
+      this.nextLifestealAt = now + 2.25;
       this.heal(0.5);
       if (game && game.runStats) game.runStats.lifestealHeals++;
     }
@@ -480,6 +487,7 @@ class Enemy {
     for (const k in type) if (typeof type[k] === 'number' && !(k in this)) this[k] = type[k];
   }
   takeDamage(amount, kx, ky){
+    if (this.isDead) return false;
     if (this.shielded) {
       if (!this.isBoss) {
         this.shieldHitCount = (this.shieldHitCount || 0) + 1;

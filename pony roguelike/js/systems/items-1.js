@@ -110,7 +110,7 @@ function recalcPlayerStats(player){
     + player.pillLuckBonus;
   const luckBonus = player.luck * 0.006;
 
-  player.speed = player.baseSpeed * Util.clamp(1 + 0.15 * (p.downyfeather || 0) + 0.15 * (p.speedup || 0) + 0.10 * crown
+  player.speed = player.baseSpeed * Util.clamp(1 + 0.10 * (p.downyfeather || 0) + 0.15 * (p.speedup || 0) + 0.10 * crown
     + (t === 'nbtr_hollowreed' ? 0.08 : 0) - (t === 'nbtr_frayedcord' ? 0.05 : 0)
     + (t === 'windsworntassel' ? 0.06 : 0) + (t === 'blastrunnerscoil' ? 0.05 : 0)
     + 0.15 * (p.sk8i_windlace || 0)
@@ -122,7 +122,7 @@ function recalcPlayerStats(player){
      + 0.08 * (p.nimblegait || 0) - 0.08 * (p.gildedhoof || 0)  - 0.10 * (p.witchbrew || 0)
     + 0.10 * (p.blessedhoof || 0) + 0.10 * (p.gildedwing || 0) - 0.08 * (p.demonhoof || 0) + 0.10 * (p.shadowstep || 0)
      + 0.05 * (p.undefeatedchampion || 0) + 0.10 * (p.pestcontrol || 0)
-    + (t === 'mothwing' ? 0.12 : 0) - (t === 'rustybolt' ? 0.08 : 0) - (t === 'stackedcoin' ? 0.05 : 0)
+    + (t === 'mothwing' ? 0.09 : 0) - (t === 'rustybolt' ? 0.06 : 0) - (t === 'stackedcoin' ? 0.05 : 0)
 
     + (t === 'sk8t_windveil' ? 0.09 : 0) + (t === 'sk8t_leadenlocket' ? 0.14 : 0)
     - (t === 'sk8t_ironclasp' ? 0.10 : 0) - (t === 'sk8t_boggedgear' ? 0.05 : 0)
@@ -231,7 +231,7 @@ function recalcPlayerStats(player){
     + 2 * (p.hollowsoul || 0) + 1 * (p.cinderclaw || 0) + 2 * (p.wrathfulhorn || 0) + 1 * (p.cursedhalo || 0)
     + 1 * (p.cursedwanderer || 0) + 1 * (p.undefeatedchampion || 0) + 1 * (p.chosenofthelight || 0) + 2 * (p.soulseller || 0)
     + 1 * (p.swarmbreaker || 0) + 1 * (p.turretbuster || 0) + sc.damage + 2 * (p.siegebreaker || 0) + 1 * (p.chainreaction || 0)
-    + (t === 'rustybolt' ? 1 : 0) + (t === 'gildedcharm' ? 1 : 0)
+    + (t === 'rustybolt' ? 0.65 : 0) + (t === 'gildedcharm' ? 1 : 0)
 
     + (t === 'sk8t_ironclasp' ? 1 : 0) - (t === 'sk8t_glasscannon' ? 1 : 0)
 
@@ -356,7 +356,7 @@ function recalcPlayerStats(player){
     + 2 * (p.hollowsoul || 0) + 1 * (p.cinderclaw || 0) + 2 * (p.wrathfulhorn || 0) + 1 * (p.cursedhalo || 0)
     + 1 * (p.cursedwanderer || 0) + 1 * (p.undefeatedchampion || 0) + 1 * (p.chosenofthelight || 0) + 2 * (p.soulseller || 0)
     + 1 * (p.swarmbreaker || 0) + 1 * (p.turretbuster || 0) + sc.damage + 2 * (p.siegebreaker || 0) + 1 * (p.chainreaction || 0)
-    + (t === 'rustybolt' ? 1 : 0) + (t === 'gildedcharm' ? 1 : 0)
+    + (t === 'rustybolt' ? 0.65 : 0) + (t === 'gildedcharm' ? 1 : 0)
 
     + (t === 'sk8t_ironclasp' ? 1 : 0) - (t === 'sk8t_glasscannon' ? 1 : 0)
 
@@ -446,7 +446,7 @@ function recalcPlayerStats(player){
     - 0.5 * (p.emberwick || 0) - 0.5 * (p.lopingreliquary || 0)
     - 0.5 * (p.crackedrune || 0) - 0.5 * (p.asheneffigy || 0)
 
-    - 1 * (p.secondwind || 0) - 0.5 * (p.multishot || 0)
+    - 1 * (p.secondwind || 0)
 
     + (t === 'cinderwisp' ? 2 : 0) + (t === 'plushpony' ? 2 : 0) + (t === 'witherember' ? 1 : 0)
     + (t === 'waxcombshard' ? 2 : 0) + (t === 'rivetplating' ? 2 : 0) + (t === 'playfulpouncecharm' ? 1 : 0)
@@ -585,7 +585,7 @@ function recalcPlayerStats(player){
   const eagleEyeBonus = 0.5 * (p.eagleeye || 0);
 
   player.rangeTiles = Util.clamp(player.baseRangeTiles + rangeBonusTiles * rangeScale + farseeingBonus + eagleEyeBonus, 0.25, 12);
-  player.meleeRange = player.rangeTiles * TILE * (t === 'bentnail' ? 1.2 : 1);
+  player.meleeRange = player.rangeTiles * TILE * (t === 'bentnail' ? 1.25 : 1);
   player.boltSpeed = player.def.boltSpeed || 340;
 
   if (p.prismveil) player.boltSpeed = Math.max(120, player.boltSpeed - 40 * p.prismveil);
@@ -649,7 +649,7 @@ function recalcPlayerStats(player){
     - (t === 'mbtr_tarnishedring' ? 0.08 : 0));
   player.spikedBarding = (p.spikedbard || 0) > 0 || t === 'thornedvine';
 
-  player.lifestealChance = Math.min(0.4, 0.08 * (p.vampfang || 0) + 0.08 * (p.crystalfang || 0) + 0.06 * (p.bloodpact || 0) + (t === 'gildedfang' ? 0.05 : 0)
+  player.lifestealChance = Math.min(0.4, 0.10 * (p.vampfang || 0) + 0.08 * (p.crystalfang || 0) + 0.06 * (p.bloodpact || 0) + (t === 'gildedfang' ? 0.05 : 0)
 
     + ((p.blackheart && p.bloodpact) ? 0.05 : 0)
 
@@ -689,7 +689,7 @@ function recalcPlayerStats(player){
 
     + 0.01*sc.lifestealChance + 0.01*(p.sapphirelocket||0) + 0.01*(p.feraltalisman||0) + 0.01*(p.rustedcharm||0) + 0.01*(p.jadelantern||0) + 0.01*(p.moltenscroll||0));
 
-  player.critChance = Math.min(0.75, 0.10 * (p.stormbarrel || 0) + 0.08 * (p.boxer || 0) + 0.05 * (p.gamblerscoin || 0)  + luckBonus
+  player.critChance = Math.min(0.75, 0.07 * (p.stormbarrel || 0) + 0.08 * (p.boxer || 0) + 0.05 * (p.gamblerscoin || 0)  + luckBonus
     + (t === 'nbtr_glasslens' ? 0.05 : 0)
     + 0.05 * (p.trophy_dunesovereign || 0)
     + (t === 'keeneyeshard' ? 0.04 : 0)
@@ -704,7 +704,7 @@ function recalcPlayerStats(player){
 
     + (t === 'sk8t_deadeyeclasp' ? 0.06 : 0) + (t === 'sk8t_glasscannon' ? 0.08 : 0) - (t === 'sk8t_narrowscope' ? 0.05 : 0)
     + 0.05 * (p.haloedcrown || 0) + 0.05 * (p.graceofthedawn || 0) + 0.10 * (p.souldrain || 0) + 0.05 * (p.bloodoffering || 0)
-    + (t === 'crackedlens' ? 0.08 : 0) + (t === 'moltencore' ? 0.05 : 0)
+    + (t === 'crackedlens' ? 0.07 : 0) + (t === 'moltencore' ? 0.05 : 0)
 
     + 0.05 * (p.cartographerseye || 0) + 0.05 * (p.assassinsedge || 0) + 0.08 * (p.executionersfocus || 0)
     + 0.1 * (p.deathsprecisionblade || 0) + 0.05 * (p.voltaiccore || 0) + 0.05 * (p.deadeyelens || 0)
@@ -1270,6 +1270,17 @@ function recalcPlayerStats(player){
   applySkillTreeStatBonuses(player);
 
   applyItemComboSynergies(player);
+
+  const settleDamage = (damage, baseline) => {
+    const threshold = baseline + 7;
+    return damage > threshold ? threshold + (damage - threshold) * 0.68 : damage;
+  };
+  const depthBonus = 1 + Math.min(0.65, Math.max(0, player.storyDepth - 5) * 0.025);
+  player.meleeDamage = settleDamage(player.meleeDamage, player.baseMeleeDamage) * depthBonus;
+  player.rangedDamage = settleDamage(player.rangedDamage, player.baseRangedDamage)
+    * Math.max(0.65, 0.82 ** (p.multishot || 0)) * depthBonus;
+  player.fireCooldown = Math.max(player.fireCooldown, player.fireCooldownBase * 0.37);
+  player.meleeCooldown = Math.max(player.meleeCooldown, player.meleeCooldownBase * 0.42);
 
   let winningStatus = null, winningChance = 0;
   for (const field of STATUS_EXCLUSIVITY_FIELDS) {

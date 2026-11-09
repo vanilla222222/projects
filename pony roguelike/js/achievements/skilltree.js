@@ -265,6 +265,9 @@ function initializeSkillTreeLoadout(player){
   player.skillTreeLoadout = nodes.filter(node => isSkillNodeOwned(unlocks, node.id)).flatMap(nodeEffects);
   for (const effect of player.skillTreeLoadout) {
     if (effect.type === 'flag') player[effect.field] = true;
+    if (effect.type === 'technique') {
+      player.technique = { config:effect.technique, rank:effect.rank, progress:0, readyAt:0 };
+    }
     if (effect.type === 'innate') player[effect.field] += effect.amount;
   }
 }
@@ -525,7 +528,7 @@ function resetSkillTreeCamera(){
 
 function describeSkillEffect(eff){
   if (eff.type === 'unlock') return 'Unlocks ' + eff.category + ': ' + eff.id;
-  if (eff.type === 'flag') return eff.label;
+  if (eff.type === 'flag' || eff.type === 'technique') return eff.label;
   const asPercent = eff.type === 'multiply' || eff.field.endsWith('Chance');
   const value = Math.round(eff.amount * (asPercent ? 10000 : 100)) / 100;
   const unit = eff.type === 'multiply' ? '%' : asPercent ? ' percentage points' : '';
@@ -789,7 +792,7 @@ function buildSkillTreePanel(){
     const isAscension = /_ascension$/.test(node.id);
     const sellable = owned && canSellSkillNode(unlocks, node.id);
     const filterState = owned ? 'owned' : affordable ? 'buyable' : 'unaffordable';
-    const isUniqueMechanic = nodeEffects(node).some(e => e.type === 'innate' || e.type === 'flag');
+    const isUniqueMechanic = nodeEffects(node).some(e => e.type === 'innate' || e.type === 'flag' || e.type === 'technique');
     const synergyEffects = nodeEffects(node).filter(e => e.type === 'synergyStat');
     const isSynergy = synergyEffects.length > 0;
     const synergyTags = isSynergy ? synergyEffects.map(e => e.tag).filter(t => t) : [];
