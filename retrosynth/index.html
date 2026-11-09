@@ -54,6 +54,10 @@ td code{font-family:var(--mono);font-size:12.5px}
   font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
 .set-btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:500}
 .set-btn.ghost:hover{color:var(--accent);border-color:var(--accent)}
+.set-question{margin-bottom:12px}
+.set-group-question{border-color:var(--accent);background:var(--accent-soft)}
+.set-group-question h3{color:var(--accent)}
+.set-smiles{font-family:var(--mono);font-size:13px}
 .set-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
 .set-group{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 14px}
 .set-row{margin-bottom:13px}
@@ -128,6 +132,22 @@ footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:v
     <td class="yes">Stops at a buyable catalogue</td>
     <td>A route should end where you can place an order, not where the counter ran out.</td>
   </tr>
+</table>
+
+<h2>Ask it something</h2>
+<p class="lede" style="max-width:none">Three questions, not three settings of one — each takes
+  different inputs and stops on a different condition, so the mode decides which fields below
+  mean anything.</p>
+<table>
+  <tr><th>Mode</th><th>You give it</th><th>It answers</th></tr>
+  <tr><td><code>route</code></td><td>a target</td>
+    <td>How to make it, working backwards until everything is something you can order.</td></tr>
+  <tr><td><code>path</code></td><td>a start and a target</td>
+    <td>How to get from the one to the other. The route has to actually use the start rather
+      than buying its way around it.</td></tr>
+  <tr><td><code>analogues</code></td><td>a target</td>
+    <td>Close relatives of it, and how to make those — for when the question is "something like
+      this, that I can actually synthesise".</td></tr>
 </table>
 
 <h2>Settings, five ways</h2>

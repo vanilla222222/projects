@@ -72,10 +72,13 @@ function settingsUI(host, schemaModule, onChange) {
   error.hidden = true;
 
   const groups = el('div', 'set-groups');
+  const question = el('div', 'set-question');
+  const rows = [];
   for (const group of S.GROUPS) {
     const entries = S.SCHEMA.filter((e) => e.group === group);
     if (!entries.length) continue;
     const box = el('section', 'set-group');
+    if (group === 'Question') box.classList.add('set-group-question');
     box.append(el('h3', null, group));
     for (const entry of entries) {
       const row = el('div', 'set-row');
@@ -100,6 +103,15 @@ function settingsUI(host, schemaModule, onChange) {
         control.type = 'text';
         control.placeholder = entry.of === 'family' ? 'coupling, reduction'
           : entry.of === 'element' ? 'Cr, Os' : 'comma separated';
+      } else if (entry.type === 'text') {
+        // Free text, which here means SMILES. Without this case it fell
+        // through to the numeric branch below and a number input silently
+        // refused every structure typed into it.
+        control = document.createElement('input');
+        control.type = 'text';
+        control.spellcheck = false;
+        control.className = 'set-input set-smiles';
+        control.placeholder = 'SMILES, e.g. CC(=O)Oc1ccccc1C(=O)O';
       } else {
         control = document.createElement('input');
         control.type = 'number';
@@ -109,7 +121,7 @@ function settingsUI(host, schemaModule, onChange) {
         if (entry.def === null) control.placeholder = 'no limit';
       }
       control.id = 'set-' + entry.key;
-      control.className = 'set-input';
+      if (!control.className) control.className = 'set-input';
       control.setAttribute('aria-label', entry.label);
       control.addEventListener('change', () => changed(entry, control));
       controls.set(entry.key, control);
@@ -119,9 +131,12 @@ function settingsUI(host, schemaModule, onChange) {
         const help = el('p', 'set-help', entry.help);
         row.append(help);
       }
+      // A setting that only applies in some modes says so itself, so the panel
+      // can hide it rather than offering a field that will be refused.
+      if (entry.showIf) rows.push({ entry, row });
       box.append(row);
     }
-    groups.append(box);
+    (group === 'Question' ? question : groups).append(box);
   }
 
   // --- the other four channels -------------------------------------------
@@ -164,7 +179,16 @@ function settingsUI(host, schemaModule, onChange) {
     } catch (err) { setError(err.message); }
   });
 
+  function syncVisible() {
+    for (const { entry, row } of rows) {
+      let show = true;
+      try { show = !!entry.showIf(current); } catch (err) { void err; }
+      row.hidden = !show;
+    }
+  }
+
   function syncMirrors() {
+    syncVisible();
     const text = S.toCommand(current);
     if (document.activeElement !== command) {
       command.value = text;
@@ -265,6 +289,7 @@ function settingsUI(host, schemaModule, onChange) {
   const row = (...nodes) => { const r = el('div', 'set-inline'); r.append(...nodes); return r; };
 
   host.append(
+    question,
     error,
     channel('Type it', 'One line, same names as the URL. A bare word turns a switch on; !word turns it off.', command),
     channel('Share it', 'Every setting that differs from the default, encoded in the address.', row(link, copyBtn)),

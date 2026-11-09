@@ -25,11 +25,52 @@ const ELEMENTS = (typeof require === 'function' && typeof module !== 'undefined'
   ? require('./elements.js')
   : (typeof RETRO !== 'undefined' ? RETRO.elements : null);
 
-const GROUPS = ['Search', 'Ranking', 'Chemistry', 'Conditions', 'Stock', 'Safety'];
+const GROUPS = ['Question', 'Search', 'Ranking', 'Chemistry', 'Conditions', 'Stock', 'Safety'];
 
 // type: int | number | bool | enum | list | text
 // alias: short names accepted by the typed syntax and the URL
 const SCHEMA = [
+  // --- Question -----------------------------------------------------------
+  // What is being asked. Three different questions, not three settings of one:
+  // each wants different inputs and a different stopping rule, so the mode
+  // decides which of the fields below mean anything.
+  { key: 'mode', group: 'Question', type: 'enum', def: 'route',
+    values: ['route', 'path', 'analogues'],
+    alias: ['m'], label: 'What to search for',
+    help: 'route: work a target back to things you can buy. '
+      + 'path: get from one named molecule to another. '
+      + 'analogues: find close relatives of a target and how to make them.' },
+  { key: 'target', group: 'Question', type: 'text', def: '',
+    alias: ['y', 'to'], label: 'Target molecule',
+    help: 'The molecule you want, as SMILES. Needed by every mode.' },
+  { key: 'start', group: 'Question', type: 'text', def: '',
+    alias: ['x', 'from'], label: 'Starting material',
+    showIf: (s) => s.mode === 'path',
+    // What else has to be true for a value here to survive. Declared rather
+    // than left for a test to know, so a setting with a companion still gets
+    // exercised generically instead of being skipped.
+    needs: { mode: 'path' },
+    help: 'The molecule you are starting from. The route must actually use it, '
+      + 'rather than buying its way around it.' },
+  { key: 'analogueCount', group: 'Question', type: 'int', min: 1, max: 200, def: 20,
+    alias: ['an'], label: 'How many analogues',
+    showIf: (s) => s.mode === 'analogues',
+    help: 'How many relatives of the target to propose.' },
+  { key: 'analogueSimilarity', group: 'Question', type: 'number', min: 0.1, max: 1, def: 0.6,
+    alias: ['sim'], label: 'Minimum similarity',
+    showIf: (s) => s.mode === 'analogues',
+    help: 'How close a relative has to stay, 0.1 distant to 1.0 identical.' },
+  { key: 'analogueVary', group: 'Question', type: 'enum', def: 'substituents',
+    values: ['substituents', 'rings', 'scaffold', 'any'],
+    alias: ['vary'], label: 'What may change',
+    showIf: (s) => s.mode === 'analogues',
+    help: 'substituents keeps the skeleton and swaps what hangs off it; '
+      + 'scaffold allows the core itself to change.' },
+  { key: 'analogueRoutable', group: 'Question', type: 'bool', def: true,
+    alias: ['routable'], label: 'Only ones you could make',
+    showIf: (s) => s.mode === 'analogues',
+    help: 'Discard an analogue unless the engine can also find a route to it.' },
+
   // --- Search -------------------------------------------------------------
   { key: 'maxDepth', group: 'Search', type: 'int', min: 1, max: 20, def: 8,
     alias: ['depth', 'd'], label: 'Maximum steps',
@@ -120,6 +161,7 @@ const SCHEMA = [
   { key: 'catalogue', group: 'Stock', type: 'enum', def: 'builtin',
     values: ['builtin', 'inventory', 'both'],
     alias: ['stock'], label: 'What counts as buyable',
+    needs: { inventory: ['CCO'] },
     help: 'inventory searches only what you say you already have.' },
   { key: 'inventory', group: 'Stock', type: 'list', of: 'text', def: [],
     alias: ['have'], label: 'Material you already have',
@@ -259,6 +301,10 @@ function normalize(raw, options) {
   if (unknown.length && !lenient) {
     fail('Unknown setting' + (unknown.length > 1 ? 's' : '') + ': ' + unknown.join(', '));
   }
+  // A starting material means nothing outside path mode, so rather than
+  // refusing the combination - which would strand anyone switching modes -
+  // it is dropped. Coercion, not an error.
+  if (out.mode !== 'path') out.start = '';
   check(out);
   // Which keys the caller actually spoke about, as opposed to which ones have
   // a value because everything does. Layering is meaningless without it: a
@@ -277,6 +323,15 @@ function normalize(raw, options) {
 // Rules that involve more than one setting, which no per-field declaration can
 // express.
 function check(settings) {
+  // Note what is deliberately *not* checked here: that the question is
+  // complete. Settings describe a question being composed, and demanding a
+  // starting material the moment the mode is set to "path" makes the mode
+  // impossible to select - you cannot type the start until you are in the mode
+  // that shows the field. Completeness is ready()'s job, at the moment the
+  // search is actually run. What is checked here is contradiction.
+  if (settings.target && settings.start && settings.target === settings.start) {
+    fail('The target and the starting material are the same molecule.');
+  }
   if (settings.minTemp !== null && settings.maxTemp !== null
       && settings.minTemp > settings.maxTemp) {
     fail('Minimum temperature (' + settings.minTemp + ') is above the maximum ('
@@ -295,6 +350,18 @@ function check(settings) {
       fail('Family "' + family + '" is both required and banned.');
     }
   }
+}
+
+// Is this question answerable yet? Separate from validity: a half-typed
+// question is perfectly valid settings and simply not ready to run.
+function ready(settings) {
+  if (!settings.target) {
+    return { ok: false, reason: 'Give it a target molecule.' };
+  }
+  if (settings.mode === 'path' && !settings.start) {
+    return { ok: false, reason: 'Mode "path" needs a starting material too.' };
+  }
+  return { ok: true, reason: '' };
 }
 
 // --- the typed one-line syntax --------------------------------------------
@@ -409,7 +476,7 @@ function resolve(layers) {
 
 const EXPORTS_settings = {
   SCHEMA, GROUPS, FAMILIES, HAZARDS, BY_KEY, BY_ALIAS,
-  defaults, normalize, parse, toCommand, toQuery, fromQuery, resolve,
+  defaults, normalize, parse, toCommand, toQuery, fromQuery, resolve, ready,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

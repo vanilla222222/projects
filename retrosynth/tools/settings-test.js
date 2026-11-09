@@ -71,16 +71,7 @@ function throws(fn, label) {
 // A value that is deliberately not the default, per type.
 function sample(entry) {
   if (entry.type === 'bool') return !entry.def;
-  if (entry.type === 'enum') {
-    // The first alternative that stands on its own: some choices need a
-    // companion setting (catalogue:inventory wants an inventory to search),
-    // and the point here is to exercise the channel, not the cross-field rule.
-    for (const value of entry.values) {
-      if (value === entry.def) continue;
-      try { S.normalize({ [entry.key]: value }); return value; } catch (err) { void err; }
-    }
-    return entry.def;
-  }
+  if (entry.type === 'enum') return entry.values.find((v) => v !== entry.def);
   if (entry.type === 'int') {
     const mid = Math.min(entry.max, Math.max(entry.min, (entry.def === null ? entry.min : entry.def) + 1));
     return mid === entry.def ? Math.max(entry.min, entry.def - 1) : mid;
@@ -101,9 +92,11 @@ function sample(entry) {
 
 for (const entry of S.SCHEMA) {
   const value = sample(entry);
+  // Companions the schema says this setting needs to be legal at all.
+  const base = entry.needs || {};
   let settings;
   try {
-    settings = S.normalize({ [entry.key]: value });
+    settings = S.normalize({ ...base, [entry.key]: value });
   } catch (err) {
     ok(false, entry.key + ' rejected its own sample value: ' + err.message);
     continue;
@@ -119,9 +112,14 @@ for (const entry of S.SCHEMA) {
     entry.key + ' does not survive a URL: '
     + JSON.stringify(settings[entry.key]) + ' -> ' + JSON.stringify(viaQuery[entry.key]));
 
-  // And every alias reaches the same setting.
+  // And every alias reaches the same setting. The companions have to come
+  // along, or an alias for a mode-specific setting is untestable.
+  const prefix = Object.entries(base)
+    .map(([k, v]) => (S.BY_KEY.get(k).alias || [k])[0] + ':'
+      + (Array.isArray(v) ? v.join(',') : v) + ' ').join('');
   for (const alias of entry.alias || []) {
-    const viaAlias = S.parse(alias + ':' + (Array.isArray(value) ? value.join(',') : value));
+    const viaAlias = S.parse(prefix + alias + ':'
+      + (Array.isArray(value) ? value.join(',') : value));
     const expected = entry.type === 'bool' ? S.normalize({ [entry.key]: value })[entry.key]
       : settings[entry.key];
     ok(JSON.stringify(viaAlias[entry.key]) === JSON.stringify(expected),
@@ -131,13 +129,14 @@ for (const entry of S.SCHEMA) {
 
 // --- bad values are refused, with a reason -------------------------------
 for (const entry of S.SCHEMA) {
+  const base = entry.needs || {};
   if (entry.type === 'int' || entry.type === 'number') {
-    throws(() => S.normalize({ [entry.key]: entry.max + 1 }), entry.key + ' accepted a value above its maximum');
-    throws(() => S.normalize({ [entry.key]: entry.min - 1 }), entry.key + ' accepted a value below its minimum');
-    throws(() => S.normalize({ [entry.key]: 'banana' }), entry.key + ' accepted a non-number');
+    throws(() => S.normalize({ ...base, [entry.key]: entry.max + 1 }), entry.key + ' accepted a value above its maximum');
+    throws(() => S.normalize({ ...base, [entry.key]: entry.min - 1 }), entry.key + ' accepted a value below its minimum');
+    throws(() => S.normalize({ ...base, [entry.key]: 'banana' }), entry.key + ' accepted a non-number');
   }
   if (entry.type === 'enum') {
-    throws(() => S.normalize({ [entry.key]: 'nonsense' }), entry.key + ' accepted a value outside its enum');
+    throws(() => S.normalize({ ...base, [entry.key]: 'nonsense' }), entry.key + ' accepted a value outside its enum');
   }
 }
 throws(() => S.normalize({ nosuchthing: 1 }), 'an unknown setting was accepted');
@@ -156,6 +155,54 @@ throws(() => S.normalize({ families: ['coupling'], banFamilies: ['coupling'] }),
   'a family both required and banned was accepted');
 throws(() => S.normalize({ families: ['nonsense'] }), 'an unknown reaction family was accepted');
 throws(() => S.normalize({ banHazards: ['spicy'] }), 'an unknown hazard class was accepted');
+
+// --- the three questions --------------------------------------------------
+{
+  const aspirin = 'CC(=O)Oc1ccccc1C(=O)O';
+  const salicylic = 'OC(=O)c1ccccc1O';
+
+  const route = S.parse('y:' + aspirin);
+  ok(route.mode === 'route', 'a bare target should mean a route search');
+  ok(route.target === aspirin, 'the target did not survive the typed syntax');
+
+  const path = S.parse('m:path x:' + salicylic + ' y:' + aspirin);
+  ok(path.mode === 'path' && path.start === salicylic && path.target === aspirin,
+    'mode path did not carry both molecules');
+
+  const an = S.parse('m:analogues y:' + aspirin + ' an:40 sim:0.75 vary:rings routable:off');
+  ok(an.analogueCount === 40 && an.analogueSimilarity === 0.75
+    && an.analogueVary === 'rings' && an.analogueRoutable === false,
+    'the analogue controls did not read back');
+
+  // A whole question is one link.
+  for (const q of [route, path, an]) {
+    ok(JSON.stringify(S.fromQuery(S.toQuery(q))) === JSON.stringify(q),
+      'a complete question did not survive a URL round trip: mode ' + q.mode);
+  }
+  // SMILES carry characters that matter in a URL, so check one explicitly.
+  ok(S.fromQuery(S.toQuery(route)).target === aspirin,
+    'a SMILES target was mangled by URL encoding');
+
+  throws(() => S.parse('m:path x:' + aspirin + ' y:' + aspirin),
+    'the same molecule was accepted as both start and target');
+
+  // Settings hold an unfinished question; readiness is asked separately. The
+  // alternative - refusing mode "path" until a start exists - makes the mode
+  // unselectable, because the field to type it into only appears in that mode.
+  const half = S.parse('m:path y:' + aspirin);
+  ok(half.mode === 'path', 'switching to path mode should be allowed before a start is typed');
+  ok(S.ready(half).ok === false, 'a path question with no start should not be ready');
+  ok(/starting material/i.test(S.ready(half).reason), 'the reason should name what is missing');
+  ok(S.ready(S.parse('y:' + aspirin)).ok === true, 'a target alone should be a ready route search');
+  ok(S.ready(S.parse('')).ok === false, 'an empty question should not be ready');
+  ok(/target/i.test(S.ready(S.parse('')).reason), 'the reason should ask for a target');
+  ok(S.ready(path).ok === true, 'a complete path question should be ready');
+
+  // A start outside path mode is dropped rather than refused, so switching
+  // modes never strands the panel in an unfixable state.
+  ok(S.normalize({ mode: 'route', start: salicylic, target: aspirin }).start === '',
+    'a starting material should be dropped outside path mode');
+}
 
 // --- element names are checked, and checked the same way everywhere ------
 // This block exists because the check used to reach for a browser global.
