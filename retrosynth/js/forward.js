@@ -83,6 +83,19 @@ function nucleophiles(mol, g) {
 
 // Each rule: given the combined precursors and their groups, list every
 // product the reaction could give.
+function stereocentre(mol, index) {
+  if (mol.atoms[index].el !== 'C' || mol.hydrogens(index) > 1) return false;
+  const links = mol.adjacency[index];
+  if (links.length + mol.hydrogens(index) !== 4 || links.some(l => l.bond.order !== 1)) return false;
+  const classes = mol.symmetryClasses();
+  return new Set(links.map(l => classes[l.other])).size === links.length;
+}
+
+function flagStereo(product, sites) {
+  if (sites.some(index => stereocentre(product, index))) product.unresolvedStereo = true;
+  return product;
+}
+
 const FORWARD = {
   'amide-coupling': (mol, g) => {
     const out = [];
@@ -175,7 +188,8 @@ const FORWARD = {
         copy.addBond(carbonyl.c, amine.n, 1);
         const bond = copy.bondBetween(carbonyl.c, carbonyl.o);
         if (bond) { bond.order = 1; copy._dirty(); }
-        out.push(without(copy, [carbonyl.o]));
+        const product = without(copy, [carbonyl.o]);
+        out.push(flagStereo(product, [carbonyl.c - Number(carbonyl.o < carbonyl.c)]));
       }
     }
     return out;
@@ -188,7 +202,7 @@ const FORWARD = {
       if (!bond) continue;
       bond.order = 1;
       copy._dirty();
-      out.push(copy);
+      out.push(flagStereo(copy, [carbonyl.c]));
     }
     return out;
   },
@@ -259,7 +273,7 @@ const FORWARD = {
       if (!bond) continue;
       bond.order = 1;
       copy._dirty();
-      out.push(copy);
+      out.push(flagStereo(copy, [alkene.a, alkene.b]));
     }
     return out;
   },
@@ -314,6 +328,64 @@ const FORWARD = {
     return out;
   },
 
+  'acetal-formation': (mol, g) => {
+    const out = [];
+    for (const { c, o } of [...g.aldehydes, ...g.ketones]) {
+      for (let i = 0; i < g.alcohols.length; i += 1) {
+        for (const second of g.alcohols.slice(i + 1)) {
+          const copy = mol.clone();
+          copy.addBond(c, g.alcohols[i].o, 1);
+          copy.addBond(c, second.o, 1);
+          out.push(flagStereo(without(copy, [o]), [c - Number(o < c)]));
+        }
+      }
+    }
+    return out;
+  },
+  'diels-alder': (mol, g) => {
+    const out = [];
+    for (const central of mol.bonds) {
+      if (central.order !== 1) continue;
+      const { a:b, b:c } = central;
+      if (mol.atoms[b].el !== 'C' || mol.atoms[c].el !== 'C') continue;
+      for (const left of mol.adjacency[b]) {
+        for (const right of mol.adjacency[c]) {
+          const a = left.other, d = right.other;
+          if (left.bond.order !== 2 || right.bond.order !== 2 || a === d
+            || mol.atoms[a].el !== 'C' || mol.atoms[d].el !== 'C') continue;
+          for (const alkene of g.alkenes) {
+            for (const [e, f] of [[alkene.a, alkene.b], [alkene.b, alkene.a]]) {
+              if (new Set([a, b, c, d, e, f]).size !== 6) continue;
+              const copy = mol.clone();
+              for (const [x, y, order] of [[a,b,1],[b,c,2],[c,d,1],[e,f,1]]) {
+                Object.assign(copy.bondBetween(x, y), { order, dir:0 });
+              }
+              copy.addBond(d, e, 1);
+              copy.addBond(f, a, 1);
+              out.push(flagStereo(copy, [a,d,e,f]));
+            }
+          }
+        }
+      }
+    }
+    return out;
+  },
+  'halohydrin-closure': (mol, g) => g.alcohols.flatMap(alcohol =>
+    g.halides.filter(halide => ['Cl', 'Br', 'I'].includes(halide.halogen)
+      && mol.hydrogens(halide.c) > 0 && mol.bondBetween(alcohol.c, halide.c)?.order === 1)
+      .map(halide => {
+        const product = join(mol, alcohol.o, halide.c, [halide.x]);
+        return flagStereo(product, [alcohol.c, halide.c].map(c => c - Number(halide.x < c)));
+      })),
+  'epoxidation': (mol, g) => g.alkenes.map(({ a, b }) => {
+    const copy = mol.clone();
+    Object.assign(copy.bondBetween(a, b), { order:1, dir:0 });
+    const oxygen = copy.addAtom('O');
+    copy.addBond(a, oxygen.index, 1);
+    copy.addBond(b, oxygen.index, 1);
+    return flagStereo(copy, [a,b]);
+  }),
+
 };
 
 // Which transforms can be checked at all. Said out loud, because a route made
@@ -331,17 +403,22 @@ function verify(step) {
     note: 'a precursor could not be read' }; }
 
   const { mol } = combine(mols);
+  const groups = FW.groups.groupsOf(mol);
   let products;
-  try { products = FORWARD[step.transform](mol, FW.groups.groupsOf(mol)) || []; }
+  try { products = FORWARD[step.transform](mol, groups) || []; }
   catch (err) { void err; return { checked: true, ok: false, selective: false,
     note: 'the forward reaction could not be run' }; }
 
   const made = new Set();
+  const unresolved = new Set();
   for (const product of products) {
     for (const piece of product.components()) {
       try {
         const text = FW.smiles.canonicalWrite(piece);
-        if (text) made.add(text);
+        if (text) {
+          made.add(text);
+          if (product.unresolvedStereo) unresolved.add(text);
+        }
       } catch (err) { void err; }
     }
   }
@@ -349,18 +426,27 @@ function verify(step) {
   for (const precursor of step.precursors) made.delete(precursor);
 
   const ok = made.has(step.product);
+  const stereo = unresolved.has(step.product);
+  const interference = step.transform === 'alkene-hydrogenation' && (groups.alkynes.length || groups.nitros.length)
+    ? 'An alkyne or nitro group could also be reduced'
+    : step.transform === 'epoxidation' && groups.thiols.length
+      ? 'A thiol could also be oxidized' : null;
   const others = [...made].filter((m) => m !== step.product);
+  const warnings = [
+    others.length && ('The model also predicts ' + others.length + ' alternative product'
+      + (others.length === 1 ? '' : 's')),
+    stereo && 'The model leaves stereochemistry unresolved',
+    interference,
+  ].filter(Boolean);
   return {
     checked: true,
     ok,
-    selective: ok && others.length === 0,
+    selective: ok && warnings.length === 0,
+    stereo,
+    interference,
     alternatives: others.slice(0, 4),
-    note: !ok
-      ? 'running it forwards does not give the product'
-      : (others.length
-        ? 'the same conditions would also give ' + others.length + ' other product'
-          + (others.length === 1 ? '' : 's')
-        : 'the only product'),
+    note: ok ? warnings.join(' · ') || 'No alternative product found by the model'
+      : 'Running it forwards does not give the product',
   };
 }
 
