@@ -5,6 +5,7 @@ const PROJECTS = [
     { folder: "polyomino-tetris", name: "Polyfall", tag: "Game", description: "Falling blocks that grow with your score. Start with dominoes and evolve into larger polyominoes.", icon: "cells", accent: "#75b88d" },
     { folder: "fathom", name: "Fathom", tag: "Game", description: "Dig into an endless world. Seeded terrain, biomes, ore and caves, lit by torchlight as you go down.", icon: "pick", accent: "#c08a4a" },
     { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
+    { folder: "retrosynth", name: "Retrosynth", tag: "Tool", description: "Plan a synthesis backwards from the molecule you want. In progress; the settings layer is live.", icon: "retro", accent: "#4f8fb8" },
     { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#4f9a8a" },
     { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8a6fb8" },
     { folder: "Evolution Sim", name: "Evolution Sim", tag: "Simulation", description: "Procedural world maps with biomes from altitude, temperature and humidity.", icon: "globe", accent: "#6f9a4f" },
@@ -27,6 +28,7 @@ const ICONS = {
     flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>',
     moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3v3M15.5 4.5h3"/>',
     radar: '<path d="M12 3 21 18H3z"/><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/>',
+    retro: '<circle cx="18" cy="6" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="16" cy="19" r="2.6"/><path d="M15.6 7.4 8.4 11"/><path d="M8.2 13.6 13.7 17.8"/><path d="M4 4.6A7 7 0 0 1 11.6 3.3"/><path d="M4.2 7.6 3.9 4.4l3.2-.4"/>',
 };
 
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -98,6 +100,8 @@ function setTheme(theme) {
     } catch {}
 }
 
+// Dark is the default, set on <body>. A saved choice still wins, so anyone who
+// has already picked light keeps it.
 try {
     const saved = localStorage.getItem("project-index-theme");
     if (saved) document.body.dataset.theme = saved;
