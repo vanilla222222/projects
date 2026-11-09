@@ -1,0 +1,47 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+for(const m of fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g))if(m[1]!=='js/app.js')vm.runInContext(fs.readFileSync(path.join(root,m[1]),'utf8'),ctx,{filename:m[1]});
+let checks=0;const check=(c,e,label)=>{assert.equal(vm.runInContext(c,ctx),e,label);checks++;};
+vm.runInContext(`const geometryE='C/C=C/C',geometryZ='C/C=C\\\\C';
+const lindlarSpec={precursors:[{smiles:'CC#CC',role:'reactant'}],reagents:[{smiles:'[H][H]',role:'reagent'}],conditions:{solvents:['ethanol'],additives:['lindlar']}};
+const transSpec={precursors:[{smiles:'CC#CC',role:'reactant'}],reagents:[],conditions:{solvents:['none'],additives:['nanh3'],temperature:-33}};
+function geometryPrediction(spec){const compounds=spec.precursors.concat(spec.reagents).map(c=>({...c,fragment:smilesToFragment(c.smiles)})),conditions={...defaultReactionConditions(),...spec.conditions},p=predictReaction(compounds,conditions);return {compounds,conditions,out:[p.best,...p.alternatives].find(o=>o&&o.id===(spec===lindlarSpec?'lindlar':'dissolving-metal'))};}`,ctx);
+for(const [name,good,bad]of [['lindlarSpec','geometryZ','geometryE'],['transSpec','geometryE','geometryZ']]){
+ check(`!!retroTryVerify(${name},${good})`,true,'Raw forward verification accepts correct geometry '+name);
+ check(`!!retroTryVerify(${name},${bad})`,false,'Raw forward verification rejects opposite geometry '+name);
+ check(`!!retroTryVerify(${name},'CC=CC')`,true,'Unspecified target remains supported '+name);
+ check(`rxsGeometricTargetConflict(geometryPrediction(${name}).out.products[0],${good})`,null,'Correct geometric endpoint passes '+name);
+ check(`!!rxsGeometricTargetConflict(geometryPrediction(${name}).out.products[0],${bad})`,true,'Opposite endpoint conflict exposed '+name);
+ check(`(()=>{const f=geometryPrediction(${name});return routeWorkspaceValidateStep({from:'CC#CC',to:${good},ruleId:f.out.id,compounds:f.compounds,conditions:f.conditions}).status;})()`,'verified','Saved correct geometry verifies '+name);
+ check(`(()=>{const f=geometryPrediction(${name});return routeWorkspaceValidateStep({from:'CC#CC',to:${bad},ruleId:f.out.id,compounds:f.compounds,conditions:f.conditions}).status;})()`,'unverified','Saved opposite geometry rejected '+name);
+}
+check("!!rxsGeometricTargetConflict({smiles:'CC=CC'},geometryE)",true,'Unspecified product geometry cannot establish an E target');
+check("rxsGeometricTargetConflict({smiles:'CC=CC'},'CC=CC')",null,'Unspecified target is not a stereopure request');
+check("rxsGeometricTargetConflict({smiles:'C/C=C/C'},'C(=C/C)\\\\C')",null,'Equivalent reversed SMILES do not invent an E/Z mismatch');
+check("(()=>{const p={smiles:'C/C=C/C',stereo:{kind:'racemic'}},before=JSON.stringify(p);rxsGeometricTargetConflict(p,geometryZ);return JSON.stringify(p)===before;})()",true,'Geometric audit does not mutate product record');
+check("rxsGeometricKey('C/C=C/[C@H](F)C')===rxsGeometricKey('C/C=C/[C@@H](F)C')",true,'Geometry check does not override separate tetrahedral recovery');
+check("rxsGeometricKey('C/C=C/[C@H](F)C')!==rxsGeometricKey('C/C=C\\\\[C@H](F)C')",true,'Geometry remains distinct beside a spectator stereocentre');
+check("rxsGeometricKey('C/C=C/c1ccc([N+](=O)[O-])cc1')===rxsGeometricKey('C/C=C/c1ccc(N(=O)=O)cc1')",true,'Existing nitro-resonance equivalence preserves geometric comparison');
+for(const [target,id,forbid]of [['C/C=C/C','dissolving-metal','lindlar'],['C/C=C\\C','lindlar','dissolving-metal']]){Object.assign(ctx,{target,id,forbid});
+ check("(()=>{const r=retroDisconnectSmiles(target,{protect:false,budgetMs:5000});return r.candidates.some(c=>c.transform===id&&retroForwardCheck(c,target))&&!r.candidates.some(c=>c.transform===forbid);})()",true,'Public retrosynthesis exposes only matching reduction geometry '+id);
+ check("(()=>{const j=pathFinderCreate('CC#CC',target,{maxDepth:1,maxRoutes:1,budgetMs:5000});while(j.status==='running')j.step(100);return j.status==='found'&&j.route[0].candidate.transform===id&&retroForwardCheck(j.route[0].candidate,target);})()",true,'Linear planner chooses correct reduction '+id);
+ check("(()=>{const j=pathFinderCreate('CC#CC',target,{maxDepth:1,maxRoutes:1,budgetMs:5000,recipeTree:true,stockPolicy:'custom',availableMaterials:[]});while(j.status==='running')j.step(100);return j.status==='found'&&j.recipeTrees.some(t=>t.candidate.transform===id);})()",true,'Recipe Tree chooses correct geometry '+id);
+ check("(()=>{const j=pathFinderCreate('CC#CC',target,{maxDepth:1,maxRoutes:1,budgetMs:5000,forbiddenRules:[id]});while(j.status==='running')j.step(100);return j.status!=='found';})()",true,'Opposite method cannot bypass forbidden correct method '+id);
+}
+check("moleculeSame(rsearchCreate(geometryE).target,rsearchCreate(geometryZ).target)",false,'Recipe search roots preserve distinct E/Z targets');
+check("rsearchCreate('C[C@H](F)CC').target.includes('@')",true,'Recipe search root also preserves tetrahedral specification');
+check("rxsGeometricTargetConflict({smiles:'CC=C'},'C/C=C')",null,'Nonstereogenic terminal alkene slash does not invent E/Z');
+vm.runInContext(`const mcSpec={precursors:[{smiles:'CC=O',role:'reactant',equiv:2}],reagents:[],conditions:{solvents:['thf'],additives:['mcmurry'],temperature:60}};`,ctx);
+check("!!retroTryVerify(mcSpec,'CC=CC')",true,'Unassigned-geometry McMurry endpoint still supports connectivity target');
+check("!!retroTryVerify(mcSpec,geometryE)",false,'Unassigned E/Z preference cannot certify pure E');
+check("!!retroTryVerify(mcSpec,geometryZ)",false,'Unassigned E/Z preference cannot certify pure Z');
+check("(()=>{rsearchClearCache();return [[geometryZ,'lindlar'],[geometryE,'dissolving-metal']].every(([target,id])=>{const j=pathFinderCreate('CC#CC',target,{maxDepth:1,maxRoutes:1,budgetMs:5000,recipeTree:true,stockPolicy:'custom',availableMaterials:[]});while(j.status==='running')j.step(100);return j.status==='found'&&j.recipeTrees[0].candidate.transform===id;});})()",true,'Reverse-order E/Z queries cannot contaminate cached recipe choices');
+vm.runInContext(`const snSpec={precursors:[{smiles:'C[C@H](Br)CC',role:'reactant'}],reagents:[{smiles:'[C-]#N',role:'reagent'}],conditions:{solvents:['dmf'],temperature:0}};`,ctx);
+check("!!retroTryVerify(snSpec,'C[C@@H](C#N)CC')",true,'Raw SN2 verification accepts inversion');
+check("!!retroTryVerify(snSpec,'C[C@H](C#N)CC')",false,'Raw SN2 verification rejects wrong enantiomer');
+check("!!retroTryVerify(snSpec,'CC(C#N)CC')",true,'Unspecified tetrahedral target remains supported');
+check("!!rxsStereoTargetConflict({smiles:'CC(C#N)CC'},'C[C@H](C#N)CC')",true,'Missing product stereo cannot certify a tetrahedral target');
+check("rxsStereoTargetConflict({smiles:'C[C@H](F)CC'},'CC[C@H](F)C')!==null",true,'Opposite tetrahedral configuration detected across reversed atom order');
+check("rxsStereoTargetConflict({smiles:'C[C@H](F)CC'},'CC[C@@H](F)C')",null,'Equivalent tetrahedral configuration accepted across reversed atom order');
+console.log('Alkene geometry planning: '+checks+' checks passed.');

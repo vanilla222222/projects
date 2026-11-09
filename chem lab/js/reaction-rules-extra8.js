@@ -5,7 +5,7 @@ function rx8RuleCyclicEther(ctx) {
       !ctx.conditions.solvents.some((s) => ['thf', 'dmf'].includes(s))) return [];
   return ctx.substrates.flatMap((s) => {
     const g = s.graph;
-    if (s.info.alcohols.length !== 1 || s.info.halides.length !== 1 ||
+    if (g.connectedComponents().length!==1 || s.info.alcohols.length !== 1 || s.info.halides.length !== 1 ||
         g.atoms.filter((a) => a.element === 'O').length !== 1 ||
         g.atoms.filter((a) => ['Cl', 'Br', 'I'].includes(a.element)).length !== 1 ||
         g.atoms.some((a) => a.charge || !['C', 'O', 'H', 'D', 'Cl', 'Br', 'I'].includes(a.element)) ||
@@ -19,12 +19,14 @@ function rx8RuleCyclicEther(ctx) {
     const product = rxCloneGraph(g);
     product.removeAtom(halide.x);
     product.addBond(alcohol.o, halide.c, 1);
-    return [rxOutcome('intramolecular-williamson', 'Intramolecular Williamson ether cyclization', 'Ring formation', product,
+    const out=rxOutcome('intramolecular-williamson', 'Intramolecular Williamson ether cyclization', 'Ring formation', product,
       'Hydride base generates the alkoxide, which displaces the tethered primary halide to close a ' + ringSize + '-membered cyclic ether.',
       { score: 14, consumes: [rxUse(s, 1), rxUse(ctx.get('hydride'), 1)], byproducts: ['H2', 'metal halide'], warnings: [
         'Dilution and conditions favoring intramolecular substitution are assumed; intermolecular oligomerization, conversion and yield are not calculated.',
         'Only acyclic monohalo monohydroxyl substrates closing five- or six-membered rings at a primary, non-neopentyl carbon are modeled.',
-      ] })];
+      ] });
+    rxCyclizationRecord(out,s,alcohol.o,halide.c,{allowedSizes:[5,6],externalPartners:ctx.substrates.filter(other=>other!==s&&(other.info.halides.length||other.info.alcohols.length||rxxPhenols(other).length)).length});
+    return [out];
   });
 }
 

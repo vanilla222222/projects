@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0b0a13">
 <title>Nightfall Charge — A Bat Pony's Stand</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=clear-render-1">
+<link rel="stylesheet" href="css/nightfall-interface.css?v=1">
 </head>
 <body>
 
@@ -23,11 +24,27 @@
     <button id="settingsBtn" class="mute-btn settings-btn" title="Settings">⚙</button>
 
     <div id="mainMenu" class="screen">
-    <h1 class="title">NIGHTFALL <span>CHARGE</span></h1>
-    <p class="subtitle">Equestria is under siege by the DNBs. Choose your hero.</p>
-    <p id="lifetimeStats" class="lifetime-stats"></p>
-    <p id="mainMenuTip" class="menu-tip"></p>
-    <div id="classSelect" class="class-grid"></div>
+    <header class="nightfall-masthead">
+      <div class="nightfall-kicker">Equestria Night Watch</div>
+      <h1 class="title">NIGHTFALL <span>CHARGE</span></h1>
+      <p class="subtitle">Equestria is under siege by the DNBs. Choose your hero.</p>
+      <p id="lifetimeStats" class="lifetime-stats"></p>
+      <p id="mainMenuTip" class="menu-tip"></p>
+    </header>
+    <nav class="menu-btn-row nightfall-navigation" aria-label="Nightfall records and modes">
+      <button id="achievementsBtn" class="achv-open-btn">Achievements<span id="achievementsNewBadge" class="new-badge hidden">NEW</span></button>
+      <button id="bestiaryBtn" class="achv-open-btn">Bestiary<span id="bestiaryNewBadge" class="new-badge hidden">NEW</span></button>
+      <button id="skillTreeBtn" class="achv-open-btn">Skill Tree<span id="skillTreePointsBadge" class="new-badge hidden"></span></button>
+      <button id="musicTestBtn" class="achv-open-btn">Music Test</button>
+      <button id="waveDefenseBtn" class="achv-open-btn">Wave Defense</button>
+    </nav>
+    <div class="nightfall-front">
+      <section class="nightfall-roster" aria-label="Pony roster">
+        <div class="nightfall-section-title"><span>01</span> Choose your pony</div>
+        <div id="classSelect" class="class-grid"></div>
+      </section>
+      <aside class="nightfall-run-panel" aria-label="Run setup">
+        <div class="nightfall-section-title"><span>02</span> Set up your run</div>
         <div id="difficultySelect" class="achv-filter" role="group" aria-label="Difficulty">
       <span class="hint">Difficulty</span>
       <button type="button" data-difficulty="easy">Easy</button>
@@ -40,15 +57,13 @@
       <span id="seedReadout" class="hint"></span>
     </div>
         <p id="controlsHint" class="hint">Move: WASD / Arrows &nbsp;·&nbsp; Attack: Left Click or Space &nbsp;·&nbsp; Bomb: B &nbsp;·&nbsp; Build Turret (hold): V &nbsp;·&nbsp; Active Item: E &nbsp;·&nbsp; Pill: Q &nbsp;·&nbsp; Star: R &nbsp;·&nbsp; Donate: F &nbsp;·&nbsp; Reroll: G &nbsp;·&nbsp; Arcade: H &nbsp;·&nbsp; Bestiary: C &nbsp;·&nbsp; Achievements: T &nbsp;·&nbsp; Pause: Esc</p>
-    <h2 class="trophyTitle">Superbosses</h2>
-    <div id="trophyRow" class="trophy-routes"></div>
-    <div class="menu-btn-row">
-      <button id="achievementsBtn" class="achv-open-btn">🏆 Achievements<span id="achievementsNewBadge" class="new-badge hidden">NEW</span></button>
-      <button id="bestiaryBtn" class="achv-open-btn">📖 Bestiary<span id="bestiaryNewBadge" class="new-badge hidden">NEW</span></button>
-      <button id="skillTreeBtn" class="achv-open-btn">🌳 Skill Tree<span id="skillTreePointsBadge" class="new-badge hidden"></span></button>
-      <button id="musicTestBtn" class="achv-open-btn">🎵 Music Test</button>
-      <button id="waveDefenseBtn" class="achv-open-btn">🌊 Wave Defense</button>
+      </aside>
     </div>
+    <section class="nightfall-records" aria-label="Superboss records">
+      <h2 class="trophyTitle">Superboss records</h2>
+      <div id="trophyRow" class="trophy-routes"></div>
+    </section>
+
   </div>
 
     <div id="achievementsScreen" class="screen hidden overlay achv-overlay">
@@ -91,21 +106,19 @@
       <button id="skillTreeRecenterBtn" type="button" title="Recenter on start">⌂ Recenter</button>
       <button id="skillTreeOverviewBtn" type="button" title="Per-character build overview">📋 Overview</button>
       <button id="skillTreeUndoBtn" type="button" title="Refund your most recent purchase this session">↩ Undo Last</button>
+      <button id="skillTreeRefundBtn" type="button">Refund Path</button>
     </div>
     <div id="skillTreeFilterBar" class="skilltree-filter-bar">
       <button type="button" class="skilltree-filter-btn" data-filter="all">All</button>
       <button type="button" class="skilltree-filter-btn" data-filter="buyable">Affordable</button>
       <button type="button" class="skilltree-filter-btn" data-filter="owned">Owned</button>
-      <button type="button" class="skilltree-filter-btn" data-filter="cursed">Cursed</button>
       <button type="button" class="skilltree-filter-btn" data-filter="unique">Unique</button>
-      <button type="button" class="skilltree-filter-btn" data-filter="synergy" title="Synergy payoff (◈) nodes — their value scales with how many tagged nodes you own">Synergy</button>
       <button type="button" class="skilltree-filter-btn" data-filter="capstone" title="Capstone (♛) and Ascension (⚡) nodes">Endgame</button>
     </div>
     <div id="skillTreeBranchBar" class="skilltree-branch-bar" title="Zoom straight to one branch of this character tree"></div>
     <div id="skillTreeBody" class="skilltree-body">
       <div id="skillTreeTabStrip" class="skilltree-tabstrip">
-        <button type="button" class="skilltree-tab" data-tab="general" style="--tab-accent:#8b5cf6"><span class="skilltree-tab-name">General</span><span class="skilltree-tab-count"></span></button>
-        <button type="button" class="skilltree-tab" data-tab="unlocks" style="--tab-accent:#e3c15d"><span class="skilltree-tab-name">Unlocks</span><span class="skilltree-tab-count"></span></button>
+        <button type="button" class="skilltree-tab" data-tab="unlocks" style="--tab-accent:#e3c15d"><span class="skilltree-tab-name">Collection</span><span class="skilltree-tab-count"></span></button>
         <button type="button" class="skilltree-tab" data-tab="earth" style="--tab-accent:#c98a4b"><span class="skilltree-tab-name">Earth Pony</span><span class="skilltree-tab-count"></span></button>
         <button type="button" class="skilltree-tab" data-tab="pegasus" style="--tab-accent:#7fc1e3"><span class="skilltree-tab-name">Pegasus</span><span class="skilltree-tab-count"></span></button>
         <button type="button" class="skilltree-tab" data-tab="unicorn" style="--tab-accent:#b48ce0"><span class="skilltree-tab-name">Unicorn</span><span class="skilltree-tab-count"></span></button>
@@ -138,6 +151,10 @@
       <div id="skillTreeList" class="achv-list"></div>
     </div>
         <canvas id="skillTreeMinimap" width="240" height="180" title="Click to jump — dots show every node you can currently see; unowned dots are tinted by branch"></canvas>
+    <div class="skilltree-touch-zoom">
+      <button id="skillTreeTouchZoomOut" type="button" aria-label="Zoom out">−</button>
+      <button id="skillTreeTouchZoomIn" type="button" aria-label="Zoom in">+</button>
+    </div>
     <span id="skillTreeZoomReadout" class="skilltree-zoom-readout" title="Current zoom — scroll wheel or +/- to change"></span>
         <div id="skillTreeDetailPanel" class="skilltree-detail hidden">
       <div class="skilltree-detail-head">
@@ -146,6 +163,10 @@
       </div>
       <div id="skillTreeDetailDesc" class="skilltree-detail-desc"></div>
       <div id="skillTreeDetailEffects" class="skilltree-detail-effects"></div>
+      <div class="skilltree-touch-detail-actions">
+        <button id="skillTreeDetailAction" type="button" class="hidden"></button>
+        <button id="skillTreeDetailClose" type="button">Close Details</button>
+      </div>
     </div>
         <div id="skillTreeOverviewPanel" class="skilltree-overview hidden">
       <div class="skilltree-overview-head">
@@ -157,19 +178,11 @@
     <div id="skillTreeLegend" class="skilltree-legend">
       <span><i class="sk-swatch owned"></i>Owned</span>
       <span><i class="sk-swatch buyable"></i>Affordable</span>
-      <span><i class="sk-swatch unaffordable"></i>Need more points</span>
-      <span><i class="sk-swatch cursed"></i>Cursed (forced drawback)</span>
-      <span title="A node whose effects mix a gain with a loss — optional power you opt into, priced with its own downside."><i class="sk-swatch tradeoff"></i>Trade-off (gain + loss)</span>
-      <span title="A keystone choice: buying one option permanently locks out the others in its group."><i class="sk-swatch keystone"></i>Keystone (one of a group)</span>
-      <span title="Locked out because you already bought the keystone that excludes it."><i class="sk-swatch excluded">🔒</i>Locked out by a keystone</span>
-      <span title="A convergence node: every incoming path must be owned before it can be bought."><i class="sk-swatch converge"></i>Convergence (all paths)</span>
-      <span title="A ranked node: buy it repeatedly up to its max rank, each rank costing more and adding its effect again."><i class="sk-swatch unique">1/5</i>Ranked node</span>
-      <span title="A breadth gate: unlocks once you have spent enough points across this branch (or the whole character tree), no matter which nodes."><i class="sk-swatch excluded">◔</i>Breadth gate (points spent)</span>
-      <span><i class="sk-swatch unique">✦</i>Unique mechanic</span>
-      <span title="A synergy payoff: its bonus grows with every owned node that carries the matching tag — hover the node for the tag and the live total."><i class="sk-swatch synergy">◈</i>Synergy payoff (scales with tagged nodes)</span>
+      <span><i class="sk-swatch unaffordable"></i>Locked</span>
+      <span><i class="sk-swatch tradeoff"></i>Trade-off</span>
+      <span><i class="sk-swatch excluded">🔒</i>Other path selected</span>
       <span><i class="sk-swatch capstone">♛</i>Capstone</span>
-      <span><i class="sk-swatch ascension">⚡</i>Ascension</span>
-      <span class="skilltree-legend-note">Each tab is a radial tree: its hub sits at the centre, rings grow outward with depth · buy a node to reveal its children · click an owned frontier node (↩) to sell it back · arrow keys pan · +/- zoom · the letter buttons above the tree zoom straight to one branch</span>
+      <span class="skilltree-legend-note">Choose one path per character. Changes take effect on your next run. Select an owned node at the end of a path to refund it, or refund the entire path at once.</span>
     </div>
     <button id="skillTreeCloseBtn">Close</button>
   </div>
@@ -222,11 +235,12 @@
     <div id="hud">
       <div id="hearts" class="hud-row"></div>
       <div class="hud-row hud-resources">
-        <span class="res" id="resCoins">🪙 <b>0</b></span>
-        <span class="res" id="resKeys">🔑 <b>0</b></span>
-        <span class="res" id="resBombs">💣 <b>0</b></span>
-        <span class="res hidden" id="resTurrets" title="Built turrets in this room (Engineer Pony).">🔧 <b>0/3</b></span>
-        <span class="res hidden" id="resMinions" title="Summoned changeling minions (Changeling Queen).">🦋 <b>0/2</b></span>
+        <span class="res" id="resCoins"><span class="nightfall-res-glyph glyph-coin" aria-label="Coins"></span> <b>0</b></span>
+        <span class="res" id="resKeys"><span class="nightfall-res-glyph glyph-key" aria-label="Keys"></span> <b>0</b></span>
+        <span class="res" id="resBombs"><span class="nightfall-res-glyph glyph-bomb" aria-label="Bombs"></span> <b>0</b></span>
+        <span class="res hidden" id="resTurrets" title="Built turrets in this room (Engineer Pony)."><span class="nightfall-res-glyph glyph-tool" aria-label="Turrets"></span> <b>0/3</b></span>
+        <span class="res hidden" id="resMinions" title="Summoned changeling minions (Changeling Queen)."><span class="nightfall-res-glyph glyph-wing" aria-label="Minions"></span> <b>0/2</b></span>
+        <span class="res hidden" id="resTechnique"><b></b></span>
         <span class="res" id="resFloor">Floor <b>1</b></span>
       </div>
       <div class="hud-row hud-resources">
@@ -262,24 +276,6 @@
 
     <div id="canvasWrap">
       <canvas id="game" width="320" height="320"></canvas>
-
-            <div id="touchJoystick" class="touch-only touch-joystick" aria-hidden="true">
-        <div class="touch-joystick-ring"></div>
-        <div id="touchJoystickKnob" class="touch-joystick-knob"></div>
-      </div>
-      <div id="touchActionBar" class="touch-only touch-action-bar">
-        <button type="button" id="touchBombBtn" class="touch-action-btn" title="Place Bomb (B)">💣</button>
-        <button type="button" id="touchActiveBtn" class="touch-action-btn touch-action-btn-lg" title="Use Active Item (E)">✨</button>
-        <button type="button" id="touchPillBtn" class="touch-action-btn" title="Take Pill (Q)">💊</button>
-        <button type="button" id="touchStarBtn" class="touch-action-btn" title="Use Star (R)">⭐</button>
-        <button type="button" id="touchTurretBtn" class="touch-action-btn touch-only-turret hidden" title="Hold to Build Turret (V)">🔧</button>
-      </div>
-      <div id="touchUtilityBar" class="touch-only touch-utility-bar">
-        <button type="button" id="touchDonateBtn" class="touch-util-btn" title="Donate (F)">💰</button>
-        <button type="button" id="touchRerollBtn" class="touch-util-btn" title="Reroll (G)">🎲</button>
-        <button type="button" id="touchArcadeBtn" class="touch-util-btn" title="Arcade Interact (H)">🕹️</button>
-        <button type="button" id="touchPauseBtn" class="touch-util-btn" title="Pause">⏸️</button>
-      </div>
 
             <div id="sideActionBar" class="side-action-bar">
         <button type="button" id="sideActionPill" class="side-action-btn" title="Consume Pill (Q)">💊</button>
@@ -335,6 +331,36 @@
       <div id="toast"></div>
     </div>
 
+    <div id="touchControls" class="touch-only">
+      <div class="touch-stick-panel">
+        <div id="touchJoystick" class="touch-joystick" role="group" aria-label="Move joystick">
+          <div class="touch-joystick-ring"></div><div id="touchJoystickKnob" class="touch-joystick-knob"></div>
+        </div>
+        <span>Move</span>
+      </div>
+      <div class="touch-buttons">
+        <button type="button" id="touchBombBtn" aria-label="Place bomb">💣</button>
+        <button type="button" id="touchActiveBtn" aria-label="Use active item">✨</button>
+        <button type="button" id="touchPillBtn" aria-label="Take pill">💊</button>
+        <button type="button" id="touchStarBtn" aria-label="Use star">⭐</button>
+        <button type="button" id="touchPocketBtn" class="hidden" aria-label="Use pocket ability">❄️</button>
+        <button type="button" id="touchTurretBtn" class="hidden" aria-label="Hold to build turret">🔧</button>
+        <button type="button" id="touchDestroyTurretBtn" class="hidden" aria-label="Destroy nearest turret">💥</button>
+        <button type="button" id="touchDropTrinketBtn" class="hidden" aria-label="Drop trinket">🗑️</button>
+        <button type="button" id="touchDonateBtn" class="hidden" aria-label="Choose treasure or donate">🤝</button>
+        <button type="button" id="touchRerollBtn" class="hidden" aria-label="Reroll or upgrade">🎲</button>
+        <button type="button" id="touchArcadeBtn" class="hidden" aria-label="Arcade or wave arena control">🕹️</button>
+        <button type="button" id="touchMapBtn" aria-label="Show or hide map" aria-expanded="false">🗺️</button>
+        <button type="button" id="touchPauseBtn" aria-label="Pause">⏸️</button>
+      </div>
+      <div class="touch-stick-panel">
+        <div id="touchAim" class="touch-joystick" role="group" aria-label="Hold to attack, drag to aim">
+          <div class="touch-joystick-ring"></div><div id="touchAimKnob" class="touch-joystick-knob"></div>
+        </div>
+        <span>Aim / Fire</span>
+      </div>
+    </div>
+
         <div id="statPanel" class="hudPanel">
       <div class="hudPanelSection">
         <div class="hudPanelTitle">Run Stats</div>
@@ -360,6 +386,7 @@
     <div id="pauseScreen" class="screen hidden overlay">
     <h2>Paused</h2>
     <p id="pauseStats"></p>
+        <p id="touchPauseHelp">Left stick moves. Hold the right stick to attack and drag it to aim. The center buttons use gear and interact with the room.</p>
         <div id="pauseKeybinds" class="pause-keybinds">
       <span class="pause-keybind"><kbd>WASD</kbd> Move</span>
       <span class="pause-keybind"><kbd>Click</kbd> Attack</span>
@@ -402,8 +429,9 @@
 
 <script src="js/core/theme.js"></script>
 <script src="js/core/rng.js"></script>
-<script src="js/core/utils-1.js"></script>
-<script src="js/core/utils-2.js"></script>
+<script src="js/core/pixel-art.js?v=pixel-props-1"></script>
+<script src="js/core/utils-1.js?v=pixel-props-1"></script>
+<script src="js/core/utils-2.js?v=pixel-1"></script>
 <script src="js/core/audio.js"></script>
 
 <script src="js/data/core.js"></script>
@@ -527,50 +555,15 @@
 <script src="js/achievements/bestiary-tiers.js"></script>
 <script src="js/achievements/logic.js"></script>
 <script src="js/achievements/skilltree.js"></script>
-<script src="js/achievements/skilltree-characters.js"></script>
-<script src="js/achievements/skilltree-characters-2.js"></script>
-<script src="js/achievements/skilltree-characters-3.js"></script>
-<script src="js/achievements/skilltree-characters-4a.js"></script>
-<script src="js/achievements/skilltree-characters-4b.js"></script>
-<script src="js/achievements/skilltree-characters-4c.js"></script>
-<script src="js/achievements/skilltree-characters-4d.js"></script>
-<script src="js/achievements/skilltree-characters-4e.js"></script>
-<script src="js/achievements/skilltree-characters-5a.js"></script>
-<script src="js/achievements/skilltree-characters-5b.js"></script>
-<script src="js/achievements/skilltree-characters-5c.js"></script>
-<script src="js/achievements/skilltree-characters-5d.js"></script>
-<script src="js/achievements/skilltree-characters-5e.js"></script>
-<script src="js/achievements/skilltree-characters-6.js"></script>
-<script src="js/achievements/skilltree-characters-7.js"></script>
-<script src="js/achievements/skilltree-characters-8.js"></script>
-<script src="js/achievements/skilltree-characters-9a.js"></script>
-<script src="js/achievements/skilltree-characters-9b.js"></script>
-<script src="js/achievements/skilltree-characters-9c.js"></script>
-<script src="js/achievements/skilltree-characters-9d.js"></script>
-<script src="js/achievements/skilltree-characters-9e.js"></script>
-<script src="js/achievements/skilltree-characters-9f.js"></script>
-<script src="js/achievements/skilltree-characters-10a.js"></script>
-  <script src="js/achievements/skilltree-characters-10b.js"></script>
-  <script src="js/achievements/skilltree-characters-10c.js"></script>
-  <script src="js/achievements/skilltree-characters-10d.js"></script>
-  <script src="js/achievements/skilltree-characters-10e.js"></script>
-  <script src="js/achievements/skilltree-characters-10f.js"></script>
-<script src="js/achievements/skilltree-characters-10g.js"></script>
-<script src="js/achievements/skilltree-characters-10h.js"></script>
-<script src="js/achievements/skilltree-characters-10i.js"></script>
-<script src="js/achievements/skilltree-characters-10j.js"></script>
-<script src="js/achievements/skilltree-capstones.js"></script>
-<script src="js/achievements/skilltree-ascensions.js"></script>
-<script src="js/achievements/skilltree-general.js"></script>
-<script src="js/achievements/skilltree-general-2.js"></script>
+<script src="js/achievements/skilltree-techniques.js"></script>
+<script src="js/achievements/skilltree-specializations.js"></script>
 <script src="js/achievements/skilltree-unlocks-stars.js"></script>
 <script src="js/achievements/skilltree-unlocks-familiars.js"></script>
 <script src="js/achievements/skilltree-unlocks-items.js"></script>
 <script src="js/achievements/skilltree-unlocks-items-2.js"></script>
 <script src="js/achievements/skilltree-unlocks-trinkets.js"></script>
-<script src="js/achievements/skilltree-unlocks-starroom.js"></script>
 
-<script src="js/ui/bestiary.js"></script>
+<script src="js/ui/bestiary.js?v=nightwatch-2"></script>
 
 <script src="js/data/roomTemplates/core.js"></script>
 <script src="js/data/roomTemplates/wavearena.js"></script>
@@ -583,6 +576,7 @@
 <script src="js/systems/tearShapes.js"></script>
 <script src="js/systems/combat-1.js"></script>
 <script src="js/systems/combat-2.js"></script>
+<script src="js/systems/combat-techniques.js"></script>
 <script src="js/systems/combat-3.js"></script>
 <script src="js/systems/combat-4.js"></script>
 <script src="js/systems/ai-minibosses.js"></script>
@@ -679,13 +673,14 @@
 <script src="js/systems/karma.js"></script>
 <script src="js/systems/wavedefense.js"></script>
 
-<script src="js/ui/ui.js"></script>
+<script src="js/ui/ui.js?v=pixel-1"></script>
 <script src="js/ui/minimap-pins.js"></script>
-<script src="js/game.js"></script>
-<script src="js/ui/render.js"></script>
-<script src="js/ui/menu-backdrop.js"></script>
+<script src="js/game.js?v=clear-render-1"></script>
+<script src="js/ui/render.js?v=pixel-props-1"></script>
+<script src="js/ui/menu-backdrop.js?v=pixel-1"></script>
 <script src="js/ui/music-test.js"></script>
 <script src="js/ui/settings.js"></script>
+<script src="js/ui/touch-input.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

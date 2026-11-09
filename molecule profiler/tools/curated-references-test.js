@@ -44,7 +44,7 @@ for(const r of composed.relationships.filter(r=>r.curatedReferenceId)){
  assert.ok(Pharmacology.prodrugs(buildMolecule(parseSmiles(r.active.smiles)),composed).examplesForActive.includes(r));
 }
 for(const r of data.records)for(const e of r.evidence){
- if(e.kind==='measured_property'){const fields=e.sourceRecord.split(';').map(s=>s.trim());assert.equal(e.value,+fields[3]);assert.equal(e.uncertainty,+fields[4]);assert.notEqual(e.value,+fields[5],'Calculated column must not replace experimental value');}
+ if(e.kind==='measured_property'){const fields=e.sourceRecord.split(';').map(s=>s.trim());assert.equal(e.value,+fields[3]);assert.equal(e.uncertainty,+fields[4]);/* Exact source-column equality also permits coincident experimental/calculated values. */}
  if(r.id==='control-gsk-j2'){assert.equal(e.values[1].relation,'>');assert.equal(e.values[1].value,100);}
 }
 const tags= require('../js/library-catalog').tagsFor;

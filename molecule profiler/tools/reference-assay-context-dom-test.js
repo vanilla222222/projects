@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict'),path=require('node:path'),{pathToFileURL}=require('node:url'),{JSDOM,VirtualConsole}=require(process.env.PROFILER_JSDOM_PATH||'jsdom');
+(async()=>{
+ const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(String(e)));const file=path.resolve(__dirname,'../library-inspector.html'),dom=await JSDOM.fromFile(file,{url:pathToFileURL(file).href,resources:'usable',runScripts:'dangerously',virtualConsole:vc});
+ try{
+  const w=dom.window;if(w.document.readyState!=='complete')await new Promise(r=>w.addEventListener('load',r,{once:true}));const ui=w.ReferenceResearchUI,observations=ui.model.entries.flatMap(e=>ui.model.dossier(e.name).observations).filter(o=>o.provider==='ChEMBL');
+  for(const format of ['cell-based format','single protein format']){
+   const o=observations.find(o=>o.assayFormat===format);assert.ok(o,'Real retained format '+format);const card=ui.observation(o),section=card.querySelector('.chembl-assay-context');assert.ok(section);assert.ok(section.textContent.includes(format));assert.ok(section.textContent.includes(o.assayFormatId));assert.match(section.textContent,/Source confidence description: Direct single protein target assigned/);assert.match(section.textContent,/Source target relationship description: Direct protein target assigned/);assert.match(section.textContent,/not an independent validation score/);assert.equal(o.hostSpecies,'Not reported');
+  }
+  const unknown=ui.observation({...observations[0],assayFormat:undefined,assayFormatId:undefined,assayTypeDescription:undefined,assayConfidenceDescription:undefined,assayRelationshipType:undefined,assayRelationshipDescription:undefined,assaySubcellularFraction:undefined,assayTestType:undefined});assert.equal((unknown.querySelector('.chembl-assay-context').textContent.match(/Not reported/g)||[]).length,8);
+  const pa2=observations.filter(o=>o.originalMetric==='pA2');assert.equal(pa2.length,5);for(const o of pa2){const before=JSON.stringify(o),card=ui.observation(o);assert.match(card.textContent,/source endpoint is pA2/);assert.match(card.textContent,/not an independently transcribed direct equilibrium binding measurement/);assert.equal(o.metric,'Kd');assert.equal(o.action,'');assert.equal(JSON.stringify(o),before);}
+  const timed=observations.filter(o=>o.sourceActivityProperties?.length);assert.equal(timed.length,22);for(const o of timed){const card=ui.observation(o),context=card.querySelector('.chembl-source-activity-context');assert.ok(context);for(const p of o.sourceActivityProperties){assert.ok(context.textContent.includes(p.value));assert.ok(context.textContent.includes(p.standard_value));assert.match(context.textContent,/Source result flag: 0/);}assert.match(context.textContent,/separate from compound properties and potency results/);}
+  assert.ok(!ui.observation(observations.find(o=>!o.sourceActivityProperties?.length)).querySelector('.chembl-source-activity-context'));
+  assert.deepEqual(errors,[]);console.log('Assay context DOM: real cell/protein formats, unknown fields, all 5 pA2 caveats and 22 literal timing contexts passed');
+ }finally{dom.window.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -5,7 +5,7 @@ const CAMERA_W = CAMERA_TILES * TILE;
 const CAMERA_H = CAMERA_TILES * TILE;
 const ROOM_FREEZE_TIME = 0.4;
 const ROOM_FADE_TIME = 0.4;
-const MAX_DPR = 2;
+const MAX_DPR = 4;
 
 const ROOM_LABELS = {
   boss: 'Boss Chamber', treasure: 'Treasure Room', shop: 'Shop', secret: 'Secret Room!',
@@ -56,6 +56,7 @@ class Game {
     this.runSeed = { int: seedInt, display: seedDisplay };
     this.player = new Player(classId);
 
+    initializeSkillTreeLoadout(this.player);
     const startDef = CLASSES[classId];
     if (startDef.startingFamiliars) {
       for (const grant of startDef.startingFamiliars) {
@@ -65,7 +66,6 @@ class Game {
       }
     }
 
-    applySkillTreeStartingPickups(this.player);
     recalcPlayerStats(this.player);
 
     if (this.player.wispCountBonus > 0) {
@@ -92,6 +92,7 @@ class Game {
     };
 
     this.runLog = [];
+    this.lootOffers = new Map();
     bumpStat('runsStarted', 1, this);
 
     beginRunUnlocks();
@@ -107,7 +108,11 @@ class Game {
   startFloor(floorNum){
 
     if (this.runStats) this.runStats.floorsReached = Math.max(this.runStats.floorsReached, floorNum);
+    this.floorKeyRelief = false;
+    this.player.shinyShellKills = 0;
     this.dungeon = generateDungeon(floorNum);
+    this.player.storyDepth = floorNum;
+    recalcPlayerStats(this.player);
 
     if (this.floorPath === 'C') {
 
@@ -373,7 +378,8 @@ class Game {
     else if (this.currentFloorTrackId) Sound.startMusic(this.currentFloorTrackId);
     else Sound.stopMusic();
     const label = roomLabel(node);
-    if (label) showRoomBanner(label, node.type);
+    if (label) showRoomBanner(node.type === 'treasure' && node.itemPedestals.some(p => p.treasureChoice && !p.taken)
+      ? 'Treasure Room · Choose One' : label, node.type);
   }
 
   loadTestRoom(template, roomType){
@@ -410,9 +416,19 @@ class Game {
     const maxH = Math.max(50, wrap.clientHeight - 8);
 
     const scale = Math.min(maxW / CAMERA_W, maxH / CAMERA_H, 2.2);
-    this.canvas.style.width = (CAMERA_W * scale) + 'px';
-    this.canvas.style.height = (CAMERA_H * scale) + 'px';
-    this._positionHudPanels(wrap, CAMERA_W * scale);
+    // Paint text at display resolution instead of enlarging a smaller canvas in CSS.
+    const density = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+    const width = Math.max(1, Math.round(CAMERA_W * scale * density));
+    const height = Math.max(1, Math.round(CAMERA_H * scale * density));
+    this.canvas.style.width = (width / density) + 'px';
+    this.canvas.style.height = (height / density) + 'px';
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this._ctxTuned = false;
+    }
+    this.dpr = width / CAMERA_W;
+    this._positionHudPanels(wrap, width / density);
   }
 
   _positionHudPanels(wrap, canvasPxW){
@@ -474,6 +490,7 @@ class Game {
 
   tryDonate(){
     if (this.state !== 'playing' || this.paused || this.freezeTimer > 0) return;
+    if (this.tryTreasureChoice()) return;
     if (this.currentRoom && this.currentRoom.type === 'karma') tryDonateKarmaMachine(this);
     else tryDonateMachine(this);
   }
@@ -516,6 +533,7 @@ class Game {
 
   tryDonateOrArcade(){
     if (this.state !== 'playing' || this.paused || this.freezeTimer > 0) return;
+    if (this.tryTreasureChoice()) return;
     if (this.currentRoom && this.currentRoom.type === 'karma' && this.currentRoom.karmaMachines && this.currentRoom.karmaMachines.length) tryDonateKarmaMachine(this);
     else if (this.currentRoom && this.currentRoom.donationMachine) tryDonateMachine(this);
     else tryArcadeInteract(this);
@@ -536,12 +554,14 @@ class Game {
       this.floatTexts.push(new FloatText(this.player.x, this.player.y - 30, '+½ heart', '#e35b6a'));
     }
 
-    if (this.player.trinketId === 'tithebell' && Util.chance(0.2)) {
+    if (this.player.trinketId === 'tithebell' && !this.player.tookDamageThisRoom) {
       const node = this.currentRoom;
       const spot = findClearFloorSpot(node, Math.floor(this.player.x / TILE), Math.floor(this.player.y / TILE));
-      node.pickups.push(new Pickup('coin', spot.x, spot.y, Util.weighted(COIN_TYPES)));
+      node.pickups.push(new Pickup('coin', spot.x, spot.y, COIN_TYPES.find(coin => coin.id === 'penny') || COIN_TYPES[0]));
     }
-    if (this.player.trinketId === 'mendingchime' && Util.chance(0.1) && this.player.redCurrent < this.player.redMax) {
+    if (this.player.trinketId === 'mendingchime' && !this.player.tookDamageThisRoom
+        && this.player.redCurrent < this.player.redMax && ++this.player.mendingClears >= 3) {
+      this.player.mendingClears = 0;
       this.player.heal(0.5);
       Sound.play('heart');
       this.floatTexts.push(new FloatText(this.player.x, this.player.y - 30, '+\u00bd heart', '#e35b6a'));
@@ -681,11 +701,26 @@ class Game {
     }
   }
 
-  updateItemPedestal(){
+  tryTreasureChoice(){
+    const offers = (this.currentRoom.itemPedestals || []).filter(ped => ped.treasureChoice && !ped.taken);
+    if (!offers.length) return false;
+    let nearest = null;
+    let distance = 46;
+    for (const ped of offers) {
+      const d = Util.dist(this.player.x, this.player.y, ped.x * TILE, ped.y * TILE);
+      if (d < distance) { nearest = ped; distance = d; }
+    }
+    if (nearest) this.updateItemPedestal(nearest);
+    else this.toast('Move closer to the treasure you want.');
+    return true;
+  }
+
+  updateItemPedestal(selection){
+
     const node = this.currentRoom;
     if (!node.itemPedestals) return;
     for (const ped of node.itemPedestals) {
-      if (ped.taken) continue;
+      if (ped.taken || (selection ? ped !== selection : ped.treasureChoice)) continue;
       const px = ped.x * TILE, py = ped.y * TILE;
       const distToPed = Util.dist(this.player.x, this.player.y, px, py);
 
@@ -693,7 +728,7 @@ class Game {
         if (distToPed >= 22) ped.justDropped = false;
         else continue;
       }
-      if (distToPed < 22) {
+      if (distToPed < (selection ? 46 : 22)) {
 
         if (ped.isDeal) {
           const player = this.player;
@@ -738,6 +773,7 @@ class Game {
           player.coins -= ped.coinCost;
         }
         ped.taken = true;
+        claimTreasureChoice(node, ped);
         if (ped.isTrinket) equipTrinket(this, ped.item, ped);
         else if (ped.isFamiliar) addFamiliar(this, ped.item);
 

@@ -1,6 +1,7 @@
 (() => {
   const SAVE_KEY = 'vanilla-incremental-save-v1';
   const SIZE = 10;
+  const BP = BlueprintCore;
 
   const ORES = [
     { id: 'dirt', name: 'Dirt', color: '#8a6142', weight: 40 },
@@ -32,14 +33,14 @@
   ];
 
   const UNIQUES = {
-    dirt: { label: 'Unlock Mastery' },
-    stone: { label: 'Unlock Autominer' },
-    copper: { label: 'Unlock Rebirth', cost: 100000 },
-    gold: { label: 'Unlock Offline Mining' },
-    silver: { label: 'Unlock Pickaxe' },
-    iron: { label: 'Unlock Smeltery' },
+    dirt: { label: 'Unlock Mastery', cost: 1.5e9 },
+    stone: { label: 'Unlock Autominer', cost: 1000 },
+    copper: { label: 'Unlock Rebirth', cost: 9e11 },
+    gold: { label: 'Unlock Offline Mining', cost: 5000 },
+    silver: { label: 'Unlock Pickaxe', cost: 1500 },
+    iron: { label: 'Unlock Smeltery', cost: 5e11 },
     zinc: { label: 'Unlock Smeltery 2' },
-    diamond: { label: 'Unlock Achievements' },
+    diamond: { label: 'Unlock Achievements', cost: 250 },
     obsidian: { label: 'Unlock Special Tiles', cost: 10 },
   };
 
@@ -69,7 +70,7 @@
   ];
   const PICK = { cost: 50000, growth: 10 };
   const BUYS = [1, 5, 10, 100, 'max'];
-  const SMELT = { slots: 10, input: 1000, time: 10, speed: 0.8, min: 1 };
+  const SMELT = { slots: 10, input: 1000, output: 3, time: 10, speed: 0.8, min: 1 };
   const RECIPES = [
     { id: 'copper', name: 'Copper', in: { copper: 1000 }, ups: [
       { id: 'omult', label: '+2 Copper multiplier', cost: 10, growth: 2 },
@@ -99,7 +100,7 @@
       { id: 'mult', label: '+1 Gold Ingot multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Gold Ingots smelt 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'auto2', label: 'Autobuy Iron, Zinc & Gold upgrades', cost: 100, growth: 1, max: 1, auto: ['iron', 'zinc', 'gold'] },
-      { id: 'smup2', label: 'Unlock more smelting upgrades', cost: 10000, growth: 1, max: 1 },
+      { id: 'smup2', label: 'Unlock more smelting upgrades', cost: 1000, growth: 1, max: 1 },
     ] },
     { id: 'silicon', name: 'Silicon', in: { quartz: 1000 }, ups: [
       { id: 'omult', label: '+2 Quartz multiplier', cost: 10, growth: 2 },
@@ -107,7 +108,20 @@
       { id: 'mult', label: '+1 Silicon multiplier', cost: 50, growth: 2.5 },
       { id: 'speed', label: 'Silicon smelts 20% faster', cost: 50, growth: 3, max: 10 },
       { id: 'auto3', label: 'Autobuy Silver, Diamond & Obsidian upgrades', cost: 100, growth: 1, max: 1, auto: ['silver', 'diamond', 'obsidian'] },
-      { id: 'forest', label: 'Unlock the Forest', cost: 1e5, growth: 1, max: 1 },
+      { id: 'forest', label: 'Unlock the Forest', cost: 2.5e5, growth: 1, max: 1 },
+    ] },
+    { id: 'steel', name: 'Steel', in: { iron: 1000, charcoal: 5 }, ups: [
+      { id: 'base', label: '+1 base Steel Ingot per smelt', cost: 25, growth: 2.5 },
+      { id: 'mult', label: '+1 Steel Ingot multiplier', cost: 50, growth: 2.5 },
+      { id: 'speed', label: 'Steel smelts 20% faster', cost: 50, growth: 3, max: 10 },
+      { id: 'axe', label: 'Forged axe head: ×2 chopping damage', cost: 25, growth: 1, max: 1 },
+      { id: 'saw', label: 'Steel saw teeth: ×2 sawmill speed', cost: 100, growth: 1, max: 1 },
+      { id: 'supports', label: '+25% all ore gains from steel supports', cost: 50, growth: 3, max: 8 },
+    ] },
+    { id: 'electrum', name: 'Electrum', in: { gold: 1000, silver: 1000 }, ups: [
+      { id: 'conductivity', label: '+4% autominer speed', cost: 25, growth: 2.5, max: 10 },
+      { id: 'radiance', label: '+5% all ore gains', cost: 50, growth: 2.5, max: 10 },
+      { id: 'precision', label: 'Research costs 2% less', cost: 50, growth: 3, max: 5 },
     ] },
   ];
   const RECIPE = Object.fromEntries(RECIPES.map(x => [x.id, x]));
@@ -183,7 +197,7 @@
     { id: 'auto', label: 'Autochop slot 1 every second', steps: [['oak', 25]] },
     { id: 'autoN', label: 'Extend autochop to another slot', steps: [['birch', 10], ['birch', 50], ['spruce', 10], ['spruce', 50], ['fir', 10], ['fir', 50], ['redwood', 10], ['redwood', 50], ['icewood', 10]], req: 'auto' },
     { id: 'slots', label: 'Unlock another slot', steps: [['oak', 10], ['oak', 50], ['birch', 10], ['birch', 50], ['spruce', 10], ['spruce', 50], ['fir', 10], ['fir', 50], ['redwood', 10]] },
-    { id: 'mill', label: 'Build the Sawmill', steps: [['spruce', 25]] },
+    { id: 'mill', label: 'Build the Sawmill', steps: [['spruce', 50000]] },
   ];
   const COAL = { oak: 1, birch: 2, spruce: 5, fir: 20, redwood: 100, icewood: 500 };
   const MILL = { slots: 4, logs: 10, time: 5, speed: 0.8, min: 0.5 };
@@ -197,7 +211,30 @@
     icewood: [{ id: 'ore2', label: '×2 all ore gains', cost: 10, growth: 10 }],
   };
   const PLANKS = WOODS.map(w => ({ ...w, ups: [{ id: 'base', label: `+1 ${w.name} Plank per cut`, cost: 10, growth: 2 }, { id: 'speed', label: `${w.name} cuts 20% faster`, cost: 25, growth: 3, max: 10 }, ...PLANK_UPS[w.id]] }));
-  const ICOL = { copper: '#d27a3e', zinc: '#8fb3c9', brass: '#d9b44a', gold: '#f0c43c', silicon: '#f3dbe8' };
+  const ICOL = { copper: '#d27a3e', zinc: '#8fb3c9', brass: '#d9b44a', gold: '#f0c43c', silicon: '#f3dbe8', steel: '#90a9b5', electrum: '#ddd496' };
+
+  const WORKSHOP = [
+    { id: 'drill', name: 'Tempered drill bits', desc: '+10% all ore gains per level', max: 10, growth: 2, pay: [['ingots', 'copper', 25]], open: () => true, needs: 'Unlock the Smeltery' },
+    { id: 'gears', name: 'Precision gearing', desc: '+5% autominer speed per level', max: 8, growth: 2.2, pay: [['ingots', 'copper', 50], ['ingots', 'zinc', 25]], open: () => ZINC_ON && hasAuto(), needs: 'Unlock Zinc and the Autominer' },
+    { id: 'foundry', name: 'Reusable casting moulds', desc: '+12.5% all ingot output per level', max: 8, growth: 2.2, pay: [['ingots', 'brass', 25], ['ingots', 'copper', 100]], open: () => S.smelt.up.zinc.brass > 0, needs: 'Unlock Brass smelting' },
+    { id: 'scanner', name: 'Crystal survey array', desc: '+20% special-tile frequency per level on new layers', max: 5, growth: 2.5, pay: [['ingots', 'silicon', 25], ['ingots', 'gold', 50]], open: () => QUARTZ_ON && S.smelt.extra.gold > 0 && SPECIAL_ON, needs: 'Unlock Quartz, Gold smelting and Special Tiles' },
+    { id: 'forestry', name: 'Laminated axe handles', desc: '+25% chopping damage per level', max: 6, growth: 2, pay: [['planks', 'spruce', 20], ['planks', 'birch', 50]], open: () => millOn(), needs: 'Build the Sawmill' },
+    { id: 'deep', name: 'Deep-core supports', desc: '+20% all ore gains per level; adds to drill-bit bonus', max: 5, growth: 2.5, pay: [['planks', 'redwood', 25], ['planks', 'icewood', 10]], open: () => millOn() && S.forest.wood.icewood.found > 0, needs: 'Build the Sawmill and discover Icewood' },
+  ];
+  const expansionLevel = id => BP.level(S.expansion, id);
+  const engineering = id => S.expansion.school === id ? 1 + 0.03 * expansionLevel('workshop') : 1;
+  const legacy = id => S.expansion.legacy === id ? 1 + 0.02 * expansionLevel('rebirth') : 1;
+  const workshopOre = () => 1 + 0.1 * S.workshop.drill * engineering('drill') + 0.2 * S.workshop.deep * engineering('deep');
+  const workshopSpecial = () => 1 + 0.2 * S.workshop.scanner * engineering('scanner');
+  const WORKSHOP_BUILD = 5000;
+  const uniqueRequirement = id => id === 'copper' && !S.ores.dirt.unique ? 'Unlock Mastery first'
+    : id === 'iron' && !S.ores.copper.unique ? 'Unlock Rebirth first'
+    : id === 'iron' && S.rb.count < 1 ? 'Complete your first rebirth' : '';
+  TABS.splice(TABS.length - 1, 1, { id: 'workshop', name: 'Workshop', unlock: () => S.workshopBuilt });
+  TABS.push({id:'blueprints', name:'Blueprints', unlock:() => S.expansion.office});
+  ach('workshop1', 'Tinkerer', 'Buy a Workshop research level', () => WORKSHOP.some(p => S.workshop[p.id] > 0));
+  ach('workshopDrill', 'Tempered to perfection', 'Max out Tempered drill bits', () => S.workshop.drill === 10);
+  ach('workshopAll', 'Industrial revolution', 'Complete all Workshop research', () => WORKSHOP.every(p => S.workshop[p.id] === p.max));
 
   const $ = id => document.getElementById(id);
 
@@ -214,7 +251,11 @@
     for (const x of PLANKS) { S.mill.planks[x.id] = 0; S.mill.total[x.id] = 0; S.mill.up[x.id] = Object.fromEntries(x.ups.map(u => [u.id, 0])); }
     for (let i = 0; i < MILL.slots; i++) S.mill.slots.push({ w: '', busy: 0, t: 0 });
     S.wcat = 'ores';
-    S.grid = newGrid();
+    S.workshop = Object.fromEntries(WORKSHOP.map(p => [p.id, 0]));
+    S.workshopBuilt = false;
+    S.expansion = BP.fresh();
+    S.touchMine = false;
+    S.grid = newGrid(false, false);
     return S;
   }
 
@@ -224,14 +265,15 @@
     return ORES[0].id;
   }
 
-  function newGrid() {
+  function newGrid(specials = SPECIAL_ON, expansions = true) {
     const g = [];
     for (let i = 0; i < SIZE * SIZE; i++) {
       const c = { ore: rollOre(), dug: 0 };
-      if (SPECIAL_ON) {
+      if (specials) {
         let r = Math.random();
-        for (const k in SPECIALS) { r -= SPECIALS[k].chance; if (r < 0) { c.sp = k; break; } }
+        for (const k in SPECIALS) { r -= SPECIALS[k].chance * workshopSpecial(); if (r < 0) { c.sp = k; break; } }
       }
+      if (expansions && BP.open(S.expansion,'mines') && Math.random() < geodeChance()) c.geode = true;
       g.push(c);
     }
     return g;
@@ -243,6 +285,15 @@
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return S;
       const d = JSON.parse(raw);
+      S.expansion = BP.restore(d.expansion);
+      if (!ORES.some(o => o.id === S.expansion.focus)) S.expansion.focus = 'dirt';
+      if (!WOODS.some(w => w.id === S.expansion.plant)) S.expansion.plant = 'random';
+      if (!WORKSHOP.some(p => p.id === S.expansion.school)) S.expansion.school = 'drill';
+      if (d.workshop) for (const p of WORKSHOP) {
+        const level = d.workshop[p.id];
+        if (Number.isFinite(level)) S.workshop[p.id] = Math.max(0, Math.min(p.max, Math.floor(level)));
+      }
+      S.touchMine = d.touchMine === true;
       if (typeof d.layer === 'number') S.layer = d.layer;
       if (typeof d.tab === 'string' && TABS.some(t => t.id === d.tab && !t.locked)) S.tab = d.tab;
       if (d.rb) {
@@ -252,7 +303,7 @@
         for (const o of ORES) { const a = Math.min(S.rb.alloc[o.id] || 0, S.rb.points - used); S.rb.alloc[o.id] = a; used += a; }
       }
       if (d.auto) for (const k of ['bulk', 'speed', 'off']) if (typeof d.auto[k] === 'number' && isFinite(d.auto[k])) S.auto[k] = d.auto[k];
-      if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => SPECIALS[c.sp] ? { ore: c.ore, dug: c.dug ? 1 : 0, sp: c.sp } : { ore: c.ore, dug: c.dug ? 1 : 0 });
+      if (Array.isArray(d.grid) && d.grid.length === SIZE * SIZE && d.grid.every(c => c && S.ores[c.ore])) S.grid = d.grid.map(c => ({ore:c.ore, dug:c.dug ? 1 : 0, ...(SPECIALS[c.sp] ? {sp:c.sp} : {}), ...(c.geode === true ? {geode:true} : {})}));
       if (BUYS.includes(d.buy)) S.buy = d.buy;
       if (d.smelt) {
         const num = v => typeof v === 'number' && isFinite(v);
@@ -293,6 +344,7 @@
         if (!src) continue;
         for (const k of Object.keys(S.ores[o.id])) if (typeof src[k] === 'number' && isFinite(src[k])) S.ores[o.id][k] = src[k];
       }
+      S.workshopBuilt = d.workshopBuilt === true || WORKSHOP.some(p => S.workshop[p.id] > 0) || S.smelt.up.silicon.forest > 0 || S.forest.up.mill > 0;
     } catch (e) {}
     return S;
   }
@@ -325,19 +377,22 @@
   const achCount = () => ACHS.filter(a => S.ach[a.id]).length;
   const achMult = () => 1 + ACH_BONUS * achCount();
   const millOre = () => (1 + 0.25 * S.mill.up.birch.ore) * Math.pow(2, S.mill.up.icewood.ore2);
-  const oreGain = id => Math.pow(oreBase(id) * oreMult(id), oreExp(id)) * oreMastery(id) * achMult() * millOre();
-  const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed)) / (S.smelt.extra.speed ? 2 : 1) * Math.pow(0.9, S.mill.up.oak.smelt);
-  const smeltYield = r => (1 + S.smelt.up[r].base) * (1 + S.smelt.up[r].mult) * (S.smelt.extra.out ? 2 : 1) * (1 + 0.5 * S.mill.up.fir.ingot);
+  const oreGain = id => Math.pow(oreBase(id) * oreMult(id), oreExp(id)) * oreMastery(id) * achMult() * millOre() * workshopOre() * (1 + 0.25 * S.smelt.up.steel.supports) * (1 + 0.02 * expansionLevel('mines')) * (S.expansion.focus === id ? 1 + 0.03 * expansionLevel('mastery') : 1) * legacy('ores') * (1 + 0.05 * S.smelt.up.electrum.radiance);
+  const smeltTime = r => Math.max(SMELT.min, SMELT.time * Math.pow(SMELT.speed, S.smelt.up[r].speed || 0)) / (S.smelt.extra.speed ? 2 : 1) * Math.pow(0.9, S.mill.up.oak.smelt);
+  const smeltYield = r => (SMELT.output + (S.smelt.up[r].base || 0)) * (1 + (S.smelt.up[r].mult || 0)) * (S.smelt.extra.out ? 2 : 1) * (1 + 0.5 * S.mill.up.fir.ingot) * (1 + 0.125 * S.workshop.foundry * engineering('foundry'));
   const slotCount = () => 1 + (S.ores.zinc.unique > 0 ? 1 : 0) + S.smelt.extra.slot3 + S.smelt.extra.slot4;
-  const REC_OPEN = { copper: () => true, zinc: () => ZINC_ON, brass: () => S.smelt.up.zinc.brass > 0, gold: () => S.smelt.extra.gold > 0, silicon: () => QUARTZ_ON };
+  const REC_OPEN = { copper: () => true, zinc: () => ZINC_ON, brass: () => S.smelt.up.zinc.brass > 0, gold: () => S.smelt.extra.gold > 0, silicon: () => QUARTZ_ON, steel: () => forestOn() };
+  REC_OPEN.electrum = () => BP.open(S.expansion,'smelt');
   const recOpen = r => REC_OPEN[r]();
   const extraOpen = () => S.smelt.up.brass.smup > 0;
   const extraVis = u => !u.tier || S.smelt.up.gold.smup2 > 0;
-  const inName = k => (ORES.find(o => o.id === k) || RECIPE[k]).name;
+  const inName = k => k === 'charcoal' ? 'Charcoal' : (ORES.find(o => o.id === k) || RECIPE[k]).name;
+  const inputBalance = k => k === 'charcoal' ? S.mill.coal : S.ores[k].amt;
+  function changeInput(k, amount) { if (k === 'charcoal') S.mill.coal += amount; else S.ores[k].amt += amount; }
   const recIn = r => Object.entries(RECIPE[r].in).map(([k, v]) => `${fmt(v)} ${inName(k)}`).join(' + ');
   const hasAuto = () => S.ores.stone.unique > 0;
   const autoBulk = () => 1 + S.auto.bulk;
-  const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed));
+  const autoInterval = () => Math.max(AUTO.speed.min, Math.pow(AUTO.speed.factor, S.auto.speed)) / ((1 + 0.05 * S.workshop.gears * engineering('gears')) * legacy('speed') * (1 + 0.04 * S.smelt.up.electrum.conductivity));
   const autoCostAt = (k, l) => Math.ceil(AUTO[k].cost * Math.pow(AUTO[k].growth, l));
   const autoCap = k => k === 'bulk' ? AUTO.bulk.max : Math.ceil(Math.log(AUTO.speed.min) / Math.log(AUTO.speed.factor));
   const autoMaxed = k => S.auto[k] >= autoCap(k);
@@ -382,7 +437,7 @@
     }
     return plan(l => cost(u, l, oreId), st[u.id], st.amt);
   }
-  const mastPlan = oreId => plan(masteryCost, S.ores[oreId].mastery, S.ores[oreId].amt);
+  const mastPlan = oreId => plan(l => Math.ceil(masteryCost(l) * (S.expansion.focus === oreId ? 1 - 0.03 * expansionLevel('mastery') : 1) / legacy('mastery')), S.ores[oreId].mastery, S.ores[oreId].amt);
   const autoPlan = k => plan(l => autoCostAt(k, l), S.auto[k], S.ores.obsidian.amt, autoCap(k));
   const offPlan = () => plan(offCostAt, S.auto.off, S.ores.gold.amt, OFFLINE.max);
   function ingotPlan(r, u) {
@@ -429,6 +484,7 @@
   }
 
   function buyIngot(r, u) {
+    if (u.id === 'forest' && expansionLevel('smelt') < 5) return;
     if (u.auto && S.smelt.up[r][u.id]) { S.smelt.abOff[u.id] = S.smelt.abOff[u.id] ? 0 : 1; renderSmelt(); return; }
     const pl = ingotPlan(r, u);
     if (!pl.can) return;
@@ -442,15 +498,15 @@
 
   const forestOn = () => S.smelt.up.silicon.forest > 0;
   const treeSlots = () => 1 + S.forest.up.slots;
-  const chopDmg = () => Math.pow(2, S.forest.up.dmg);
+  const chopDmg = () => Math.pow(2, S.forest.up.dmg) * (1 + 0.25 * S.workshop.forestry * engineering('forestry')) * (S.smelt.up.steel.axe ? 2 : 1);
   const regrowTime = () => FOREST.regrow * Math.pow(FOREST.regrowF, S.forest.up.regrow);
   const autoSlots = () => S.forest.up.auto ? 1 + S.forest.up.autoN : 0;
-  const woodGain = id => { const st = S.forest.wood[id]; return Math.pow((1 + st.base) * (1 + st.mult), 1 + st.exp * 0.01) * (1 + 0.25 * S.mill.up.spruce.log); };
+  const woodGain = id => { const st = S.forest.wood[id]; return Math.pow((1 + st.base) * (1 + st.mult), 1 + st.exp * 0.01) * (1 + 0.25 * S.mill.up.spruce.log) * (1 + 0.02 * expansionLevel('forest')); };
   const coalGain = w => COAL[w] * (1 + 0.5 * S.mill.up.redwood.coal);
   const millOn = () => S.forest.up.mill > 0;
   const sawCount = () => 1 + S.mill.up.birch.slot2 + S.mill.up.fir.slot3 + S.mill.up.redwood.slot4;
-  const millTime = w => Math.max(MILL.min, MILL.time * Math.pow(MILL.speed, S.mill.up[w].speed));
-  const millYield = w => 1 + S.mill.up[w].base;
+  const millTime = w => Math.max(MILL.min, MILL.time * Math.pow(MILL.speed, S.mill.up[w].speed)) / (S.smelt.up.steel.saw ? 2 : 1);
+  const millYield = w => (1 + S.mill.up[w].base) * (1 + 0.03 * expansionLevel('mill')) * (1 + 0.1 * S.expansion.jig);
   let SAWPICK = -1;
 
   function millStep(dt) {
@@ -478,6 +534,7 @@
           S.mill.planks[w] += g;
           S.mill.total[w] += g;
           S.stats.planks += g;
+          if (BP.open(S.expansion,'mill')) S.expansion.offcuts++;
           done = 1;
         }
       }
@@ -508,10 +565,14 @@
   }
 
   function rollWood() {
-    let r = Math.random() * WOODS.reduce((s, w) => s + w.weight, 0);
-    for (const w of WOODS) { r -= w.weight; if (r < 0) return w.id; }
+    const available = availableWoods();
+    if (expansionLevel('forest') > 0 && available.some(w => w.id === S.expansion.plant) && S.forest.wood[S.expansion.plant].found > 0) return S.expansion.plant;
+    let r = Math.random() * available.reduce((s, w) => s + w.weight, 0);
+    for (const w of available) { r -= w.weight; if (r < 0) return w.id; }
     return WOODS[0].id;
   }
+
+  const availableWoods = () => WOODS.filter(w => w.hp <= Math.max(20, chopDmg() * 120));
 
   function chop(i, dmg) {
     const sl = S.forest.slots[i];
@@ -523,6 +584,8 @@
     st.amt += g;
     st.total += g;
     S.stats.trees++;
+    recordBlueprint('logs', g);
+    recordBlueprint('trees', 1);
     sl.w = '';
     sl.t = 0;
     return 1;
@@ -534,9 +597,11 @@
     const c = coalGain(sl.w);
     S.mill.coal += c;
     S.mill.coalTotal += c;
+    recordBlueprint('charcoal', c);
     sl.w = '';
     sl.t = 0;
     S.stats.burned++;
+    recordBlueprint('trees', 1);
     renderForest();
     renderWallet();
   }
@@ -562,7 +627,11 @@
       S.forest.acc += dt;
       while (S.forest.acc >= 1) {
         S.forest.acc -= 1;
-        for (let i = 0; i < a; i++) if (S.forest.slots[i].w) { chop(i, chopDmg()); ch = 1; }
+        for (let i = 0; i < a; i++) if (S.forest.slots[i].w) {
+          if (i === a-1 && expansionLevel('forest') > 0 && S.expansion.fuelReserve && S.mill.coal < (millOn() ? 100 : 25)) burn(i);
+          else chop(i, chopDmg());
+          ch = 1;
+        }
       }
     } else S.forest.acc = 0;
     return ch;
@@ -572,6 +641,7 @@
     const lvl = S.forest.up[u.id];
     const st = u.steps[lvl];
     if (!st) return { done: 1, can: false };
+    if (u.id === 'mill' && expansionLevel('forest') < 5) return {w:st[0],n:st[1],can:false,requires:'Complete Forest expansion first'};
     return { w: st[0], n: st[1], can: (!u.req || S.forest.up[u.req] > 0) && S.forest.wood[st[0]].amt >= st[1] };
   }
 
@@ -610,8 +680,8 @@
       while (left > 0) {
         if (!sl.busy) {
           const need = Object.entries(RECIPE[r].in);
-          if (need.some(([k, v]) => S.ores[k].amt < v)) break;
-          for (const [k, v] of need) S.ores[k].amt -= v;
+          if (need.some(([k, v]) => inputBalance(k) < v)) break;
+          for (const [k, v] of need) changeInput(k, -v);
           sl.busy = 1;
           sl.t = 0;
         }
@@ -624,6 +694,8 @@
         const g = n * smeltYield(r);
         S.smelt.ingots[r] += g;
         S.smelt.total[r] += g;
+        recordBlueprint('ingots', g);
+        recordBlueprint(`ingot:${r}`, g);
         done += n;
       }
     });
@@ -633,7 +705,7 @@
   function setRecipe(i, r) {
     const sl = S.smelt.slots[i];
     if (sl.rec === r) return;
-    if (sl.busy && sl.rec) for (const [k, v] of Object.entries(RECIPE[sl.rec].in)) S.ores[k].amt += v;
+    if (sl.busy && sl.rec) for (const [k, v] of Object.entries(RECIPE[sl.rec].in)) changeInput(k, v);
     sl.rec = r;
     sl.busy = 0;
     sl.t = 0;
@@ -659,6 +731,7 @@
 
   function buy(oreId, u) {
     if (isSoon(oreId, u)) return;
+    if (u.id === 'unique' && uniqueRequirement(oreId)) return;
     const st = S.ores[oreId];
     const pl = upgPlan(oreId, u);
     if (!pl.can) return;
@@ -707,6 +780,7 @@
     st.amt += g;
     st.total += g;
     st.run += g;
+    recordBlueprintOre(oreId, g);
   }
 
   function collect(cell) {
@@ -715,10 +789,13 @@
     let g = oreGain(cell.ore);
     if (S.vein > 0) { g *= 2; S.vein--; }
     S.stats.tiles++;
+    recordBlueprint('tiles', 1);
+    if (cell.geode) { S.expansion.geodes++; S.expansion.geodesTotal++; recordBlueprint('geodes', 1); }
     if (g > S.stats.best) S.stats.best = g;
     st.amt += g;
     st.total += g;
     st.run += g;
+    recordBlueprintOre(cell.ore, g);
     if (!st.found++) buildTabs();
     return g;
   }
@@ -829,6 +906,7 @@
     }
     if (millOn()) {
       if (millStep(dt)) renderAll(true);
+      if (beamStep(dt)) renderAll(true);
       if (S.tab === 'mill') renderMillBars();
     }
     if (Math.floor(S.stats.time) !== Math.floor(S.stats.time - dt)) { checkAch(); if (autoBuy()) renderAll(true); }
@@ -840,6 +918,7 @@
       if (mines) { autoDig(mines * autoBulk()); renderAll(true); }
       $('autoBar').style.width = Math.min(100, autoAcc / iv * 100) + '%';
     }
+    sampleBlueprintRates(dt, gap >= OFFLINE.min);
     requestAnimationFrame(tick);
   }
 
@@ -859,6 +938,12 @@
       got.push([o, g]);
     }
     if (S.ores.iron.unique) smeltStep(sec * offEff());
+    if (millOn()) beamStep(sec * offEff());
+    recordBlueprint('tiles', digs);
+    if (BP.open(S.expansion,'mines')) {
+      const geodes = Math.floor(digs * geodeChance());
+      S.expansion.geodes += geodes; S.expansion.geodesTotal += geodes; recordBlueprint('geodes', geodes);
+    }
     const layers = Math.floor(digs / (SIZE * SIZE));
     S.layer += layers;
     S.stats.layers += layers;
@@ -909,7 +994,8 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tile';
-      b.setAttribute('aria-label', 'Dig tile');
+      b.dataset.index = i;
+      b.setAttribute('aria-label', `Dig row ${Math.floor(i / SIZE) + 1}, column ${i % SIZE + 1}`);
       b.addEventListener('click', () => dig(i, b));
       if (cell.sp && !cell.dug) {
         const sp = SPECIALS[cell.sp];
@@ -918,10 +1004,12 @@
         b.style.setProperty('--g', sp.color);
         b.title = sp.name;
       }
+      if (cell.geode && !cell.dug) { b.classList.add('geode'); b.dataset.geode = '🔷'; b.title = cell.sp ? `${SPECIALS[cell.sp].name} + Geode` : 'Geode'; }
       paintTile(b, cell);
       grid.appendChild(b);
     });
     updateMineHead();
+    if (!layerTimer && S.grid.every(c => c.dug)) layerTimer = setTimeout(nextLayer, 450);
   }
 
   function updateMineHead() {
@@ -1005,8 +1093,10 @@
       el.card.hidden = !oreOpen(o);
       el.chance.textContent = (oreWeight(o) / totalWeight() * 100).toFixed(1) + '%';
       el.stats.innerHTML = found
-        ? `Per tile: <b>${fmt(oreGain(o.id))}</b> = (<b>${fmt(oreBase(o.id))}</b> × <b>${fmt(oreMult(o.id))}</b>)^<b>${+oreExp(o.id).toFixed(4)}</b>${st.mastery ? ` × <b>${fmt(oreMastery(o.id))}</b>` : ''}${achCount() ? ` × <b>${achMult().toFixed(2)}</b>` : ''}`
+        ? `Per tile: <b>${fmt(oreGain(o.id))}</b> = (<b>${fmt(oreBase(o.id))}</b> × <b>${fmt(oreMult(o.id))}</b>)^<b>${+oreExp(o.id).toFixed(4)}</b>${st.mastery ? ` × <b>${fmt(oreMastery(o.id))}</b>` : ''}${achCount() ? ` × <b>${achMult().toFixed(2)}</b>` : ''}${millOre() !== 1 ? ` × <b>${fmt(millOre())}</b> mill` : ''}${workshopOre() !== 1 ? ` × <b>${fmt(workshopOre())}</b> workshop` : ''}${S.smelt.up.steel.supports ? ` × <b>${fmt(1 + 0.25 * S.smelt.up.steel.supports)}</b> steel` : ''}`
         : 'Not discovered yet';
+      const expansionBoost = (1 + 0.02 * expansionLevel('mines')) * (S.expansion.focus === o.id ? 1 + 0.03 * expansionLevel('mastery') : 1) * legacy('ores') * (1 + 0.05 * S.smelt.up.electrum.radiance);
+      if (found && expansionBoost !== 1) el.stats.innerHTML += ` × <b>${fmt(expansionBoost)}</b> expansion/alloy`;
       UPGRADES.forEach((u, i) => {
         const b = el.btns[i];
         const lvl = st[u.id];
@@ -1015,12 +1105,15 @@
         const maxed = isMaxed(st, u);
         b.querySelector('span').textContent = u.label(o) + (soon || u.max ? '' : xN(pl.n)) + (soon || u.max || !lvl ? '' : ` (${lvl})`);
         b.querySelector('small').textContent = maxed ? 'Unlocked' : `${fmt(pl.total)} ${o.name}`;
-        const can = !soon && found && pl.can;
+        const requirement = u.id === 'unique' && !maxed ? uniqueRequirement(o.id) : '';
+        const can = !soon && found && pl.can && !requirement;
         const ab = !u.max && autoOn(o.id);
         b.disabled = !can;
         b.classList.toggle('done', !!maxed);
         b.classList.toggle('can', can && !ab);
         b.classList.toggle('ab', ab);
+        b.title = requirement;
+        if (requirement) b.querySelector('small').textContent = requirement;
         if (ab) b.querySelector('small').textContent = `Auto · ${fmt(pl.total)} ${o.name}`;
       });
     }
@@ -1038,14 +1131,14 @@
       b.textContent = t.name;
       b.dataset.tab = t.id;
       b.disabled = !!t.locked;
-      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); renderStats(); renderSmelt(); renderAch(); renderForest(); renderMill(); });
+      b.addEventListener('click', () => { S.tab = t.id; renderTabs(); renderMastery(); renderRebirth(); renderStats(); renderSmelt(); renderAch(); renderForest(); renderMill(); renderWorkshop(); renderBlueprints(); });
       nav.appendChild(b);
     }
   }
 
   function renderTabs() {
     if (!TABS.some(t => t.id === S.tab && tabOpen(t))) S.tab = 'mines';
-    for (const b of $('tabs').children) b.classList.toggle('on', b.dataset.tab === S.tab);
+    for (const b of $('tabs').children) { b.classList.toggle('on', b.dataset.tab === S.tab); b.setAttribute('aria-current', b.dataset.tab === S.tab ? 'page' : 'false'); }
     for (const sec of document.querySelectorAll('.tab')) sec.hidden = sec.dataset.tab !== S.tab;
   }
 
@@ -1200,6 +1293,11 @@
 
   function renderSmelt() {
     if (S.tab !== 'smelt') return;
+    const build = $('buildWorkshopBtn');
+    build.disabled = S.workshopBuilt || S.smelt.ingots.copper < WORKSHOP_BUILD;
+    build.classList.toggle('can', !build.disabled);
+    build.querySelector('span').textContent = S.workshopBuilt ? 'Workshop built' : 'Build the Workshop';
+    build.querySelector('small').textContent = S.workshopBuilt ? 'Kept on rebirth' : `${fmt(WORKSHOP_BUILD)} Copper Ingots`;
     const n = slotCount();
     [...$('slots').children].forEach((b, i) => {
       const sl = S.smelt.slots[i];
@@ -1210,6 +1308,8 @@
       b.classList.toggle('brass', open && sl.rec === 'brass');
       b.classList.toggle('gold', open && sl.rec === 'gold');
       b.classList.toggle('silicon', open && sl.rec === 'silicon');
+      b.classList.toggle('steel', open && sl.rec === 'steel');
+      b.classList.toggle('electrum', open && sl.rec === 'electrum');
       b.classList.toggle('sel', PICKING === i);
       b.querySelector('.sname').textContent = !open ? 'Locked' : sl.rec ? `${RECIPE[sl.rec].name} Ingot` : 'Empty';
       b.querySelector('small').textContent = open ? slotStatus(sl) : '🔒';
@@ -1248,9 +1348,11 @@
         const lvl = S.smelt.up[r][u.id];
         const maxed = u.max && lvl >= u.max;
         const pl = ingotPlan(r, u);
+        if (u.id === 'forest' && expansionLevel('smelt') < 5) pl.can = false;
         b.querySelector('span').textContent = u.label + (u.max === 1 ? '' : xN(pl.n) + (lvl ? ` (${lvl})` : ''));
         const tog = !!(u.auto && maxed);
         b.querySelector('small').textContent = tog ? (S.smelt.abOff[u.id] ? 'OFF · click to turn on' : 'ON · click to turn off') : maxed ? (u.max === 1 ? 'Unlocked' : 'Maxed') : ingotCost(r, u, pl);
+        if (u.id === 'forest' && expansionLevel('smelt') < 5 && !maxed) b.querySelector('small').textContent = 'Complete Smeltery expansion first';
         b.disabled = !pl.can && !tog;
         b.classList.toggle('can', !!(pl.can || (tog && !S.smelt.abOff[u.id])));
         b.classList.toggle('done', !!maxed && !tog);
@@ -1283,6 +1385,10 @@
       ['Brass Ingots made', fmt(S.smelt.total.brass)],
       ['Gold Ingots made', fmt(S.smelt.total.gold)],
       ['Silicon made', fmt(S.smelt.total.silicon)],
+      ['Steel Ingots made', fmt(S.smelt.total.steel)],
+      ['Electrum made', fmt(S.smelt.total.electrum)],
+      ['Geodes found', fmt(S.expansion.geodesTotal)],
+      ['Beams joined', fmt(S.expansion.beamsTotal)],
       ['Trees chopped', fmt(st.trees)],
       ['Trees burned', fmt(st.burned)],
       ['Charcoal made', fmt(S.mill.coalTotal)],
@@ -1453,6 +1559,8 @@
     const n = treeSlots();
     const a = Math.min(autoSlots(), n);
     $('forestInfo').textContent = `${fmt(chopDmg())} damage per chop · trees regrow in ${regrowTime().toFixed(1)}s` + (a ? ` · autochop on ${a} slot${a > 1 ? 's' : ''}` : '');
+    const nextWood = WOODS.find(w => !availableWoods().includes(w));
+    $('forestInfo').textContent += ` · growing: ${availableWoods().map(w => w.name).join(', ')}` + (nextWood ? ` · ${nextWood.name} enters at ${fmt(Math.ceil(nextWood.hp / 120))} chopping damage` : '');
     [...$('trees').children].forEach((d, i) => {
       const sl = S.forest.slots[i];
       const open = i < n;
@@ -1474,7 +1582,7 @@
       const lvl = S.forest.up[u.id];
       const pl = fupPlan(u);
       b.querySelector('span').textContent = u.label + (u.steps.length > 1 && lvl ? ` (${lvl}/${u.steps.length})` : '');
-      b.querySelector('small').textContent = pl.done ? (u.steps.length > 1 ? 'Maxed' : 'Unlocked') : u.req && !S.forest.up[u.req] ? 'Needs autochop' : `${fmt(pl.n)} ${WOOD[pl.w].name}`;
+      b.querySelector('small').textContent = pl.done ? (u.steps.length > 1 ? 'Maxed' : 'Unlocked') : pl.requires || (u.req && !S.forest.up[u.req] ? 'Needs autochop' : `${fmt(pl.n)} ${WOOD[pl.w].name}`);
       b.disabled = !pl.can;
       b.classList.toggle('can', !!pl.can);
       b.classList.toggle('done', !!pl.done);
@@ -1608,7 +1716,322 @@
     for (const b of $('buyAmt').children) b.classList.toggle('on', String(S.buy) === b.dataset.v);
   }
 
+  function researchCost(p) {
+    return p.pay.map(([kind, id, amount]) => ({ kind, id, amount: Math.ceil(amount * Math.pow(p.growth, S.workshop[p.id]) * (1 - 0.02 * S.smelt.up.electrum.precision)) }));
+  }
+
+  const researchBalance = c => c.kind === 'ingots' ? S.smelt.ingots[c.id] : S.mill.planks[c.id];
+  const researchName = c => c.kind === 'ingots' ? `${RECIPE[c.id].name}${c.id === 'silicon' ? '' : ' Ingots'}` : `${WOOD[c.id].name} Planks`;
+  const researchOpen = p => S.workshopBuilt && S.ores.iron.unique > 0 && p.open();
+  function constructWorkshop() {
+    if (!S.ores.iron.unique || S.workshopBuilt || S.smelt.ingots.copper < WORKSHOP_BUILD) return;
+    S.smelt.ingots.copper -= WORKSHOP_BUILD;
+    S.workshopBuilt = true;
+    ensureBlueprintChain();
+    S.tab = 'workshop';
+    buildTabs(); save(); renderAll();
+  }
+  function buyResearch(p) {
+    if (!researchOpen(p) || S.workshop[p.id] >= p.max) return;
+    const costs = researchCost(p);
+    if (!costs.every(c => researchBalance(c) >= c.amount)) return;
+    for (const c of costs) {
+      if (c.kind === 'ingots') S.smelt.ingots[c.id] -= c.amount;
+      else S.mill.planks[c.id] -= c.amount;
+    }
+    S.workshop[p.id]++;
+    save();
+    renderAll(true);
+    toast(`${p.name} · level ${S.workshop[p.id]}`);
+  }
+
+  function buildWorkshop() {
+    const list = $('workshopList');
+    for (const p of WORKSHOP) {
+      const card = document.createElement('article');
+      card.className = 'research-card';
+      card.dataset.project = p.id;
+      card.innerHTML = `<div class="research-heading"><h3>${p.name}</h3><b class="research-level"></b></div><p>${p.desc}</p><div class="research-cost"></div><button class="upg" type="button"><span>Research one level</span><small></small></button>`;
+      card.querySelector('button').addEventListener('click', () => buyResearch(p));
+      list.appendChild(card);
+    }
+  }
+
+  function renderWorkshop() {
+    if (S.tab !== 'workshop') return;
+    const office = $('blueprintOfficeBtn');
+    office.disabled = false;
+    office.querySelector('span').textContent = 'Open required expansion chain';
+    office.querySelector('small').textContent = 'Seven expansions · ~20m each';
+    const completed = WORKSHOP.reduce((n,p) => n + S.workshop[p.id], 0);
+    $('workshopSummary').textContent = `${completed} / 42 levels · ore ×${fmt(workshopOre())} · autominer ×${fmt(1 + 0.05 * S.workshop.gears * engineering('gears'))} · ingots ×${fmt(1 + 0.125 * S.workshop.foundry * engineering('foundry'))} · chopping ×${fmt(1 + 0.25 * S.workshop.forestry * engineering('forestry'))} · special frequency ×${fmt(workshopSpecial())}`;
+    [...$('workshopList').children].forEach((card,i) => {
+      const p = WORKSHOP[i], level = S.workshop[p.id], done = level >= p.max, open = researchOpen(p);
+      card.querySelector('.research-level').textContent = `${level} / ${p.max}`;
+      const costs = researchCost(p);
+      card.querySelector('.research-cost').textContent = done ? 'Research complete · kept on rebirth' : !open ? p.needs : costs.map(c => `${fmt(c.amount)} ${researchName(c)} (${fmt(researchBalance(c))} available)`).join(' + ');
+      const button = card.querySelector('button');
+      button.disabled = done || !open || !costs.every(c => researchBalance(c) >= c.amount);
+      button.classList.toggle('can', !button.disabled);
+      button.querySelector('span').textContent = done ? 'Complete' : !open ? 'Not unlocked yet' : 'Research one level';
+      button.querySelector('small').textContent = done || !open ? '' : `Level ${level + 1}`;
+    });
+  }
+
+  function renderGoal() {
+    const unlocks = ['dirt','copper','iron'];
+    const id = unlocks.find(id => !S.ores[id].unique);
+    let title, detail, have, need;
+    if (id) {
+      const o = ORES.find(o => o.id === id);
+      need = cost(UPGRADES.find(u => u.id === 'unique'), 0, id); have = S.ores[id].amt;
+      title = UNIQUES[id].label;
+      detail = `Save ${fmt(need)} ${o.name}; buy its unlock in the ore card. About an hour per major stage, with no timer locks.`;
+    } else if (!S.workshopBuilt) {
+      title = 'Build the Workshop'; detail = 'Expand your Smeltery, then spend Copper Ingots on the Workshop blueprint.';
+      have = S.smelt.ingots.copper; need = WORKSHOP_BUILD;
+    } else if (S.expansion.active) {
+      const project = BP.PROJECTS.find(p => p.id === S.expansion.active);
+      title = `${project.name} · required expansion`;
+      detail = 'Complete five fresh-production milestones to unlock the next expansion. Target: about 20 minutes total.';
+      have = expansionLevel(project.id); need = 5;
+    } else if (!forestOn()) {
+      title = 'Reach the Forest'; detail = 'Follow Brass → Gold → Quartz → Silicon. The Workshop can boost the journey.';
+      have = S.smelt.ingots.silicon; need = RECIPE.silicon.ups.find(u => u.id === 'forest').cost;
+    } else if (!millOn()) {
+      title = 'Build the Sawmill'; detail = `Spend ${fmt(FUPS.find(u => u.id === 'mill').steps[0][1])} Spruce logs in Forest upgrades.`;
+      have = S.forest.wood.spruce.amt; need = FUPS.find(u => u.id === 'mill').steps[0][1];
+    } else {
+      title = 'Develop your Workshop'; detail = 'Research with ingots and planks for bonuses that survive rebirth.';
+      have = WORKSHOP.reduce((n,p) => n + S.workshop[p.id], 0); need = 42;
+    }
+    $('goalTitle').textContent = title; $('goalDetail').textContent = detail;
+    $('goalProgress').value = Math.min(100, have / need * 100);
+    $('goalAmount').textContent = `${fmt(have)} / ${fmt(need)}${have >= need ? ' · Ready!' : ''}`;
+    const nextTool = ['stone','obsidian','diamond','silver','gold'].find(id => !S.ores[id].unique);
+    $('goalTools').textContent = nextTool ? `Along the way: ${UNIQUES[nextTool].label} for ${fmt(cost(UPGRADES.find(u => u.id === 'unique'), 0, nextTool))} ${ORES.find(o => o.id === nextTool).name}.` : 'Keep improving ore yields, automation and pickaxe coverage as you work toward the next stage.';
+    $('dragMine').setAttribute('aria-pressed', String(S.touchMine));
+    $('dragMine').textContent = `Drag to mine: ${S.touchMine ? 'on' : 'off'}`;
+    $('grid').classList.toggle('drag-mine', S.touchMine);
+  }
+
+  let blueprintPending = {}, blueprintSeconds = 0;
+  const blueprintHistory = [];
+  let blueprintUIBuilt = false;
+  const blueprintPanels = {};
+  const geodeChance = () => Math.min(0.2, 0.025 * workshopSpecial());
+  function recordBlueprint(key, amount) {
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    blueprintPending[key] = (blueprintPending[key] || 0) + amount;
+    BP.record(S.expansion, key, amount);
+  }
+  function recordBlueprintOre(id, amount) {
+    recordBlueprint(`ore:${id}`, amount); recordBlueprint('ores', amount);
+    recordBlueprint('points', amount * POINTS[id]);
+  }
+  function observedBlueprintRate(key) {
+    const window = key === 'ingots' ? 420 : 60;
+    let duration = 0, amount = 0;
+    for (let i = blueprintHistory.length-1; i >= 0 && duration < window; i--) { duration += blueprintHistory[i].seconds; amount += blueprintHistory[i].values[key] || 0; }
+    return duration >= 15 ? amount / duration : 0;
+  }
+  function sampleBlueprintRates(dt, reset = false) {
+    if (reset) { blueprintPending = {}; blueprintSeconds = 0; blueprintHistory.length = 0; return; }
+    blueprintSeconds += dt;
+    if (blueprintSeconds < 1) return;
+    blueprintHistory.push({seconds:blueprintSeconds, values:blueprintPending});
+    blueprintPending = {}; blueprintSeconds = 0;
+    let duration = blueprintHistory.reduce((n,x) => n + x.seconds, 0);
+    while (blueprintHistory.length > 1 && duration - blueprintHistory[0].seconds >= 420) duration -= blueprintHistory.shift().seconds;
+    renderBlueprints();
+  }
+  function blueprintRate(key) {
+    const measured = observedBlueprintRate(key);
+    if (measured > 0) return measured;
+    const tileRate = (hasAuto() ? autoBulk() / autoInterval() : 0) + 2 * countPick(PICKS[pickTier()]) * 0.8;
+    const oreRate = id => tileRate * (oreWeight(ORES.find(o => o.id === id)) / totalWeight() + (SPECIAL_ON ? SPECIALS.chest.chance * workshopSpecial() * SPECIALS.chest.tiles : 0)) * oreGain(id) * (SPECIAL_ON ? 1.075 : 1);
+    if (key === 'tiles') return tileRate;
+    if (key === 'geodes') return tileRate * geodeChance();
+    if (key.startsWith('ore:')) return oreRate(key.slice(4));
+    if (key === 'ores' || key === 'points') return ORES.filter(oreOpen).reduce((n,o) => n + oreRate(o.id) * (key === 'points' ? o.points : 1), 0);
+    if (key === 'ingot:electrum') return Math.min(2,slotCount()) * smeltYield('electrum') / smeltTime('electrum');
+    if (key === 'ingots') return Math.max(0.1, S.smelt.slots.slice(0,slotCount()).reduce((n,sl) => n + (sl.rec ? smeltYield(sl.rec) / smeltTime(sl.rec) : 0), 0));
+    if (key === 'trees') {
+      const woods = availableWoods(), weight = woods.reduce((n,w) => n + w.weight,0);
+      const hp = woods.reduce((n,w) => n + w.hp*w.weight,0) / weight;
+      return Math.max(0.025,treeSlots() / (regrowTime() + hp / Math.max(1,chopDmg()*(2+autoSlots())/treeSlots())));
+    }
+    if (key === 'beams') {
+      const cuts = S.mill.slots.slice(0,sawCount()).reduce((n,sl) => n + (sl.w ? 1/millTime(sl.w) : 0),0) || sawCount()/millTime('oak');
+      const logs = observedBlueprintRate('logs');
+      const suppliedCuts = logs > 0 ? Math.min(cuts, logs / MILL.logs) : cuts;
+      return Math.min(1/beamTime(),suppliedCuts/3);
+    }
+    return 1;
+  }
+  function blueprintMetricName(key) {
+    if (key.startsWith('ore:')) return `${inName(key.slice(4))} earned`;
+    return {geodes:'Geodes found',points:'weighted ore points earned',tiles:'tiles mined',trees:'trees processed',beams:'Beams joined',ingots:'ingots produced',ores:'ore units earned','ingot:electrum':'Electrum produced'}[key] || key;
+  }
+  function openBlueprintOffice() {
+    if (!S.workshopBuilt) return;
+    ensureBlueprintChain();
+    S.tab = 'blueprints'; buildTabs(); save(); renderAll();
+  }
+  function ensureBlueprintChain() {
+    if (!S.workshopBuilt) return '';
+    S.expansion.office = true;
+    if (expansionLevel('mines') === 5) S.ores.dirt.unique = 1;
+    if (expansionLevel('mastery') === 5) S.ores.copper.unique = 1;
+    if (expansionLevel('rebirth') === 5) S.ores.iron.unique = 1;
+    if (expansionLevel('smelt') === 5) S.smelt.up.silicon.forest = 1;
+    if (expansionLevel('forest') === 5) S.forest.up.mill = 1;
+    if (S.expansion.active) return '';
+    const p = BP.next(S.expansion);
+    if (!p || !TABS.some(t => t.id === p.tab && tabOpen(t))) return '';
+    const keys = p.metrics.map(k => k === 'focus' ? `ore:${S.expansion.focus}` : k);
+    if (!BP.start(S.expansion,p.id,Object.fromEntries(keys.map(k => [k,blueprintRate(k)])))) return '';
+    if (p.id === 'mines') {
+      for (const c of S.grid) if (!c.dug && Math.random() < geodeChance()) c.geode = true;
+      if (blueprintUIBuilt) renderGrid();
+    }
+    if (p.id === 'mill') S.expansion.joiner = true;
+    return p.id;
+  }
+  function startBlueprint(id) {
+    if (!S.workshopBuilt) return false;
+    const p = BP.PROJECTS.find(p => p.id === id);
+    if (!p || !TABS.some(t => t.id === p.tab && tabOpen(t))) return false;
+    const keys = p.metrics.map(k => k === 'focus' ? `ore:${S.expansion.focus}` : k);
+    const estimates = Object.fromEntries(keys.map(k => [k, blueprintRate(k)]));
+    if (!BP.start(S.expansion,id,estimates)) return false;
+    if (id === 'mines') { for (const c of S.grid) if (!c.dug && Math.random() < geodeChance()) c.geode = true; renderGrid(); }
+    if (id === 'mill') S.expansion.joiner = true;
+    S.tab = p.tab; save(); renderAll(); return true;
+  }
+  function claimBlueprint() {
+    const id = S.expansion.active;
+    if (!BP.claim(S.expansion)) return false;
+    const started = ensureBlueprintChain();
+    if (started) S.tab = BP.PROJECTS.find(p => p.id === started).tab;
+    buildTabs(); checkAch(); save(); renderAll();
+    toast(`${BP.PROJECTS.find(p => p.id === id).name}: milestone ${expansionLevel(id)}/5${expansionLevel(id) === 5 ? (BP.next(S.expansion) ? ' · next expansion unlocked' : ' · chain complete') : ''}`);
+    return true;
+  }
+  function crackGeodes() {
+    if (!expansionLevel('mines') || S.expansion.geodes < 10) return;
+    S.expansion.geodes -= 10;
+    for (const o of ORES) if (S.ores[o.id].found) give(o.id,oreGain(o.id)*(10+2*expansionLevel('mines')));
+    renderAll(true); save();
+  }
+  const beamTime = () => 6 / (S.smelt.up.steel.saw ? 2 : 1);
+  function beamStep(dt) {
+    const e = S.expansion;
+    if (!millOn() || !BP.open(e,'mill') || !e.joiner || dt <= 0) return 0;
+    let done = 0, remaining = dt;
+    while (remaining > 0) {
+      if (!e.joinBusy) {
+        if (e.offcuts < 3) break;
+        e.offcuts -= 3;
+        e.joinBusy = true; e.joinTime = 0;
+      }
+      const time = beamTime(), step = Math.min(remaining, Math.max(0,time-e.joinTime));
+      remaining -= step; e.joinTime += step;
+      if (e.joinTime >= time) {
+        e.joinBusy = false; e.joinTime = 0; e.beams++; e.beamsTotal++;
+        recordBlueprint('beams',1); done++;
+      }
+    }
+    return done;
+  }
+  function setJoiner(on) {
+    const e = S.expansion;
+    if (!BP.open(e,'mill')) return;
+    if (!on && e.joinBusy) { e.offcuts += 3; e.joinBusy = false; e.joinTime = 0; }
+    e.joiner = on; save(); renderAll(true);
+  }
+  function buyJoineryJig() {
+    const e = S.expansion, cost = 10 * 2 ** e.jig;
+    if (!expansionLevel('mill') || e.jig >= 10 || e.beams < cost) return;
+    e.beams -= cost; e.jig++; save(); renderAll(true);
+  }
+
+  function buildBlueprints() {
+    const office = $('blueprintList');
+    for (const p of BP.PROJECTS) {
+      const card = document.createElement('article'); card.className = 'research-card'; card.dataset.project = p.id;
+      card.innerHTML = `<div class="research-heading"><h3>${p.name}</h3><b class="bp-level"></b></div><p>${p.feature}</p><small class="bp-requirement"></small><button type="button" class="upg"><span></span><small>~20m target</small></button>`;
+      card.querySelector('button').addEventListener('click',() => { if (BP.open(S.expansion,p.id)) { S.tab = p.tab; renderAll(); } });
+      office.appendChild(card);
+      const panel = document.createElement('div'); panel.className = 'blueprint-panel masterybox';
+      panel.innerHTML = `<div class="research-heading"><h2>${p.name}</h2><b class="bp-level"></b></div><p class="hint">${p.feature}</p><div class="bp-feature"></div><div class="bp-task"></div><progress class="bp-progress" max="1" value="0" aria-label="Blueprint milestone progress"></progress><div class="bp-actions"><button type="button" class="upg bp-claim"><span>Complete milestone</span></button><button type="button" class="upg bp-return"><span>Blueprints →</span></button></div>`;
+      panel.querySelector('.bp-claim').addEventListener('click',claimBlueprint);
+      panel.querySelector('.bp-return').addEventListener('click',()=>{S.tab='blueprints';renderAll();});
+      document.querySelector(`section[data-tab="${p.tab}"]`).prepend(panel);
+      blueprintPanels[p.id] = panel;
+      const feature = panel.querySelector('.bp-feature');
+      const choice = (label,field,options) => {
+        const wrap=document.createElement('label');wrap.className='bp-choice';
+        wrap.appendChild(document.createTextNode(label));
+        const select=document.createElement('select');select.dataset.field=field;
+        for(const [value,text] of options){const option=document.createElement('option');option.value=value;option.textContent=text;select.appendChild(option);}
+        select.addEventListener('change',()=>{if(!expansionLevel(p.id))return;S.expansion[field]=select.value;save();renderAll(true);});
+        wrap.appendChild(select);feature.appendChild(wrap);
+      };
+      const button = (text,action,kind) => {const b=document.createElement('button');b.type='button';b.className='upg';b.dataset.kind=kind;b.textContent=text;b.addEventListener('click',action);feature.appendChild(b);};
+      if(p.id==='mines')button('Crack 10 Geodes',crackGeodes,'geodes');
+      if(p.id==='mastery')choice('Focused ore','focus',ORES.map(o=>[o.id,o.name]));
+      if(p.id==='rebirth')choice('Legacy talent','legacy',[['ores','Prospector · ore yield'],['speed','Engineer · autominer speed'],['mastery','Scholar · cheaper Mastery']]);
+      if(p.id==='smelt'){const help=document.createElement('p');help.className='hint';help.textContent='Select Electrum on your smelters. Planning assumes two smelters (or one if only one is available). Alloy upgrades use Electrum; producing it counts even when you spend it.';feature.appendChild(help);}
+      if(p.id==='forest'){
+        choice('Nursery planting','plant',[['random','Random eligible trees'],...WOODS.map(w=>[w.id,w.name])]);
+        button('Toggle automatic fuel reserve',()=>{if(!expansionLevel('forest'))return;S.expansion.fuelReserve=!S.expansion.fuelReserve;save();renderAll(true);},'fuel');
+      }
+      if(p.id==='mill'){
+        button('Toggle Beam joiner',()=>setJoiner(!S.expansion.joiner),'joiner');button('Buy joinery jig',buyJoineryJig,'jig');
+        const help=document.createElement('p');help.className='hint';help.textContent='Every completed saw cut produces an offcut. Keep saws on logs you can supply; pause Steel smelting if it competes for Charcoal. Pause saws when saving logs for Forest upgrades. Nursery fuel reserve keeps an automated supply running.';feature.appendChild(help);
+      }
+      if(p.id==='workshop')choice('Research specialization','school',WORKSHOP.map(r=>[r.id,r.name]));
+    }
+    blueprintUIBuilt = true;
+  }
+  function renderBlueprints() {
+    if (!blueprintUIBuilt) return;
+    const e = S.expansion, next = BP.next(e), status = BP.status(e);
+    $('blueprintSummary').textContent = `${BP.PROJECTS.filter(p=>expansionLevel(p.id)===5).length} / 7 required expansions complete · ${e.active ? BP.PROJECTS.find(p=>p.id===e.active).name+' in progress' : next ? 'Unlock the next base tab to continue' : 'Expansion chain complete'}`;
+    [...$('blueprintList').children].forEach((card,i)=>{
+      const p=BP.PROJECTS[i], lvl=expansionLevel(p.id), baseOpen=TABS.some(t=>t.id===p.tab&&tabOpen(t));
+      const button=card.querySelector('button');card.querySelector('.bp-level').textContent=`${lvl}/5`;
+      const active=e.active===p.id, done=lvl===5;
+      button.disabled=!(active||done);button.querySelector('span').textContent=done?'Visit expanded tab':active?'Continue required expansion':'Locked by progression';
+      card.querySelector('.bp-requirement').textContent=done?'Permanent feature unlocked':active?'Earn fresh production in its home tab':!baseOpen?'Unlock the base tab first':next?.id!==p.id?'Complete the preceding expansion first':'Five milestones · fresh production only · no clock lock';
+    });
+    for(const p of BP.PROJECTS){
+      const panel=blueprintPanels[p.id],lvl=expansionLevel(p.id),active=e.active===p.id;
+      panel.hidden=!BP.open(e,p.id);if(panel.hidden)continue;
+      panel.querySelector('.bp-level').textContent=`${lvl}/5`;
+      const task=panel.querySelector('.bp-task');
+      task.textContent=active?e.job.targets.map(t=>`${fmt(t.earned)} / ${fmt(t.step*(lvl+1))} ${blueprintMetricName(t.key)} since starting`).join(' · '):'Expansion complete. This feature is permanent.';
+      panel.querySelector('.bp-progress').hidden=!active;panel.querySelector('.bp-progress').value=active?status.progress:1;
+      const claim=panel.querySelector('.bp-claim');claim.hidden=!active;claim.disabled=!active||!status.ready;
+      claim.querySelector('span').textContent=active?`Complete milestone ${lvl+1}/5`:'Complete';
+      for(const select of panel.querySelectorAll('select')){
+        select.value=e[select.dataset.field];select.disabled=lvl<1;select.title=lvl<1?'Complete the first milestone to activate this control':'';
+        for(const option of select.options){
+          if(select.dataset.field==='plant'&&option.value!=='random')option.disabled=!availableWoods().some(w=>w.id===option.value)||!S.forest.wood[option.value].found;
+          if(select.dataset.field==='focus')option.disabled=!S.ores[option.value].found||!oreOpen(ORES.find(o=>o.id===option.value));
+        }
+      }
+      const geodes=panel.querySelector('[data-kind="geodes"]');if(geodes){geodes.textContent=`Crack 10 Geodes · ${fmt(e.geodes)} available`;geodes.disabled=lvl<1||e.geodes<10;}
+      const joiner=panel.querySelector('[data-kind="joiner"]');if(joiner){joiner.textContent=`Beam joiner: ${e.joiner?'on':'off'} · ${fmt(e.beams)} Beams · ${fmt(e.offcuts)} offcuts · 3 offcuts per Beam (${beamTime()}s)`;joiner.setAttribute('aria-pressed',String(e.joiner));}
+      const jig=panel.querySelector('[data-kind="jig"]');if(jig){jig.textContent=e.jig>=10?'Joinery jigs maxed':`Joinery jig ${e.jig+1} · ${fmt(10*2**e.jig)} Beams · +10% plank yield`;jig.disabled=lvl<1||e.jig>=10||e.beams<10*2**e.jig;}
+      const fuel=panel.querySelector('[data-kind="fuel"]');if(fuel){fuel.textContent=`Automatic fuel reserve: ${e.fuelReserve?'on':'off'} · last autochop slot burns trees below ${millOn()?100:25} Charcoal`;fuel.disabled=lvl<1;fuel.setAttribute('aria-pressed',String(e.fuelReserve));}
+    }
+  }
+
   function renderAll(skipGrid) {
+    if (ensureBlueprintChain()) buildTabs();
+    renderGoal();
     renderBuy();
     renderWallet();
     renderUpgrades();
@@ -1621,6 +2044,8 @@
     renderAch();
     renderForest();
     renderMill();
+    renderWorkshop();
+    renderBlueprints();
     updateMineHead();
     if (!skipGrid) renderTabs();
   }
@@ -1628,21 +2053,47 @@
   $('saveBtn').addEventListener('click', () => { save(); $('saveBtn').textContent = 'Saved'; setTimeout(() => { $('saveBtn').textContent = 'Save'; }, 900); });
   $('resetBtn').addEventListener('click', () => {
     if (!confirm('Erase all progress?')) return;
-    S = fresh();
-    ALLOC = S.rb.alloc;
+    clearTimeout(layerTimer);
+    layerTimer = 0;
     SPECIAL_ON = false;
     ZINC_ON = false;
     QUARTZ_ON = false;
+    ALLOC = {};
+    S = fresh();
+    ALLOC = S.rb.alloc;
     save();
     buildTabs();
     renderGrid();
     renderAll();
   });
 
+  let miningPointer = null, lastSweep = -Infinity;
+  const stopSweep = () => { miningPointer = null; };
+  function sweepTile(e) {
+    if (layerTimer) return;
+    const tile = document.elementFromPoint(e.clientX, e.clientY)?.closest('.tile');
+    if (!tile || !$('grid').contains(tile) || tile.disabled) return;
+    const now = performance.now();
+    if (now - lastSweep < 45) return;
+    lastSweep = now;
+    dig(Number(tile.dataset.index), tile);
+  }
+  $('dragMine').addEventListener('click', () => { S.touchMine = !S.touchMine; stopSweep(); renderGoal(); save(); });
+  $('grid').addEventListener('pointerdown', e => {
+    if (!S.touchMine || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    e.preventDefault(); miningPointer = e.pointerId; lastSweep = -Infinity;
+    $('grid').setPointerCapture(e.pointerId); sweepTile(e);
+  });
+  $('grid').addEventListener('pointermove', e => { if (miningPointer === e.pointerId) { e.preventDefault(); sweepTile(e); } });
+  for (const name of ['pointerup','pointercancel','lostpointercapture']) $('grid').addEventListener(name, stopSweep);
+  window.addEventListener('blur', stopSweep);
+
   $('autoBulk').addEventListener('click', () => buyAuto('bulk'));
   $('autoSpeed').addEventListener('click', () => buyAuto('speed'));
   $('autoOff').addEventListener('click', buyOffline);
   $('pickUp').addEventListener('click', buyPick);
+  $('buildWorkshopBtn').addEventListener('click', constructWorkshop);
+  $('blueprintOfficeBtn').addEventListener('click', openBlueprintOffice);
   $('offOk').addEventListener('click', () => { $('offline').hidden = true; });
   const away = offlineGain((Date.now() - S.seen) / 1000);
   S.seen = Date.now();
@@ -1655,6 +2106,8 @@
   buildSmelt();
   buildForest();
   buildMill();
+  buildWorkshop();
+  buildBlueprints();
   renderGrid();
   renderAll();
   showOffline(away);
@@ -1662,3 +2115,5 @@
   setInterval(save, 5000);
   window.addEventListener('pagehide', save);
 })();
+
+

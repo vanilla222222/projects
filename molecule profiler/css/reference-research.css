@@ -47,3 +47,13 @@ svg.depiction .atom{fill:currentColor;text-anchor:middle;dominant-baseline:centr
 .structure-viewer-canvas svg{display:block;flex-shrink:0;max-width:none;max-height:none;margin:auto}
 @media(min-width:1500px){.library-workspace{grid-template-columns:250px minmax(320px,1fr) 460px}}
 @media(max-width:600px){.dossier-structure-dialog{padding:14px;gap:12px;border-radius:12px}.dossier-structure-dialog h2{font-size:16px}.research-structure svg{height:270px}}
+
+/* Dossier descriptors retain a compact table at every catalog breakpoint. */
+.chembl-calculated-properties table{min-width:0;table-layout:auto}
+.chembl-calculated-properties th,.chembl-calculated-properties td{width:auto!important;padding:10px 8px;font-size:12px;text-transform:none;letter-spacing:normal}
+.chembl-calculated-properties thead{display:table-header-group;position:static;width:auto;height:auto;clip:auto}
+.chembl-calculated-properties tbody{display:table-row-group}
+.chembl-calculated-properties tbody tr{display:table-row;padding:0;border:0}
+.chembl-calculated-properties td{display:table-cell!important}
+.chembl-calculated-properties tbody th{width:60%!important;border-top:1px solid var(--line);font-weight:500}
+.chembl-calculated-properties caption{text-align:left;font-size:12px;color:var(--muted);padding:8px 0}

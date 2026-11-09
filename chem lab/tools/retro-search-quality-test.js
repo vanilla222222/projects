@@ -79,5 +79,33 @@ check(`(() => {
   return !!hit && hit.source === 'grignard' && hit.smiles === 'CCBr';
 })()`, true, 'Grignard fallback retains the verified parent-halide identity');
 
+// A shared intermediate is expanded at its shallowest graph depth, but can
+// also occur on a longer branch. Enforce the budget on each enumerated path.
+run(`
+function depthNode(smiles, stock = false) {
+  return { smiles, skeleton: 0, stock: stock ? {tier: 1, smiles} : null, ands: [] };
+}
+function depthEdge(parent, children, operations = 1) {
+  const candidate = {key: parent.smiles, precursors: children.map(c => ({smiles: c.smiles, skeleton: 0})), outcome: {}};
+  if (operations > 1) candidate.pgSteps = Array.from({length: operations}, () => ({outcome: {}, role: 'step'}));
+  parent.ands.push({candidate, children, solved: true});
+}
+const depthRoot = depthNode('target'), depthShared = depthNode('shared'), depthLong = depthNode('long'), depthStock = depthNode('stock', true);
+depthEdge(depthRoot, [depthShared]);
+depthEdge(depthRoot, [depthLong]);
+depthEdge(depthLong, [depthShared]);
+depthEdge(depthShared, [depthStock]);
+const depthJob = {root: depthRoot, options: {maxDepth: 2}};
+`);
+check(`rsearchEnumerate(depthJob, depthRoot, new Set(), 20).length`, 1, 'Shared intermediates cannot leak an over-depth alternative');
+check(`rsearchEnumerate(depthJob, depthRoot, new Set(), 20).every(r => rsearchScore(r).longest <= 2)`, true, 'Every emitted branch respects the operation budget');
+check(`rsearchEnumerate({...depthJob, options: {maxDepth: 3}}, depthRoot, new Set(), 20).length`, 2, 'Increasing depth retains both valid alternatives');
+run(`const protectedRoot = depthNode('protected'); depthEdge(protectedRoot, [depthStock], 3); const protectedJob = {root: protectedRoot, options: {maxDepth: 2}};`);
+check(`rsearchEnumerate(protectedJob, protectedRoot, new Set(), 20).length`, 0, 'Protection triplets cannot count as a single operation');
+check(`rsearchEnumerate({...protectedJob, options: {maxDepth: 3}}, protectedRoot, new Set(), 20).length`, 1, 'A protection triplet fits an exact three-operation budget');
+check(`rsearchEnumerate(depthJob, depthStock, new Set(), 20, 0).length`, 1, 'Stock leaves are allowed exactly at the depth limit');
+run(`const convergentRoot = depthNode('convergent'), otherBranch = depthNode('other'); depthEdge(otherBranch, [depthStock]); depthEdge(convergentRoot, [depthShared, otherBranch]); const convergentJob = {root: convergentRoot, options: {maxDepth: 2}};`);
+check(`rsearchEnumerate(convergentJob, convergentRoot, new Set(), 20).length`, 1, 'Convergent branches each receive the remaining depth budget');
+
 run('stockTier = originalStockTier;');
 console.log('Retrosynthesis search quality: ' + checks + ' checks passed.');

@@ -170,21 +170,7 @@ const FOREST_ENEMY_MARKS = {
 Object.assign(Util, {
 
   _turretStatic(ctx, e, flash){
-    const col = flash ? Theme.enemy.flash : e.color;
-    const dark = flash ? Theme.enemy.flashSoft : e.dark;
-    const r = e.radius;
-    ctx.fillStyle = Theme.shadow.groundSoft;
-    ctx.beginPath(); ctx.ellipse(e.x, e.y + r * 0.75, r * 0.7, r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = flash ? Theme.enemy.flashSoft : Util.bodyShade(ctx, e.x, e.y + r * 0.35, r * 0.5, dark);
-    ctx.beginPath(); ctx.ellipse(e.x, e.y + r * 0.5, r * 0.5, r * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = flash ? Theme.enemy.flash : Util.bodyShade(ctx, e.x, e.y, r * 0.7, col);
-    ctx.beginPath();
-    ctx.moveTo(e.x - r * 0.45, e.y + r * 0.5);
-    ctx.lineTo(e.x - r * 0.3, e.y - r * 0.6);
-    ctx.lineTo(e.x + r * 0.3, e.y - r * 0.6);
-    ctx.lineTo(e.x + r * 0.45, e.y + r * 0.5);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = dark; ctx.lineWidth = 1.5; ctx.stroke();
+    NightfallArt.dnb(ctx, e, flash);
   },
 
   _humanoidStatic(ctx, e, flash){
@@ -193,30 +179,8 @@ Object.assign(Util, {
     const r = e.radius;
     const behavior = e.behavior || '';
 
-    ctx.strokeStyle = dark; ctx.lineWidth = Math.max(2, r * 0.22);
-    ctx.beginPath(); ctx.moveTo(e.x - r * 0.55, e.y - r * 0.1); ctx.lineTo(e.x - r * 0.9, e.y + r * 0.35); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(e.x + r * 0.55, e.y - r * 0.1); ctx.lineTo(e.x + r * 0.9, e.y + r * 0.35); ctx.stroke();
-
-    const bodyFill = flash ? col : Util.bodyShade(ctx, e.x, e.y - r * 0.3, r, col);
-    ctx.fillStyle = bodyFill;
-    ctx.beginPath(); ctx.ellipse(e.x, e.y, r * 0.62, r * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+    NightfallArt.dnb(ctx, e, flash);
     const hx = e.x, hy = e.y - r * 0.75;
-    ctx.beginPath(); ctx.arc(hx, hy, r * 0.5, 0, Math.PI * 2); ctx.fill();
-
-    if (!flash) {
-      ctx.strokeStyle = Theme.shadow.rim; ctx.lineWidth = Math.max(1, r * 0.1);
-      ctx.beginPath(); ctx.ellipse(e.x, e.y, r * 0.6, r * 0.82, 0, Math.PI * 1.12, Math.PI * 1.62); ctx.stroke();
-    }
-
-    if (!flash && e.type && (e.type.id === 'sapling' || e.type.id === 'sprout')) {
-      ctx.fillStyle = Util.shadeColor(col, 0.35);
-      ctx.beginPath(); ctx.ellipse(hx - r * 0.2, hy - r * 0.4, r * 0.16, r * 0.08, -0.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(hx + r * 0.2, hy - r * 0.4, r * 0.16, r * 0.08, 0.5, 0, Math.PI * 2); ctx.fill();
-    }
-
-    ctx.fillStyle = Theme.enemy.eye;
-    ctx.beginPath(); ctx.arc(e.x - r * 0.18, e.y - r * 0.78, r * 0.08, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(e.x + r * 0.18, e.y - r * 0.78, r * 0.08, 0, Math.PI * 2); ctx.fill();
 
     if (behavior === 'shielded') {
 
@@ -1704,10 +1668,10 @@ Object.assign(Util, {
       ctx.globalAlpha = 1;
     } else {
 
-      const swing = moving ? Math.sin(now / 110 + phase) * r * 0.22 : Math.sin(now / 700 + phase) * r * 0.03;
-      ctx.fillStyle = flash ? Theme.enemy.flashSoft : Util.shadeColor(dark, -0.15);
-      ctx.beginPath(); ctx.ellipse(e.x - r * 0.3, e.y + r * 0.55 + swing, r * 0.22, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(e.x + r * 0.3, e.y + r * 0.55 - swing, r * 0.22, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      const step = moving && Math.floor(now / 105) % 2 ? r * 0.18 : 0;
+      ctx.fillStyle = flash ? Theme.enemy.flashSoft : '#4d302e';
+      ctx.fillRect(e.x - r * 0.55, e.y + r * 0.56 + step, r * 0.43, r * 0.48);
+      ctx.fillRect(e.x + r * 0.13, e.y + r * 0.56 - step, r * 0.43, r * 0.48);
     }
 
     if (baked) Util._blitSprite(ctx, Util._humanoidSprite(e, flash, bakeScale), e, bakeScale);
@@ -2000,7 +1964,7 @@ Object.assign(Util, {
     const fillH = meterH * Util.clamp(frac, 0, 1);
 
     ctx.save();
-    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 5;
+    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 0;
     ctx.fillStyle = Theme.machine.meterFill;
     ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
     ctx.restore();
@@ -2028,7 +1992,7 @@ Object.assign(Util, {
     ctx.save();
     ctx.translate(x, y - h / 2 - 7);
     ctx.rotate(((now || 0) / 700) % (Math.PI * 2));
-    ctx.shadowColor = Theme.machine.altarGlow; ctx.shadowBlur = 6;
+    ctx.shadowColor = Theme.machine.altarGlow; ctx.shadowBlur = 0;
     ctx.strokeStyle = Theme.machine.altarGlow; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, 7, 0.5, Math.PI * 1.75); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(7, -2.5); ctx.lineTo(4, 2); ctx.lineTo(10, 2); ctx.closePath();
@@ -2053,7 +2017,7 @@ Object.assign(Util, {
     const pulse = 0.5 + 0.5 * Math.sin((now || 0) / 260);
     ctx.save();
     ctx.translate(x, y - h / 2 - 7);
-    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 4 + pulse * 4;
+    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 0;
     ctx.fillStyle = Theme.machine.meterFill;
     ctx.beginPath(); ctx.arc(0, 0, 4 + pulse * 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
@@ -2075,24 +2039,18 @@ Object.assign(Util, {
       facing: { x: 0, y: 1 }, now: now || 0,
     });
 
-    const signY = y - 30;
+    const signY = Math.round(y) - 30;
+    const px = Math.round(x);
+    ctx.fillStyle = Theme.machine.fillySignEdge;
+    ctx.fillRect(px - 10, signY - 8, 20, 16);
+    ctx.fillRect(px - 8, signY - 10, 16, 20);
     ctx.fillStyle = Theme.machine.fillySign;
-    Util.drawRoundedRect(ctx, x - 9, signY - 9, 18, 18, 3); ctx.fill();
-    ctx.strokeStyle = Theme.machine.fillySignEdge; ctx.lineWidth = 1.5;
-    Util.drawRoundedRect(ctx, x - 9, signY - 9, 18, 18, 3); ctx.stroke();
-    switch (kind) {
-      case 'coin':
-        ctx.fillStyle = Util.bodyShade(ctx, x, signY, 6, '#e3c15b');
-        ctx.beginPath(); ctx.arc(x, signY, 6, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = Theme.shadow.groundHard; ctx.stroke();
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(x - 2, signY - 2, 1.5, 0, Math.PI * 2); ctx.fill();
-        break;
-      case 'bomb': Util.drawBombIcon(ctx, x, signY, Theme.icon.bombBody, Theme.icon.bombFuse); break;
-      case 'key': Util.drawKeyIcon(ctx, x, signY, Theme.icon.key); break;
-      case 'heart': Util.drawHeart(ctx, x - 6, signY - 6, 12, 1, Theme.icon.heartRed, Theme.icon.heartRedLine); break;
-      case 'battery': Util.drawBatteryIcon(ctx, x, signY, 1); break;
-    }
+    ctx.fillRect(px - 8, signY - 8, 16, 16);
+    ctx.save();
+    ctx.translate(px, signY);
+    ctx.scale(0.55, 0.55);
+    Util.drawPickupIcon(ctx, { x:0, y:0, kind:kind === 'heart' ? 'heartRed' : kind }, 0);
+    ctx.restore();
   },
 
   drawFriendshipMachine(ctx, x, y, machine, now){
@@ -2186,7 +2144,7 @@ Object.assign(Util, {
 
     ctx.save();
     ctx.shadowColor = GLOW;
-    ctx.shadowBlur = 6 + pulse * 6;
+    ctx.shadowBlur = 0;
 
     const shards = [
       { dx:0, dy:-14, dx2:0, dy2:6, w:6 },
@@ -2780,222 +2738,8 @@ Object.assign(Util, {
   },
 
   drawPony(ctx, x, y, size, opts){
-    opts = opts || {};
-    const facing = opts.facing || { x: 0, y: 1 };
-    const angle = Math.atan2(facing.y, facing.x);
-    const now = opts.now || 0;
-    const bodyColor = opts.flash ? Theme.pony.flash : opts.bodyColor;
-    const maneColor = opts.flash ? Theme.pony.flash : opts.maneColor;
-    const B = PONY_BUILD[opts.build] || PONY_BUILD.stout;
-    const bob = Math.sin(now / 250) * size * 0.015;
-    ctx.save();
-    ctx.translate(x, y + bob);
-    if (opts.ghostly) ctx.globalAlpha = Theme.pony.ghostAlpha;
+    NightfallArt.pony(ctx, x, y, size, opts);
 
-    if (opts.aura && !opts.flash) Util._ponyAura(ctx, size, now, opts);
-
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, size * 0.42, size * B.bw * 0.82, size * 0.13, 0, 0, Math.PI * 2); ctx.fill();
-
-    const legPhase = opts.moving ? Math.sin(now / 100) * size * 0.1 : Math.sin(now / 900) * size * 0.02;
-    ctx.fillStyle = opts.flash ? Theme.pony.flash : Util.shadeColor(bodyColor, -0.35);
-    for (const s of [-1, 1]) {
-      const ly = size * 0.32 + legPhase * s;
-      if (B.angular) {
-        ctx.beginPath();
-        ctx.rect(s * size * B.legX - size * B.legW, ly - size * B.legH, size * B.legW * 2, size * B.legH * 2);
-        ctx.fill();
-      } else {
-        ctx.beginPath();
-        ctx.ellipse(s * size * B.legX, ly, size * B.legW, size * B.legH, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    if (opts.hasWings) {
-      const baseAlpha = opts.ghostly ? Theme.pony.ghostAlpha : 1;
-      const flap = opts.moving ? Math.sin(now / 90) * 0.3 : Math.sin(now / 400) * 0.08;
-      Util._ponyWings(ctx, size, angle, flap, baseAlpha, bodyColor, maneColor, opts);
-      ctx.globalAlpha = baseAlpha;
-    }
-
-    const tailSway = (opts.moving ? Math.sin(now / 220) * 0.22 : Math.sin(now / 800) * 0.08);
-    const tailAng = angle + Math.PI + tailSway;
-    const tx = Math.cos(tailAng) * size * (B.bw * 0.9), ty = Math.sin(tailAng) * size * 0.3 + size * 0.1;
-    Util._ponyTail(ctx, size, tx, ty, tailAng, maneColor, opts);
-
-    const bodyGrad = opts.flash ? bodyColor : Util.bodyShadeLocal(ctx, 0, size * 0.06, size * 0.5, bodyColor);
-    ctx.fillStyle = bodyGrad;
-    Util._ponyBodyPath(ctx, size, B);
-    ctx.fill();
-
-    if (!opts.flash) {
-      ctx.strokeStyle = Theme.shadow.rim; ctx.lineWidth = size * 0.02;
-      ctx.beginPath(); ctx.ellipse(0, size * 0.06, size * B.bw * 0.88, size * B.bh * 0.85, 0, Math.PI * 1.1, Math.PI * 1.7); ctx.stroke();
-    }
-
-    if (opts.hasScales && !opts.flash && opts.pattern !== 'scalepat') {
-      ctx.strokeStyle = Util.shadeColor(bodyColor, -0.25); ctx.lineWidth = size * 0.02;
-      for (let i = -1; i <= 1; i++) {
-        ctx.beginPath();
-        ctx.arc(i * size * 0.14, size * 0.02, size * 0.08, Math.PI * 0.15, Math.PI * 0.85);
-        ctx.stroke();
-      }
-    }
-
-    if (!opts.flash) Util._ponyPattern(ctx, size, B, bodyColor, maneColor, opts);
-
-    if (opts.hasStripes && !opts.flash) {
-      ctx.save();
-      Util._ponyBodyPath(ctx, size, B);
-      ctx.clip();
-      ctx.strokeStyle = opts.maneColor;
-      ctx.lineWidth = size * 0.055;
-      for (let i = -2; i <= 2; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * size * 0.16, -size * 0.34);
-        ctx.lineTo(i * size * 0.16 + size * 0.09, size * 0.5);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    if (opts.isRobot && !opts.flash) {
-      ctx.strokeStyle = Theme.pony.robotSeam; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(-size * 0.2, -size * 0.05); ctx.lineTo(-size * 0.2, size * 0.28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(size * 0.2, -size * 0.05); ctx.lineTo(size * 0.2, size * 0.28); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-size * 0.3, size * 0.1); ctx.lineTo(size * 0.3, size * 0.1); ctx.stroke();
-    }
-
-    const hx = Math.cos(angle) * size * B.neck, hy = Math.sin(angle) * size * B.neck - size * 0.05;
-    ctx.fillStyle = bodyGrad;
-
-    ctx.beginPath();
-    ctx.arc(hx, hy, size * B.hs, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (!opts.hasBeak) {
-      const mx = hx + Math.cos(angle) * size * 0.2, my = hy + Math.sin(angle) * size * 0.2;
-      ctx.beginPath();
-      ctx.ellipse(mx, my, size * 0.15, size * 0.125, angle, 0, Math.PI * 2);
-      ctx.fill();
-      if (!opts.flash) {
-        ctx.fillStyle = Util.shadeColor(bodyColor, -0.4);
-        const nAng = angle + 1.3;
-        ctx.beginPath();
-        ctx.arc(mx + Math.cos(angle) * size * 0.09 + Math.cos(nAng) * size * 0.06,
-          my + Math.sin(angle) * size * 0.09 + Math.sin(nAng) * size * 0.06, size * 0.022, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    Util._ponyEars(ctx, size, hx, hy, now, opts, bodyGrad, maneColor);
-
-    if (opts.hasBeak) {
-      ctx.fillStyle = Theme.pony.beak;
-      ctx.beginPath();
-      ctx.moveTo(hx + Math.cos(angle) * size * 0.28, hy + Math.sin(angle) * size * 0.28 - size * 0.02);
-      ctx.lineTo(hx + Math.cos(angle) * size * 0.44, hy + Math.sin(angle) * size * 0.44);
-      ctx.lineTo(hx + Math.cos(angle) * size * 0.28, hy + Math.sin(angle) * size * 0.28 + size * 0.06);
-      ctx.closePath(); ctx.fill();
-    }
-
-    if (opts.hasFangs && !opts.flash) {
-      ctx.fillStyle = Theme.pony.fang;
-      const fx = hx + Math.cos(angle) * size * 0.24, fy = hy + Math.sin(angle) * size * 0.24;
-      ctx.beginPath(); ctx.moveTo(fx - size * 0.05, fy); ctx.lineTo(fx - size * 0.03, fy + size * 0.08); ctx.lineTo(fx - size * 0.01, fy); ctx.closePath(); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(fx + size * 0.05, fy); ctx.lineTo(fx + size * 0.03, fy + size * 0.08); ctx.lineTo(fx + size * 0.01, fy); ctx.closePath(); ctx.fill();
-    }
-
-    if (opts.hasHorn || opts.extraHorn) Util._ponyHorn(ctx, size, hx, hy, now, opts, maneColor);
-
-    ctx.fillStyle = opts.flash ? Theme.pony.flash : maneColor;
-    if (opts.flameMane && !opts.flash) {
-      const mx = hx - Math.cos(angle) * size * 0.08, my = hy - Math.sin(angle) * size * 0.08 - size * 0.04;
-      const flick = Math.sin(now / 140) * size * 0.03;
-      ctx.beginPath();
-      ctx.moveTo(mx - size * 0.14, my + size * 0.14);
-      ctx.lineTo(mx - size * 0.16 + flick, my - size * 0.1);
-      ctx.lineTo(mx - size * 0.04, my - size * 0.02);
-      ctx.lineTo(mx + size * 0.02 - flick, my - size * 0.26);
-      ctx.lineTo(mx + size * 0.1, my - size * 0.06);
-      ctx.lineTo(mx + size * 0.16 + flick, my - size * 0.18);
-      ctx.lineTo(mx + size * 0.12, my + size * 0.14);
-      ctx.closePath(); ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.ellipse(hx - Math.cos(angle) * size * 0.08, hy - Math.sin(angle) * size * 0.08 - size * 0.04,
-        size * 0.16, size * 0.22, angle, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (!opts.flash) {
-      const eyeStyle = opts.isRobot ? 'robot' : (opts.eyeStyle || 'round');
-      const blinking = !opts.isRobot && (((now % 3600) + 3600) % 3600) < 110;
-      const blinkK = blinking ? 1 - Math.abs((((now % 3600) + 3600) % 3600) - 55) / 55 : 0;
-
-      for (const s of [-1, 1]) {
-        const ex = hx + Math.cos(angle) * size * 0.1 + Math.cos(angle + s * 1.2) * size * 0.12;
-        const ey = hy + Math.sin(angle) * size * 0.1 + Math.sin(angle + s * 1.2) * size * 0.12;
-        if (blinking) {
-          ctx.fillStyle = bodyColor;
-          ctx.beginPath(); ctx.ellipse(ex, ey, size * 0.062, Math.max(size * 0.008, size * 0.05 * blinkK), angle, 0, Math.PI * 2); ctx.fill();
-          continue;
-        }
-        if (eyeStyle !== 'robot' && eyeStyle !== 'facet') {
-          ctx.fillStyle = Theme.pony.eyeWhite;
-          ctx.beginPath(); ctx.ellipse(ex, ey, size * 0.062, size * 0.05, angle, 0, Math.PI * 2); ctx.fill();
-        }
-        if (eyeStyle === 'robot') {
-          ctx.fillStyle = Theme.pony.robotEye;
-          ctx.shadowColor = Theme.pony.robotEye; ctx.shadowBlur = 5;
-          ctx.beginPath(); ctx.arc(ex + Math.cos(angle) * size * 0.012, ey, size * 0.045, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-        } else if (eyeStyle === 'slit') {
-          ctx.fillStyle = Theme.pony.pupil;
-          ctx.beginPath();
-          ctx.ellipse(ex + Math.cos(angle) * size * 0.012, ey, size * 0.016, size * 0.05, angle, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = Theme.pony.eyeGlint;
-          ctx.beginPath(); ctx.arc(ex - size * 0.02, ey - size * 0.018, size * 0.012, 0, Math.PI * 2); ctx.fill();
-        } else if (eyeStyle === 'glow') {
-          ctx.fillStyle = maneColor;
-          ctx.shadowColor = maneColor; ctx.shadowBlur = 6;
-          ctx.beginPath(); ctx.arc(ex + Math.cos(angle) * size * 0.012, ey, size * 0.042, 0, Math.PI * 2); ctx.fill();
-          ctx.shadowBlur = 0;
-        } else if (eyeStyle === 'facet') {
-          const fc = opts.auraColor || maneColor;
-          ctx.fillStyle = fc;
-          const r = size * 0.055;
-          ctx.beginPath();
-          for (let i = 0; i < 6; i++) {
-            const a = angle + i * Math.PI / 3;
-            const px = ex + Math.cos(a) * r, py = ey + Math.sin(a) * r * 0.8;
-            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-          }
-          ctx.closePath(); ctx.fill();
-          ctx.strokeStyle = Util.shadeColor(fc, -0.4); ctx.lineWidth = size * 0.01;
-          ctx.beginPath(); ctx.moveTo(ex - r, ey); ctx.lineTo(ex + r, ey); ctx.stroke();
-        } else {
-          ctx.fillStyle = Theme.pony.pupil;
-          ctx.beginPath(); ctx.arc(ex + Math.cos(angle) * size * 0.012, ey, size * 0.036, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = Theme.pony.eyeGlint;
-          ctx.beginPath(); ctx.arc(ex - size * 0.018, ey - size * 0.018, size * 0.015, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-    }
-
-    if (opts.hasTalons && !opts.flash) {
-      ctx.strokeStyle = Theme.pony.talon; ctx.lineWidth = size * 0.02;
-      for (const s of [-1, 1]) {
-        const lx = s * size * B.legX, ly = size * 0.42;
-        for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + i * size * 0.03, ly + size * 0.07); ctx.stroke(); }
-      }
-    }
-
-    if (opts.flourish && !opts.flash) Util._ponyFlourish(ctx, size, hx, hy, angle, now, opts, bodyColor, maneColor);
-
-    ctx.restore();
   },
 });
 

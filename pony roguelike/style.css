@@ -406,7 +406,6 @@ button:focus-visible, .class-card:focus-visible{
 
 .active-icon.ready-glow{ animation:readyGlow 1.6s ease-in-out infinite; }
 
-.touch-action-btn.ready-glow{ animation:readyGlow 1.6s ease-in-out infinite; border-color:var(--accent2); }
 @keyframes readyGlow{
   0%,100%{ box-shadow:0 0 8px rgba(79,209,197,.35), var(--shadow-soft); }
   50%{ box-shadow:0 0 16px rgba(79,209,197,.7), var(--shadow-soft); }
@@ -1418,69 +1417,92 @@ button:focus-visible, .class-card:focus-visible{
 
 .skilltree-overlay #skillTreeList .skilltree-scroll.skilltree-dragging{ cursor:grabbing; }
 
-@media not all and (hover:hover) and (pointer:fine){
-  .touch-only{ display:flex !important; }
-
-  #rightPanel{ display:none; }
+.touch-only{ display:none; }
+.nightfall-touch #touchControls{
+  display:grid;
+  grid-template-columns:auto minmax(0, 1fr) auto;
+  align-items:center;
+  gap:6px;
+  flex:none;
+  width:100%;
+  max-width:660px;
 }
-.touch-only{ display:none !important; }
-
+.touch-stick-panel{ display:grid; justify-items:center; gap:3px; font-size:11px; color:var(--muted); }
 .touch-joystick{
-  position:absolute; z-index:6; touch-action:none;
-  left:calc(14px + env(safe-area-inset-left, 0px));
-  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
-  width:92px; height:92px;
-  align-items:center; justify-content:center;
+  position:relative;
+  width:clamp(66px, 19vw, 96px);
+  aspect-ratio:1;
+  touch-action:none;
+  -webkit-touch-callout:none;
 }
 .touch-joystick-ring{
   position:absolute; inset:0; border-radius:50%;
-  background:var(--panel-glass); border:2px solid var(--border-soft);
-  box-shadow:var(--shadow-soft);
-  backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
-
-  animation:touchJoystickBreathe 3.2s ease-in-out infinite;
+  background:#241b30; border:2px solid #635273;
 }
-@keyframes touchJoystickBreathe{
-  0%,100%{ border-color:var(--border-soft); }
-  50%{ border-color:rgba(139,92,246,.4); }
-}
-@media (prefers-reduced-motion:reduce){ .touch-joystick-ring{ animation:none; } }
+#touchAim .touch-joystick-ring{ border-color:#9b638d; }
 .touch-joystick-knob{
-  position:absolute; top:50%; left:50%; width:42px; height:42px; border-radius:50%;
+  position:absolute; top:50%; left:50%; width:39%; aspect-ratio:1; border-radius:50%;
   transform:translate(-50%,-50%);
-  background:linear-gradient(160deg, var(--accent), var(--accent-dim));
-  border:2px solid rgba(255,255,255,.25); box-shadow:var(--glow-accent), var(--shadow-soft);
-  transition:box-shadow var(--transition-fast);
-  pointer-events:none;
+  background:var(--accent); border:2px solid #cab5e1; pointer-events:none;
 }
-
-.touch-action-bar{
-  position:absolute; z-index:6; touch-action:none;
-  right:calc(10px + env(safe-area-inset-right, 0px));
-  bottom:calc(14px + env(safe-area-inset-bottom, 0px));
-  align-items:center; gap:8px;
+#touchAimKnob{ background:#a95983; border-color:#f0a5bc; }
+.touch-buttons{ display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }
+.touch-buttons button{
+  box-sizing:border-box; width:44px; height:44px; padding:0;
+  background:#261d30; border:1px solid #645175; color:var(--ink);
+  border-radius:8px; font-size:20px; line-height:1; touch-action:manipulation;
+  -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
 }
-
-.touch-utility-bar{
-  position:absolute; z-index:6; touch-action:none;
-  left:calc(10px + env(safe-area-inset-left, 0px));
-  top:calc(10px + env(safe-area-inset-top, 0px));
-  flex-direction:column; align-items:center; gap:6px;
+.touch-buttons button:active{ background:#483357; }
+.touch-buttons .ready-glow{ border-color:var(--accent2); box-shadow:inset 0 0 0 1px var(--accent2); }
+.nightfall-touch #gameScreen{
+  box-sizing:border-box;
+  height:100dvh;
+  gap:4px;
+  padding:calc(44px + env(safe-area-inset-top)) max(5px, env(safe-area-inset-right))
+    max(5px, env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left));
 }
-.touch-action-btn, .touch-util-btn{
-  border-radius:50%; background:var(--panel-glass); border:2px solid var(--border-soft);
-  color:var(--ink); font-size:20px; line-height:1; cursor:pointer; padding:0;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:var(--shadow-soft); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
-  transition:transform var(--transition-fast), border-color var(--transition-fast), filter var(--transition-fast);
+.nightfall-touch #hud{ box-sizing:border-box; padding:3px 5px; gap:3px; backdrop-filter:none; }
+.nightfall-touch .hud-resources{ gap:3px; }
+.nightfall-touch .hud-resources .res{ padding:2px 5px; font-size:10px; }
+.nightfall-touch #canvasWrap{ box-sizing:border-box; min-height:0; }
+.nightfall-touch #game, .nightfall-touch #minimap{ touch-action:none; }
+.nightfall-touch #leftPanel, .nightfall-touch #rightPanel, .nightfall-touch #sideActionBar,
+.nightfall-touch #statPanel, .nightfall-touch #logPanel, .nightfall-touch #itemProxTooltip{ display:none; }
+.nightfall-touch #minimapWrap{ display:none; }
+.nightfall-touch #minimapWrap.touch-map-open{
+  display:block; z-index:8; right:max(6px, env(safe-area-inset-right)); top:calc(44px + env(safe-area-inset-top));
+  transform:none; background:#211928;
 }
-.touch-action-btn{ width:52px; height:52px; }
-.touch-action-btn-lg{ width:62px; height:62px; font-size:24px; border-color:var(--accent); box-shadow:var(--glow-accent), var(--shadow-soft); }
-.touch-util-btn{ width:38px; height:38px; font-size:15px; }
-.touch-action-btn:active, .touch-util-btn:active{ transform:scale(.9); filter:brightness(1.2); box-shadow:inset 0 0 12px rgba(0,0,0,.35), var(--shadow-soft); }
-.touch-only-turret{ border-color:rgba(180,140,224,.5); }
-
-.touch-only-turret.hidden{ display:none !important; }
+.nightfall-touch #minimapWrap button{ width:28px; height:28px; }
+.nightfall-touch #roomBanner{ font-size:13px; letter-spacing:1px; white-space:normal; text-align:center; }
+.nightfall-touch #itemExamine{ max-width:calc(100% - 12px); padding:5px 8px; backdrop-filter:none; background:#201827; }
+.nightfall-touch .mute-btn{ top:calc(4px + env(safe-area-inset-top)); }
+.nightfall-touch #muteBtn{ left:max(6px, env(safe-area-inset-left)); }
+.nightfall-touch #fullscreenBtn{ left:calc(45px + env(safe-area-inset-left)); }
+.nightfall-touch #screenshotBtn{ left:calc(84px + env(safe-area-inset-left)); }
+.nightfall-touch #settingsBtn{ left:calc(123px + env(safe-area-inset-left)); }
+.nightfall-touch #volumeSlider{ display:none; }
+.nightfall-touch #touchControls,
+.nightfall-touch #touchControls *{ user-select:none; }
+@media (orientation:landscape) and (max-height:520px){
+  .nightfall-touch #gameScreen{
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 2.4fr) minmax(0, 1fr);
+    grid-template-rows:auto minmax(0, 1fr) auto;
+    padding-top:max(5px, env(safe-area-inset-top));
+    justify-items:center;
+  }
+  .nightfall-touch #hud{ grid-column:2; grid-row:1; }
+  .nightfall-touch #hud > .hud-row:nth-child(3){ display:none; }
+  .nightfall-touch #canvasWrap{ grid-column:2; grid-row:2; height:100%; }
+  .nightfall-touch #touchControls{ display:contents; }
+  .nightfall-touch .touch-stick-panel{ grid-column:1; grid-row:2; align-self:end; padding-bottom:4px; }
+  .nightfall-touch .touch-stick-panel:last-child{ grid-column:3; }
+  .nightfall-touch .touch-buttons{ grid-column:1 / -1; grid-row:3; }
+  .nightfall-touch .touch-joystick{ width:clamp(64px, 14vw, 102px); }
+  .nightfall-touch #minimapWrap.touch-map-open{ top:max(5px, env(safe-area-inset-top)); }
+}
 
 .side-action-bar{
   display:none;
@@ -1561,3 +1583,48 @@ button:focus-visible, .class-card:focus-visible{
   .hud-resources .res{ font-size:11px; padding:2px 7px; }
   #minimapWrap{ transform:scale(.85); transform-origin:top right; }
 }
+
+/* Nightfall Charge pixel-art surfaces */
+.nightfall-pixel-icon {
+  display: inline-block;
+  width: 1.65em;
+  height: 1.65em;
+  object-fit: contain;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+.best-card-icon .nightfall-pixel-icon,
+#itemExamineIcon .nightfall-pixel-icon {
+  width: 100%;
+  height: 100%;
+}
+#menuBackdrop, .class-card canvas {
+  image-rendering: pixelated;
+}
+
+
+#touchPauseHelp, .skilltree-touch-zoom, .skilltree-touch-detail-actions{ display:none; }
+.nightfall-touch #touchPauseHelp{ display:block; margin:0; max-width:38ch; font-size:13px; }
+.nightfall-touch #pauseKeybinds, .nightfall-touch #controlsHint{ display:none; }
+.nightfall-touch #skillTreeMinimap, .nightfall-touch #skillTreeLegend{ display:none; }
+.nightfall-touch #skillTreeScreen{
+  padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right))
+    max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+}
+.nightfall-touch #skillTreeScreen .skilltree-toolbar{ flex-wrap:wrap; }
+.nightfall-touch #skillTreeScreen .skilltree-toolbar input{ min-width:0; font-size:16px; }
+.nightfall-touch .skilltree-body{ flex-direction:column; }
+.nightfall-touch .skilltree-tabstrip{
+  width:100%; flex:0 0 auto; flex-direction:row; overflow-x:auto; overflow-y:hidden;
+}
+.nightfall-touch .skilltree-tab{ width:auto; min-height:40px; }
+.nightfall-touch #skillTreeList .skilltree-scroll{ touch-action:none; }
+.nightfall-touch .skilltree-touch-zoom,
+.nightfall-touch .skilltree-touch-detail-actions{ display:flex; justify-content:center; gap:6px; }
+.nightfall-touch .skilltree-touch-zoom button,
+.nightfall-touch .skilltree-touch-detail-actions button{ min-height:44px; min-width:44px; }
+.nightfall-touch #skillTreeDetailPanel{
+  z-index:5; box-sizing:border-box; width:min(360px, calc(100% - 16px)); left:50%; transform:translateX(-50%);
+  bottom:54px; max-height:58dvh; pointer-events:auto;
+}
+.nightfall-touch .skilltree-touch-detail-actions{ margin-top:6px; }

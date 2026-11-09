@@ -1,10 +1,10 @@
 'use strict';
 (function(root){
  function create(model){
-  function trace(name){const d=model.dossier(name);if(!d)return null;const claims=new Map(),normalize=a=>a.toLowerCase().replace(/ /g,'_').replace(/^full_agonist$/,'agonist');
+  function trace(name){const d=model.dossier(name);if(!d)return null;const claims=new Map(),actions=root.ReferenceActions||(typeof module!=='undefined'&&module.exports?require('./reference-actions'):null);
    function add(type,key,label,o){if(!claims.has(key))claims.set(key,{id:key,type,label,target:o.target||'',species:o.species,witnesses:[]});const c=claims.get(key);if(!c.witnesses.some(w=>w.id===o.id))c.witnesses.push(o);}
    for(const o of d.observations){const prefix=o.target+'|'+o.species;
-    if(o.action&&['functional_assay','source_classification','imported_classification'].includes(o.kind)){const action=normalize(o.action);add('action','action|'+prefix+'|'+action,'Reported '+action.replace(/_/g,' ')+' at '+o.target,o);}
+    for(const action of actions?.canonicalActions(o)||[])add('action','action|'+prefix+'|'+action,'Reported '+actions.label(action)+' at '+o.target,o);
     if(o.kind==='imported_binding')add('binding','binding|'+prefix,'Imported binding observations at '+o.target,o);
     if(typeof o.value==='number'&&Number.isFinite(o.value)&&['functional_assay','control_comparison'].includes(o.kind)){const metric=root.ReferenceSAR.endpoint(o)||'reported endpoint';add('measurement','measurement|'+prefix+'|'+metric+'|'+o.unit,metric+' observations at '+o.target,o);}
     if(o.negativeControl)add('control','control|'+prefix,'Source-designated control for '+o.target,o);

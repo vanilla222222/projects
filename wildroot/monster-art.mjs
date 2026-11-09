@@ -1,0 +1,240 @@
+import {PIXEL_STYLE,shade,finishSprite,drawSprite,spriteSvg} from './pixel-style.mjs?v=50';
+import {EXPANSION_AREAS} from './expansion-content.mjs?v=45';
+// Hand-authored pixel textures: silhouettes, anatomy and surface patterns are species-specific.
+const SIZE=48;
+function art(colors,paint,description,motion='bob'){
+ const palette={o:PIXEL_STYLE.outline,w:PIXEL_STYLE.light,e:'#142a27',...colors},pixels=Array(SIZE*SIZE).fill(null);
+ const r=(x,y,w,h,k)=>{for(let j=Math.max(0,y);j<Math.min(SIZE,y+h);j++)for(let i=Math.max(0,x);i<Math.min(SIZE,x+w);i++)pixels[j*SIZE+i]=palette[k];};
+ const line=(x,y,a,b,k)=>{const n=Math.max(Math.abs(a-x),Math.abs(b-y));for(let i=0;i<=n;i++)r(Math.round(x+(a-x)*i/(n||1)),Math.round(y+(b-y)*i/(n||1)),1,1,k);};
+ const oval=(x,y,rx,ry,k)=>{for(let j=Math.floor(y-ry);j<=y+ry;j++)for(let i=Math.floor(x-rx);i<=x+rx;i++)if(((i-x)/rx)**2+((j-y)/ry)**2<=1)r(i,j,1,1,k);};
+ paint(r,line,oval,pixels);
+ // Shade clusters inside the authored mask. Eyes, markings and the outer contour keep their colours.
+ const source=[...pixels],main=new Set([palette.b,palette.l,palette.s]);
+ const highlight=new Map([...main].map(color=>[color,shade(color,21)]));
+ const shadow=new Map([...main].map(color=>[color,shade(color,-20)]));
+ const at=(x,y)=>x>=0&&y>=0&&x<SIZE&&y<SIZE?source[y*SIZE+x]:null;
+ for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
+  const color=at(x,y);
+  if(!main.has(color))continue;
+  const upper=at(x,y-2),left=at(x-2,y),lower=at(x,y+2),right=at(x+2,y);
+  if((!upper||upper===palette.o)&&(!left||left===palette.o||y<23))pixels[y*SIZE+x]=highlight.get(color);
+  else if((!lower||lower===palette.o)&&(!right||right===palette.o||y>29))pixels[y*SIZE+x]=shadow.get(color);
+ }
+ return{...finishSprite(pixels,SIZE,SIZE,{description}),motion};
+}
+export const MONSTER_ART={
+ 'forest-0':art({b:'#78ad65',l:'#c4df7b',s:'#487e62',f:'#edc071'},(r,l,o)=>{o(24,34,17,12,'o');o(24,33,15,11,'b');r(14,20,19,8,'b');r(16,19,10,3,'l');r(12,36,6,6,'s');r(34,31,4,7,'s');r(18,28,4,5,'e');r(29,28,4,5,'e');r(19,28,1,2,'w');r(24,37,4,2,'s');r(17,15,4,7,'s');r(20,12,7,4,'l');r(24,10,5,3,'b');r(10,29,2,2,'l');r(32,40,3,2,'l');r(13,27,4,2,'l');r(12,29,2,3,'l');r(24,25,3,2,'l');r(28,34,4,2,'s');r(11,35,2,2,'f');r(34,36,2,1,'f');},'Moss dome with a leaf sprout and translucent lime patches'),
+ 'forest-1':art({b:'#905b4e',l:'#cb9270',s:'#593f42',f:'#d7c078',v:'#718d54'},(r,l,o)=>{r(7,25,28,16,'o');r(8,24,25,15,'b');r(31,29,11,11,'l');r(11,40,5,7,'s');r(28,39,5,8,'s');r(31,19,5,11,'b');r(32,20,2,5,'l');r(35,30,2,3,'e');r(40,35,4,4,'s');r(37,38,2,6,'f');r(39,41,5,2,'w');for(let x=9;x<30;x+=5){r(x,20,3,7,'s');r(x+1,17,2,4,'v');}l(7,30,3,24,'v');l(4,24,2,27,'v');r(12,28,4,2,'l');for(let i=0;i<4;i++){r(11+i*4,25,2,5,'s');r(12+i*4,30,2,2,'l');}r(35,34,3,2,'f');},'Russet boar, ivory tusks and a jagged thorn mane','crawl'),
+ 'forest-2':art({b:'#c5a960',l:'#f3dc84',s:'#78625d',g:'#d4f5a0'},(r,l,o)=>{o(12,23,10,14,'o');o(35,23,10,14,'o');o(12,22,8,12,'b');o(35,22,8,12,'b');o(10,18,3,4,'l');o(37,18,3,4,'l');o(12,29,4,5,'s');o(35,29,4,5,'s');r(21,15,6,24,'s');r(20,13,8,7,'b');o(24,30,4,6,'g');r(22,28,4,3,'w');l(22,14,17,6,'s');l(26,14,31,6,'s');r(17,5,2,2,'g');r(30,5,2,2,'g');},'Round moth wings with luminous lantern abdomen and eye spots','flutter'),
+ 'forest-3':art({b:'#a87b53',l:'#d2b177',s:'#654d43',g:'#86ac6c'},(r,l,o)=>{r(15,22,20,20,'o');r(16,23,18,18,'b');o(25,23,9,4,'l');o(25,23,5,2,'s');r(18,29,2,9,'s');r(30,26,2,13,'s');r(19,31,3,3,'e');r(28,31,3,3,'e');l(16,34,8,29,'b');l(8,29,5,21,'b');r(4,19,6,3,'g');l(33,33,42,26,'b');r(39,21,6,6,'g');r(18,41,5,6,'s');r(29,41,5,6,'s');},'Small hollow stump with visible growth rings and twig arms','sway'),
+ 'forest-4':art({b:'#626f54',l:'#b5c99a',s:'#3b514b',g:'#86b16c',f:'#e6c575'},(r,l,o)=>{r(14,19,21,24,'s');r(17,21,15,20,'b');r(9,28,7,14,'b');r(34,28,7,14,'b');r(16,40,7,7,'s');r(28,40,7,7,'s');l(18,23,9,8,'b');l(29,23,38,7,'b');l(12,13,5,12,'b');l(35,12,43,11,'b');r(7,5,9,5,'g');r(31,4,10,6,'g');r(15,15,20,7,'g');r(18,25,4,3,'f');r(28,25,4,3,'f');r(21,33,8,6,'s');r(23,33,4,4,'f');},'Antlered grove knight with moss pauldrons and a golden heart','sway'),
+ 'caves-0':art({b:'#7887a3',l:'#bbc4d0',s:'#445069',f:'#e8a080'},(r,l,o)=>{l(23,26,2,15,'o');l(2,15,5,34,'o');l(5,34,18,30,'o');l(25,26,45,15,'o');l(45,15,42,34,'o');for(let i=0;i<16;i++){r(5+i,19+Math.floor(i/3),1,12-Math.floor(i/2),'b');r(42-i,19+Math.floor(i/3),1,12-Math.floor(i/2),'b');}o(24,29,7,11,'s');r(18,14,5,13,'b');r(26,14,5,13,'b');r(19,16,2,7,'f');r(27,16,2,7,'f');r(19,25,10,7,'b');r(20,26,2,2,'w');r(27,26,2,2,'w');r(22,32,1,3,'w');r(26,32,1,3,'w');r(21,22,5,3,'l');},'Slate bat with angular membranes, tall ears and pebble brow','flutter'),
+ 'caves-1':art({b:'#b7754d',l:'#efc07a',s:'#74534a',g:'#73b6a3'},(r,l,o)=>{o(24,31,13,10,'o');o(24,30,11,8,'b');r(19,24,10,11,'l');r(23,25,2,10,'s');for(let i=0;i<3;i++){l(13,29+i*4,5,24+i*7,'s');l(34,29+i*4,42,24+i*7,'s');}r(7,18,5,11,'b');r(3,17,9,5,'l');r(35,18,5,11,'b');r(36,16,9,5,'l');r(17,36,3,3,'g');r(29,36,3,3,'g');r(18,20,4,5,'s');r(27,20,4,5,'s');},'Copper-plated crawler with pincer antennae and verdigris seams','crawl'),
+ 'caves-2':art({b:'#738db0',l:'#a7c9dc',s:'#45526f',g:'#aeece1'},(r,l,o)=>{r(16,16,17,18,'s');r(18,18,13,14,'b');r(10,27,9,14,'b');r(31,27,9,14,'b');r(18,34,13,8,'b');r(15,41,8,6,'s');r(28,41,8,6,'s');r(13,10,23,7,'l');r(20,7,9,4,'b');r(19,22,4,3,'g');r(27,22,3,3,'g');l(24,29,21,33,'g');l(21,33,27,37,'g');r(11,30,3,6,'l');r(35,30,3,6,'l');},'Blue stone golem with resonant crystal seams and a flat echo crown','sway'),
+ 'jungle-0':art({b:'#4e9c74',l:'#a2ce7c',s:'#286760',f:'#d9d68b'},(r,l,o)=>{l(6,44,11,19,'s');l(11,19,31,12,'s');l(31,12,39,30,'s');l(39,30,18,37,'s');for(let i=0;i<7;i++){o(10+i*4,30-Math.round(Math.sin(i)*10),4,7,i%2?'b':'l');}r(28,15,8,10,'b');r(29,17,2,3,'e');r(33,17,2,3,'e');r(30,23,4,2,'f');l(14,35,8,46,'b');l(31,34,42,43,'b');r(3,42,8,3,'l');r(39,41,6,3,'l');},'Coiled walking vine with paired leaves and tendril feet','sway'),
+ 'jungle-1':art({b:'#69b8ae',l:'#b5e3a0',s:'#39798c',f:'#e7b25c'},(r,l,o)=>{o(24,33,13,9,'s');o(24,30,12,9,'b');o(15,22,6,6,'b');o(33,22,6,6,'b');o(15,21,3,3,'w');o(33,21,3,3,'w');r(15,20,2,3,'e');r(33,20,2,3,'e');r(18,32,13,6,'l');o(9,37,6,5,'b');o(39,37,6,5,'b');r(5,43,12,3,'l');r(32,43,12,3,'l');r(20,27,2,2,'f');r(28,25,2,2,'f');r(14,31,2,2,'f');l(21,30,29,30,'s');},'Turquoise rainfrog with round eye turrets, spotted skin and webbed feet','bob'),
+ 'jungle-2':art({b:'#d6a54e',l:'#f5db82',s:'#997046',g:'#6eab7f'},(r,l,o)=>{l(6,40,15,35,'s');r(13,26,23,11,'b');r(31,19,10,14,'b');r(34,21,5,4,'l');r(37,23,2,2,'e');r(39,28,5,3,'s');r(17,35,4,10,'s');r(29,35,4,10,'s');r(12,43,10,3,'l');r(28,43,11,3,'l');for(let i=0;i<5;i++){r(14+i*4,22-i%2*2,3,6,'g');r(17+i*4,29,2,2,'l');}l(8,39,3,32,'g');},'Golden sun lizard with emerald dorsal scales and a hooked tail','crawl'),
+ 'jungle-3':art({b:'#bb81ac',l:'#f0bbd6',s:'#725571',g:'#9db58b'},(r,l,o)=>{r(21,19,5,20,'g');r(18,14,12,7,'b');r(17,13,4,3,'l');r(27,13,4,3,'l');r(19,17,2,2,'e');r(27,17,2,2,'e');l(22,25,9,18,'b');l(9,18,6,31,'l');l(26,25,38,18,'b');l(38,18,41,31,'l');r(7,27,3,6,'s');r(38,27,3,6,'s');o(16,30,5,10,'l');o(31,30,5,10,'b');l(23,37,12,46,'g');l(25,37,36,46,'g');l(22,14,18,6,'s');l(26,14,31,6,'s');},'Orchid mantis with petal wings, hooked forelegs and slender green limbs','sway'),
+ 'deep-0':art({b:'#818d98',l:'#bbc5c8',s:'#414b61',f:'#d2a177'},(r,l,o)=>{o(24,33,16,10,'o');r(9,29,29,11,'s');r(12,23,24,12,'b');r(16,20,16,5,'l');for(let x=15;x<34;x+=6){r(x,25,3,10,'s');r(x+1,25,2,7,'l');}r(7,31,6,9,'f');r(36,31,7,9,'f');r(10,40,5,7,'s');r(19,40,5,7,'s');r(28,40,5,7,'s');r(37,40,5,7,'s');r(7,31,2,2,'e');},'Low ironback beetle with riveted steel plates and four heavy feet','crawl'),
+ 'deep-1':art({b:'#918ed9',l:'#d8e0ff',s:'#56558e',g:'#a5f1e8'},(r,l,o)=>{o(24,25,9,12,'s');o(24,23,7,10,'b');o(24,22,4,6,'l');r(20,21,2,3,'g');r(27,21,2,3,'g');l(20,34,16,44,'b');l(16,44,25,40,'b');l(25,40,29,46,'s');r(10,17,3,3,'g');r(35,27,4,4,'b');r(15,7,2,2,'l');r(31,10,3,3,'l');r(6,32,2,2,'b');},'Violet cave flame with a pale core, floating sparks and a spectral tail','float'),
+ 'deep-2':art({b:'#cda94c',l:'#f3e09b',s:'#75603e',g:'#68a5b1'},(r,l,o)=>{o(24,29,13,14,'o');o(24,28,11,12,'b');r(22,17,3,24,'s');r(15,21,6,2,'l');r(28,21,6,2,'l');r(15,29,6,2,'l');r(28,29,6,2,'l');r(18,13,13,6,'g');r(20,14,2,2,'w');r(27,14,2,2,'w');l(23,14,17,5,'b');l(25,14,32,5,'b');r(15,3,5,3,'l');r(30,3,5,3,'l');for(let y=22;y<43;y+=8){l(12,y,6,y+4,'s');l(36,y,42,y+4,'s');}},'Gilded scarab with chased wing cases, blue face and forked antennae','crawl'),
+ 'deep-3':art({b:'#686f86',l:'#a8b0bb',s:'#393f56',g:'#edac79'},(r,l,o)=>{r(16,13,18,15,'s');r(17,14,16,12,'b');r(13,28,23,13,'b');r(7,25,8,17,'s');r(36,24,8,18,'s');r(15,41,8,6,'l');r(29,41,8,6,'l');r(18,7,4,8,'l');r(28,5,4,10,'l');r(21,20,9,2,'g');r(24,27,2,12,'g');r(19,32,12,2,'g');r(9,28,3,9,'l');r(39,27,3,10,'l');},'Towering sentry with split stone horns and an amber cross-shaped core','sway'),
+ 'tree-0':art({b:'#a65f47',l:'#d9ab6d',s:'#623f3c',g:'#94b566'},(r,l,o)=>{o(24,31,10,9,'s');o(24,29,8,7,'b');r(18,24,12,4,'l');r(20,31,8,3,'s');r(20,36,8,3,'l');for(let i=0;i<4;i++){l(16,27+i*4,7-i%2*3,22+i*6,'b');l(32,27+i*4,41+i%2*3,22+i*6,'b');}r(19,19,4,5,'g');r(26,19,4,5,'g');r(20,20,2,2,'e');r(27,20,2,2,'e');},'Banded red branch mite with eight splayed legs and leaf-green eyes','crawl'),
+ 'tree-1':art({b:'#d29048',l:'#f2d184',s:'#74554a',g:'#b7ddba'},(r,l,o)=>{o(11,24,9,13,'s');o(36,24,9,13,'s');o(11,22,7,10,'g');o(36,22,7,10,'g');r(8,17,3,12,'w');r(35,17,3,12,'w');r(21,19,6,20,'b');r(22,23,4,3,'s');r(22,31,4,3,'s');o(24,39,4,5,'l');r(20,14,8,7,'l');r(21,17,2,2,'e');r(26,17,2,2,'e');l(21,15,17,9,'s');l(27,15,31,9,'s');},'Amber sapwing with narrow glassy wings and a teardrop sap abdomen','flutter'),
+ 'tree-2':art({b:'#8d8668',l:'#d9d0a1',s:'#505e57',g:'#e4c77a',f:'#89b99a'},(r,l,o)=>{r(15,20,19,23,'s');r(18,22,13,19,'b');r(9,27,8,14,'l');r(33,27,8,14,'l');r(16,41,7,6,'s');r(28,41,7,6,'s');r(13,15,23,7,'l');for(let x=14;x<36;x+=7){r(x,6,3,12,'g');r(x-1,5,5,3,'f');}r(20,25,3,4,'f');r(28,25,3,4,'f');r(22,33,7,6,'g');r(24,34,3,3,'w');for(const x of [12,35]){r(x,30,2,6,'s');r(x+1,31,3,2,'f');}r(21,21,9,2,'g');},'Ivory crown guardian with a branching gold diadem and sky-blue eyes','sway'),
+ sunwell:art({b:'#6f9d83',l:'#c7dc9d',s:'#416d70',g:'#f5dc7e'},(r,l,o)=>{o(24,30,14,13,'s');r(15,23,19,18,'b');r(7,28,8,14,'s');r(34,28,8,14,'s');r(14,41,10,5,'s');r(27,41,10,5,'s');o(24,17,13,6,'l');o(24,17,9,3,'g');r(23,6,3,10,'g');r(16,8,3,4,'g');r(32,7,3,4,'g');r(19,27,3,3,'g');r(28,27,3,3,'g');r(21,34,8,3,'l');r(23,30,4,11,'g');},'Spring keeper carrying a luminous water basin and falling golden sap','sway'),
+ vault:art({b:'#8a7771',l:'#d5bc8d',s:'#484b5e',g:'#f0a767'},(r,l,o)=>{r(13,16,24,25,'s');r(15,18,20,22,'b');r(17,11,16,7,'l');r(21,7,8,5,'b');r(18,21,15,3,'s');r(20,21,4,2,'g');r(28,21,4,2,'g');o(25,32,6,6,'s');o(25,32,4,4,'l');r(24,30,2,6,'g');r(6,25,7,17,'s');r(37,23,7,19,'s');r(36,22,10,5,'l');r(13,41,10,6,'s');r(28,41,10,6,'s');},'Bronze vault automaton with a keyhole chest and hammer arm','sway'),
+ boss:art({b:'#75503f',l:'#bd8c60',s:'#382b34',f:'#87ae6f',g:'#e28b60'},(r,line,oval)=>{
+  for(const d of [-1,1]){
+   const arm=24+d*14,tip=24+d*21;
+   oval(arm,31,7,10,'s');oval(arm,29,5,8,'b');r(arm-3,24,6,3,'l');
+   line(24+d*7,21,24+d*12,10,'s');line(24+d*12,10,tip,4,'l');
+   line(24+d*12,10,24+d*9,3,'b');r(tip-2,4,4,5,'f');
+   line(24+d*6,39,24+d*16,46,'b');line(24+d*8,39,24+d*5,47,'l');
+   r(arm-4,37,8,4,'f');
+  }
+  oval(24,29,12,15,'s');oval(24,28,10,13,'b');
+  r(14,17,20,5,'l');r(17,16,14,3,'f');
+  r(16,24,5,3,'g');r(27,24,5,3,'g');
+  oval(24,34,6,8,'o');oval(24,34,4,6,'g');r(23,30,3,4,'w');
+  for(const [x,y] of [[15,31],[30,30],[19,40],[28,42]])r(x,y,3,2,'l');
+ },'Ancient root king with a moss crown, branch antlers and an amber heart framed by split bark','sway'),
+ 'boss-rootling':art({b:'#8d6656',l:'#d5aa83',s:'#463c49',g:'#bc6d88'},(r,l,o)=>{r(18,26,14,15,'b');r(21,22,8,5,'l');r(20,29,3,3,'g');r(27,29,3,3,'g');l(18,33,9,28,'b');l(31,33,40,26,'b');l(21,40,14,47,'s');l(28,40,35,47,'s');l(25,24,24,14,'s');r(20,12,10,4,'g');},'Small corrupted root sprig with magenta buds and forked feet','sway'),
+ 'ruin-bat':art({b:'#5e809a',l:'#94ced4',s:'#34465e',g:'#cfac6e'},(r,l,o)=>{for(let i=0;i<18;i++){r(3+i,15+i/2|0,1,14-i/2|0,'b');r(44-i,15+i/2|0,1,14-i/2|0,'b');}r(19,19,10,20,'s');r(18,12,5,12,'l');r(26,12,5,12,'l');r(20,22,3,3,'g');r(26,22,3,3,'g');r(22,30,4,5,'g');l(5,16,16,27,'l');l(42,16,31,27,'l');},'Ruins bat with turquoise glass wing veins and a brass chest seal','flutter'),
+ 'ruin-creeper':art({b:'#568b89',l:'#a4c2a1',s:'#344f60',g:'#dab76c'},(r,l,o)=>{r(17,21,15,20,'s');r(19,22,11,17,'b');r(16,16,17,6,'l');r(20,26,3,3,'g');r(27,26,3,3,'g');l(18,33,8,25,'b');l(31,33,41,23,'b');l(20,39,12,47,'b');l(28,39,37,47,'b');r(5,20,9,5,'l');r(37,17,7,6,'l');r(22,11,6,5,'g');},'Carved vine puppet with brass forehead seal and blade-shaped leaves','sway'),
+ 'archive-golem':art({b:'#a79073',l:'#dfcca0',s:'#5c646f',g:'#8ad0cf'},(r,l,o)=>{r(14,15,22,25,'s');r(17,18,16,19,'b');r(13,10,24,6,'l');r(21,7,8,4,'g');r(19,23,4,3,'g');r(28,23,4,3,'g');r(7,26,7,16,'l');r(36,26,7,16,'l');r(15,41,8,6,'s');r(29,41,8,6,'s');r(21,30,9,7,'l');l(23,31,27,35,'g');},'Archive golem built from engraved parchment slabs and cyan runes','sway'),
+ 'ruin-heart':art({b:'#777c9e',l:'#b8c0d5',s:'#3f455e',g:'#cf86bd'},(r,l,o)=>{o(24,27,14,17,'s');o(24,27,11,14,'b');r(11,15,27,4,'l');r(7,22,7,16,'s');r(35,22,7,16,'s');r(20,7,3,10,'l');r(28,5,3,12,'l');o(24,29,7,9,'s');o(24,29,4,6,'g');r(22,26,3,3,'w');l(16,40,9,47,'l');l(32,40,39,47,'l');r(7,27,3,7,'g');r(38,27,3,7,'g');},'Hollow reliquary with suspended violet heart, crystal horns and stone claws','float')
+};
+MONSTER_ART.tempest=art({b:'#3b7b92',l:'#a3d6cd',s:'#213852',f:'#dfaa67',g:'#dbf2dc'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*15;
+  oval(x,33,8,7,'s');oval(x,32,7,5,'b');
+  line(x,29,x+d*6,20,'l');line(x,30,x+d*8,30,'f');
+  for(let n=0;n<3;n++)line(24+d*8,34+n*3,24+d*(15+n*3),41+n*2,'s');
+ }
+ oval(24,27,14,14,'s');oval(24,25,12,11,'b');
+ for(let i=0;i<5;i++){
+  const x=11+i*6,h=5+Math.abs(2-i)*3;
+  line(x,21,x,h,'l');r(x-1,h,3,8,'f');
+  r(x-2,23,4,3,'l');
+ }
+ r(15,28,6,4,'g');r(27,28,6,4,'g');
+ oval(24,35,5,7,'o');oval(24,34,3,4,'f');r(23,32,2,2,'w');
+},'A stormglass crab sovereign with a brass reef crown, broad claws and luminous seafoam eyes','sway');
+export function monsterArtId(e){const id=typeof e==='string'?e:e?.artId||e?.id;return MONSTER_ART[id]?id:null;}
+export function drawMonsterArt(g,e,x,y,time=0,boss=false){const id=monsterArtId(e),a=MONSTER_ART[id];if(!a)return false;const bob=a.motion==='float'?Math.round(Math.sin(time*2)*3):Math.round(Math.sin(time*3)),scale=boss?5:2.3;g.fillStyle='#24383c33';g.fillRect(Math.round(x-17*scale),Math.round(y-2),34*scale,4);drawSprite(g,a,x-24*scale,y-48*scale+bob,scale);if(e?.huntTier>0){g.fillStyle=e.huntTier===2?'#c2a7da':'#e3c47c';for(let i=0;i<3;i++)g.fillRect(Math.round(x+(i*6-7)*scale),Math.round(y-41*scale-i%2*3),4*scale,4*scale);}return true;}
+
+MONSTER_ART.singularity=art({b:'#555b9a',l:'#aaa9ec',s:'#282847',g:'#8fe8dc',f:'#d7a86a'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*15;
+  r(x-4,13,8,22,'s');r(x-3,16,6,16,'b');r(x-3,17,6,3,'l');
+  line(x,12,x+d*5,7,'f');line(x,35,x+d*5,43,'l');r(x-2,36,4,3,'g');
+ }
+ oval(24,25,12,17,'s');oval(24,25,10,14,'b');
+ r(17,9,14,6,'f');r(19,10,10,3,'l');
+ oval(24,26,8,9,'o');oval(24,26,6,7,'s');oval(24,26,3,5,'g');r(23,24,2,3,'w');
+ r(15,22,4,10,'l');r(29,22,4,10,'l');r(18,37,12,4,'f');
+},'An orbital colossus with brass clamps, articulated armor shutters and a cyan reactor core','float');
+export function monsterSvg(e,cls='monster-art'){const id=monsterArtId(e);return id?spriteSvg(MONSTER_ART[id],cls):'';}
+
+// Tidewild silhouettes have area anatomy, then room-specific crests and palettes.
+for(const [region,a]of EXPANSION_AREAS.entries())if(!a.town)a.zones.forEach((_,i)=>{
+ const colours=({depths:['#6899bb','#81738f','#a99874'],'tide-shore':['#9ba991','#b78c71','#699da8'],'tide-marsh':['#879a69','#b49a62','#779f99'],'tide-dunes':['#c0a17a','#a88d78','#c7b98e'],'tide-bramble':['#8c9c72','#ab8a8d','#6e8a8a'],'tide-hunt':['#aa886f','#8e819c','#a9a185'],'tide-cliffs':['#7b98a8','#8b829e','#b0aa8d']})[a.id]||(a.world===3?['#8a75bd','#6ba3ba','#bb789b']:['#7b9b87','#b29877','#8d90a6']),b=colours[i%3],l=shade(b,34),s=shade(b,-38),f=colours[(i+1)%3];
+ MONSTER_ART[a.id+'-'+i]=art({b,l,s,f},(r,line,oval,pixels)=>{
+  const shape=({depths:[5,3,2],'tide-shore':[0,0,4,5,1],'tide-marsh':[1,1,1,6,2],'tide-dunes':[0,5,2,2],'tide-bramble':[3,3,4,3],'tide-hunt':[3,3,4,3,3],'tide-cliffs':[1,0,3,2]})[a.id]?.[i]??(region+i)%5;
+  if(shape===0){oval(24,31,15,10,'o');oval(24,30,13,8,'b');for(let n=0;n<3;n++){line(12,28+n*4,4,24+n*7,'s');line(35,28+n*4,44,24+n*7,'s');}r(9,17,6,11,'f');r(34,17,6,11,'f');r(19,25,3,4,'e');r(28,25,3,4,'e');}
+  if(shape===1){oval(11,22,9,13,'s');oval(37,22,9,13,'s');oval(11,20,7,10,'l');oval(37,20,7,10,'b');r(21,15,7,23,'b');r(21,14,8,6,'f');r(22,17,2,2,'e');r(27,17,2,2,'e');line(21,14,16,6,'s');line(28,14,33,6,'s');}
+  if(shape===2){r(13,23,22,17,'b');r(8,20,8,20,'s');r(34,20,8,20,'s');r(16,40,7,7,'s');r(28,40,7,7,'s');r(17,11,15,13,'l');r(19,16,4,3,'e');r(27,16,3,3,'e');r(22,29,5,7,'f');}
+  if(shape===3){oval(22,31,15,10,'b');r(30,18,11,15,'b');r(9,38,5,9,'s');r(28,38,5,9,'s');r(34,23,2,3,'e');r(38,30,7,4,'s');line(10,29,3,19,'f');line(32,19,28,7,'l');line(36,19,41,8,'l');}
+  if(shape===4){oval(24,27,12,13,'b');oval(24,24,8,9,'l');r(19,22,3,4,'e');r(28,22,3,4,'e');line(13,29,3,15,'s');line(34,29,44,15,'s');line(22,39,17,47,'f');line(27,39,33,47,'f');}
+  if(shape===5){oval(24,30,17,12,'s');oval(24,26,16,13,'b');oval(24,24,11,9,'l');for(let n=0;n<4;n++)line(14+n*6,20,13+n*6,33,'s');r(37,27,8,8,'b');r(40,28,2,2,'e');r(12,39,5,7,'s');r(30,39,5,7,'s');}
+  if(shape===6){for(let n=0;n<5;n++){const x=7+n*7,y=31+Math.round(Math.sin(n*1.6)*7);oval(x,y,6,5,'s');oval(x,y-2,5,3,'b');}oval(38,23,7,7,'l');r(39,21,3,3,'e');line(12,29,16,18,'f',2);line(25,30,29,20,'f',2);}
+  // Crests grow from the silhouette rather than floating as an identifier row.
+  for(let bit=0;bit<7;bit++){const x=8+bit*5;let top=8;while(top<40&&!pixels[top*SIZE+x])top++;if(top<40){const h=1+(((region*8+i)>>bit)&1)*4;line(x,top,x,Math.max(2,top-h),'f',2);}}
+  if(a.id.startsWith('void-')){
+   const x=17+i*2;
+   let top=8;while(top<35&&!pixels[top*SIZE+x])top++;
+   if(top<35){const tip=3+(region+i)%6;line(x,top,x-6,tip,'s');r(x-7,tip,3,4,'l');}
+  }
+  if(a.world===3){const x=5+region-9;line(x,38,x+i+2,46,'f');r(x+i+1,45,3,2,'l');}
+  for(let n=0;n<=i;n++)r(14+n*4,33+(n%2)*4,2,2,'l');
+ },a.names[i]+' — distinct anatomy and crest',['crawl','flutter','sway','bob','float'][(region+i)%5]);
+});
+
+// These Astral Reach creatures have silhouettes based on their names and habitats.
+MONSTER_ART['orbit-garden-0']=art({b:'#679b88',l:'#acd6a2',s:'#345e63',f:'#ecadba'},(r,line,oval)=>{
+ oval(21,32,15,11,'o');oval(21,31,13,9,'b');oval(21,27,10,4,'l');
+ for(const x of [10,18,27]){r(x,37,5,9,'s');r(x-1,45,7,2,'o');}
+ r(30,23,12,12,'o');r(31,24,10,9,'l');r(38,27,2,3,'e');r(39,32,7,3,'s');
+ line(19,27,19,13,'s');line(19,18,13,13,'l');line(19,18,26,13,'l');
+ oval(19,10,7,6,'o');oval(19,10,6,5,'f');r(18,8,3,3,'w');
+},'A round garden grazer with a pink starbud sprouting from its green shell','crawl');
+MONSTER_ART['orbit-silk-4']=art({b:'#8b72b7',l:'#caade1',s:'#45375f',f:'#82dedb'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  oval(24+d*11,19,10,12,'o');oval(24+d*11,18,8,10,'b');
+  oval(24+d*10,32,8,9,'s');oval(24+d*11,33,5,6,'l');
+  oval(24+d*13,16,4,5,'s');oval(24+d*13,16,2,3,'f');
+  line(24+d*3,14,24+d*7,5,'l');r(23+d*7,4,3,2,'f');
+ }
+ oval(24,26,5,15,'o');oval(24,25,3,12,'l');r(21,19,6,3,'f');
+},'Nebula moth with four scalloped wings, luminous eyespots, and pale antennae','flutter');
+MONSTER_ART['orbit-relay-0']=art({b:'#5d879c',l:'#a4cbdb',s:'#39445f',f:'#f1c778'},(r,line,oval)=>{
+ r(13,19,22,17,'o');r(15,21,18,13,'b');r(17,22,14,4,'l');r(19,28,10,4,'f');
+ for(const x of [5,36]){r(x,24,7,12,'s');r(x+1,34,5,4,'l');r(x+2,39,3,5,'f');}
+ line(23,20,25,12,'s');line(19,12,32,6,'l');line(20,13,32,8,'b');
+ r(29,6,4,3,'f');r(16,36,16,3,'s');r(21,40,6,3,'l');
+},'A compact receiver drone with a tilted dish, amber visor, and twin thrusters','float');
+
+// Expansion species share a visual family, with anatomy and colours chosen per creature.
+const species={
+ crab(r,line,oval,v){
+  const reach=7+v;
+  for(const d of [-1,1]){
+   for(let i=0;i<3;i++){
+    line(24+d*9,30+i*3,24+d*(15+i),35+i*4,'o');
+    line(24+d*9,29+i*3,24+d*(14+i),34+i*4,'s');
+   }
+   line(24+d*12,29,24+d*(reach+8),21-v,'s');
+   oval(24+d*(reach+8),18-v,5,6,'o');
+   oval(24+d*(reach+8),17-v,4,4,'l');
+   r(22+d*(reach+8),12-v,4,5,'o');
+  }
+  oval(24,30,14,9,'o');oval(24,29,12,8,'b');oval(24,26,9,4,'l');
+  r(18,20,3,6,'s');r(27,20,3,6,'s');r(18,20,2,2,'f');r(27,20,2,2,'f');
+ },
+ ray(r,line,oval,v){
+  for(const d of [-1,1])for(let i=0;i<19;i++){
+   const y=18+Math.floor((18-i)*(v+2)/8),x=24+d*i;
+   r(x,y,1,Math.max(3,16-i/2),'o');r(x,y+2,1,Math.max(1,12-i/2),'b');
+   if(i%5===0)r(x,y+4,1,3,'f');
+  }
+  oval(24,27,9,11,'s');oval(24,24,8,6,'l');r(18,24,4,2,'e');r(27,24,4,2,'e');
+  line(24,34,23-v,40,'b');line(23-v,40,26-v*2,46,'l');
+ },
+ hound(r,line,oval,v){
+  const head=18-v;
+  line(10,32,3,23+v,'o');line(11,31,4,23+v,'l');
+  for(const x of [11,18,29,35]){r(x,33,4,12-(x%2)*2,'s');r(x-1,43-(x%2)*2,6,3,'o');}
+  oval(22,30,14,9,'o');oval(22,29,12,7,'b');oval(18,27,8,3,'l');
+  r(28,head,12,15,'o');r(29,head+2,10,12,'b');r(36,head+8,10,6,'s');
+  r(30,head-5-v,4,8+v,'o');r(35,head-4,4,7,'s');r(35,head+4,3,3,'f');
+  for(let i=0;i<=v;i++)r(14+i*3,25,1,6,'s');
+ },
+ wisp(r,line,oval,v){
+  for(let i=0;i<6;i++){
+   const x=8+i*5,y=32+Math.round(Math.sin(i)*4);
+   oval(x,y,5,4,'s');oval(x,y-2,4,3,'b');
+  }
+  oval(26,24,12,14,'o');oval(26,23,10,12,'b');oval(26,22,7,8,'l');
+  line(18,18,13-v,7+v,'b');line(28,14,30+v,4,'l');
+  line(34,20,40+v,12-v,'b');r(21,22,4,3,'e');r(29,22,4,3,'e');
+  r(24,29,6,3,'f');r(10+v,39,3,2,'f');
+ },
+ sentinel(r,line,oval,v){
+  r(15,18,19,22,'o');r(17,20,15,19,'b');r(14,10-v,21,10+v,'s');
+  r(17,12-v,15,4,'l');r(19,16,11,3,'f');r(22,16,5,2,'w');
+  for(const d of [-1,1]){
+   const x=24+d*(13+v);
+   line(24+d*6,22,x,24,'l');r(x-3,23,7,13,'s');r(x-2,26,5,4,'l');
+   r(21+d*6,38,7,8,'s');r(20+d*6,44,9,3,'o');
+  }
+  oval(24,29,5,6,'s');oval(24,28,3,4,'f');
+ }
+};
+const expandedSpecies=[
+ ['crab','sculpted pincers and segmented shell',[
+  ['tide-shore-0','#a57962','#e6c583'],['tide-shore-1','#98605b','#f1b78b'],['tide-marsh-0','#6d986d','#d2dd88']
+ ]],
+ ['ray','broad fins and luminous markings',[
+  ['tide-shore-4','#548c9f','#d5f1d9'],['orbit-rim-3','#966bba','#9fe9e2'],['orbit-comets-2','#699dbc','#d9f6ff']
+ ]],
+ ['hound','angular muzzle and a low running stance',[
+  ['tide-hunt-0','#b67857','#f5d49e'],['orbit-wilds-0','#7f8fba','#e5be89'],['orbit-wilds-1','#a372a0','#a4e4de'],['tide-hunt-3','#726b8d','#d8e2ed']
+ ]],
+ ['wisp','bright core and a trailing wake',[
+  ['orbit-garden-2','#8f80bf','#f0c3dc'],['orbit-comets-0','#599fb5','#ddf7f5'],['orbit-relay-2','#7185bf','#ffc593'],['orbit-comets-5','#b47875','#ffcb90']
+ ]],
+ ['sentinel','plated shoulders and a lit visor',[
+  ['tide-cliffs-3','#7f91a3','#e8d594'],['orbit-relay-1','#668f9e','#c2fcf4'],['orbit-relay-5','#9b78a2','#f6bb9b'],['orbit-rim-5','#6d74a2','#bcb3ff']
+ ]]
+];
+for(const [family,details,entries] of expandedSpecies){
+ for(const [variant,[id,b,f]] of entries.entries()){
+  MONSTER_ART[id]=art({b,f,l:shade(b,40),s:shade(b,-38)},(r,line,oval)=>species[family](r,line,oval,variant),
+   'A '+family+' with '+details+'.',family==='ray'||family==='wisp'?'float':'crawl');
+ }
+}
+
+MONSTER_ART.unmoored=art({b:'#6c4f94',l:'#c0a2e0',s:'#352748',f:'#d394e7',g:'#9ce2e6'},(r,line,oval)=>{
+ for(const d of [-1,1]){
+  const x=24+d*14;
+  oval(x,23,6,10,'s');oval(x,22,5,8,'b');r(x-3,17,6,4,'l');
+  line(x,13,x+d*5,5,'l');line(x,33,x+d*4,39,'f');r(x+d*4-2,42,4,4,'s');
+  r(x-2,25,4,2,'g');
+ }
+ oval(24,25,10,15,'s');oval(24,24,8,12,'b');
+ line(18,16,14,6,'l');line(30,16,34,6,'l');r(21,8,6,4,'f');
+ r(18,20,5,2,'g');r(25,20,5,2,'g');
+ oval(24,29,6,7,'o');line(21,29,27,29,'f');r(23,25,2,9,'g');
+ line(21,38,17,45,'s');line(27,38,31,45,'l');
+},'A fractured Void monarch with floating pauldrons, broken chains and a suspended anchor heart','float');

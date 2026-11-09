@@ -1,0 +1,42 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
+const root=path.join(__dirname,'..'),ctx=vm.createContext({console,performance,setTimeout,clearTimeout});
+for(const m of fs.readFileSync(path.join(root,'index.html'),'utf8').matchAll(/<script src="([^"]+)"/g))if(m[1]!=='js/app.js')vm.runInContext(fs.readFileSync(path.join(root,m[1]),'utf8'),ctx,{filename:m[1]});
+const run=c=>vm.runInContext(c,ctx);let checks=0;
+const check=(c,e,label)=>{assert.equal(run(c),e,label);checks++;};
+run(`function mixtureFixture(smiles,additives=['dmp'],reagent=null){
+ const compounds=smiles.map(smiles=>({smiles,fragment:smilesToFragment(smiles),role:'reactant',equiv:'1'}));
+ if(reagent)compounds.push({smiles:reagent,fragment:smilesToFragment(reagent),role:'reagent',equiv:'4'});
+ const conditions={...defaultReactionConditions(),solvents:[reagent?'ether':'dcm'],additives};
+ const prediction=predictReaction(compounds,conditions);
+ return {compounds,conditions,prediction};
+}
+function mixtureOutcome(f,id){return [f.prediction.best,...f.prediction.alternatives].find(o=>o&&o.id===id);}
+`);
+check(`!!mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp')`,true,'Oxidation remains an inspectable branch');
+check(`mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp').chemoselectivity.otherInputs.length`,1,'Other alcohol input is recorded');
+check(`mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp').chemoselectivity.otherInputs[0].source`,'unconsumed-input','Input origin is explicit');
+check(`mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp').chemoselectivity.otherInputs[0].substrateSmiles`,'CCCO','Other input identity is retained');
+check(`routeStepAssessment({outcome:mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp')}).blockers.some(b=>b.code==='competing-sites')`,true,'Planner rejects unestablished survival');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']),o=mixtureOutcome(f,'oxidation-dmp');return reactionScopeAssess(f.compounds,f.conditions,o).selectivity.status;})()`,'conflict','Query scope carries the mixture conflict');
+check(`mixtureOutcome(mixtureFixture(['CCO']),'oxidation-dmp').chemoselectivity`,null,'Single alcohol stays unflagged');
+check(`mixtureOutcome(mixtureFixture(['CCO','CCC']),'oxidation-dmp').chemoselectivity`,null,'Hydrocarbon is not invented as a competing site');
+check(`mixtureOutcome(mixtureFixture(['CCO','CC(C)(C)O']),'oxidation-dmp').chemoselectivity`,null,'Tertiary alcohol is not oxidizable in this model');
+check(`mixtureOutcome(mixtureFixture(['CCO','CC(=O)C']),'oxidation-dmp').chemoselectivity`,null,'DMP does not inherit hydride carbonyl susceptibility');
+check(`(()=>{const f=mixtureFixture(['CCO','OCCO']),o=mixtureOutcome(f,'oxidation-dmp');return o.chemoselectivity.otherInputs[0].count;})()`,2,'Other polyol preserves site multiplicity');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']),before=JSON.stringify(f.compounds);predictReaction(f.compounds,f.conditions);return before===JSON.stringify(f.compounds);})()`,true,'Prediction does not mutate inputs');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']);f.compounds[1].role='solvent';return mixtureOutcome({...f,prediction:predictReaction(f.compounds,f.conditions)},'oxidation-dmp').chemoselectivity;})()`,null,'Explicit solvent role is outside additional-reactant audit');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']);f.compounds[1].role='catalyst';return mixtureOutcome({...f,prediction:predictReaction(f.compounds,f.conditions)},'oxidation-dmp').chemoselectivity;})()`,null,'Catalyst role is not treated as a substrate');
+check(`(()=>{const f=mixtureFixture(['CC(=O)C','CCC=O'],[],'[Na+].[BH4-]'),o=mixtureOutcome(f,'reduction-nabh4');return !!o&&o.chemoselectivity.otherInputs.length===1;})()`,true,'NaBH4 flags additional reducible carbonyl input');
+check(`(()=>{const f=mixtureFixture(['CC(=O)C','CCC(=O)OC'],[],'[Na+].[BH4-]'),o=mixtureOutcome(f,'reduction-nabh4');return !!o&&!o.chemoselectivity;})()`,true,'NaBH4 does not falsely attack an additional ester');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']);return [f.prediction.best,...f.prediction.alternatives].filter(o=>o&&o.id==='oxidation-dmp').every(o=>o.chemoselectivity.otherInputs.length===1);})()`,true,'Every oxidation branch audits the other reactant');
+check(`mixtureOutcome(mixtureFixture(['CCCO','CCO']),'oxidation-dmp').chemoselectivity.otherInputs.length`,1,'Input ordering cannot hide competing input');
+check(`(()=>{const f=mixtureFixture(['OCCO']),o=mixtureOutcome(f,'oxidation-dmp');return reactionScopeAssess(f.compounds,f.conditions,o).selectivity.status==='multiple-sites';})()`,true,'DMP bulk polyol edits share the main audit');
+check(`mixtureOutcome(mixtureFixture(['CCO','CCCO'],[],'[O-][Cr](=O)(=O)Cl.c1cc[nH+]cc1'),'oxidation-pcc').chemoselectivity.otherInputs.length`,1,'PCC sees another oxidizable alcohol');
+check(`(()=>{const e=RX_CHEMOSELECTIVITY.find(e=>e.id==='chromium');return rxChemoSusceptibleGroups(reactionFragmentGraph(smilesToFragment('CC(C)(C)O')),e).alcohol.length;})()`,0,'Jones ordinary-alcohol model excludes tertiary sites');
+check(`(()=>{const e=RX_CHEMOSELECTIVITY.find(e=>e.id==='chromium');return rxChemoSusceptibleGroups(reactionFragmentGraph(smilesToFragment('CC(O)C')),e).alcohol.length;})()`,1,'Jones secondary alcohol susceptibility is retained');
+check(`(()=>{const o=mixtureOutcome(mixtureFixture(['CCO','CCCO']),'oxidation-dmp');return routeStepAssessment({pgSteps:[{outcome:o}]}).blockers.some(b=>b.code==='competing-sites');})()`,true,'Collapsed protection sequences retain the same mixture gate');
+check(`(()=>{const f=mixtureFixture(['CCO']),o=mixtureOutcome(f,'oxidation-dmp');f.compounds.push({smiles:'CCCO',fragment:smilesToFragment('CCCO'),role:'reactant'});return reactionScopeAssess(f.compounds,f.conditions,o).selectivity.status;})()`,'conflict','Saved clean branch is reaudited after adding a reactive input');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']),o=mixtureOutcome(f,'oxidation-dmp'),used=o.consumes.map(u=>u.compound);return reactionScopeAssess(f.compounds.filter(c=>used.includes(c)),f.conditions,o).selectivity.status;})()`,'single-recognized-site','Removed competing input does not leave a stale conflict');
+check(`(()=>{const f=mixtureFixture(['CCO','CCCO']),o=mixtureOutcome(f,'oxidation-dmp'),before=JSON.stringify(o);reactionScopeAssess(f.compounds,f.conditions,o);return before===JSON.stringify(o);})()`,true,'Scope replay does not mutate the saved outcome');
+console.log('Mixture redox compatibility: '+checks+' checks passed.');

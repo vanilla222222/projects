@@ -34,7 +34,7 @@ const AUTO_OPEN_ROOM_TYPES = new Set([
 const MANDATORY_ROOM_TYPES = ['boss', 'treasure', 'shop', 'secret', 'supersecret'];
 
 const DUNGEON_CONFIG = {
-  roomCount: { base: 12, perFloor: 2, spread: 4, floorMin: 6 },
+  roomCount: { base: 9, perFloor: 0.7, spread: 3, floorMin: 7, max: 17 },
   radiusBase: 8, radiusPerFloor: 1, radiusHeadroom: 2,
   specialBudget: { base: 3, perFloors: 4, max: 6 },
   specialChances: {
@@ -351,9 +351,10 @@ function attachSuperSecretRoom(rooms, blockGrid, radius, floorNum){
 function generateDungeon(floorNum){
 
   const rc = DUNGEON_CONFIG.roomCount;
-  const rawMin = rc.base + rc.perFloor * floorNum - rc.spread / 2;
+  const normalCenter = Math.min(rc.max, rc.base + rc.perFloor * floorNum);
+  const rawMin = normalCenter - rc.spread / 2;
   const minNormal = Math.max(rc.floorMin, Math.round(rawMin));
-  const maxNormal = Math.max(minNormal, Math.round(rc.base + rc.perFloor * floorNum + rc.spread / 2));
+  const maxNormal = Math.max(minNormal, Math.round(normalCenter + rc.spread / 2));
 
   const radius = DUNGEON_CONFIG.radiusBase + DUNGEON_CONFIG.radiusPerFloor * floorNum + DUNGEON_CONFIG.radiusHeadroom;
 
@@ -377,7 +378,7 @@ function generateDungeon(floorNum){
   }
   const groupAType = weightedGroupPick(['curse', 'sacrifice', 'challenge', 'miniboss', 'bosschallenge']);
   const groupBType = weightedGroupPick(['shrine', 'petshop', 'vault', 'arcade', 'karma']);
-  const starRolled = Util.chance(Math.min(1, DUNGEON_CONFIG.specialChances.star + getStarRoomChanceBonus()));
+  const starRolled = Util.chance(DUNGEON_CONFIG.specialChances.star);
 
   const decidedSpecialCount = 5 + 2;
   const targetNormal = Math.min(maxNormal, Math.max(minNormal, totalRoomTarget - decidedSpecialCount));

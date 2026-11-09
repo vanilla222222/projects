@@ -1,23 +1,20 @@
 'use strict';
 
-'use strict';
+function encounterGrowth(floorNum, early, late){
+  const floor = Math.max(0, floorNum || 0);
+  const depth = Math.max(0, floor - 7);
+  return early ** Math.min(floor, 7) * (1 + late * depth + 0.22 * (late * depth) ** 2);
+}
 
-const ENEMY_HP_GROWTH = 1.20;
-function enemyHpScale(floorNum){ return Math.pow(ENEMY_HP_GROWTH, floorNum || 0); }
-
-const BOSS_HP_GROWTH = 1.36;
-function bossHpScale(floorNum){ return Math.pow(BOSS_HP_GROWTH, floorNum || 0); }
-
-const BOSS_DMG_GROWTH = 1.06;
-function bossDmgScale(floorNum){ return Math.pow(BOSS_DMG_GROWTH, floorNum || 0); }
-
-const MINIBOSS_HP_GROWTH = 1.28;
-function minibossHpScale(floorNum){ return Math.pow(MINIBOSS_HP_GROWTH, floorNum || 0); }
+function enemyHpScale(floorNum){ return encounterGrowth(floorNum, 1.17, 0.10); }
+function bossHpScale(floorNum){ return encounterGrowth(floorNum, 1.28, 0.17); }
+function minibossHpScale(floorNum){ return encounterGrowth(floorNum, 1.23, 0.13); }
+function bossDmgScale(floorNum){ return encounterGrowth(floorNum, 1.04, 0.012); }
 function minibossDmgScale(floorNum){ return bossDmgScale(floorNum); }
 
-function explosionDamage(floorNum){ return Math.max(1, Math.round(4 * bossHpScale(floorNum))); }
+function explosionDamage(floorNum){ return Math.max(1, Math.round(4 * encounterGrowth(floorNum, 1.22, 0.16))); }
 
-function statusTickDamage(floorNum){ return Math.max(1, Math.round(0.6 * bossHpScale(floorNum))); }
+function statusTickDamage(floorNum){ return Math.max(1, Math.round(0.6 * enemyHpScale(floorNum))); }
 
 const STAGE_DIFFICULTY_HP = [
   1.00, 1.00,
@@ -26,9 +23,9 @@ const STAGE_DIFFICULTY_HP = [
   1.54, 1.58, 1.62, 1.66, 1.70
 ];
 
-const STAGE_AGGRESSION_SHARE = 0.35;
+const STAGE_AGGRESSION_SHARE = 0.18;
 
-const STAGE_DAMAGE_SHARE = 0.5;
+const STAGE_DAMAGE_SHARE = 0.32;
 
 function stageDifficultyMult(floorNum){
   if (typeof stageIndexForFloor !== 'function') return 1;

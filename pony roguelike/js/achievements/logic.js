@@ -128,6 +128,7 @@ function ensureUnlockShape(unlocks){
     unlocks.stats.donationTotal = Math.max(unlocks.stats.donationTotal, unlocks.donationTotal);
     delete unlocks.donationTotal;
   }
+  migrateSkillTreeSpecializations(unlocks.skillTree);
   return unlocks;
 }
 

@@ -17,7 +17,14 @@ function aiFeared(game, e, dt){
 }
 
 function aiCharmed(game, e, dt){
-  aiWander(game, e, dt);
+  let target = null, nearest = Infinity;
+  for (const enemy of game.currentRoom.enemies) {
+    if (enemy === e || enemy.isDead || enemy.charmTimer > 0 || enemy.submerged) continue;
+    const distance = Util.dist2(e.x, e.y, enemy.x, enemy.y);
+    if (distance < nearest) { target = enemy; nearest = distance; }
+  }
+  if (target) chaseSeek(game, e, target.x, target.y, 0.9, dt);
+  else aiWander(game, e, dt);
 }
 
 function seekVector(e, tx, ty){
@@ -42,6 +49,7 @@ function makeIsBlockedFn(node, e){
 
 function hasLineOfSight(node, e, tx, ty){
   const flying = !!(e.flies || e.canFly);
+  const radius = e.radius || 0;
   const dx = tx - e.x, dy = ty - e.y;
   const dist = Math.hypot(dx, dy) || 1;
   const steps = Math.max(1, Math.ceil(dist / (TILE * 0.5)));
@@ -51,7 +59,7 @@ function hasLineOfSight(node, e, tx, ty){
     for (const ob of node.obstacles) {
       if (ob.destroyed || ob.isHazard || ob.isWalkable) continue;
       if (flying && !ob.alwaysBlocks) continue;
-      if (Util.dist(px, py, ob.x, ob.y) < ob.radius + e.radius * 0.5) return false;
+      if (Util.dist(px, py, ob.x, ob.y) < ob.radius + radius * 0.5) return false;
     }
   }
   return true;
@@ -79,7 +87,22 @@ function chaseSeek(game, e, tx, ty, speedMul, dt){
 
   const player = game.player;
   const auraMult = (player.passives.calmingincense && Util.dist(e.x, e.y, player.x, player.y) < 150) ? 0.85 : 1;
-  return tryMoveEntity(e, node, node.obstacles, v.x * e.speed * dt * speedMul * auraMult, v.y * e.speed * dt * speedMul * auraMult);
+  let x = v.x, y = v.y;
+  if (!target && !e.isBoss && !e.isMiniboss && !e.isChallengeBoss && !(e.charmTimer > 0)) {
+    for (const neighbor of node.enemies) {
+      if (neighbor === e || neighbor.isDead || neighbor.submerged) continue;
+      const dx = e.x - neighbor.x, dy = e.y - neighbor.y;
+      const distance = Math.hypot(dx, dy);
+      const spacing = Math.min(34, e.radius + neighbor.radius + 5);
+      if (distance > 0 && distance < spacing) {
+        const strength = (1 - distance / spacing) * 0.48;
+        x += dx / distance * strength;
+        y += dy / distance * strength;
+      }
+    }
+  }
+  const scale = e.speed * dt * speedMul * auraMult / Math.max(1, Math.hypot(x, y));
+  return tryMoveEntity(e, node, node.obstacles, x * scale, y * scale);
 }
 
 function aiChase(game, e, dt){
@@ -109,23 +132,59 @@ function fireSpread(game, shooter, tx, ty, speed, damage, opts){
   for (let i = 0; i < n; i++) fireProjectileAngle(game, shooter, aim - spread / 2 + step * i, speed, damage, opts);
 }
 
+// Windups lock a direction so the player can dodge the line rather than the shot.
+function reserveEnemyWindup(game, enemy){
+  if (enemy.isBoss || enemy.isMiniboss || enemy.isChallengeBoss) return true;
+  const room = game.currentRoom;
+  const time = game.runElapsed || 0;
+  if ((room.nextEnemyWindup || 0) > time) return false;
+  room.nextEnemyWindup = time + (room.type === 'boss' ? 0.55 : 0.28);
+  return true;
+}
+
+function startEnemyAim(enemy, player, time, range){
+  const aim = seekVector(enemy, player.x, player.y);
+  enemy.attackAim = { x:aim.x, y:aim.y, remaining:time, range };
+}
+
+function updateEnemyAim(game, enemy, dt, range, windup, speed, color, radius, opts){
+  const player = game.player;
+  const type = enemy.type;
+  if (enemy.attackAim) {
+    const aim = enemy.attackAim;
+    aim.remaining -= dt;
+    if (aim.remaining <= 0) {
+      enemy.attackAim = null;
+      enemy.fireTimer = type.fireCooldown || 1.5;
+      fireSpread(game, enemy, enemy.x + aim.x * range, enemy.y + aim.y * range,
+        speed, enemy.dmg, Object.assign({ color, radius }, opts));
+    }
+    return true;
+  }
+  enemy.fireTimer = Math.max(0, enemy.fireTimer - dt);
+  if (enemy.fireTimer > 0 || Util.dist(enemy.x, enemy.y, player.x, player.y) > range
+    || !hasLineOfSight(game.currentRoom, enemy, player.x, player.y)
+    || !reserveEnemyWindup(game, enemy)) return false;
+  startEnemyAim(enemy, player, windup, range);
+  return true;
+}
+
 function aiRanged(game, e, dt){
   const node = game.currentRoom, player = game.player, t = e.type;
-  const d = Util.dist(e.x, e.y, player.x, player.y);
+  if (updateEnemyAim(game, e, dt, t.fireRange || 420, 0.34, t.boltSpeed || 200,
+    t.boltColor || '#d9895a', t.boltRadius || 5)) return;
+  const v = seekVector(e, player.x, player.y);
   const keep = t.keepDistance || 160;
-  if (d < keep - 20) {
-
-    const mx = e.x - player.x, my = e.y - player.y;
-    const len = Math.hypot(mx, my) || 1;
-    tryMoveEntity(e, node, node.obstacles, (mx / len) * e.speed * dt, (my / len) * e.speed * dt);
-  } else if (d > keep + 20) {
+  if (v.d < keep - 20) {
+    const scale = e.speed * dt * 0.7;
+    tryMoveEntity(e, node, node.obstacles, -v.x * scale, -v.y * scale);
+  } else if (v.d > keep + 20 || !hasLineOfSight(node, e, player.x, player.y)) {
     chaseSeek(game, e, player.x, player.y, 1, dt);
-  }
-  e.fireTimer -= dt;
-  if (e.fireTimer <= 0 && d < (t.fireRange || 420)) {
-    e.fireTimer = t.fireCooldown || 1.5;
-    fireSpread(game, e, player.x, player.y, t.boltSpeed || 200, e.dmg,
-      { color: t.boltColor || '#d9895a', radius: t.boltRadius || 5 });
+  } else {
+    const scale = e.speed * dt * 0.45;
+    const side = e.strafeSide || (e.strafeSide = Util.chance(0.5) ? 1 : -1);
+    const step = tryMoveEntity(e, node, node.obstacles, -v.y * scale * side, v.x * scale * side);
+    if (!step.movedX && !step.movedY) e.strafeSide = -side;
   }
 }
 
@@ -137,12 +196,9 @@ function aiFlyer(game, e, dt){
   const mx = v.x * 0.6 + e.pathDir.x * 0.4, my = v.y * 0.6 + e.pathDir.y * 0.4;
   const len = Math.hypot(mx, my) || 1;
   tryMoveEntity(e, node, node.obstacles, (mx/len) * e.speed * dt, (my/len) * e.speed * dt);
-  e.fireTimer -= dt;
-  if (e.fireTimer <= 0 && v.d < (t.fireRange || 380)) {
-    e.fireTimer = t.fireCooldown || 1.5;
-    fireSpread(game, e, player.x, player.y, t.boltSpeed || 200, e.dmg,
-      { color: t.boltColor || '#e0b35a', radius: t.boltRadius || 4 });
-  }
+  updateEnemyAim(game, e, dt, t.fireRange || 380, 0.3, t.boltSpeed || 200,
+    t.boltColor || '#e0b35a', t.boltRadius || 4);
+
 }
 
 function aiBomber(game, e, dt){
@@ -164,63 +220,53 @@ function aiBomber(game, e, dt){
 }
 
 function aiCharger(game, e, dt){
-  const node = game.currentRoom, player = game.player, t = e.type;
-  if (e.dashing) {
-    tryMoveEntity(e, node, node.obstacles, e.dashVX * dt, e.dashVY * dt);
-    e.dashTimer -= dt;
-    if (e.dashTimer <= 0) e.dashing = false;
-  } else if (e.telegraph > 0) {
-    e.telegraph -= dt;
-    e.hitFlash = (Math.sin(e.telegraph * 30) > 0) ? 0.12 : 0;
-    if (e.telegraph <= 0) {
-      const v = seekVector(e, player.x, player.y);
-      const cs = t.chargeSpeed || 6;
-      e.dashing = true; e.dashTimer = t.dashDuration || 0.4;
-      e.dashVX = v.x * e.speed * cs; e.dashVY = v.y * e.speed * cs;
-    }
-  } else {
-    chaseSeek(game, e, player.x, player.y, 0.7, dt);
-    e.attackTimer -= dt;
-    if (e.attackTimer <= 0 && Util.dist(e.x, e.y, player.x, player.y) < 260) {
-      e.attackTimer = t.chargeCooldown || 2.2;
-      e.telegraph = t.telegraphTime || 0.5;
-    }
-  }
+  updateCommittedDash(game, e, dt, false);
 }
 
 function aiTurret(game, e, dt){
-  const player = game.player, t = e.type;
-  const d = Util.dist(e.x, e.y, player.x, player.y);
-  e.fireTimer -= dt;
-  if (e.fireTimer <= 0 && d < (t.fireRange || 420)) {
-    e.fireTimer = t.fireCooldown || 1.5;
-    fireSpread(game, e, player.x, player.y, t.boltSpeed || 200, e.dmg,
-      { color: t.boltColor || '#c9a25a', radius: t.boltRadius || 5 });
-  }
+  const t = e.type;
+  updateEnemyAim(game, e, dt, t.fireRange || 420, 0.48, t.boltSpeed || 200,
+    t.boltColor || '#c9a25a', t.boltRadius || 5);
 }
 
 function aiLeaper(game, e, dt){
-  const node = game.currentRoom, player = game.player, t = e.type;
-  if (e.dashing) {
-    tryMoveEntity(e, node, node.obstacles, e.dashVX * dt, e.dashVY * dt);
-    e.dashTimer -= dt;
-    if (e.dashTimer <= 0) e.dashing = false;
-  } else if (e.telegraph > 0) {
-    e.telegraph -= dt;
-    if (e.telegraph <= 0) {
-      const v = seekVector(e, player.x, player.y);
-      const ls = t.leapSpeed || 5;
-      e.dashing = true; e.dashTimer = t.dashDuration || 0.3;
-      e.dashVX = v.x * e.speed * ls; e.dashVY = v.y * e.speed * ls;
+  updateCommittedDash(game, e, dt, true);
+}
+
+function updateCommittedDash(game, enemy, dt, leaping){
+  const node = game.currentRoom, player = game.player, type = enemy.type;
+  const range = leaping ? 200 : 260;
+  if (enemy.dashing) {
+    const oldX = enemy.x, oldY = enemy.y;
+    tryMoveEntity(enemy, node, node.obstacles, enemy.dashVX * dt, enemy.dashVY * dt);
+    enemy.dashTimer -= dt;
+    if (enemy.dashTimer <= 0 || Util.dist2(oldX, oldY, enemy.x, enemy.y) < 0.01) {
+      enemy.dashing = false;
+      enemy.dashRecovery = leaping ? 0.55 : 0.72;
     }
+    return;
+  }
+  if (enemy.dashRecovery > 0) { enemy.dashRecovery -= dt; return; }
+  if (enemy.attackAim) {
+    const aim = enemy.attackAim;
+    aim.remaining -= dt;
+    if (aim.remaining <= 0) {
+      enemy.attackAim = null;
+      const speed = enemy.speed * (leaping ? type.leapSpeed || 5 : type.chargeSpeed || 6);
+      enemy.dashing = true;
+      enemy.dashTimer = type.dashDuration || (leaping ? 0.3 : 0.4);
+      enemy.dashVX = aim.x * speed;
+      enemy.dashVY = aim.y * speed;
+      enemy.attackTimer = leaping ? type.leapCooldown || 1.5 : type.chargeCooldown || 2.2;
+    }
+    return;
+  }
+  enemy.attackTimer = Math.max(0, enemy.attackTimer - dt);
+  if (enemy.attackTimer === 0 && Util.dist2(enemy.x, enemy.y, player.x, player.y) < range ** 2
+      && hasLineOfSight(node, enemy, player.x, player.y) && reserveEnemyWindup(game, enemy)) {
+    startEnemyAim(enemy, player, Math.max(0.42, type.telegraphTime || 0.5), range);
   } else {
-    e.attackTimer -= dt;
-    if (e.attackTimer <= 0) {
-      e.attackTimer = t.leapCooldown || 1.5;
-      e.telegraph = t.telegraphTime || 0.5;
-    } else {
-      chaseSeek(game, e, player.x, player.y, 0.3, dt);
-    }
+    chaseSeek(game, enemy, player.x, player.y, leaping ? 0.58 : 0.7, dt);
   }
 }
 
@@ -275,11 +321,12 @@ function aiSummoner(game, e, dt){
   }
   e.summonTimer -= dt;
   const cap = t.maxSummons || 6;
-  if (e.summonTimer > 0 || e.minionsSpawned >= cap) return;
+  const live = node.enemies.filter(other => !other.isDead && !other.isBoss).length;
+  if (e.summonTimer > 0 || e.minionsSpawned >= cap || live >= 8 || !reserveEnemyWindup(game, e)) return;
   e.summonTimer = t.summonCooldown || 6;
   const def = ENEMY_TYPES[t.summonId || 'swarmerdnb'];
   if (!def) return;
-  const n = Math.min(t.summonCount || 2, cap - e.minionsSpawned);
+  const n = Math.min(t.summonCount || 2, cap - e.minionsSpawned, 8 - live);
   for (let i = 0; i < n; i++) {
     const ang = RNG.random() * Math.PI * 2;
     const spot = findNearestFloor(node, Math.floor((e.x + Math.cos(ang) * 55) / TILE), Math.floor((e.y + Math.sin(ang) * 55) / TILE));
@@ -296,6 +343,7 @@ function aiHealer(game, e, dt){
   e.healTimer -= dt;
   if (e.healTimer > 0) return;
   const R = t.healRadius || 140, amt = t.healAmount || 2;
+  let pulses = 0;
   let healed = false;
   for (const o of node.enemies) {
     if (o === e || o.isDead || o.isBoss || o.hp >= o.maxHp) continue;
@@ -303,32 +351,21 @@ function aiHealer(game, e, dt){
     o.hp = Math.min(o.maxHp, o.hp + amt);
     game.floatTexts.push(new FloatText(o.x, o.y - o.radius - 6, '+' + amt, Theme.floatText.heal));
     healed = true;
+    if (++pulses === 2) break;
   }
   if (healed) e.healTimer = t.healCooldown || 3;
 }
 
 function aiSniper(game, e, dt){
-  const node = game.currentRoom, player = game.player, t = e.type;
-  const range = t.fireRange || 520;
-  const d = Util.dist(e.x, e.y, player.x, player.y);
-  if (e.telegraph > 0) {
-    e.telegraph -= dt;
-    e.hitFlash = (Math.sin(e.telegraph * 30) > 0) ? 0.12 : 0;
-    if (e.telegraph <= 0) {
-      fireSpread(game, e, player.x, player.y, t.boltSpeed || 420, e.dmg,
-        { color: t.boltColor || '#e0cf9a', radius: t.boltRadius || 4 });
-      e.fireTimer = t.fireCooldown || 2.6;
-    }
-    return;
-  }
-  e.fireTimer -= dt;
-  if (e.fireTimer <= 0 && d < range && hasLineOfSight(node, e, player.x, player.y)) {
-    e.telegraph = t.telegraphTime || 1.2;
-  } else if (d < range * 0.35) {
-    const v = seekVector(e, player.x, player.y);
-    tryMoveEntity(e, node, node.obstacles, -v.x * e.speed * dt, -v.y * e.speed * dt);
-  } else if (d > range * 0.9) {
-    chaseSeek(game, e, player.x, player.y, 1, dt);
+  const player = game.player, t = e.type, range = t.fireRange || 520;
+  if (updateEnemyAim(game, e, dt, range, Math.max(0.65, t.telegraphTime || 1.05),
+    t.boltSpeed || 420, t.boltColor || '#e0cf9a', t.boltRadius || 4)) return;
+  const v = seekVector(e, player.x, player.y);
+  if (v.d < range * 0.35) {
+    const step = e.speed * dt * 0.65;
+    tryMoveEntity(e, game.currentRoom, game.currentRoom.obstacles, -v.x * step, -v.y * step);
+  } else if (v.d > range * 0.9 || !hasLineOfSight(game.currentRoom, e, player.x, player.y)) {
+    chaseSeek(game, e, player.x, player.y, 0.65, dt);
   }
 }
 

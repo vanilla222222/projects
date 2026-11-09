@@ -27,4 +27,14 @@ check(`organoIds(['NCCC#N','C[Mg]Br']).includes('grignard-nitrile')`, false, 'Ni
 check(`organoIds(['CCC#N','C[Mg]Br']).includes('grignard-nitrile')`, true, 'Compatible nitrile branch remains available');
 check(`organoIds(['NCCBr'],{additives:['mg']}).includes('grignard-formation')`, false, 'N-H substrate blocks organomagnesium formation');
 check(`organoIds(['CCBr'],{additives:['mg']}).includes('grignard-formation')`, true, 'Compatible formation remains available');
+run(`function nitrileFixture(s,r='C[Mg]Br'){const inputs=[s,r].map((smiles,i)=>({smiles,fragment:smilesToFragment(smiles),role:i?'reagent':'reactant'})),before=JSON.stringify(inputs),p=predictReaction(inputs,{...defaultReactionConditions(),solvents:['ether']});return {out:[p.best,...p.alternatives].find(o=>o&&o.id==='grignard-nitrile'),unchanged:before===JSON.stringify(inputs)};}`);
+for(const [s,r,p] of [['C[13C]#[15N]','C[Mg]Br','C[13C](=O)C'],['CC#N','[13CH3][Mg]Br','CC(=O)[13CH3]'],['COCC#[15N]','C[Mg]Br','COCC(=O)C']]){
+  Object.assign(context,{s,r,p});
+  check('nitrileFixture(s,r).out.products.some(x=>moleculeSame(x.isomericSmiles||x.smiles,p))',true,'Hydrolysis preserves carbon labels and introduces oxygen: '+s);
+  check('nitrileFixture(s,r).unchanged',true,'Inputs remain unchanged: '+s);
+}
+check("nitrileFixture('C[13C]#[15N]').out.workupAtoms.nitrogenIsotopes[0]",15,'Departing nitrogen isotope is recorded as nitrogen');
+check("nitrileFixture('C[13C]#[15N]').out.products.every(p=>!p.isomericSmiles.includes('15O'))",true,'Nitrogen isotope never becomes oxygen isotope');
+check("nitrileFixture('CC#N').out.workupAtoms.oxygenSource.includes('separate')",true,'Ketone oxygen has explicit assumed work-up provenance');
+check("nitrileFixture('CC#N').out.productSurvival.status",'workup-boundary','Hydrolytic ketone is not co-exposed to the dry Grignard mixture');
 console.log('Organometallic compatibility: ' + checks + ' checks passed.');

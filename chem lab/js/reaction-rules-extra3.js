@@ -171,6 +171,7 @@ function rxzRuleNitration(ctx) {
     if (made.ratio) {
       res.ratio = made.ratio;
     }
+    rxRegioAromatic(res);
     const g = s.graph;
     const phenol = rxxPhenols(s).length > 0;
     const aniline = rxyAnilines(s).length > 0 || g.atoms.some((a) => a.element === 'N' && !a.charge && rxHydrogens(g, a.id) > 0 &&
@@ -206,6 +207,7 @@ function rxzRuleSulfonation(ctx) {
       if (made.ratio) {
         res.ratio = made.ratio;
       }
+      rxRegioAromatic(res);
       if (pos.deactivated) {
         res.warnings.push('The ring is deactivated: sulfonation needs hot oleum and is slow.');
       }

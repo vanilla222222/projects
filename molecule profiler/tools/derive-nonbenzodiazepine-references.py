@@ -21,6 +21,37 @@ from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 
 RDLogger.DisableLog("rdApp.*")
 
+
+def load_library():
+    """Every row of data/library.js, through node's own module loader.
+
+    The single-line `ENTRY` regex this generator used to parse the file with
+    matches 7,049 of the 22,137 rows and none of the 15,067 that carry a
+    `source` block, because a sourced row is not written on one line. Reading
+    the module instead makes the whole corpus visible, with `source` left
+    nested on the row exactly as the module returns it.
+    """
+    import json
+    import os
+    import subprocess
+    import tempfile
+    cache = os.environ.get("MP_DERIVE_CACHE")
+    if not cache:
+        cache = tempfile.mkdtemp(prefix="mp-derive-")
+    if not os.path.isdir(cache):
+        os.makedirs(cache)
+    path = os.path.join(cache, "library.json")
+    if not os.path.exists(path):
+        out = subprocess.run(
+            ["node", "-e",
+             "const{LIBRARY}=require('./data/library.js');"
+             "console.log(JSON.stringify(LIBRARY))"],
+            cwd=ROOT, stdout=subprocess.PIPE, check=True).stdout
+        with open(path, "wb") as fh:
+            fh.write(out)
+    with open(path) as fh:
+        return json.load(fh)
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 ENTRY = re.compile(
@@ -93,6 +124,10 @@ BRUR = {
 
 ATOM = re.compile(r"([A-Z][a-z]?)(\d*)")
 LETTERS = re.compile(r"[^a-z]")
+
+
+def jsq(s):
+    return "'" + s.replace('\\', '\\\\').replace("'", "\\'") + "'"
 
 
 def parse_formula(text):
@@ -255,11 +290,12 @@ def combos(slots):
 def main():
     argparse.ArgumentParser().parse_args()
 
-    lib = open(os.path.join(ROOT, "data", "library.js")).read()
+    lib = load_library()
     stored = {}
     seen = {}
-    for m in ENTRY.finditer(lib):
-        name, cls, formula, smiles = m.groups()
+    for _row in lib:
+        name, cls, formula, smiles = (_row["name"], _row["cls"],
+                                      _row["formula"], _row["smiles"])
         stored[name] = smiles
         key = flat(smiles)
         if key:
@@ -325,9 +361,23 @@ def main():
             if key in seen:
                 skipped += 1
                 continue
+            Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+            Chem.FindPotentialStereoBonds(mol)
+            why = None
+            if any(label == '?' for _, label in Chem.FindMolChiralCenters(
+                    mol, includeUnassigned=True, useLegacyImplementation=False)):
+                why = 'unassigned stereocentre'
+            elif any(bond.GetStereo() == Chem.BondStereo.STEREOANY
+                     for bond in mol.GetBonds()):
+                why = 'undefined double-bond geometry'
+            if why:
+                print("gate refused %s %s: %s" % (fam["cls"], smiles, why),
+                      file=sys.stderr)
+                skipped += 1
+                continue
             seen[key] = "new"
-            out.append("  { name: '%s', cls: '%s', formula: '%s', smiles: '%s' },\n"
-                       % (fam["name"](vals), fam["cls"], stated, smiles))
+            out.append("  { name: %s, cls: %s, formula: %s, smiles: %s },\n"
+                       % (jsq(fam["name"](vals)), jsq(fam["cls"]), jsq(stated), jsq(smiles)))
             made += 1
         counts.append("%s %d" % (fam["cls"], made))
         if made < fam["target"]:

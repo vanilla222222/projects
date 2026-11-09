@@ -1,23 +1,8 @@
 'use strict';
 
-const SKILL_TREE_STAT_FIELDS = ['speed','meleeDamage','rangedDamage','critChance','luck','fireCooldown','meleeCooldown','rangeTiles','boltSpeed','magnetRadius',
-
-  'venomChance','stunChance','charmChance','freezeChance','fearChance','vulnerableChance','lifestealChance','onKillHealChance','dodgeChance',
-
-  'shopDiscountBonus'];
-const SKILL_TREE_STAT_CAP = 0.25;
-
-const SKILL_TREE_STAT_CAP_OVERRIDES = { lifestealChance: 0.10, shopDiscountBonus: 0.10 };
-
-const SKILL_TREE_ADDITIVE_STAT_FIELDS = ['venomChance','stunChance','charmChance','freezeChance','fearChance','vulnerableChance','lifestealChance','onKillHealChance','dodgeChance',
-
-  'shopDiscountBonus'];
-
 function nodeEffects(node){
   return node.effects || (node.effect ? [node.effect] : []);
 }
-
-const SKILL_TREE_SIGNED_EFFECT_TYPES = ['stat','globalStat','uniqueField'];
 
 function skillNodeParentIds(node){
   if (!node) return [];
@@ -37,15 +22,7 @@ function skillNodePrimaryParent(node){
 }
 
 function isTradeoffNode(node){
-  let pos = false, neg = false;
-  for (const eff of nodeEffects(node)) {
-    if (!eff || SKILL_TREE_SIGNED_EFFECT_TYPES.indexOf(eff.type) === -1) continue;
-    if (typeof eff.amount !== 'number' || !isFinite(eff.amount)) continue;
-    if (eff.amount > 0) pos = true;
-    else if (eff.amount < 0) neg = true;
-    if (pos && neg) return true;
-  }
-  return false;
+  return !!node.tradeoff;
 }
 
 let skillTreeExclusionMap = null;
@@ -79,18 +56,17 @@ const SKILL_TREE_NODES = [
   { id:'start', parent:null, cost:0, name:'Awakening', desc:'The root of your meta-progression.', effect:null },
 
   ...Object.keys(CLASSES).map(classId => ({
-    id:'char_hub_' + classId, parent:'start', cost:1,
+    id:'char_hub_' + classId, parent:'start', cost:0,
     name:CLASSES[classId].name + ' Path',
-    desc:'Unlocks this character\'s upgrade path.', effect:null,
+    desc:'Choose one of two specializations. Refund its nodes from the tip to switch.', effect:null,
   })),
   { id:'unlock_hub', parent:'start', cost:1, name:'Unlocks Path', desc:'Unlocks the path to new content.', effect:null },
-  { id:'general_hub', parent:'start', cost:1, name:'General Path', desc:'Unlocks the path to general upgrades.', effect:null },
 ];
 const SKILL_TREE_NODES_BY_ID = {};
 for (const n of SKILL_TREE_NODES) SKILL_TREE_NODES_BY_ID[n.id] = n;
 
 function isSkillNodeOwned(unlocks, nodeId){
-  return nodeId === 'start' || !!(unlocks.skillTree.unlockedNodes && unlocks.skillTree.unlockedNodes[nodeId]);
+  return nodeId === 'start' || nodeId.startsWith('char_hub_') && !!SKILL_TREE_NODES_BY_ID[nodeId] || !!(unlocks.skillTree.unlockedNodes && unlocks.skillTree.unlockedNodes[nodeId]);
 }
 
 function skillNodeMaxRank(node){
@@ -133,8 +109,10 @@ function skillNodeNextRankScaleDelta(unlocks, node, eff){
 }
 
 function skillNodeBranchKey(nodeId){
+  const node = SKILL_TREE_NODES_BY_ID[nodeId];
+  if (node && node.classId) return node.classId + '|' + node.pathName;
   const tab = getSkillTreeNodeTab(nodeId);
-  if (!tab) return null;
+  if (!tab || nodeId === skillTreeTabRootId(tab)) return null;
   let rest = nodeId;
   const charPrefix = 'char_' + tab + '_';
   if (rest.indexOf(charPrefix) === 0) rest = rest.slice(charPrefix.length);
@@ -177,23 +155,11 @@ function skillNodeSpentGateUnmet(unlocks, node){
   return (gate && !gate.met) ? gate : null;
 }
 
-function countOwnedTaggedNodes(unlocks, classId, tag, cache){
-  const key = classId + '|' + tag;
-  if (cache && cache[key] != null) return cache[key];
-  let count = 0;
-  for (const n of SKILL_TREE_NODES) {
-    if (!Array.isArray(n.tags) || n.tags.indexOf(tag) === -1) continue;
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    if (getSkillTreeNodeTab(n.id) !== classId) continue;
-    count++;
-  }
-  if (cache) cache[key] = count;
-  return count;
-}
-
 function canBuySkillNode(unlocks, nodeId){
   const node = SKILL_TREE_NODES_BY_ID[nodeId];
   if (!node) return false;
+  if (node.classId && !CLASSES[node.classId].unlocked && !unlocks[node.classId]) return false;
+  if (node.classId && specializationSpend(unlocks, node.classId) + node.cost > SKILL_SPECIALIZATION_LIMIT) return false;
   const rank = skillNodeRank(unlocks, nodeId);
   if (rank > 0 && rank >= skillNodeMaxRank(node)) return false;
   for (const pid of skillNodeParentIds(node)) {
@@ -261,112 +227,60 @@ function applySkillTreeUnlockEffect(unlocks, effect){
   unlocks[bucket][effect.id] = true;
 }
 
-function getSkillTreeStatBonus(unlocks, classId, stat){
-  let total = 0;
-  const tagCache = {};
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type === 'stat' && eff.classId === classId && eff.stat === stat) total += eff.amount * skillNodeOwnedScale(unlocks, n, eff);
+function specializationSpend(unlocks, classId){
+  return (SKILL_SPECIALIZATION_NODES[classId] || []).reduce((sum, node) =>
+    sum + (isSkillNodeOwned(unlocks, node.id) ? node.cost : 0), 0);
+}
 
-      else if (eff.type === 'globalStat' && eff.stat === stat) total += eff.amount * skillNodeOwnedScale(unlocks, n, eff);
-      else if (eff.type === 'synergyStat' && eff.classId === classId && eff.stat === stat) {
-        total += (eff.perOwned || 0) * countOwnedTaggedNodes(unlocks, eff.classId, eff.tag, tagCache) * skillNodeOwnedScale(unlocks, n, eff);
-      }
-    }
+function refundSkillSpecialization(classId){
+  const unlocks = ensureUnlockShape(loadUnlocks());
+  const refund = specializationSpend(unlocks, classId);
+  if (!refund) return false;
+  const tree = unlocks.skillTree;
+  for (const node of SKILL_SPECIALIZATION_NODES[classId]) {
+    delete tree.spent[node.id];
+    delete tree.unlockedNodes[node.id];
   }
+  tree.points += refund;
+  saveUnlocks(unlocks);
+  return true;
+}
 
-  const cap = SKILL_TREE_STAT_CAP_OVERRIDES[stat] != null ? SKILL_TREE_STAT_CAP_OVERRIDES[stat] : SKILL_TREE_STAT_CAP;
-  return Util.clamp(total, -cap, cap);
+function migrateSkillTreeSpecializations(tree){
+  if (tree.specializationVersion === 1) return;
+  for (const id of new Set([...Object.keys(tree.unlockedNodes), ...Object.keys(tree.spent)])) {
+    if (SKILL_TREE_NODES_BY_ID[id] && !id.startsWith('char_hub_')) continue;
+    const cost = tree.spent[id];
+    if (Number.isFinite(cost) && cost > 0) tree.points += cost;
+    delete tree.spent[id];
+    delete tree.unlockedNodes[id];
+  }
+  tree.specializationVersion = 1;
+}
+
+function initializeSkillTreeLoadout(player){
+  if (player.skillTreeLoadout) return;
+  const unlocks = ensureUnlockShape(loadUnlocks());
+  const nodes = SKILL_SPECIALIZATION_NODES[player.classId] || [];
+  player.skillTreeLoadout = nodes.filter(node => isSkillNodeOwned(unlocks, node.id)).flatMap(nodeEffects);
+  for (const effect of player.skillTreeLoadout) {
+    if (effect.type === 'flag') player[effect.field] = true;
+    if (effect.type === 'technique') {
+      player.technique = { config:effect.technique, rank:effect.rank, progress:0, readyAt:0 };
+    }
+    if (effect.type === 'innate') player[effect.field] += effect.amount;
+  }
 }
 
 function applySkillTreeStatBonuses(player){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  for (const stat of SKILL_TREE_STAT_FIELDS) {
-    if (typeof player[stat] !== 'number') continue;
-    const bonus = getSkillTreeStatBonus(unlocks, player.classId, stat);
-    if (bonus === 0) continue;
-    if (SKILL_TREE_ADDITIVE_STAT_FIELDS.indexOf(stat) !== -1) player[stat] += bonus;
-    else player[stat] *= (1 + bonus);
+  initializeSkillTreeLoadout(player);
+  const previousRange = player.rangeTiles;
+  for (const effect of player.skillTreeLoadout) {
+    if (effect.type === 'multiply') player[effect.field] *= 1 + effect.amount;
+    if (effect.type === 'add') player[effect.field] += effect.amount;
   }
-  applySkillTreeUniqueFieldBonuses(player);
-  applySkillTreeUniqueFlagEffects(player);
-  applySkillTreeRunModifiers(player);
-}
-
-function applySkillTreeUniqueFieldBonuses(player){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  const groups = {};
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type !== 'uniqueField' || eff.classId !== player.classId) continue;
-      const key = eff.classId + '|' + eff.field;
-      const g = groups[key] || (groups[key] = { sum: 0, min: eff.min, max: eff.max });
-      g.sum += eff.amount * skillNodeOwnedScale(unlocks, n, eff);
-
-      if (eff.min > g.min) g.min = eff.min;
-      if (eff.max < g.max) g.max = eff.max;
-    }
-  }
-
-  if (!player._skillTreeFieldBase) player._skillTreeFieldBase = {};
-  for (const key in groups) {
-    const field = key.split('|')[1];
-    if (typeof player[field] !== 'number') continue;
-    if (!(field in player._skillTreeFieldBase)) player._skillTreeFieldBase[field] = player[field];
-    const g = groups[key];
-    player[field] = player._skillTreeFieldBase[field] + Util.clamp(g.sum, g.min, g.max);
-  }
-}
-
-function applySkillTreeUniqueFlagEffects(player){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type === 'uniqueFlag' && eff.classId === player.classId) player[eff.field] = eff.value;
-    }
-  }
-}
-
-function applySkillTreeRunModifiers(player){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  if (!player.skillTreeMods) player.skillTreeMods = {};
-  else for (const k in player.skillTreeMods) delete player.skillTreeMods[k];
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type === 'runModifier' && eff.classId === player.classId) player.skillTreeMods[eff.key] = eff.value;
-    }
-  }
-}
-
-function applySkillTreePoolNudge(pool, poolName){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  let out = null;
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type !== 'poolWeight' || eff.pool !== poolName) continue;
-      if (!out) out = pool.map(e => ({ id:e.id, w:e.w }));
-      const entry = out.find(e => e.id === eff.id);
-      if (entry) entry.w += eff.bonus * skillNodeOwnedScale(unlocks, n, eff);
-    }
-  }
-  return out || pool;
-}
-
-function applySkillTreeStartingPickups(player){
-  const unlocks = ensureUnlockShape(loadUnlocks());
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const eff of nodeEffects(n)) {
-      if (eff.type !== 'startingPickup') continue;
-      const field = { bombs:'bombs', keys:'keys', coins:'coins', blue:'blueCurrent' }[eff.pickup];
-      if (field && typeof player[field] === 'number') player[field] += eff.amount * skillNodeOwnedScale(unlocks, n, eff);
-    }
-  }
+  player.rangeTiles = Util.clamp(player.rangeTiles, 0.25, 12);
+  player.meleeRange *= player.rangeTiles / previousRange;
 }
 
 const SKILL_TREE_RING_BASE = 260;
@@ -562,7 +476,6 @@ let skillTreeActiveTab = 'earth';
 let skillTreeNodeTabMap = null;
 
 function skillTreeTabRootId(tab){
-  if (tab === 'general') return 'general_hub';
   if (tab === 'unlocks') return 'unlock_hub';
   return 'char_hub_' + tab;
 }
@@ -570,7 +483,6 @@ function buildSkillTreeNodeTabMap(){
   skillTreeNodeTabMap = {};
   const hubTab = {};
   for (const classId in CLASSES) hubTab['char_hub_' + classId] = classId;
-  hubTab['general_hub'] = 'general';
   hubTab['unlock_hub'] = 'unlocks';
   function resolve(id, seen){
     if (id == null) return null;
@@ -594,7 +506,7 @@ function getSkillTreeNodeTab(nodeId){
 }
 function skillTreeTabNodeSet(tab){
   if (!skillTreeNodeTabMap) buildSkillTreeNodeTabMap();
-  const set = { start: true };
+  const set = {};
   for (const n of SKILL_TREE_NODES) {
     if (skillTreeNodeTabMap[n.id] === tab) set[n.id] = true;
   }
@@ -614,108 +526,13 @@ function resetSkillTreeCamera(){
   skillTreeFocusedBranch = null;
 }
 
-const SKILL_TREE_UNIQUE_FIELD_UNITS = {
-  damageTakenMult: 'percent', rockCoinChance: 'percent', turretDamageMult: 'percent', fireZoneRootMult: 'percent',
-  baseRangeTiles: 'tiles', crystalVolleySpacing: 'px', chargeTime: 'seconds',
-  fireRingRadius: 'px', fireZoneRadius: 'px', fireZoneRange: 'px', radius: 'px', changelingMinionRadius: 'px',
-  changelingSummonCooldown: 'seconds', changelingMinionDmg: 'dmg',
-  maxTurrets: 'count', maxChangelingMinions: 'count', crystalShardCount: 'count',
-};
-function formatUniqueFieldAmount(field, amount){
-  const unit = SKILL_TREE_UNIQUE_FIELD_UNITS[field] || 'raw';
-  if (unit === 'percent') {
-    const pct = Math.round(amount * 1000) / 10;
-    return (pct >= 0 ? '+' : '') + pct + '%';
-  }
-  const rounded = Math.round(amount * 100) / 100;
-  const sign = rounded >= 0 ? '+' : '';
-  if (unit === 'tiles') return sign + rounded + ' tiles';
-  if (unit === 'px') return sign + rounded + ' px';
-  if (unit === 'seconds') return sign + rounded + 's';
-  if (unit === 'dmg') return sign + rounded + ' dmg';
-  return sign + rounded;
-}
-
 function describeSkillEffect(eff){
-  if (eff.type === 'stat') {
-    const pct = Math.round(eff.amount * 1000) / 10;
-    const sign = pct >= 0 ? '+' : '';
-    return sign + pct + '% ' + eff.stat;
-  }
-  if (eff.type === 'uniqueField') {
-    return formatUniqueFieldAmount(eff.field, eff.amount) + ' ' + eff.field + ' (unique)';
-  }
-  if (eff.type === 'uniqueFlag') return 'Grants ' + eff.field;
   if (eff.type === 'unlock') return 'Unlocks ' + eff.category + ': ' + eff.id;
-  if (eff.type === 'poolWeight') return 'Nudges ' + eff.pool + ' pool weighting';
-  if (eff.type === 'startingPickup') return '+' + eff.amount + ' starting ' + eff.pickup;
-  if (eff.type === 'globalStat') {
-    const pct = Math.round(eff.amount * 1000) / 10;
-    const sign = pct >= 0 ? '+' : '';
-    return sign + pct + '% ' + eff.stat + ' (every character)';
-  }
-  if (eff.type === 'runModifier') return 'Sets ' + eff.key + ' = ' + eff.value;
-  if (eff.type === 'synergyStat') {
-    const pct = Math.round((eff.perOwned || 0) * 1000) / 10;
-    const sign = pct >= 0 ? '+' : '';
-    return sign + pct + '% ' + eff.stat + ' per owned "' + eff.tag + '" node';
-  }
-  return eff.type;
-}
-
-function describeSkillEffectTotal(unlocks, eff, node){
-  if (eff.type === 'stat') return describeStatTotal(unlocks, eff, node);
-  if (eff.type === 'uniqueField') return describeUniqueFieldTotal(unlocks, eff, node);
-  if (eff.type === 'synergyStat') return describeSynergyStatTotal(unlocks, eff, node);
-  return null;
-}
-function describeSynergyStatTotal(unlocks, eff, node){
-  const count = countOwnedTaggedNodes(unlocks, eff.classId, eff.tag, null);
-  const scale = node ? (isSkillNodeOwned(unlocks, node.id) ? skillNodeOwnedScale(unlocks, node, eff) : 1) : 1;
-  const pct = Math.round((eff.perOwned || 0) * count * scale * 1000) / 10;
-  return count + ' owned "' + eff.tag + '" node' + (count === 1 ? '' : 's') + ' — currently worth ' + (pct >= 0 ? '+' : '') + pct + '% ' + eff.stat;
-}
-function describeStatTotal(unlocks, eff, node){
-  const cap = SKILL_TREE_STAT_CAP_OVERRIDES[eff.stat] != null ? SKILL_TREE_STAT_CAP_OVERRIDES[eff.stat] : SKILL_TREE_STAT_CAP;
-  const capPct = Math.round(cap * 1000) / 10;
-  const current = getSkillTreeStatBonus(unlocks, eff.classId, eff.stat);
-  const curPct = Math.round(current * 1000) / 10;
-  const delta = node ? skillNodeNextRankScaleDelta(unlocks, node, eff) : 1;
-  const owned = node && isSkillNodeOwned(unlocks, node.id);
-  if (owned && delta === 0) return 'Current total: ' + curPct + '% / ' + capPct + '% cap';
-  let rawTotal = 0;
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const e of nodeEffects(n)) {
-      if (e.type === 'stat' && e.classId === eff.classId && e.stat === eff.stat) rawTotal += e.amount * skillNodeOwnedScale(unlocks, n, e);
-      else if (e.type === 'synergyStat' && e.classId === eff.classId && e.stat === eff.stat) rawTotal += (e.perOwned || 0) * countOwnedTaggedNodes(unlocks, e.classId, e.tag, null) * skillNodeOwnedScale(unlocks, n, e);
-    }
-  }
-  rawTotal += eff.amount * delta;
-  const afterPct = Math.round(Util.clamp(rawTotal, -cap, cap) * 1000) / 10;
-  if (afterPct === curPct) return 'Current total: ' + curPct + '% / ' + capPct + '% cap (already at cap — this would add nothing)';
-  return 'Current: ' + curPct + '% → after buying: ' + afterPct + '% / ' + capPct + '% cap';
-}
-
-function describeUniqueFieldTotal(unlocks, eff, node){
-  let sum = 0, min = eff.min, max = eff.max;
-  for (const n of SKILL_TREE_NODES) {
-    if (!isSkillNodeOwned(unlocks, n.id)) continue;
-    for (const e of nodeEffects(n)) {
-      if (e.type !== 'uniqueField' || e.classId !== eff.classId || e.field !== eff.field) continue;
-      sum += e.amount * skillNodeOwnedScale(unlocks, n, e);
-      if (e.min > min) min = e.min;
-      if (e.max < max) max = e.max;
-    }
-  }
-  const delta = node ? skillNodeNextRankScaleDelta(unlocks, node, eff) : 1;
-  const owned = node && isSkillNodeOwned(unlocks, node.id);
-  const curClamped = Util.clamp(sum, min, max);
-  const fmt = (v) => formatUniqueFieldAmount(eff.field, v).replace(/^\+/, '');
-  if (owned && delta === 0) return 'Current total: ' + fmt(curClamped);
-  const afterClamped = Util.clamp(sum + eff.amount * delta, min, max);
-  if (afterClamped === curClamped) return 'Current total: ' + fmt(curClamped) + ' (already at its limit — this would add nothing)';
-  return 'Current: ' + fmt(curClamped) + ' → after buying: ' + fmt(afterClamped);
+  if (eff.type === 'flag' || eff.type === 'technique') return eff.label;
+  const asPercent = eff.type === 'multiply' || eff.field.endsWith('Chance');
+  const value = Math.round(eff.amount * (asPercent ? 10000 : 100)) / 100;
+  const unit = eff.type === 'multiply' ? '%' : asPercent ? ' percentage points' : '';
+  return eff.label + ' ' + (value >= 0 ? '+' : '') + value + unit;
 }
 
 function showSkillNodeDetail(node){
@@ -732,6 +549,23 @@ function showSkillNodeDetail(node){
   const maxRank = skillNodeMaxRank(node);
   const rank = skillNodeRank(unlocks, node.id);
   const spentGate = skillNodeSpentGate(unlocks, node);
+  const action = document.getElementById('skillTreeDetailAction');
+  if (action) {
+    const buyable = canBuySkillNode(unlocks, node.id);
+    const sellable = !buyable && canSellSkillNode(unlocks, node.id);
+    action.classList.toggle('hidden', !buyable && !sellable);
+    action.textContent = buyable ? 'Buy · ' + skillNodeNextRankCost(unlocks, node) + ' pt'
+      : 'Refund · ' + skillNodeRankCost(node, rank) + ' pt';
+    action.onclick = () => {
+      if (!(buyable ? buySkillNode(node.id) : sellable && sellSkillNode(node.id))) return;
+      Sound.play(buyable ? 'shopBuy' : 'coin');
+      skillTreeLastBoughtId = buyable ? node.id : null;
+      buildSkillTreePanel();
+      showSkillNodeDetail(node);
+    };
+  }
+  const close = document.getElementById('skillTreeDetailClose');
+  if (close) close.onclick = () => showSkillNodeDetail(null);
   if (nameEl) nameEl.textContent = (node.icon ? node.icon + ' ' : '') + node.name + (maxRank > 1 ? ' (' + rank + '/' + maxRank + ')' : '') + (node.cursed ? ' ☠' : '') + (tradeoff ? ' ⚖' : '') + (/_capstone$/.test(node.id) ? ' ♛' : '') + (/_ascension$/.test(node.id) ? ' ⚡' : '');
   if (costEl) {
     const nextCost = skillNodeRankCost(node, Math.min(rank + 1, maxRank));
@@ -745,13 +579,6 @@ function showSkillNodeDetail(node){
       const row = document.createElement('div');
       row.className = 'skilltree-detail-effect-row';
       row.textContent = describeSkillEffect(eff);
-      const totalNote = describeSkillEffectTotal(unlocks, eff, node);
-      if (totalNote) {
-        const sub = document.createElement('span');
-        sub.className = 'skilltree-detail-effect-total';
-        sub.textContent = totalNote;
-        row.appendChild(sub);
-      }
       effEl.appendChild(row);
     }
     if (!effs.length) {
@@ -777,6 +604,13 @@ function showSkillNodeDetail(node){
       effEl.appendChild(row);
     }
     const parentIds = skillNodeParentIds(node);
+    const missingParents = parentIds.filter(id => !isSkillNodeOwned(unlocks, id));
+    if (missingParents.length) {
+      const row = document.createElement('div');
+      row.className = 'skilltree-detail-effect-row';
+      row.textContent = 'Requires ' + missingParents.map(id => SKILL_TREE_NODES_BY_ID[id].name).join(', ');
+      effEl.appendChild(row);
+    }
     if (parentIds.length > 1) {
       const row = document.createElement('div');
       row.className = 'skilltree-detail-effect-row detail-note-converge';
@@ -860,16 +694,20 @@ function buildSkillTreePanel(){
   wrap.innerHTML = '';
   const unlocks = ensureUnlockShape(loadUnlocks());
   const summaryEl = document.getElementById('skillTreeSummary');
-  const ownedCount = Object.keys(unlocks.skillTree.unlockedNodes).length + 1;
   if (summaryEl) {
-    summaryEl.textContent = unlocks.skillTree.points + ' points available — ' + ownedCount + ' / ' + SKILL_TREE_NODES.length + ' nodes unlocked'
-      + (unlocks.skillTree.lifetimeEarned ? ' — ' + unlocks.skillTree.lifetimeEarned + ' lifetime earned' : '');
+    const classId = skillTreeActiveTab;
+    const def = CLASSES[classId];
+    const label = !def ? 'Collection unlocks'
+      : !def.unlocked && !unlocks[classId] ? 'Unlock ' + def.name + ' first · ' + def.unlockHint
+      : specializationSpend(unlocks, classId) + '/' + SKILL_SPECIALIZATION_LIMIT + ' invested · Choose one path';
+    summaryEl.textContent = unlocks.skillTree.points + ' points available · ' + label;
   }
 
   function isVisible(nodeId){
     if (isSkillNodeOwned(unlocks, nodeId)) return true;
     const node = SKILL_TREE_NODES_BY_ID[nodeId];
     if (!node) return false;
+    if (node.classId) return true;
     const parentIds = skillNodeParentIds(node);
     if (!parentIds.length) return false;
     return parentIds.some(pid => isSkillNodeOwned(unlocks, pid));
@@ -958,7 +796,7 @@ function buildSkillTreePanel(){
     const spentGate = skillNodeSpentGate(unlocks, node);
     const spentLocked = !!(spentGate && !spentGate.met);
     const affordable = !excludedBy && parentOwned && canBuySkillNode(unlocks, node.id);
-    const unaffordable = !owned && !excludedBy && parentOwned && !affordable;
+    const unaffordable = !owned && !excludedBy && !affordable;
     const rankable = owned && rank < maxRank;
     const nextCost = skillNodeRankCost(node, Math.min(rank + 1, maxRank));
     const cursed = !!node.cursed;
@@ -971,7 +809,7 @@ function buildSkillTreePanel(){
     const isAscension = /_ascension$/.test(node.id);
     const sellable = owned && canSellSkillNode(unlocks, node.id);
     const filterState = owned ? 'owned' : affordable ? 'buyable' : 'unaffordable';
-    const isUniqueMechanic = nodeEffects(node).some(e => e.type === 'uniqueField' || e.type === 'uniqueFlag');
+    const isUniqueMechanic = nodeEffects(node).some(e => e.type === 'innate' || e.type === 'flag' || e.type === 'technique');
     const synergyEffects = nodeEffects(node).filter(e => e.type === 'synergyStat');
     const isSynergy = synergyEffects.length > 0;
     const synergyTags = isSynergy ? synergyEffects.map(e => e.tag).filter(t => t) : [];
@@ -1009,7 +847,8 @@ function buildSkillTreePanel(){
     el.title = node.name + (node.cost ? ' (' + nextCost + ' pt)' : '') + ' — ' + node.desc
       + (maxRank > 1 ? ' [RANK ' + rank + '/' + maxRank + (rankable ? ' — buy again to rank up' : ' — fully ranked') + ']' : '')
       + (spentLocked ? ' [BREADTH GATE — needs ' + spentGate.need + ' pt spent in this ' + (spentGate.scope === 'tab' ? 'character tree' : 'branch') + ', ' + spentGate.have + ' so far]' : '')
-      + (unaffordable ? ' [need ' + nextCost + ' pt, have ' + unlocks.skillTree.points + ']' : '')
+      + (!owned && !parentOwned ? ' [Requires ' + parentIds.map(id => SKILL_TREE_NODES_BY_ID[id].name).join(', ') + ']' : '')
+      + (unaffordable && unlocks.skillTree.points < nextCost ? ' [need ' + nextCost + ' pt, have ' + unlocks.skillTree.points + ']' : '')
       + (cursed ? ' [CURSED — permanent drawback]' : '')
       + (tradeoff ? ' [TRADE-OFF — a gain paid for with a loss]' : '')
       + (keystone ? ' [KEYSTONE — buying it locks out its alternatives]' : '')
@@ -1071,7 +910,9 @@ function buildSkillTreePanel(){
     label.className = 'skilltree-node-label';
     label.textContent = node.name;
     el.appendChild(label);
-    if (affordable) {
+    if (document.documentElement?.classList.contains('nightfall-touch')) {
+      el.addEventListener('click', () => showSkillNodeDetail(node));
+    } else if (affordable) {
       el.addEventListener('click', () => {
         if (buySkillNode(node.id)) {
           Sound.play(isAscension ? 'ascensionChime' : isCapstone ? 'achievement' : 'shopBuy');
@@ -1092,7 +933,9 @@ function buildSkillTreePanel(){
       el.disabled = !owned;
     }
 
-    el.addEventListener('mouseenter', () => showSkillNodeDetail(node));
+    el.addEventListener('mouseenter', () => {
+      if (!document.documentElement?.classList.contains('nightfall-touch')) showSkillNodeDetail(node);
+    });
     el.dataset.nodeId = node.id;
     canvas.appendChild(el);
     minimapPoints.push({
@@ -1203,7 +1046,10 @@ function buildSkillTreePanel(){
     skillTreeZoom = 1;
     skillTreePanX = 0;
     skillTreePanY = 0;
-    const rootPos = positions[skillTreeTabRootId(skillTreeActiveTab)] || positions['start'];
+    if (CLASSES[skillTreeActiveTab]) {
+      focusOnRect(originX + minX, originY + minY, originX + maxX, originY + maxY);
+    }
+    const rootPos = !CLASSES[skillTreeActiveTab] && positions[skillTreeTabRootId(skillTreeActiveTab)];
     if (rootPos) {
       const rootPx = toPx(rootPos);
       const rootCenterX = rootPx.left + SKILL_TREE_NODE_SIZE / 2;
@@ -1266,13 +1112,14 @@ function buildSkillTreePanel(){
     const keys = Object.keys(branchBounds).sort();
     for (const key of keys) {
       const b = branchBounds[key];
-      const letter = key.slice(key.indexOf('|') + 1);
+      const name = key.slice(key.indexOf('|') + 1);
+      const branchLabel = CLASSES[skillTreeActiveTab] ? name : name.toUpperCase();
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'skilltree-branch-btn' + (key === skillTreeFocusedBranch ? ' active' : '');
       btn.style.setProperty('--branch-hue', skillTreeBranchHue(key));
-      btn.textContent = letter.toUpperCase() + ' ' + b.owned + '/' + b.total;
-      btn.title = 'Zoom to branch "' + letter.toUpperCase() + '" — ' + b.total + ' visible node' + (b.total === 1 ? '' : 's') + ', ' + b.owned + ' owned';
+      btn.textContent = branchLabel + ' ' + b.owned + '/' + b.total;
+      btn.title = 'Zoom to branch "' + branchLabel + '" — ' + b.total + ' visible node' + (b.total === 1 ? '' : 's') + ', ' + b.owned + ' owned';
       btn.onclick = () => {
         Sound.play('uiClick');
         skillTreeFocusedBranch = key;
@@ -1302,15 +1149,15 @@ function buildSkillTreePanel(){
     const tabTotals = {}, tabOwned = {};
     for (const n of SKILL_TREE_NODES) {
       const tab = getSkillTreeNodeTab(n.id);
-      if (!tab) continue;
+      if (!tab || !n.cost) continue;
       tabTotals[tab] = (tabTotals[tab] || 0) + 1;
-      if (isSkillNodeOwned(unlocks, n.id)) tabOwned[tab] = (tabOwned[tab] || 0) + 1;
+      if (n.cost && isSkillNodeOwned(unlocks, n.id)) tabOwned[tab] = (tabOwned[tab] || 0) + 1;
     }
     tabStrip.querySelectorAll('.skilltree-tab').forEach(btn => {
       const tab = btn.dataset.tab;
       btn.classList.toggle('active', tab === skillTreeActiveTab);
       const countEl = btn.querySelector('.skilltree-tab-count');
-      if (countEl) countEl.textContent = (tabOwned[tab] || 0) + '/' + (tabTotals[tab] || 0);
+      if (countEl) countEl.textContent = (tabOwned[tab] || 0) + '/' + (CLASSES[tab] ? 3 : tabTotals[tab] || 0);
       btn.onclick = () => { Sound.play('uiClick'); setSkillTreeActiveTab(tab); };
     });
     const activeBtn = tabStrip.querySelector('.skilltree-tab.active');
@@ -1324,6 +1171,18 @@ function buildSkillTreePanel(){
     if (branchBar) branchBar.querySelectorAll('.skilltree-branch-btn').forEach(b => b.classList.toggle('active', b.classList.contains('branch-all')));
     if (!centerOnNode(skillTreeTabRootId(skillTreeActiveTab))) centerOnNode('start');
   };
+
+  const refundBtn = document.getElementById('skillTreeRefundBtn');
+  if (refundBtn) {
+    refundBtn.hidden = !CLASSES[skillTreeActiveTab];
+    refundBtn.disabled = !specializationSpend(unlocks, skillTreeActiveTab);
+    refundBtn.onclick = () => {
+      if (!refundSkillSpecialization(skillTreeActiveTab)) return;
+      skillTreeLastBoughtId = null;
+      Sound.play('uiClick');
+      buildSkillTreePanel();
+    };
+  }
 
   const undoBtn = document.getElementById('skillTreeUndoBtn');
   if (undoBtn) {
@@ -1473,30 +1332,36 @@ function buildSkillTreePanel(){
     applyTransform();
   }, { passive: false });
 
-  let dragging = false;
+  let dragPointer = null;
   let dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
-  scroller.addEventListener('mousedown', (e) => {
-    if (e.target.closest && e.target.closest('.skilltree-node')) return;
-    dragging = true;
+  scroller.addEventListener('pointerdown', e => {
+    if (dragPointer !== null || e.button !== 0 || e.target.closest?.('.skilltree-node')) return;
+    dragPointer = e.pointerId;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     panStartX = skillTreePanX;
     panStartY = skillTreePanY;
+    scroller.setPointerCapture(dragPointer);
     scroller.classList.add('skilltree-dragging');
   });
-  scroller.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    skillTreePanX = panStartX + (e.clientX - dragStartX);
-    skillTreePanY = panStartY + (e.clientY - dragStartY);
+  scroller.addEventListener('pointermove', e => {
+    if (e.pointerId !== dragPointer) return;
+    skillTreePanX = panStartX + e.clientX - dragStartX;
+    skillTreePanY = panStartY + e.clientY - dragStartY;
     applyTransform();
   });
-  function endDrag(){
-    if (!dragging) return;
-    dragging = false;
-    scroller.classList.remove('skilltree-dragging');
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    scroller.addEventListener(event, e => {
+      if (e.pointerId !== dragPointer) return;
+      dragPointer = null;
+      scroller.classList.remove('skilltree-dragging');
+    });
   }
-  scroller.addEventListener('mouseup', endDrag);
-  scroller.addEventListener('mouseleave', endDrag);
-
-  scroller.addEventListener('mouseleave', () => showSkillNodeDetail(null));
+  scroller.addEventListener('pointerleave', e => {
+    if (e.pointerType === 'mouse' && !document.documentElement?.classList.contains('nightfall-touch')) showSkillNodeDetail(null);
+  });
+  const zoomOut = document.getElementById('skillTreeTouchZoomOut');
+  const zoomIn = document.getElementById('skillTreeTouchZoomIn');
+  if (zoomOut) zoomOut.onclick = () => skillTreeStepZoomAtCenter(-1);
+  if (zoomIn) zoomIn.onclick = () => skillTreeStepZoomAtCenter(1);
 }

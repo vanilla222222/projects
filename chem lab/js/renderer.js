@@ -7,8 +7,8 @@ const RENDER_SETTINGS = {
   wedgeWidth: 10,
   hashSpacing: 5,
   hashWidth: 1.6,
-  gridSpacing: 24,
-  gridDotRadius: 1,
+  gridSpacing: 28,
+  gridDotRadius: 0.8,
   labelSize: 18,
   subscriptSize: 13,
   chargeSize: 12,
@@ -80,18 +80,18 @@ const ARROW_STYLES = ['forward', 'equilibrium', 'resonance', 'retro', 'electron'
 
 const RENDER_THEMES = {
   dark: {
-    background: '#0d1016',
-    grid: 'rgba(255, 255, 255, 0.05)',
-    bond: '#dde1e8',
+    background: '#14201d',
+    grid: 'rgba(163, 197, 178, 0.12)',
+    bond: '#e1eae4',
     bondGlow: 'rgba(0, 0, 0, 0)',
     glowBlur: 0,
-    name: '#b7bdf0',
-    nameBg: 'rgba(22, 26, 38, 0.92)',
-    nameBorder: 'rgba(124, 140, 248, 0.28)',
-    nameHoverBorder: 'rgba(124, 140, 248, 0.85)',
+    name: '#acd8bb',
+    nameBg: 'rgba(20, 32, 29, 0.94)',
+    nameBorder: 'rgba(128, 213, 182, 0.24)',
+    nameHoverBorder: 'rgba(128, 213, 182, 0.85)',
     copied: '#7fe3a1',
     hover: '79, 209, 224',
-    selection: '124, 140, 248',
+    selection: '128, 213, 182',
     problem: '248, 113, 113',
     ghostRing: '125, 211, 252',
     flash: '248, 113, 113',
@@ -111,18 +111,18 @@ const RENDER_THEMES = {
     basePin: '#3b82f6',
   },
   light: {
-    background: '#fbfcfe',
-    grid: 'rgba(15, 23, 42, 0.09)',
-    bond: '#1f2937',
+    background: '#fafbf5',
+    grid: 'rgba(56, 91, 69, 0.15)',
+    bond: '#203c32',
     bondGlow: 'rgba(0, 0, 0, 0)',
     glowBlur: 0,
-    name: '#3b44a8',
+    name: '#216b52',
     nameBg: 'rgba(255, 255, 255, 0.95)',
     nameBorder: 'rgba(79, 92, 214, 0.25)',
     nameHoverBorder: 'rgba(79, 92, 214, 0.8)',
     copied: '#15803d',
     hover: '8, 145, 178',
-    selection: '79, 92, 214',
+    selection: '33, 107, 82',
     problem: '220, 38, 38',
     ghostRing: '14, 116, 144',
     flash: '220, 38, 38',
@@ -185,7 +185,7 @@ class Renderer {
   }
 
   get palette() {
-    return RENDER_THEMES[this.theme] || RENDER_THEMES.dark;
+    return this.paletteOverride || RENDER_THEMES[this.theme] || RENDER_THEMES.dark;
   }
 
   viewportSize() {
@@ -1229,13 +1229,15 @@ class Renderer {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '500 17px ' + RENDER_FONT_FAMILY;
+    const compact = width < 540;
+    ctx.font = '500 ' + (compact ? 20 : 26) + 'px ' + RENDER_FONT_FAMILY;
     ctx.fillStyle = palette.emptyTitle;
-    ctx.fillText('Click anywhere to place an atom', width / 2, height / 2 - 22);
+    ctx.fillText('Make room for a new idea.', width / 2, height / 2 - 36);
     ctx.font = '400 13px ' + RENDER_FONT_FAMILY;
     ctx.fillStyle = palette.emptyText;
-    ctx.fillText('Drag from an atom to draw a bond · pick a ring stamp on the left', width / 2, height / 2 + 6);
-    ctx.fillText('Paste a SMILES string with Ctrl+V · press ? for shortcuts', width / 2, height / 2 + 26);
+    ctx.fillText(compact ? 'Tap to place an atom. Drag to connect.' : 'Click to place an atom. Drag to draw a bond.', width / 2, height / 2);
+    ctx.fillText(compact ? 'Open Palette for rings and elements.' : 'Choose a ring from the palette, or paste a SMILES string.', width / 2, height / 2 + 24);
+    if (!compact) ctx.fillText('Press ? to explore keyboard shortcuts', width / 2, height / 2 + 62);
     ctx.restore();
   }
 
@@ -1749,9 +1751,16 @@ class Renderer {
 
   drawGrid(width, height) {
     const ctx = this.ctx;
-    let spacing = RENDER_SETTINGS.gridSpacing * this.view.scale;
+    let spacing = (this.gridSpacing || RENDER_SETTINGS.gridSpacing) * this.view.scale;
     while (spacing < 12) {
       spacing *= 2;
+    }
+    if (this.gridStyle === 'lines') {
+      ctx.save();ctx.strokeStyle=this.palette.grid;ctx.lineWidth=0.7;ctx.beginPath();
+      const sx=((this.view.x%spacing)+spacing)%spacing,sy=((this.view.y%spacing)+spacing)%spacing;
+      for(let x=sx;x<width;x+=spacing){ctx.moveTo(x,0);ctx.lineTo(x,height);}
+      for(let y=sy;y<height;y+=spacing){ctx.moveTo(0,y);ctx.lineTo(width,y);}
+      ctx.stroke();ctx.restore();return;
     }
     const radius = RENDER_SETTINGS.gridDotRadius;
     const startX = ((this.view.x % spacing) + spacing) % spacing;

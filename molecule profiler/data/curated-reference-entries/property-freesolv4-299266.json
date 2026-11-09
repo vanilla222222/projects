@@ -1,0 +1,79 @@
+{
+  "id": "property-freesolv4-299266",
+  "title": "2-Methylpropene — experimental hydration free energy",
+  "collections": [
+    "Measured properties"
+  ],
+  "compounds": [
+    {
+      "name": "2-Methylpropene",
+      "smiles": "CC(=C)C",
+      "formula": "C4H8",
+      "inchiKey": "VQTUBCCKSQIDNK-UHFFFAOYSA-N",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt#L179",
+      "role": "measured-property reference",
+      "identitySource": {
+        "provider": "FreeSolv / Mobley laboratory",
+        "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+        "formulaOrigin": "RDKit-derived from the exact source SMILES",
+        "license": "CC BY 4.0",
+        "licenseMetadata": {
+          "license": "CC BY 4.0",
+          "observedAtRevision": "6c7d19b4b565537365ffd22006aa2cd4643200c6",
+          "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/LICENSE",
+          "statementUrl": "https://github.com/MobleyLab/FreeSolv/blob/6c7d19b4b565537365ffd22006aa2cd4643200c6/README.md#license",
+          "scope": "Official 2026 licensing statement, recorded separately from the 2017 data revision. Maintainers license the data to the extent it is theirs to license; original source restrictions may remain."
+        },
+        "sourceFile": "validation/sources/freesolv-properties-004.json",
+        "sourceSha256": "635c7c6b084338f4831751f71b6f9034a40f9040d7050dc56dfef3dc852803ba",
+        "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+        "sourceTableSha256": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+        "sourceRecord": {
+          "sourceId": "mobley_299266",
+          "sourceName": "2-methylprop-1-ene",
+          "sourceSMILES": "CC(=C)C",
+          "smiles": "CC(=C)C",
+          "formula": "C4H8",
+          "inchiKey": "VQTUBCCKSQIDNK-UHFFFAOYSA-N",
+          "identifierOrigin": "RDKit-derived from the exact source SMILES; not a source-supplied registry identifier",
+          "formulaOrigin": "RDKit-derived from the exact source SMILES",
+          "rawRow": "mobley_299266; CC(=C)C; 2-methylprop-1-ene; 1.16; 0.60; 2.33; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  "
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "kind": "measured_property",
+      "target": "Hydration free energy",
+      "endpoint": "1.16 kcal/mol; source-assigned default uncertainty 0.60 kcal/mol",
+      "relation": "=",
+      "value": 1.16,
+      "unit": "kcal/mol",
+      "uncertainty": 0.6,
+      "uncertaintyKind": "source-assigned default uncertainty",
+      "sourceUrl": "https://github.com/MobleyLab/FreeSolv/blob/134cd763f95d54d818fc0618095aa01cbe470fc3/database.txt#L179",
+      "originalReferences": [
+        "https://doi.org/10.1021/ct050097l"
+      ],
+      "experimentalReference": "10.1021/ct050097l",
+      "sourceFile": "validation/sources/freesolv-properties-004.json",
+      "sourceSha256": "635c7c6b084338f4831751f71b6f9034a40f9040d7050dc56dfef3dc852803ba",
+      "sourceRecord": "mobley_299266; CC(=C)C; 2-methylprop-1-ene; 1.16; 0.60; 2.33; 0.02; 10.1021/ct050097l; 10.1021/acs.jced.7b00104; Experimental uncertainty not presently available, so assigned a default value.  ",
+      "sourceRow": 179,
+      "sourceId": "mobley_299266",
+      "sourceLocation": "database.txt line 179, experimental value/uncertainty columns 4 and 5",
+      "sourceGitBlob": "6c6dbf5d27e646db5a540288ece636f9c915f363",
+      "sourceTableSha256": "2d13f095713bc39b85f85dd7b4e5483fbb12fc694bf253bb1d92a4c4d484f260",
+      "conditions": {
+        "temperature": "Not specified on this database row",
+        "pH": "Not specified on this database row",
+        "phaseTransfer": "Gas to water; retain the FreeSolv dataset standard-state convention"
+      },
+      "context": "Experimental uncertainty not presently available, so assigned a default value.",
+      "originalReference": "https://doi.org/10.1021/ct050097l"
+    }
+  ],
+  "note": "Experimental FreeSolv hydration free energy, not aqueous solubility, pKa, logP, logD or receptor evidence. Calculated GAFF columns are excluded. Source-listed uncertainty is an estimate or assigned default, never a transcribed SD. No experimental temperature or pH is inferred from simulation conditions. Stored library names and graphs are unchanged.",
+  "reviewedDate": "2026-10-26"
+}

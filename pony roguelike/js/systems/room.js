@@ -238,22 +238,13 @@ function populateRoom(node, dungeon, opts){
     node.obstacles.push(new Obstacle('spike', spot.x, spot.y));
   }
 
-  if (node.forceSwarm) {
-    const cx = Math.floor(node.tileW / 2), cy = Math.floor(node.tileH / 2);
-    for (let i = 0; i < 5; i++) {
-      const ang = (i / 5) * Math.PI * 2;
-      const s = findClearFloorSpot(node, cx + Math.round(Math.cos(ang) * 2), cy + Math.round(Math.sin(ang) * 2));
-      node.enemies.push(new Enemy(ENEMY_TYPES.swarmerdnb, s.x, s.y, dungeon.floorNum));
-    }
-  }
-
   if (node.type === 'normal' && !node.enemies.some(e => e.isChampion) && Util.chance(0.05)) {
     const candidates = node.enemies.filter(e => !e.isBoss && !e.isDead);
     if (candidates.length) {
       const champ = Util.choice(candidates);
       champ.isChampion = true;
-      champ.hp = champ.maxHp = champ.hp * 2;
-      champ.dmg = champ.dmg * 2;
+      champ.hp = champ.maxHp = Math.ceil(champ.hp * 1.6);
+      champ.dmg = champ.dmg + 1;
     }
   }
 
@@ -452,8 +443,8 @@ function roomBlockCount(node){
   return Math.max(1, n);
 }
 
-const SCATTER_BASE_MAX = 6;
-const SCATTER_MAX_CAP = 18;
+const SCATTER_BASE_MAX = 5;
+const SCATTER_MAX_CAP = 13;
 const SCATTER_BLOCK_STEP = 2.0;
 const SCATTER_WALL_BIAS_FRACTION = 0.5;
 const SCATTER_WALL_BIAS_SAMPLE = 9;
@@ -470,12 +461,10 @@ function scatterCountRange(node){
   return Math.min(SCATTER_MAX_CAP, SCATTER_BASE_MAX + Math.round((roomBlockCount(node) - 1) * SCATTER_BLOCK_STEP));
 }
 
-const ARENA_SCATTER_MAX = 6;
+const ARENA_SCATTER_MAX = 4;
 function arenaScatterCount(node){
   return Math.min(ARENA_SCATTER_MAX, 1 + Math.floor(roomBlockCount(node) * 1.5));
 }
-
-const PROCGEN_SETPIECE_CHANCE = 0.2;
 
 const PROCGEN_SETPIECE_CORE_KINDS = new Set(['rock', 'hardrock', 'tallrock', 'tallhardrock', 'pit', 'redfire', 'yellowfire', 'turretn', 'turrete', 'turrets', 'turretw']);
 
@@ -629,7 +618,7 @@ function generateRoomDecor(node, flavor, spots){
 function populateRoomProcedural(node, dungeon, opts){
   const floorNum = dungeon.floorNum;
   const floorBranch = opts && opts.floorBranch;
-  let spots = roomFloorTiles(node, { avoidDoors: 2.5, avoidCenter: node.type === 'start' ? 0 : 1.2 });
+  let spots = roomFloorTiles(node, { avoidDoors: node.type === 'normal' ? 3.5 : 2.5, avoidCenter: node.type === 'start' ? 0 : 1.2 });
   if (node.type === 'normal') {
     const blocked = new Set();
     for (const t of doorClearanceTiles(node)) blocked.add(t.x + ',' + t.y);
@@ -882,24 +871,25 @@ function populateRoomProcedural(node, dungeon, opts){
   }
 
   if (node.type === 'normal') {
-    const budget = Util.clamp(2 + Math.floor(floorNum * 1.3) + Util.randi(0, 2), 2, 8);
-    let spent = 0;
-    while (spent < budget) {
-      if (!spots.length) break;
-      const s = takeSpot();
-      const type = resolveGenericEnemy(floorNum, floorBranch);
-
-      const n = Math.max(1, type.groupSize || 1);
-      for (let i = 0; i < n; i++) {
-        const en = new Enemy(type, s.x, s.y, floorNum);
-        if (n > 1) { en.x += Util.rand(-10, 10); en.y += Util.rand(-10, 10); }
-        node.enemies.push(en);
-      }
-      spent += n;
-    }
-    let normalScatterBudget = Util.randi(Math.ceil(scatterCountRange(node) * 0.6), scatterCountRange(node));
-    if (Util.chance(PROCGEN_SETPIECE_CHANCE)) normalScatterBudget = Math.max(0, normalScatterBudget - applyRoomSetPiece());
-    enforcePathability(scatterObstacles(normalScatterBudget));
+    const profiles = floorNum < 2 ? ['lanes', 'cover'] : ['lanes', 'cover', 'pockets'];
+    node.encounterLayout = Util.choice(profiles);
+    const lane = spot => {
+      const x = (spot.x - 1) % BLOCK, y = (spot.y - 1) % BLOCK;
+      const middle = coordinate => Math.abs(coordinate - (BLOCK - 1) / 2) < 1;
+      if (node.encounterLayout === 'lanes') return middle(x) || middle(y);
+      if (node.encounterLayout === 'cover') return middle(x) && middle(y);
+      return x === 0 || y === 0 || x === BLOCK - 1 || y === BLOCK - 1;
+    };
+    const reserved = spots.filter(lane);
+    spots = spots.filter(spot => !lane(spot));
+    const scatterMax = scatterCountRange(node);
+    let scatterBudget = Util.randi(Math.ceil(scatterMax * 0.45), scatterMax);
+    if (node.encounterLayout === 'cover') scatterBudget = Math.max(0, scatterBudget - applyRoomSetPiece());
+    enforcePathability(scatterObstacles(scatterBudget));
+    spots.push(...reserved);
+    Util.shuffle(spots);
+    const placed = populateCombatEncounter(node, dungeon, floorBranch, spots);
+    spots = spots.filter(spot => !placed.has(spot));
     if (spots.length && Util.chance(0.003)) {
       const s = takeSpot();
       node.chests.push(new Chest(Util.weighted(CHEST_TYPE_POOL).id, s.x, s.y));
@@ -916,6 +906,7 @@ function populateRoomProcedural(node, dungeon, opts){
   } else if (node.type === 'boss') {
     const bossType = (opts && opts.bossType) || resolveGenericBoss(floorNum, floorBranch);
     const center = findNearestFloor(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+    spots = spots.filter(spot => Util.dist(spot.x, spot.y, center.x, center.y) >= 2.5);
     const boss = new Boss(bossType, center.x, center.y, floorNum);
     node.enemies.push(boss);
     node.bossDefeated = false;
@@ -924,6 +915,7 @@ function populateRoomProcedural(node, dungeon, opts){
   } else if (node.type === 'miniboss') {
 
     const center = findNearestFloor(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+    spots = spots.filter(spot => Util.dist(spot.x, spot.y, center.x, center.y) >= 2.5);
     node.enemies.push(new Miniboss(resolveMiniboss(floorNum), center.x, center.y, floorNum));
     const arenaCount = arenaScatterCount(node);
     enforcePathability(scatterObstacles(Util.randi(Math.ceil(arenaCount * 0.5), arenaCount)));
@@ -963,9 +955,7 @@ function populateRoomProcedural(node, dungeon, opts){
       }
     }
   } else if (node.type === 'treasure') {
-    const tcx = Math.floor(node.tileW / 2), tcy = Math.floor(node.tileH / 2);
-    addItemOrTrinketPedestal(node, 'treasure', tcx, tcy, 0.55);
-    frameReward(node, tcx, tcy, 'crystal', { radius: 2 });
+    addTreasureChoice(node);
   } else if (node.type === 'shop') {
 
     const nSlots = Math.min(SHOP_MAX_SLOTS, Util.randi(3, 4) + shopBonusSlots(floorNum));
@@ -1219,14 +1209,14 @@ function currentFloorPath(explicit){
   return (typeof game !== 'undefined' && game) ? game.floorPath : null;
 }
 
-function resolveGenericEnemy(floorNum, branch, floorPath){
+function genericEnemyPool(floorNum, branch, floorPath){
 
   const avail = e => (!e.locked || isEnemyUnlocked(e.id)) && !e.neverRandom
     && (e.onlyFloorNum === undefined || e.onlyFloorNum === floorNum);
   const floorKey = floorKeyFor(floorNum, branch, currentFloorPath(floorPath));
   if (floorKey) {
     const fkPool = ENEMY_LIST.filter(e => e.floorKey === floorKey && !e.isMinion && avail(e));
-    if (fkPool.length) return pickBiasedEnemy(fkPool);
+    if (fkPool.length) return fkPool;
   }
   const stage = stageIndexForFloor(floorNum);
   const floorInStage = floorNum % FLOORS_PER_STAGE;
@@ -1236,7 +1226,84 @@ function resolveGenericEnemy(floorNum, branch, floorPath){
   if (!pool.length) pool = ENEMY_LIST.filter(e => stageMatch(e) && !e.isMinion && avail(e));
 
   if (!pool.length) pool = ENEMY_LIST.filter(avail);
-  return pickBiasedEnemy(pool.length ? pool : ENEMY_LIST.filter(avail));
+  return pool;
+}
+
+function resolveGenericEnemy(floorNum, branch, floorPath){
+  return pickBiasedEnemy(genericEnemyPool(floorNum, branch, floorPath));
+}
+
+function encounterEnemyRole(type){
+  const behavior = type.behavior.toLowerCase();
+  if (type.summonId || /summon|healer|shielder|caller|priest/.test(behavior)) return 'support';
+  if (type.shotCount || type.fireRange || /ranged|turret|sniper|lobber|sentry|marksman/.test(behavior)) return 'ranged';
+  return 'pressure';
+}
+
+function populateCombatEncounter(node, dungeon, branch, spots){
+  const floor = dungeon.floorNum;
+  const blocks = roomBlockCount(node);
+  const budget = Math.min(10, 3 + Math.floor(floor * 0.6) + (blocks > 1 ? 1 : 0));
+  const maximum = Math.min(8, 2 + blocks + Math.floor(floor / 3));
+  const pool = genericEnemyPool(floor, branch);
+  const blocked = procgenObstacleBlockKeys(node.obstacles);
+  const hazardTiles = new Set(node.obstacles.filter(ob => ob.isHazard || ob.isPit).map(ob => ob.tx + ',' + ob.ty));
+  const entry = procgenActiveDoorSlots(node)[0];
+  const origin = entry ? doorInteriorTile(entry) : findNearestFloor(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+  const reachable = roomReachableTiles(node, origin, blocked);
+  const safe = spot => reachable.has(spot.x + ',' + spot.y) && !hazardTiles.has(spot.x + ',' + spot.y);
+  const placed = new Set();
+  let candidates = spots.filter(safe);
+  if (!candidates.length) candidates = roomFloorTiles(node, { avoidDoors:2 }).filter(safe);
+  const composition = { pressure:0, ranged:0, support:0 };
+  const solidCover = node.obstacles.filter(ob => !ob.isHazard && !ob.isPit && !ob.isWalkable);
+  const roles = new Map(pool.map(type => [type, encounterEnemyRole(type)]));
+  const priority = node.encounterLayout === 'cover' ? ['ranged', 'pressure']
+    : node.encounterLayout === 'pockets' ? ['support', 'pressure'] : ['pressure', 'ranged'];
+  let remaining = budget;
+  while (remaining > 0 && candidates.length && node.enemies.length < maximum) {
+    const options = pool.filter(type => {
+      const role = roles.get(type);
+      const cost = role === 'pressure' && (type.xpTier || 1) < 3 ? 1 : 2;
+      return cost <= remaining && (role === 'pressure' || composition[role] < (role === 'ranged' && floor >= 4 ? 2 : 1));
+    });
+    if (!options.length) break;
+    const preferredRole = priority.find(role => composition[role] === 0 && options.some(type => roles.get(type) === role));
+    const preferred = options.filter(type => roles.get(type) === preferredRole);
+    const swarm = node.forceSwarm && node.enemies.length === 0;
+    const type = swarm ? ENEMY_TYPES.swarmerdnb : pickBiasedEnemy(preferred.length ? preferred : options);
+    const role = encounterEnemyRole(type);
+    const cost = role === 'pressure' && (type.xpTier || 1) < 3 ? 1 : 2;
+    if (remaining < cost && node.enemies.length) break;
+    const roleLimit = role === 'pressure' ? maximum : role === 'ranged' && floor >= 4 ? 2 : 1;
+    const groupSize = Math.min(swarm ? 3 + Math.min(2, Math.floor(floor / 3)) : type.groupSize || 1,
+      Math.max(1, Math.floor(remaining / cost)),
+      maximum - node.enemies.length, roleLimit - composition[role], candidates.length);
+    for (let i = 0; i < groupSize; i++) {
+      let best = candidates.length - 1, bestScore = -Infinity;
+      const start = Math.max(0, candidates.length - 12);
+      for (let j = start; j < candidates.length; j++) {
+        const spot = candidates[j];
+        const spacing = node.enemies.reduce((min, enemy) =>
+          Math.min(min, Util.dist(spot.x, spot.y, enemy.x / TILE - 0.5, enemy.y / TILE - 0.5)), 5);
+        const backline = role !== 'pressure';
+        const depth = Util.dist(spot.x, spot.y, origin.x, origin.y);
+        const cover = backline && node.encounterLayout === 'cover' && solidCover.some(ob =>
+          Util.dist2(spot.x, spot.y, ob.tx, ob.ty) <= 5);
+        const score = spacing + (backline ? depth * 0.4 : 0) + (cover ? 3 : 0);
+        if (score > bestScore) { best = j; bestScore = score; }
+      }
+      const [spot] = candidates.splice(best, 1);
+      placed.add(spot);
+      const enemy = new Enemy(type, spot.x, spot.y, floor);
+      enemy.fireTimer = Math.max(enemy.fireTimer, 0.65 + node.enemies.length * 0.15);
+      enemy.attackTimer = Math.max(enemy.attackTimer, 0.75 + node.enemies.length * 0.12);
+      node.enemies.push(enemy);
+      composition[role]++;
+      remaining -= cost;
+    }
+  }
+  return placed;
 }
 
 function resolveGenericBoss(floorNum, branch, floorPath){
@@ -1284,13 +1351,58 @@ function rollSackBatteryKind(){
   return Util.weighted(candidates).id;
 }
 
-function pickItemFromPool(poolName, passiveChance){
-  const available = i => !i.locked || isItemUnlocked(i.id);
+const LOOT_ROLES = {
+  melee: new Set(['bentnail','ironshoes','directmalice']),
+  bolt: new Set(['multishot','piercingshot','ironfilings','silverbell','hominglens']),
+  familiar: new Set(['houndwhistle','swarmcollar','packwhistle','menageriekeeperscloak','beastfriendsbond']),
+  bomb: new Set(['bombsatchel','bombrangeup','powderpouch','sootyfeather','blastward','powderflask','cracklingfuse','ironpowderkeg']),
+  active: new Set(['tinybattery','tinwhistle']),
+  attack: new Set(['damageup','firerateup','rangeup','rustybolt','crackedlens','staticcharm','stormbarrel','coldheart','vampfang']),
+};
+
+function lootRoleWeight(def, player){
+  if (!player) return 1;
+  if (def.id === 'borrowedwings' && player.canFly) return 0.18;
+  if (def.id === 'thickmane' || def.id === 'hpup') return player.def.noRedContainers ? 0.15 : 1;
+  if (LOOT_ROLES.melee.has(def.id)) return !player.noAttack && player.attackType === 'melee' ? 2.2 : 0.45;
+  if (LOOT_ROLES.bolt.has(def.id)) return !player.noAttack && player.attackType === 'ranged'
+    && !player.laser && !player.greenFireAttack && !player.innateFireRing && !player.charged ? 2.2 : 0.15;
+  if (LOOT_ROLES.familiar.has(def.id)) return player.familiars.length ? 2.5 : 0.7;
+  if (LOOT_ROLES.bomb.has(def.id)) return player.unlimitedBombs ? 3 : 1;
+  if (LOOT_ROLES.active.has(def.id)) return player.activeItem ? 1.6 : 0.4;
+  if (LOOT_ROLES.attack.has(def.id)) return player.noAttack ? 0.2 : 1.35;
+  return 1;
+}
+
+function pickRunLoot(candidates, run, category){
+  if (!candidates.length) return null;
+  const player = run && run.player;
+  const offered = run && run.lootOffers;
+  const entries = candidates.map(def => {
+    const seen = offered ? offered.get(category + ':' + def.id) || 0 : 0;
+    const copies = player && ((player.passives[def.id] || 0) + (player.statPassives[def.id] || 0));
+    return { def, w:lootRoleWeight(def, player) / (1 + 3 * seen + (copies || 0)) };
+  });
+  const fresh = entries.filter(({ def }) => !player || (category === 'trinket'
+    ? def.id !== player.trinketId : !player.activeItem || def.id !== player.activeItem.id));
+  const available = fresh.length ? fresh : entries;
+  const affinity = available.filter(({ def }) => lootRoleWeight(def, player) >= 2.2);
+  const pool = affinity.length && Util.chance(category === 'trinket' ? 0.18 : 0.13) ? affinity : available;
+  const picked = Util.weighted(pool).def;
+  if (offered) {
+    const key = category + ':' + picked.id;
+    offered.set(key, (offered.get(key) || 0) + 1);
+  }
+  return picked;
+}
+
+function pickItemFromPool(poolName, passiveChance, excludedIds){
+  const available = i => (!excludedIds || !excludedIds.has(i.id)) && (!i.locked || isItemUnlocked(i.id));
 
   let basePassiveChance = passiveChance !== undefined ? passiveChance : 0.68;
 
-  let p = null;
-  try { p = (typeof activeGame === 'function' && activeGame()) ? activeGame().player : null; } catch (e) { p = null; }
+  const run = typeof activeGame === 'function' ? activeGame() : null;
+  const p = run && run.player;
   if (p && p.activeItem) basePassiveChance = 1 - (1 - basePassiveChance) / 2;
   const wantType = RNG.random() < basePassiveChance ? 'passive' : 'active';
 
@@ -1304,15 +1416,19 @@ function pickItemFromPool(poolName, passiveChance){
   if (!candidates.length) candidates = ITEM_LIST.filter(i => available(i) && notCapped(i) && i.pools && i.pools.includes(poolName));
   if (!candidates.length) candidates = (wantType === 'passive' ? PASSIVE_ITEMS : ACTIVE_ITEMS).filter(i => available(i) && notCapped(i));
   if (!candidates.length) candidates = ITEM_LIST.filter(available);
-  return pickByQuality(candidates);
+  return pickByQuality(candidates, run, poolName);
 }
 
-const ITEM_QUALITY_WEIGHTS = [ { q:1, w:40 }, { q:2, w:30 }, { q:3, w:20 }, { q:4, w:10 } ];
-function pickByQuality(candidates){
+function pickByQuality(candidates, run, poolName){
   if (!candidates.length) return null;
-  const tier = Util.weighted(ITEM_QUALITY_WEIGHTS).q;
-  const atTier = candidates.filter(i => (i.quality || 1) === tier);
-  return Util.choice(atTier.length ? atTier : candidates);
+  const floor = run && run.dungeon ? run.dungeon.floorNum : 0;
+  const early = floor < 3;
+  const treasure = poolName === 'treasure' || poolName === 'boss';
+  const weights = early ? [30, 43, 22, 5] : [21, 37, 30, 12];
+  if (treasure) { weights[0] -= 8; weights[2] += 8; }
+  const tiers = weights.map((w, index) => ({ w, q:index + 1,
+    entries:candidates.filter(item => (item.quality || 1) === index + 1) })).filter(tier => tier.entries.length);
+  return pickRunLoot(tiers.length ? Util.weighted(tiers).entries : candidates, run, 'item');
 }
 
 function pickAboveQuality1(){
@@ -1376,18 +1492,19 @@ function addStarPedestal(node, starId, tx, ty){
   node.itemPedestals.push({ item: STAR_TYPES[starId], taken: false, x: tx, y: ty, isStar: true, starId });
 }
 
-function pickTrinketFromPool(){
+function pickTrinketFromPool(excludedIds){
 
-  let p = null;
-  try { p = (typeof activeGame === 'function' && activeGame()) ? activeGame().player : null; } catch (e) { p = null; }
+  const run = typeof activeGame === 'function' ? activeGame() : null;
+  const p = run && run.player;
   let cappedIds = null;
   if (p && p.primedStatus && (p[p.primedStatus] || 0) >= (STATUS_CHANCE_CAPS[p.primedStatus] || Infinity)) {
     const g = STATUS_GRANTING_ITEMS[p.primedStatus];
     if (g) cappedIds = new Set(g.trinkets);
   }
-  let candidates = TRINKET_LIST.filter(t => (!t.locked || isTrinketUnlocked(t.id)) && (!cappedIds || !cappedIds.has(t.id)));
-  if (!candidates.length) candidates = TRINKET_LIST.filter(t => !t.locked || isTrinketUnlocked(t.id));
-  return candidates.length ? Util.choice(candidates) : null;
+  const available = t => (!excludedIds || !excludedIds.has(t.id)) && (!t.locked || isTrinketUnlocked(t.id));
+  let candidates = TRINKET_LIST.filter(t => available(t) && (!cappedIds || !cappedIds.has(t.id)));
+  if (!candidates.length) candidates = TRINKET_LIST.filter(available);
+  return pickRunLoot(candidates, run, 'trinket');
 }
 
 function addFamiliarPedestal(node, familiar, tx, ty){
@@ -1395,9 +1512,9 @@ function addFamiliarPedestal(node, familiar, tx, ty){
   node.itemPedestals.push({ item: familiar, taken: false, x: tx, y: ty, isFamiliar: true });
 }
 
-function pickFamiliarFromPool(){
+function pickFamiliarFromPool(excludedIds){
 
-  const candidates = FAMILIAR_LIST.filter(f => (!f.locked || isFamiliarUnlocked(f.id)) && !f.trashBagOnly);
+  const candidates = FAMILIAR_LIST.filter(f => (!excludedIds || !excludedIds.has(f.id)) && (!f.locked || isFamiliarUnlocked(f.id)) && !f.trashBagOnly);
   return candidates.length ? Util.choice(candidates) : null;
 }
 
@@ -1425,11 +1542,13 @@ function rerollOnePedestal(node){
   const list = (node.itemPedestals || []).filter(p => !p.taken);
   if (!list.length) return null;
   const ped = Util.choice(list);
+  const excluded = ped.treasureChoice
+    ? new Set(list.filter(offer => offer.treasureChoice).map(offer => offer.item.id)) : undefined;
   let next = null;
-  if (ped.isFamiliar) next = pickFamiliarFromPool();
-  else if (ped.isTrinket) next = pickTrinketFromPool();
+  if (ped.isFamiliar) next = pickFamiliarFromPool(excluded);
+  else if (ped.isTrinket) next = pickTrinketFromPool(excluded);
   else if (ped.isDeal) next = pickItemFromPool(ped.dealType || 'sombra');
-  else next = pickItemFromPool(itemPoolForRoomType(node.type));
+  else next = pickItemFromPool(itemPoolForRoomType(node.type), undefined, excluded);
   if (!next) return null;
   ped.item = next;
   return next;
@@ -1475,11 +1594,40 @@ function championizeRoomEnemies(node){
   for (const e of node.enemies) {
     if (e.isDead || e.isBoss || e.isChampion) continue;
     e.isChampion = true;
-    e.hp = e.maxHp = e.hp * 2;
-    e.dmg = e.dmg * 2;
+    e.hp = e.maxHp = Math.ceil(e.hp * 1.6);
+    e.dmg = e.dmg + 1;
     count++;
   }
   return count;
+}
+
+function addTreasureChoice(node){
+  const center = findNearestFloor(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+  const offers = roomFloorTiles(node, { avoidDoors:2.5 }).sort((a, b) =>
+    Util.dist2(center.x, center.y, a.x, a.y) - Util.dist2(center.x, center.y, b.x, b.y));
+  // Separate both offers from the entry and from each other so neither is collected by accident.
+  const left = offers.find(spot => spot.x <= center.x - 2) || offers[0] || center;
+  const right = offers.find(spot => Util.dist2(left.x, left.y, spot.x, spot.y) >= 16);
+  const primary = pickItemFromPool('treasure', 1);
+  if (!primary) return;
+  addItemPedestal(node, primary, left.x, left.y);
+  if (!right) return;
+  const excluded = new Set([primary.id]);
+  const familiar = Util.chance(0.25) ? pickFamiliarFromPool(excluded) : null;
+  const trinket = !familiar && Util.chance(0.35) ? pickTrinketFromPool(excluded) : null;
+  const second = familiar || trinket || pickItemFromPool('treasure', 0.42, excluded);
+  if (!second) return;
+  if (familiar) addFamiliarPedestal(node, familiar, right.x, right.y);
+  else if (trinket) addTrinketPedestal(node, trinket, right.x, right.y);
+  else addItemPedestal(node, second, right.x, right.y);
+  for (const ped of node.itemPedestals) ped.treasureChoice = true;
+}
+
+function claimTreasureChoice(node, selected){
+  if (!selected.treasureChoice) return;
+  for (const ped of node.itemPedestals) {
+    if (ped !== selected && ped.treasureChoice) ped.taken = true;
+  }
 }
 
 function addItemOrTrinketPedestal(node, poolName, tx, ty, passiveChance){
@@ -1582,6 +1730,12 @@ function rerollShopSlots(node){
 function spawnClearRoomPickup(game){
   const node = game.currentRoom;
   if (node.type === 'boss') return;
+  if (node.type === 'normal' && game.mode === 'story' && !game.floorKeyRelief && game.player.keys === 0) {
+    game.floorKeyRelief = true;
+    const spot = findClearFloorSpot(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+    spawnResolvedPickup(node, 'key', spot.x, spot.y);
+    return;
+  }
   const c = CLEAR_REWARD_CHANCE;
   const tier = Util.weighted(Object.keys(c).map(id => ({ id, w: c[id] }))).id;
   const spot = findClearFloorSpot(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
@@ -1597,19 +1751,19 @@ function spawnClearRoomPickup(game){
 
   if (tier === 'common') {
 
-    const cat = Util.weighted(applySkillTreePoolNudge(COMMON_CATEGORY_POOL, 'COMMON_CATEGORY_POOL')).id;
+    const cat = Util.weighted(COMMON_CATEGORY_POOL).id;
     if (cat === 'penny') {
       const pennyPool = wdCoinPool(game, COMMON_PENNY_POOL);
-      const coin = Util.weighted(applySkillTreePoolNudge(pennyPool, 'COMMON_PENNY_POOL')).id;
+      const coin = Util.weighted(pennyPool).id;
 
       spawnResolvedPickup(node, coin === 'cursedpenny' ? 'cursedpenny' : 'coin:' + coin, spot.x, spot.y);
     } else if (cat === 'heart') {
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(COMMON_HEART_POOL, 'COMMON_HEART_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(COMMON_HEART_POOL).id, spot.x, spot.y);
     } else if (cat === 'bomb') {
 
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(BOMB_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id)), 'BOMB_TIER_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(BOMB_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id))).id, spot.x, spot.y);
     } else {
-      spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(KEY_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id)), 'KEY_TIER_POOL')).id, spot.x, spot.y);
+      spawnResolvedPickup(node, Util.weighted(KEY_TIER_POOL.filter(t => !t.locked || isPickupKindUnlocked(t.id))).id, spot.x, spot.y);
     }
     return;
   }
@@ -1618,11 +1772,11 @@ function spawnClearRoomPickup(game){
 
     const candidates = RARE_POOL.filter(t => !ACHIEVEMENT_PICKUP_KINDS.includes(t.id) || isPickupKindUnlocked(t.id));
     if (!candidates.length) return;
-    spawnResolvedPickup(node, Util.weighted(applySkillTreePoolNudge(candidates, 'RARE_POOL')).id, spot.x, spot.y);
+    spawnResolvedPickup(node, Util.weighted(candidates).id, spot.x, spot.y);
     return;
   }
 
-  const leg = Util.weighted(applySkillTreePoolNudge(LEGENDARY_POOL, 'LEGENDARY_POOL')).id;
+  const leg = Util.weighted(LEGENDARY_POOL).id;
   if (leg === 'trinket') {
     const trinket = pickTrinketFromPool();
 
@@ -1632,5 +1786,5 @@ function spawnClearRoomPickup(game){
     if (familiar) { addFamiliar(game, familiar); return; }
   }
 
-  node.chests.push(new Chest(Util.weighted(applySkillTreePoolNudge(CHEST_TYPE_POOL, 'CHEST_TYPE_POOL')).id, spot.x, spot.y));
+  node.chests.push(new Chest(Util.weighted(CHEST_TYPE_POOL).id, spot.x, spot.y));
 }

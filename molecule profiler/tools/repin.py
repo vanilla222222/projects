@@ -58,6 +58,7 @@ def check_pins(node):
         ('validation/library-family-coverage.json', 'data/library-tags.js', None),
         ('validation/curated-references.json', 'data/curated-references.js', 'tools/build-curated-references.py'),
         ('validation/library-receptor-tags.json', 'data/library-receptor-tags.js', None),
+        ('validation/chembl-properties.json', 'data/chembl-properties.js', 'tools/build-chembl-properties.py'),
         ('validation/receptor-scaffold-diversity.json', None, None),
     ]
     for report_file, output, builder in reports:
@@ -117,6 +118,7 @@ def build_steps(python, node):
         ('library tags and family coverage', [python, '-B', 'tools/build-library-tags.py']),
         ('curated overlay and provenance', [python, '-B', 'tools/build-curated-references.py']),
         ('receptor tags and provenance', [python, '-B', 'tools/build-receptor-tags.py']),
+        ('calculated ChEMBL-entry properties', [python, '-B', 'tools/build-chembl-properties.py']),
         ('structural motifs', [python, '-B', 'tools/build-reference-motifs.py']),
         ('matched pairs', [python, '-B', 'tools/build-reference-pairs.py']),
         ('release snapshots (existing history only)', [python, '-B', 'tools/build-reference-releases.py']),

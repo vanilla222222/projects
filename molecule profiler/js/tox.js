@@ -146,8 +146,16 @@ const DEPENDENCE_BANDS = [
 
 function dependenceProfile(record, methodKey, score) {
   const query = fingerprint(record.mol, methodKey);
+  const needed = new Set(DEPENDENCE.map((drug) => drug.name));
+  TARGETS.forEach((target) => {
+    if (REWARD_TARGETS.indexOf(target.gene) !== -1) target.ligands.forEach((name) => needed.add(name));
+  });
   const byName = new Map();
-  libraryFingerprints(methodKey).forEach((item) => byName.set(item.entry.name, item));
+  SIMILARITY_REFERENCE_POOL.forEach((entry) => {
+    if (!needed.has(entry.name)) return;
+    const fp = fingerprint(buildMolecule(parseSmiles(entry.smiles)), methodKey);
+    byName.set(entry.name, { entry: entry, fp: fp });
+  });
 
   const neighbours = [];
   DEPENDENCE.forEach((drug) => {

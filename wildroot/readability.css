@@ -1,0 +1,150 @@
+/* Readable dialogs: text wraps and grows; bounded content owns scrolling. */
+#panel { width:min(1120px,96vw); max-height:94dvh; }
+#panel-content { min-width:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+#panel-content p,#panel-content small,#panel-content .small {font-family:system-ui,sans-serif;font-size:13px!important;line-height:1.5!important;overflow-wrap:anywhere;white-space:normal;}
+#panel-content h3 {font-size:18px!important;line-height:1.3;overflow-wrap:anywhere;}
+#panel-content h4,#panel-content strong {line-height:1.4;overflow-wrap:anywhere;}
+#panel-content button {font-size:12px!important;line-height:1.35!important;min-height:40px;height:auto;white-space:normal;overflow-wrap:anywhere;}
+#panel-content .rpg-tabs {display:flex;flex-wrap:wrap;overflow:visible;gap:5px;}
+#panel-content .rpg-tabs button {flex:1 1 100px;min-width:0;}
+#panel-content .master-detail {grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);align-items:start;}
+#panel-content .master-detail>* {min-width:0;}
+#panel-content .ledger-list,#panel-content .recipe-icon-grid,#panel-content .item-index-grid {max-height:none;overflow:visible;}
+#panel-content .recipe-icon-grid,#panel-content .item-index-grid {grid-template-columns:repeat(auto-fill,minmax(100px,1fr));}
+#panel-content .recipe-icon-grid button,#panel-content .item-index-grid button {min-height:120px!important;padding:10px!important;}
+#panel-content .recipe-icon-grid span,#panel-content .item-index-grid span,#panel-content .card-album span {font-size:12px!important;line-height:1.4;white-space:normal;overflow:visible;text-overflow:clip;}
+#panel-content .save-actions {display:flex;flex-wrap:wrap;gap:8px;}
+#panel-content .ingredient-list button {min-width:0;}
+#panel-content .ingredient-list span {min-width:0;white-space:normal;}
+#panel-content .ledger-box {min-width:0;}
+#panel-content .selected-talent,#panel-content .inventory-detail {max-height:none;overflow:visible;}
+#panel-content .worn-slot {min-height:76px;}
+#panel-content .worn-slot small {font-size:11px!important;}
+.profession-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:16px;align-items:start;}
+.profession-grid>article,.alchemy-boosts>article {border:1px solid #a28c68;padding:14px;background:#fff7db55;min-width:0;}
+.access-levels,.unlock-steps {display:grid;gap:10px;margin:16px 0;}
+.access-levels span {padding:8px;border:1px solid #ad9875;font-family:system-ui,sans-serif;font-size:13px;}
+.unlock-steps {grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));}
+.unlock-steps article {padding:12px;background:#fff5d044;border:1px solid #b09b76;}
+.enchant-comparison {display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.enchant-comparison>div {padding:12px;background:#e8d7ad;border:1px solid #b09b76;min-width:0;}
+.alchemy-assignments {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:14px;}
+.alchemy-assignments label {display:flex;flex-direction:column;gap:8px;font-family:system-ui,sans-serif;font-size:14px;}
+.alchemy-assignments select {width:100%;min-width:0;padding:10px;font:14px system-ui;background:#fff3cf;color:#35291d;}
+.alchemy-boosts {display:grid;gap:12px;}
+.cauldron-art {display:flex;align-items:center;gap:16px;border-bottom:6px solid var(--liquid);padding:20px 0;}
+.cauldron-art .ui-icon {width:70px;height:70px;color:var(--liquid);}
+.experiment-result {border:1px solid #b18c4b;background:#fff3b2;padding:12px;}
+.recipe-question {font-size:40px;display:block;line-height:1.2;}
+@media(max-width:800px){
+ #panel {width:98vw;max-width:98vw;max-height:96dvh;}
+ #panel-content {padding:12px!important;}
+ #panel-content .master-detail {grid-template-columns:1fr;gap:14px;}
+ #panel-content .inventory-layout {grid-template-columns:1fr;}
+ #panel-content .inventory-grid {grid-template-columns:repeat(4,minmax(0,1fr));}
+ #panel-content .inventory-slot {min-height:66px!important;}
+ #panel-content .vault-grid,#panel-content .achievement-grid,#panel-content .set-bonuses {grid-template-columns:1fr;}
+ #panel-content .quick-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+ #panel-content .recipe-icon-grid,#panel-content .item-index-grid {grid-template-columns:repeat(3,minmax(0,1fr));}
+ #panel-content button {min-height:44px;font-size:12px!important;}
+ #panel-content .product-grid>.ledger-box {display:block;}
+ #panel-content .rpg-tabs button {flex-basis:95px;}
+ #panel-content .inventory-detail p {font-size:13px!important;}
+ #panel-content .player-cards,#panel-content .card-album {grid-template-columns:repeat(2,minmax(0,1fr));}
+ #panel-content .enchant-comparison {grid-template-columns:1fr;}
+ #panel-tabs {display:flex;flex-wrap:wrap;position:static;overflow:visible;}
+ #panel-tabs button {flex:1 1 80px;min-height:40px;font-size:11px!important;white-space:normal;}
+}
+/* Keep recipe browsing beside its details rather than extending the entire dialog. */
+#panel-content .recipe-icon-grid {max-height:55dvh;overflow-y:auto;overscroll-behavior:contain;padding:2px 7px 8px 2px;}
+@media(max-width:800px){#panel-content .recipe-icon-grid {max-height:300px;}}
+.alchemy-material {display:flex;flex-direction:column;gap:8px;font:14px/1.5 system-ui,sans-serif;min-width:0;margin-bottom:14px;}
+.alchemy-material select {min-width:0;max-width:100%;padding:10px;background:#fff0c8;color:#342c22;font:14px system-ui;}
+
+/* World One progression panels retain usable touch targets and wrap long book titles. */
+.ability-cards article{min-width:0;overflow-wrap:anywhere}
+.ability-cards article h3,.ability-cards article h4{line-height:1.35}
+.ability-cards article small{display:block;line-height:1.5;white-space:normal}
+.ability-cards article button{min-height:42px;white-space:normal}
+
+/* Dialogue is a conversation, with responses below the current line. */
+.npc-conversation{display:grid;grid-template-columns:190px minmax(0,1fr);gap:22px;align-items:start}
+.speaker-card{border:2px solid var(--speaker);background:#c7b88e;padding:20px 14px;text-align:center;min-width:0}
+.speaker-card .character-art{width:100px;height:160px}.speaker-card h3{margin:10px 0 4px!important}
+.speaker-card p,.speaker-card small,.speaker-card span{display:block;white-space:normal;line-height:1.5}.speaker-card span{font-size:11px;margin-top:12px}
+.speech-column{min-width:0}.conversation-context{display:flex;justify-content:space-between;gap:12px;font-size:12px;letter-spacing:1px;margin:5px 0 12px;color:#62583e}
+#panel-content .npc-speech{display:flex;flex-direction:column;justify-content:space-between;width:100%;min-height:210px;white-space:normal;text-transform:none!important;text-align:left;padding:24px!important;background:#f7e9bd;color:#343b36;border:2px solid #998253;box-shadow:4px 5px #65513544}
+#npc-speech-text{font-size:19px;line-height:1.65;letter-spacing:0;font-weight:400;overflow-wrap:anywhere}
+#npc-speech-prompt{font-size:11px;margin-top:24px;color:#716440}.conversation-actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 14px}.conversation-actions button{min-height:48px;flex:1 1 150px;white-space:normal}.conversation-objectives{padding:16px 20px;border:1px solid #b09b6c;background:#d8c99e;margin-top:20px;line-height:1.6}.conversation-objectives li{margin:9px 0}.conversation-objectives li b{white-space:nowrap}.dialogue-help{display:block;line-height:1.6;color:#6b604b}
+@media(max-width:800px){.npc-conversation{grid-template-columns:1fr;gap:14px}.speaker-card{display:grid;grid-template-columns:65px 1fr;text-align:left;padding:10px 14px;gap:0 12px}.speaker-card .character-art{grid-row:1/5;width:55px;height:88px}.speaker-card h3{margin:0!important}.speaker-card p,.speaker-card small,.speaker-card span{margin:0!important}.speaker-card span{font-size:10px}#panel-content .npc-speech{padding:18px!important;min-height:195px}#npc-speech-text{font-size:17px}.conversation-context{font-size:11px}.conversation-objectives{padding:12px}.conversation-actions button{flex-basis:140px}}
+@media(max-height:530px) and (orientation:landscape){.npc-conversation{grid-template-columns:130px 1fr}.speaker-card{display:block}.speaker-card .character-art{display:none}#panel-content .npc-speech{min-height:130px}#npc-speech-text{font-size:16px}}
+.monster-art{width:78px;height:78px;display:block;flex-shrink:0;image-rendering:pixelated}.bestiary-portrait .monster-art{width:150px;height:150px}.selected-card .monster-art{width:120px;height:120px;margin:0 auto 12px}.card-album .monster-art{max-width:100%;margin:0 auto}.equipped-cards .monster-art{width:44px;height:44px}
+@media(max-width:800px){.card-album .monster-art{width:60px;height:60px}.bestiary-portrait .monster-art{width:120px;height:120px}}
+
+#panel-content .npc-speech:hover,#panel-content .npc-speech:focus,#panel-content .npc-speech:active{background:#f7e9bd!important;color:#343b36!important}
+#panel-content .npc-speech:focus-visible{outline:3px solid #977334;outline-offset:2px}
+
+/* Storage sources and permanent-upgrade status stay readable on narrow screens. */
+#panel-content .capacity-list h4{font-size:14px!important;line-height:1.4}
+#panel-content .capacity-entry{gap:8px;padding:9px;align-items:center}
+#panel-content .capacity-entry span{min-width:0;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+#panel-content .capacity-entry small,#panel-content .capacity-entry b{font-size:12px!important;line-height:1.4;white-space:normal}
+#panel-content .capacity-entry>b{flex:0 0 72px;text-align:right;color:#3f5634}
+
+/* Character management: broad rows and readable source/action text. */
+#panel-content .roster-cards{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+#panel-content .roster-card{min-width:0;text-align:left;overflow-wrap:anywhere}
+#panel-content .roster-card .character-art{width:56px;height:88px;float:right;margin:0 0 8px 10px}
+#panel-content .roster-card h3{font-size:17px!important;line-height:1.4}
+#panel-content .roster-state{display:block;font-size:11px!important;font-weight:bold;margin:7px 0;color:#435c48}
+#panel-content .roster-card p{font-size:13px!important;line-height:1.5}
+#panel-content .roster-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0;clear:both}
+#panel-content .roster-metrics>div{padding:8px;background:#e7d4a3;min-width:0;border:1px solid #b7a071}
+#panel-content .roster-metrics small{display:block;font-size:11px!important;line-height:1.4}
+#panel-content .roster-metrics strong{display:block;font-size:15px;line-height:1.5}
+#panel-content .roster-goal{border-left:4px solid #63826a;padding:10px;background:#efe1b9;margin:10px 0}
+#panel-content .roster-goal h4{font-size:14px!important;line-height:1.5;margin:0 0 6px}
+#panel-content .roster-goal p{margin:0}
+#panel-content .roster-card .save-actions{display:flex;flex-wrap:wrap;gap:7px;clear:both}
+#panel-content .roster-card .save-actions button{flex:1 1 105px;white-space:normal}
+#panel-content .offline-materials{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px}
+#panel-content .offline-materials p{margin:3px 0;overflow-wrap:anywhere}
+@media(max-width:700px){#panel-content .roster-cards{grid-template-columns:1fr}#panel-content .offline-materials{grid-template-columns:1fr}}
+
+.world-screen[data-boss="true"] .quest-tracker{display:none}
+@media(max-width:700px){.world-screen[data-boss="true"] .map-title h1{font-size:17px}}
+
+#panel-content .gear-comparison{margin:12px 0;padding:10px;background:#f2e5c4;border:1px solid #a68c62;overflow-wrap:anywhere}
+#panel-content .gear-comparison table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+#panel-content .gear-comparison th,#panel-content .gear-comparison td{padding:6px 3px;text-align:right;overflow-wrap:anywhere;border-bottom:1px solid #c5af86}
+#panel-content .gear-comparison th:first-child{text-align:left}
+#panel-content .stat-gain td:last-child{color:#285832;font-weight:bold}#panel-content .stat-loss td:last-child{color:#873e32;font-weight:bold}
+#panel-content .bank-characters p{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.loot-feed .loot-rare{color:#b8d4ff}.loot-feed .loot-legendary{color:#f8ce7d}.loot-feed .loot-mythical{color:#e5b5ff}
+
+/* Illustrated travel atlas: room labels are always visible, selection never spends a charge. */
+.atlas-legend{display:flex;flex-wrap:wrap;gap:8px 16px;color:#465a56;font:12px/1.5 system-ui;padding:10px 2px}.atlas-legend small{flex-basis:100%}.atlas-redesign{background:#355b66;isolation:isolate}.atlas-redesign>svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.atlas-redesign .atlas-route{fill:none;stroke:#586e63;stroke-width:5;stroke-dasharray:5 8;stroke-linecap:round}.atlas-redesign .atlas-route.open{stroke:#efe3b6;stroke-width:6;stroke-dasharray:none;filter:drop-shadow(0 2px 0 #506553)}.atlas-redesign .region-name{font:600 12px Georgia,serif;letter-spacing:2px;fill:#263f3c;paint-order:stroke;stroke:#dce0b0;stroke-width:3px}.atlas-redesign .atlas-compass{fill:#e4d7a4;text-anchor:middle;font:16px Georgia}.atlas-redesign .atlas-node{width:56px!important;height:52px!important;min-height:52px!important;padding:0!important;background:#657a72!important;border:2px solid #c0c8b1!important;border-radius:14px!important;box-shadow:0 4px 0 #344d4b,0 7px 15px #243d3d55!important;overflow:visible;color:#f7efce!important}.atlas-redesign .atlas-node .atlas-pin{font:26px/1 Georgia;color:inherit}.atlas-redesign .atlas-node.discovered{background:var(--region)!important;border-color:#fbefc6!important}.atlas-redesign .atlas-node.route-locked{background:#52636a!important;color:#c3c9c3!important}.atlas-redesign .atlas-node small{position:absolute;left:50%;top:55px;width:142px;transform:translateX(-50%);margin:0;padding:5px 7px;background:#263f40ed;border:1px solid #d7cf9c77;border-radius:5px;font:600 12px/1.3 system-ui!important;text-align:center;color:#fff0cd!important;text-shadow:none;white-space:normal}.atlas-redesign .atlas-node.current{outline:3px solid #fcda83;outline-offset:5px}.atlas-redesign .atlas-node.selected{box-shadow:0 0 0 7px #8ed8db,0 5px 10px #213d44!important}.atlas-redesign .atlas-node b{top:-24px;background:#f6d78c;color:#3a4c45;border-radius:4px;padding:4px 7px;font:700 10px system-ui;white-space:nowrap}.atlas-redesign .atlas-node:focus-visible{outline:4px solid white;outline-offset:8px}.map-layout .atlas-detail{top:0}.atlas-scroll{max-height:580px;overscroll-behavior:contain}.atlas-detail .save-actions{position:sticky;bottom:0;background:#e9d9b3;padding:10px 0;z-index:2}
+@media(max-width:800px){.atlas-scroll{max-height:360px}.atlas-legend{font-size:11px}.map-layout .atlas-detail{position:static}.atlas-redesign .atlas-node{min-height:52px!important}.atlas-detail .save-actions button{flex:1}}
+
+.npc-hub .npc-speech{min-height:0!important;cursor:default!important;padding:16px 20px!important;background:#f4e6c6!important;border-radius:8px!important}.npc-hub .npc-speech p{font:16px/1.65 system-ui!important;margin:0!important;color:#3f4d48}.npc-status{display:inline-block;padding:6px 10px;border-radius:5px;background:#d6c49a;color:#4a5349;font:700 11px system-ui;letter-spacing:1px}.npc-status.ready{background:#426b55;color:#f3f6dc}.npc-topics{display:flex;flex-direction:column;gap:8px;margin-top:18px}.npc-topics button[aria-pressed=true]{outline:2px solid #547c74}.npc-hub .conversation-objectives{margin-top:14px;border-radius:8px}.npc-hub .conversation-objectives ul{list-style:none;padding:0}.npc-hub .conversation-objectives li{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #b5a37d66;padding:8px 0}.npc-hub .conversation-objectives li.done{color:#3c654b}.npc-rewards{border-left:4px solid #b6904e;padding:4px 14px;margin-top:16px;background:#e9d9b4}.npc-rewards h4{margin:8px 0 0}.npc-primary-actions{position:sticky;bottom:-10px;padding:12px 0;margin:10px 0;background:#eadbb9;z-index:3;border-top:1px solid #b5a37d}.npc-story{padding:10px;border:1px solid #b5a37d;border-radius:5px}.npc-story summary{cursor:pointer;font:14px system-ui}.npc-story p{font:14px/1.6 system-ui!important}
+@media(max-width:800px){.npc-topics{grid-column:1/-1;flex-direction:row;margin-top:10px}.npc-topics button{flex:1}.npc-hub .npc-speech p{font-size:14px!important}.npc-hub .conversation-actions{flex-wrap:wrap}.npc-hub .speaker-card{position:static}}
+
+/* Keep the legend and atlas in one grid cell; only the atlas canvas scrolls. */
+.map-layout{min-width:0;max-width:100%}.atlas-pane{min-width:0;max-width:100%;overflow:hidden}.atlas-pane .atlas-scroll{display:block;width:100%;min-width:0;max-width:100%;height:min(580px,55dvh);max-height:580px;overflow:scroll;box-sizing:border-box;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;overscroll-behavior:auto}.atlas-pane .world-atlas{max-width:none;flex-shrink:0}.map-layout>.atlas-detail{min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:800px){.atlas-pane .atlas-scroll{height:min(360px,48dvh);max-height:360px}.map-layout{grid-template-columns:minmax(0,1fr)}}
+
+.atlas-scroll,.atlas-scroll .atlas-node{cursor:grab!important}.atlas-scroll{user-select:none;-webkit-user-select:none}.atlas-scroll.is-panning,.atlas-scroll.is-panning *{cursor:grabbing!important}
+
+/* One bounded scrolling body for every menu; chrome stays outside that body. */
+#panel[open]{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;height:min(860px,94dvh);max-height:94dvh;overflow:hidden;box-sizing:border-box}
+#panel>.panel-header,#panel>#panel-tabs,#panel>.panel-footer{position:static;min-width:0;max-width:100%;box-sizing:border-box}
+#panel>.panel-header{flex-shrink:0}#panel>.panel-header>div{min-width:0}#panel>.panel-header button{flex-shrink:0}
+#panel>#panel-content{min-height:0;min-width:0;max-width:100%;overflow:auto;overscroll-behavior:contain;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;scroll-padding:12px;box-sizing:border-box}
+#panel-content>.inventory-topline,#panel-content>.map-layout,#panel-content>.master-detail,#panel-content>.inventory-layout,#panel-content>.shop-layout,#panel-content>.options-layout,#panel-content>.talent-layout{min-width:0;max-width:100%}
+#panel-content :where(.master-detail,.inventory-layout,.shop-layout,.options-layout,.talent-layout,.player-cards,.grid,.two-column)>*{min-width:0}
+#panel-content :where(.recipe-icon-grid,.item-index-grid,.ledger-list){overscroll-behavior:auto;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+#panel-content select,#panel-content input{max-width:100%;box-sizing:border-box}
+@media(max-width:800px){#panel[open]{height:96dvh;max-height:96dvh}#panel>.panel-footer{flex-wrap:wrap;gap:4px 10px}#panel>.panel-footer span{min-width:0;overflow-wrap:anywhere}}
+.atlas-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 0}.atlas-toolbar>span{margin-right:auto;font:700 11px system-ui;letter-spacing:1.5px;color:#496557}.atlas-toolbar output{min-width:48px;text-align:center;font:700 13px system-ui}.atlas-toolbar button{min-width:40px}.atlas-canvas{position:relative;overflow:hidden;flex-shrink:0}.atlas-canvas>.world-atlas{position:absolute;left:0;top:0;transform-origin:0 0}
+@media(max-width:600px){.atlas-toolbar>span{flex-basis:100%}.atlas-toolbar{gap:5px}.atlas-toolbar button{padding:7px!important}}
+/* Empty tab bars must not move content into the unbounded auto row. */
+#panel>.panel-header{grid-row:1}#panel>#panel-tabs{grid-row:2}#panel>#panel-content{grid-row:3}#panel>.panel-footer{grid-row:4}

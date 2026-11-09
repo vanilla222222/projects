@@ -84,3 +84,14 @@ function rx14RuleHenry(ctx) {
     assumptions: ['The displayed product is a net structural endpoint after proton transfer/work-up; catalysis and intermediate speciation are not explicitly simulated.'],
     limitations: ['The encoded substrate bounds do not establish experimental feasibility, conversion, yield or selectivity for a particular pair.'],
     references: [reference] } }));
+
+// Prefer the specific intramolecular cyclization over generic alkene
+// dibromination or halohydrin formation when both outcomes are available.
+const RX14_HALOLACTONIZATION = RX_RULES.find((rule) => rule.id === 'halolactonization');
+if (RX14_HALOLACTONIZATION) {
+  const run = RX14_HALOLACTONIZATION.run;
+  RX14_HALOLACTONIZATION.run = (ctx) => run(ctx).map((outcome) => {
+    if (outcome.id === 'bromolactonization' || outcome.id === 'iodolactonization') outcome.score = 20;
+    return outcome;
+  });
+}

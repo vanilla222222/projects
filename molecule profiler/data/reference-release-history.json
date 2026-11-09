@@ -114,6 +114,127 @@
       "label": "Experimental hydration properties · existing reference graphs",
       "date": "2026-10-26",
       "commit": "51b944ef5c3fd5d20955ca5797a812ffb3ea811c"
+    },
+    {
+      "id": "structural-taxonomy-003",
+      "label": "Structural classification tag refresh",
+      "date": "2026-10-26",
+      "commit": "8c035b4a21e4ef65bf56d833d379ccf2695b2af4"
+    },
+    {
+      "id": "property-evidence-004",
+      "label": "Experimental hydration properties · batch 002",
+      "date": "2026-10-26",
+      "commit": "eb4676474bd0338e62b27176ca95df81bbd870c8"
+    },
+    {
+      "id": "saturated-family-closures",
+      "label": "Penicillin and beta blocker family ceilings recorded",
+      "date": "2026-10-26",
+      "commit": "851349ecdd3fb90e0dd0c426536fe1bc32952b39"
+    },
+    {
+      "id": "property-batch-merge",
+      "label": "Experimental property batches merged with the family closures",
+      "date": "2026-10-26",
+      "commit": "6f2de140d0a8d1a871f80441945a28de7530c5dd"
+    },
+    {
+      "id": "imidazopyridine-references",
+      "label": "Imidazo[1,2-a]pyridine class brought to fifty references",
+      "date": "2026-10-26",
+      "commit": "dfb05dd7a17dd2e5f80086a572bcc801ffa58c57"
+    },
+    {
+      "id": "sulfonylurea-closure",
+      "label": "Sulfonylurea class closed at fourteen references",
+      "date": "2026-10-26",
+      "commit": "083051681589f29f53a98d464442852d6aa19600"
+    },
+    {
+      "id": "beta-carboline-closure",
+      "label": "beta-Carboline class closed at thirty-three references",
+      "date": "2026-10-27",
+      "commit": "ed753af91e93d3ec6858d415d72a7ad10603111c"
+    },
+    {
+      "id": "flavonoid-fifty",
+      "label": "Flavonoid class brought to fifty references",
+      "date": "2026-10-27",
+      "commit": "33ece9f2855eb8fff0e6f9ef51f3b309526284c6"
+    },
+    {
+      "id": "beta-agonist-fifty",
+      "label": "Beta agonist class brought to fifty references",
+      "date": "2026-10-27",
+      "commit": "ebf107ffad60cf01f2933932b16363303556ec28"
+    },
+    {
+      "id": "steroid-fifty",
+      "label": "Steroid class brought to fifty references",
+      "date": "2026-10-27",
+      "commit": "46bfd66304c2f07e3e01d3eb41e7353bc97c55a9"
+    },
+    {
+      "id": "aniline-analgesic-ceiling",
+      "label": "Aniline analgesic and methylenedioxy ceilings measured",
+      "date": "2026-10-27",
+      "commit": "a59a1625734724aeb54ab2fdf4d7f61b39b92f66"
+    },
+    {
+      "id": "nitroarene-fifty",
+      "label": "Nitroarene class brought to fifty references",
+      "date": "2026-10-27",
+      "commit": "85a8325282697a17800d50cc5b5d8a2d71b9aa77"
+    },
+    {
+      "id": "property-evidence-005",
+      "label": "Experimental hydration properties · batch 003",
+      "date": "2026-10-27",
+      "commit": "84d740543c451649a1fd3a78e3e32828270a6a96"
+    },
+    {
+      "id": "benzofuran-fifty",
+      "label": "Benzofuran class brought to fifty references and the statin ceiling measured",
+      "date": "2026-10-27",
+      "commit": "189ac4ada12ceaa0a16170df0c5aadda01466208"
+    },
+    {
+      "id": "cholinergic-ester-twenty",
+      "label": "Cholinergic ester class measured at a ceiling of twenty references",
+      "date": "2026-10-27",
+      "commit": "d95dc4cb63a0fa0326b56995f7881b29f4de7658"
+    },
+    {
+      "id": "retinoid-seven",
+      "label": "Retinoid class measured at a ceiling of seven references",
+      "date": "2026-10-27",
+      "commit": "b0aab01023b9ad71d4fb3d875b27c8ee66ea8803"
+    },
+    {
+      "id": "nucleoside-nine",
+      "label": "Nucleoside and nucleobase classes measured at ceilings of nine and five references",
+      "date": "2026-10-27",
+      "commit": "2fb7fd6777acf5f5ddfcd6c3250e5d962b1d0f91"
+    },
+    {
+      "id": "cox2-eight",
+      "label": "COX-2 inhibitor class measured at a ceiling of eight references",
+      "date": "2026-10-27",
+      "commit": "0debcdc28ea8dbc84aa9f54e4ca0020e3d3b87f2"
+    },
+    {
+      "id": "parp-six",
+      "label": "PARP inhibitor class measured at a ceiling of six references",
+      "date": "2026-10-27",
+      "commit": "2ebbb7be9d8bb2ad8cb42f4f9174c4af31139ebd"
+    },
+    {
+      "id": "property-evidence-006",
+      "label": "Experimental hydration properties · batch 004 and assay context",
+      "date": "2026-10-27",
+      "workingTree": true,
+      "baseCommit": "b319d4894a1a7c9c3cfd957deccc65b52ee9c4bd"
     }
   ]
 }

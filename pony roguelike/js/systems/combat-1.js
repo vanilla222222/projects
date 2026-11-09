@@ -8,7 +8,7 @@ const CONTACT_DMG_DEFAULT = 1;
 const CURRENT_PUSH_SPEED = 90;
 function playerDamageAmount(game, isBoss, dmgHalves){
   let halves = dmgHalves > 0 ? dmgHalves : CONTACT_DMG_DEFAULT;
-  if (game.dungeon.floorNum >= 6) halves += 1;
+  if (isBoss && game.dungeon.floorNum >= 10) halves += 1;
   let amount = halves * 0.5;
 
   if (isBoss) amount *= game.player.bossDamageTakenMult;
@@ -22,12 +22,15 @@ function playerDamageAmount(game, isBoss, dmgHalves){
 function damagePlayer(game, amount, source){
   const player = game.player;
   const invulnBefore = player.invulnTimer;
-  player.takeDamage(amount, source);
+  const guarded = player.techniqueGuardUntil > game.runElapsed;
+  player.takeDamage(guarded ? Math.max(0.5, amount - 0.5) : amount, source);
   const hitLanded = player.invulnTimer > invulnBefore;
 
   if (hitLanded && 'vibrate' in navigator) {
     try { navigator.vibrate(45); } catch (e) {  }
   }
+  if (hitLanded && guarded) player.techniqueGuardUntil = 0;
+  if (hitLanded) triggerSkillTechnique(game, 'hurt', player);
   if (hitLanded && player.stubbornGround) gainGritStack(game);
   if (hitLanded && player.emberMolt) gainMoltStack(game);
   if (hitLanded && player.scrappySurge && player.scrappySurgeCooldown <= 0 && player.redCurrent <= SCRAPPY_SURGE_HP_THRESHOLD) triggerScrappySurge(game);
@@ -154,21 +157,19 @@ function updatePlayer(game, input, dt){
   tickOrbitBlades(game, dt);
   tickDelayedActions(player, dt);
 
-  let mx = 0, my = 0;
-  if (input.left) mx -= 1;
-  if (input.right) mx += 1;
-  if (input.up) my -= 1;
-  if (input.down) my += 1;
-  if (mx !== 0 || my !== 0) {
-    const len = Math.hypot(mx, my);
-    mx /= len; my /= len;
-    if (!input.mouseActive) player.facing = { x: mx, y: my };
-  }
-  if (input.mouseActive) {
-
+  let mx = (input.moveX || 0) + Number(!!input.right) - Number(!!input.left);
+  let my = (input.moveY || 0) + Number(!!input.down) - Number(!!input.up);
+  const movement = Math.hypot(mx, my);
+  if (movement > 1) { mx /= movement; my /= movement; }
+  const aim = Math.hypot(input.aimX || 0, input.aimY || 0);
+  if (aim > 0) {
+    player.facing = { x:input.aimX / aim, y:input.aimY / aim };
+  } else if (input.mouseActive) {
     const worldMouseX = input.mouseX + game.camX, worldMouseY = input.mouseY + game.camY;
     const ang = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
     player.facing = { x: Math.cos(ang), y: Math.sin(ang) };
+  } else if (movement > 0) {
+    player.facing = { x:mx / Math.hypot(mx, my), y:my / Math.hypot(mx, my) };
   }
 
   if (player.greenFireAttack) updateGreenFireAttack(game, input, dt);
@@ -308,7 +309,9 @@ function updatePlayer(game, input, dt){
       }
     }
     tryPushObstacles(node, player, stepX, stepY);
+    const previousX = player.x, previousY = player.y;
     tryMoveEntity(player, node, node.obstacles, stepX, stepY);
+    if (player.moving) triggerSkillTechnique(game, 'move', player, Math.hypot(player.x - previousX, player.y - previousY));
 
     if (player.galeStep && player.moving) {
       player.galeDistance = (player.galeDistance || 0) + Math.hypot(stepX, stepY);
@@ -1211,6 +1214,7 @@ function updateGreenFireAttack(game, input, dt){
       runHitLayers(game, 'firezone', { x: e.x, y: e.y, ang: Math.atan2(player.facing.y, player.facing.x), hits: [e], dmg: dps * player.fireCooldown });
     }
     if (e.isDead) { bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
+    if (feedback) triggerSkillTechnique(game, 'hit', e);
   }
   if (feedback) runCastLayers(game, 'firezone', { x: zone.x, y: zone.y, ang: Math.atan2(player.facing.y, player.facing.x), hits: layerHits, dmg: dps * player.fireCooldown });
 
@@ -1465,6 +1469,7 @@ function playerLaserAttack(game){
       applyOnHitStatuses(game, e);
       game.floatTexts.push(new FloatText(e.x, e.y - 20, (crit ? 'CRIT ' : '') + dmg, crit ? '#ffcf5c' : '#fff', true));
       if (e.isDead) { bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
+      triggerSkillTechnique(game, 'hit', e);
       layerHits.push(e);
       runHitLayers(game, 'laser', { x: e.x, y: e.y, ang, hits: [e], dmg });
     }

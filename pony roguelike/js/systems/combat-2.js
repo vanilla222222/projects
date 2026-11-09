@@ -107,6 +107,7 @@ function playerFireBreathAttack(game){
       applyOnHitStatuses(game, e);
       game.floatTexts.push(new FloatText(e.x, e.y - 20, (crit ? 'CRIT ' : '') + dmg, crit ? '#ffcf5c' : '#fff', true));
       if (e.isDead) { bumpStat('rangedKills', 1, game); handleEnemyDeath(game, e); }
+      triggerSkillTechnique(game, 'hit', e);
     }
   }
   game.laserFX = { x1: player.x, y1: player.y, x2: player.x + dx * endDist, y2: player.y + dy * endDist, life: 0.16, maxLife: 0.16, color: '224,122,58', width: 8 };
@@ -135,6 +136,7 @@ function dealPlayerDamage(game, enemy, ang, opts){
     if (player.prismBloom) gainPrismCharge(game);
     if (enemy.isDead) { bumpStat('meleeKills', 1, game); handleEnemyDeath(game, enemy); }
     else if (player.stoopKill) tryStoopExecute(game, enemy);
+    triggerSkillTechnique(game, 'hit', enemy);
   }
   return applied;
 }
@@ -561,6 +563,7 @@ function openChestContents(game, c){
 function handleEnemyDeath(game, enemy){
   const node = game.currentRoom, player = game.player;
   player.onKill();
+  triggerSkillTechnique(game, 'kill', enemy);
   if (player.loveHarvest) gainLoveStack(game);
   if (player.salvageProtocol) gainSalvageScrap(game, enemy);
   if (player.shatterfrost) triggerShatterfrost(game, enemy);
@@ -660,7 +663,8 @@ function handleEnemyDeath(game, enemy){
     } else {
       node.pickups.push(new Pickup('star', spot.x, spot.y, rollRandomStarId()));
     }
-  } else if (player.trinketId === 'shinyshell' && Util.chance(0.08)) {
+  } else if (player.trinketId === 'shinyshell' && player.redCurrent < player.redMax
+      && ++player.shinyShellKills === 5) {
     const spot = findClearFloorSpot(node, Math.floor(enemy.x / TILE), Math.floor(enemy.y / TILE));
     node.pickups.push(new Pickup('heartRed', spot.x, spot.y));
   } else if (player.trinketId === 'gravekeeperstoken' && Util.chance(0.06)) {

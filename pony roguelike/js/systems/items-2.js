@@ -166,13 +166,17 @@ function useActiveEffect(game, item){
           if (applied && e.isDead) handleEnemyDeath(game, e);
         }
       }
+      for (const shot of game.projectiles) {
+        if (shot.owner === 'enemy' && Util.dist2(player.x, player.y, shot.x, shot.y) < 115 ** 2) shot.dead = true;
+      }
       game.explosions.push(new Explosion(player.x, player.y, 170));
       break;
     }
     case 'thundercloud': {
       for (const e of node.enemies) {
         if (e.isDead) continue;
-        const applied = e.takeDamage(depthDmg(4), 0, 0);
+        const applied = e.takeDamage(depthDmg(3.25), 0, 0);
+        if (applied && !e.isBoss && !e.isMiniboss && !e.isChallengeBoss) e.stunTimer = Math.max(e.stunTimer, 0.9);
         game.floatTexts.push(new FloatText(e.x, e.y - 18, 'ZAP', '#f4d35e'));
         if (applied && e.isDead) handleEnemyDeath(game, e);
       }
@@ -182,17 +186,29 @@ function useActiveEffect(game, item){
       const ang = Math.atan2(player.facing.y, player.facing.x);
       const nx = player.x + Math.cos(ang) * TILE * 3;
       const ny = player.y + Math.sin(ang) * TILE * 3;
-      const spot = clampToRoom(node, nx, ny);
-      player.x = spot.x; player.y = spot.y;
+      // A blink can cross cover, but must land clear and in the same connected room.
+      for (let distance = 1; distance >= 0.15; distance -= 0.15) {
+        const x = player.x + (nx - player.x) * distance, y = player.y + (ny - player.y) * distance;
+        if (collidesAt(player, x, y, node, node.obstacles)) continue;
+        const tile = node.tiles[Math.floor(y / TILE)][Math.floor(x / TILE)];
+        if (tile !== T_FLOOR) continue;
+        player.x = x;
+        player.y = y;
+        break;
+      }
       player.invulnTimer = Math.max(player.invulnTimer, 0.4);
       break;
     }
     case 'vialcourage': {
-      player.invincibleTimer = 5;
-      player.speedBoostTimer = 5;
+      player.invincibleTimer = Math.max(player.invincibleTimer, 2.75);
+      player.speedBoostTimer = Math.max(player.speedBoostTimer, 4.5);
       break;
     }
-    case 'healingdraught': { player.heal(2); break; }
+    case 'healingdraught': {
+      if (player.redCurrent <= 1) player.shieldHits = Math.max(player.shieldHits, 1);
+      player.heal(1.5);
+      break;
+    }
     case 'bombsatchel': { player.bombs += 3; placeBombAt(game, player.x, player.y - 6, 'player-free'); break; }
     case 'largepenny': {
 

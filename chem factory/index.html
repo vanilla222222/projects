@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Chem Factory</title>
-<link rel="stylesheet" href="style.css?v=26">
+<link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 <header id="top">
@@ -25,6 +25,28 @@
   <div id="tip" hidden></div>
   <div id="toast"></div>
 </main>
+<section id="factoryTouch" hidden aria-label="Touch controls">
+  <div class="factory-dpad" aria-label="Movement">
+    <button data-move="w" aria-label="Move up">▲</button>
+    <button data-move="a" aria-label="Move left">◀</button>
+    <button data-move="s" aria-label="Move down">▼</button>
+    <button data-move="d" aria-label="Move right">▶</button>
+  </div>
+  <div class="factory-touch-actions">
+    <select id="factoryTouchMode" aria-label="Map touch mode">
+      <option value="act">Build / use</option><option value="pan">Pan view</option><option value="remove">Remove</option>
+      <option value="wire">Wire / paste</option><option value="copy">Copy setup</option>
+      <option value="take">Quick take</option><option value="fill">Quick fill</option>
+    </select>
+    <button data-touch-key="f">Use / exit</button><button data-touch-key="r">Rotate</button>
+    <button data-touch-key="Escape">Clear</button><button data-touch-key="x">Weapon</button>
+    <button data-touch-key="g">Throw</button><button data-touch-key="n">Net</button>
+    <button data-touch-key="t">Research</button><button data-touch-key="p">Gear</button>
+    <button data-touch-key="Alt">Recipes</button><button data-touch-key="v">Overlay</button>
+    <button data-touch-zoom="-1" aria-label="Zoom in">＋</button><button data-touch-zoom="1" aria-label="Zoom out">−</button>
+    <button data-touch-center>Center</button>
+  </div>
+</section>
 <nav id="hotbar"></nav>
 <div id="modal" hidden>
   <div class="mwin">
@@ -34,5 +56,6 @@
 </div>
 <script src="data.js?v=125"></script>
 <script src="game.js?v=125"></script>
+<script src="touch.js"></script>
 </body>
 </html>

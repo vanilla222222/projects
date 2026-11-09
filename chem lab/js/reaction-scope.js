@@ -30,10 +30,20 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   const knownKeys=new Set(Object.keys(defaultReactionConditions()));
   Object.keys(raw).filter(key=>!knownKeys.has(key)).forEach(key=>note('unknown-condition','The condition field '+key+' is not interpreted by this model.'));
   let context=null,entry=null,reproduced=false,descriptor=null;
+  let auditedOutcome=outcome;
   const input=Array.isArray(compounds)?compounds:[];
   try {
     const prepared=input.map(c=>c.fragment?c:Object.assign({},c,{fragment:smilesToFragment(c.isomericSmiles||c.smiles)}));
     context=reactionContext(prepared,normalized);
+    if(context.has('dibal')&&typeof rxxDibalConflicts==='function')rxxDibalConflicts(context).forEach(message=>note('dibal-mixture-conflict',message,'conflict'));
+    if(context.has('alanate')&&context.protic)note('alanate-protic-medium','LiAlH4 is incompatible with the recorded water or protic solvent during the reaction. A later aqueous work-up must be recorded separately from the reaction medium.','conflict');
+    if(context.has('grignard')||(outcome&&outcome.id==='grignard-formation')){
+      if(rxGrignardProticConflict(context))note('grignard-proton-donor','A recorded proton donor or protic medium can consume the organometallic reagent. A clean addition or isolated formation is not established.','conflict');
+      const auxiliaryConflicts=rxGrignardAuxiliaryConflict(context);
+      if(auxiliaryConflicts.length)note('grignard-reactive-input','A recorded auxiliary input contains electrophilic carbonyl/nitrile groups; its assigned role does not establish compatibility.','conflict');
+      const solventConflicts=rxGrignardReactiveSolvents(context);
+      if(solventConflicts.length)note('grignard-reactive-medium','Recorded solvent electrophiles ('+solventConflicts.map(s=>s.name).join(', ')+') can react with the organometallic reagent. The intended solvent-independent product is not established.','conflict');
+    }
     if(!outcome)note('missing-outcome','No selected outcome is available for a scope audit.');
     else {
       const rule=RX_RULES.find(r=>r.id===outcome.rule)||RX_RULES.find(r=>r.id===outcome.id);
@@ -42,28 +52,61 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
       else {
         const productKeys=o=>(o.products||[]).map(p=>moleculeIdentity(p.isomericSmiles||p.smiles).key).sort().join('|');
         const expected=productKeys(outcome);
-        reproduced=!!expected&&(rule.run(context)||[]).some(o=>o.id===outcome.id&&productKeys(o)===expected);
+        const replay=expected&&(rule.run(context)||[]).find(o=>o.id===outcome.id&&productKeys(o)===expected);
+        reproduced=!!replay;
+        if(replay){
+          // Audit the current mixture, not chemoselectivity cached in a saved
+          // outcome from a different collection of inputs.
+          rxChemoselectivity(context,replay);
+          replay.stoichiometry=rxStoichiometry(replay,prepared);
+          replay.productSurvival=rxProductSurvival(context,replay);
+          if(typeof rxxCompatibilityAssess==='function'){
+            replay.compatibilityConflicts=rxxCompatibilityAssess(context,replay);
+            replay.compatibilityWarnings=rxxCompatibilityWarnings(context,replay);
+          }
+          auditedOutcome=replay;
+        }
         if(!reproduced)note('branch-mismatch','The selected forward-rule branch does not reproduce these product identities under the recorded conditions.','conflict');
       }
       if(!descriptor||!descriptor.references.length)note('missing-evidence','No linked reaction-class source is recorded for this rule.');
       if(!descriptor||/Detailed scope has not yet been curated/.test(descriptor.scope))note('uncurated-scope','Detailed rule scope is not curated; a matched pattern is insufficient for a broader substrate claim.');
-      if(typeof rxChemoEntry==='function'&&Array.isArray(outcome.consumes))entry=rxChemoEntry(context,outcome);
+      if(typeof rxChemoEntry==='function'&&Array.isArray(auditedOutcome.consumes))entry=rxChemoEntry(context,auditedOutcome);
       if(!entry&&typeof RX_CHEMOSELECTIVITY!=='undefined')entry=RX_CHEMOSELECTIVITY.find(e=>!e.acylating&&e.tags&&e.tags.every(tag=>context.has(tag)))||null;
-      // These exact existing branches enumerate alcohol sites but do not have
-      // their own RX_CHEMOSELECTIVITY entry. Reuse their encoded attack class.
-      if(!entry&&context.has('dmp')&&(outcome.id==='oxidation-dmp'||outcome.rule==='site-resolved-oxidation'))entry={id:'dmp',attacks:['alcohol']};
     }
+    entry=rxChemoConditionEntry(entry,context);
     context.substrates.forEach(s=>{
       const compoundIndex=prepared.indexOf(s.compound),groups=rxChemoGroups(s.graph);
       const original=reactionFragmentGraph(s.compound.fragment),index=new Map(original.atoms.map((a,i)=>[a.id,i+1]));
       Object.keys(groups).forEach(group=>groups[group].forEach(atomIds=>{
-        let susceptible=!!entry&&entry.attacks.includes(group);
-        if(susceptible&&group==='alcohol'&&['dmp','pcc'].includes(entry.id))susceptible=s.info.alcohols.some(a=>atomIds.includes(a.o)&&a.degree<3&&rxHydrogens(s.graph,a.c)>0);
+        const susceptible=rxChemoSiteSusceptible(s.graph,entry,group,atomIds,s.info);
         sites.push({compoundIndex,substrateSmiles:s.compound.isomericSmiles||s.compound.smiles,group,label:typeof RX_CHEMO_GROUP_LABELS!=='undefined'&&RX_CHEMO_GROUP_LABELS[group]||group,atomIds:atomIds.slice(),atomIndices:atomIds.map(id=>index.get(id)),susceptible});
       }));
     });
   } catch(error) {note('audit-incomplete','The scope audit could not complete: '+error.message);}
-  const competing=outcome&&outcome.chemoselectivity&&outcome.chemoselectivity.competing||[];
+  ((auditedOutcome&&auditedOutcome.compatibilityConflicts)||[]).forEach(c=>note(c.code,c.message,'conflict'));
+  ((auditedOutcome&&auditedOutcome.compatibilityWarnings)||[]).forEach(c=>note(c.code,c.message));
+  if(rxLoadingConflict(auditedOutcome))note('reagent-loading',rxLoadingConflict(auditedOutcome),'conflict');
+  const productSurvival=auditedOutcome&&auditedOutcome.productSurvival||null;
+  if(productSurvival){productSurvival.blockers.forEach(b=>note(b.code,b.message,'conflict'));if(['review','incomplete','workup-boundary'].includes(productSurvival.status))note('product-survival',productSurvival.message);}
+  const cyclization=auditedOutcome&&auditedOutcome.cyclization||null;
+  if(cyclization){(cyclization.blockers||[]).forEach(b=>note(b.code,b.message,'conflict'));note('cyclization-assumptions',cyclization.message);}
+  const rawRegio=auditedOutcome&&auditedOutcome.regioselectivity;
+  const regioselectivity=rawRegio?{...rawRegio,ratio:Array.isArray(auditedOutcome.ratio)?auditedOutcome.ratio.slice():null}:null;
+  if(regioselectivity&&regioselectivity.status!=='equivalent')note('regioselectivity',regioselectivity.message,regioselectivity.status==='unresolved'?'conflict':'uncertain');
+  const stereochemistry={products:[],ratio:null,ratioStatus:'not-assigned'};
+  if(outcome){
+    ['products','minor'].forEach(role=>(outcome[role]||[]).forEach((product,index)=>{
+      if(product.stereo)stereochemistry.products.push({role,index,kind:product.stereo.kind,text:product.stereo.text||''});
+    }));
+    if(stereochemistry.products.some(p=>['racemic','diastereomers'].includes(p.kind)))note('stereochemical-mixture','The encoded outcome reports a racemic or diastereomeric mixture; a single drawn structure does not establish stereopure preparation.');
+    if(stereochemistry.products.some(p=>p.kind==='relative'))note('relative-stereochemistry','Only relative stereochemistry is recorded; absolute configuration is not established.');
+    if(Array.isArray(outcome.ratio)){
+      if(regioselectivity)note('heuristic-regioratio','The displayed positional ratio is an encoded heuristic, not a measured or substrate-specific regioselectivity.');
+      else{stereochemistry.ratio=outcome.ratio.slice();stereochemistry.ratioStatus='heuristic';
+        note('heuristic-stereoratio','The displayed product ratio is an encoded heuristic, not a substrate-specific measured or calculated selectivity.');}
+    }
+  }
+  const competing=auditedOutcome&&auditedOutcome.chemoselectivity&&auditedOutcome.chemoselectivity.competing||[];
   const partial=!!(outcome&&outcome.partialConversion),susceptible=sites.filter(s=>s.susceptible);
   let selectivityStatus='not-assessed';
   if(partial){selectivityStatus='unestablished';note('partial-selectivity','The selected site is a partial-conversion alternative. No kinetic preference or selective preparation is established.');}
@@ -72,7 +115,7 @@ function reactionScopeAssess(compounds, rawConditions, outcome) {
   else if(entry&&susceptible.length===1)selectivityStatus='single-recognized-site';
   else note('selectivity-unassessed','No applicable susceptible-site model is encoded for this branch; absence of flagged competition is not established selectivity.');
   const status=reasons.some(r=>r.level==='conflict')?'conflict':reasons.length?'uncertain':'supported';
-  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,
+  return {status,reasons,conditions,normalizedConditions:normalized,rule:descriptor,modelReproduced:reproduced,sites,stereochemistry,regioselectivity,cyclization,productSurvival,
     selectivity:{status:selectivityStatus,selected:outcome&&outcome.site?Object.assign({},outcome.site):null,susceptibleCount:susceptible.length,competing},limitations};
 }
 
@@ -82,6 +125,7 @@ function reactionScopeElement(report) {
   const labels={supported:'Reproduced encoded scope',uncertain:'Scope needs review',conflict:'Encoded conflict'};
   box.append(make('summary','Substrate and condition scope · '+(labels[report.status]||labels.uncertain)));
   box.append(make('p','Selected forward branch reproduced: '+(report.modelReproduced?'yes':'no')+'. Site assessment: '+report.selectivity.status+'.'));
+  if(report.productSurvival){const a=report.productSurvival;box.append(make('p','Product survival: '+rxProductSurvivalLabel(a.status)+'. '+a.message));const items=make('ul');a.issues.forEach(i=>items.append(make('li','Product '+i.product+' · '+i.group+' · susceptible to '+i.label+' in the encoded model.')));box.append(items);}
   const list=make('ul');report.reasons.forEach(r=>list.append(make('li',r.message)));box.append(list);
   const conditionList=make('ul');report.conditions.forEach(c=>conditionList.append(make('li',c.field+': '+c.status+'. '+c.message)));box.append(make('strong','Recorded conditions'),conditionList);
   if(report.selectivity.selected)box.append(make('p','Selected inspection site: '+report.selectivity.selected.label+' in '+report.selectivity.selected.substrateSmiles+'.'));

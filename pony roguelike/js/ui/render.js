@@ -278,209 +278,7 @@ function paintFlavorFloorMark(ctx, px, py, x, y, pal, baseFloor, flavor){
   ctx.restore();
 }
 
-function drawDecorProp(ctx, p, pal){
-  const dark = Util.shadeColor(pal.floorA, -0.4);
-  const mid = Util.shadeColor(pal.floorA, -0.2);
-  const light = Util.shadeColor(pal.floorA, 0.3);
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.scale(p.scale * p.flip, p.scale);
-  ctx.globalAlpha = 0.85;
-  const k = p.kind;
-  if (k === 'pebble') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0.5, 2.2, 4, 1.6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = mid;
-    ctx.beginPath(); ctx.ellipse(0, 0, 3.4, 2.4, p.seed, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = light; ctx.globalAlpha = 0.4;
-    ctx.beginPath(); ctx.ellipse(-1, -0.9, 1.2, 0.7, p.seed, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'rubble') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3, 6.5, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = mid;
-    for (let i = 0; i < 3; i++) {
-      const a = p.seed + i * 2.1;
-      const cx = Math.cos(a) * 3.4, cy = Math.sin(a) * 2;
-      ctx.beginPath();
-      ctx.moveTo(cx - 2.4, cy + 1.6); ctx.lineTo(cx - 0.6, cy - 2); ctx.lineTo(cx + 2.4, cy + 1.2);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.strokeStyle = dark; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.5;
-    ctx.beginPath(); ctx.moveTo(-3, 1.8); ctx.lineTo(3.2, 1.2); ctx.stroke();
-  } else if (k === 'bonechip') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.4, 5, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#d8d2c2'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-4, 1); ctx.lineTo(4, -1.4); ctx.stroke();
-    ctx.fillStyle = '#e6e1d2';
-    ctx.beginPath(); ctx.arc(-4.2, 0.6, 1.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(4.2, -1.8, 1.5, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'skull') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 5.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ddd7c6';
-    ctx.beginPath(); ctx.ellipse(0, 0, 4.4, 3.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(0.4, 3.2, 2.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#2a2622';
-    ctx.beginPath(); ctx.ellipse(-1.7, -0.4, 1.2, 1.4, 0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(1.7, -0.4, 1.2, 1.4, -0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(-0.5, 1.6, 1, 1.6);
-  } else if (k === 'leaftuft') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.6, 6, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    for (let i = 0; i < 4; i++) {
-      const a = p.seed + i * 1.6;
-      ctx.fillStyle = Util.shadeColor(pal.accent, -0.15 + i * 0.08);
-      ctx.globalAlpha = 0.75;
-      ctx.beginPath();
-      ctx.ellipse(Math.cos(a) * 3.2, Math.sin(a) * 2.2, 3, 1.3, a, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else if (k === 'twig') {
-    ctx.strokeStyle = Util.shadeColor('#6b5136', -0.05); ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-6, 2); ctx.lineTo(-1, -1); ctx.lineTo(5.5, 0.6);
-    ctx.stroke();
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(-1, -1); ctx.lineTo(0.5, -4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(2.5, -0.2); ctx.lineTo(4.5, -3); ctx.stroke();
-  } else if (k === 'mushroom') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.2, 4, 1.4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#cfc2ab';
-    ctx.fillRect(-0.9, -1, 1.8, 4);
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1);
-    ctx.beginPath(); ctx.ellipse(0, -1.4, 3.6, 2.4, 0, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = light; ctx.globalAlpha = 0.5;
-    ctx.beginPath(); ctx.arc(-1.2, -2.2, 0.7, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'sandripple') {
-    ctx.strokeStyle = light; ctx.globalAlpha = 0.4; ctx.lineWidth = 1.2;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(0, 4 + i * 2.6, 5 + i * 1.6, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-    }
-  } else if (k === 'ashpile') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.6, 7, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#3a3230'; ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(-6, 2.4);
-    ctx.quadraticCurveTo(-2.4, -3.2, 0.4, -1.2);
-    ctx.quadraticCurveTo(3, -3.6, 6, 2.4);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#6d625c'; ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.ellipse(-1.6, 0.8, 2, 0.9, 0.2, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'ember') {
-    ctx.fillStyle = '#2b1a14';
-    ctx.beginPath(); ctx.ellipse(0, 1, 4.4, 2.4, p.seed * 0.3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = pal.accent;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 7;
-    ctx.beginPath(); ctx.arc(-1.2, 0.4, 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(1.6, 1.4, 0.8, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  } else if (k === 'iceshard') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.6, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#bfe4f5'; ctx.globalAlpha = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-2.6, 3.2); ctx.lineTo(-0.8, -4.6); ctx.lineTo(1.2, 3.2);
-    ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(1, 3.2); ctx.lineTo(2.8, -1.6); ctx.lineTo(4, 3.2);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = Theme.shadow.sheen; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.7;
-    ctx.beginPath(); ctx.moveTo(-0.8, -4.2); ctx.lineTo(-0.4, 2.4); ctx.stroke();
-  } else if (k === 'crystalshard') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.4, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = pal.accent; ctx.globalAlpha = 0.68;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.moveTo(0, -5.2); ctx.lineTo(2.4, -1); ctx.lineTo(1.4, 3.2); ctx.lineTo(-1.6, 3.2); ctx.lineTo(-2.4, -1);
-    ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = Theme.shadow.glint; ctx.globalAlpha = 0.8;
-    ctx.beginPath(); ctx.arc(-0.8, -2.4, 0.8, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'rustflake') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.4, 5.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.35);
-    ctx.beginPath();
-    ctx.moveTo(-4.6, 1.8); ctx.lineTo(-2.2, -2.2); ctx.lineTo(2.6, -1.4); ctx.lineTo(4.4, 2);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(pal.accent, 0.1); ctx.lineWidth = 0.8; ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.moveTo(-2.6, 0.4); ctx.lineTo(3, -0.2); ctx.stroke();
-  } else if (k === 'shell') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.8, 4.6, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#e8dcc6';
-    ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 3.4, p.seed * 0.2, Math.PI, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#b9a88c'; ctx.lineWidth = 0.7;
-    for (let i = -2; i <= 2; i++) {
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(i * 1.8, -3.2); ctx.stroke();
-    }
-  } else if (k === 'kelp') {
-    ctx.strokeStyle = Util.shadeColor(pal.accent, -0.3); ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, 4);
-    ctx.quadraticCurveTo(-3, 0, -0.6, -5.5);
-    ctx.stroke();
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(0.6, 4); ctx.quadraticCurveTo(3.4, -0.4, 2.2, -4);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1); ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.ellipse(-1.4, -2.6, 1.8, 0.9, 0.6, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'siltmound') {
-    ctx.fillStyle = Util.shadeColor(pal.floorB, -0.24); ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(-6.5, 2.6);
-    ctx.quadraticCurveTo(-2, -2.6, 1, -0.6);
-    ctx.quadraticCurveTo(4, -2.4, 6.5, 2.6);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = dark; ctx.globalAlpha = 0.35;
-    ctx.beginPath(); ctx.ellipse(1.8, 1.6, 2.4, 0.9, 0, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'tubeworm') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.4, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#cdbfae'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-2.4, 3); ctx.quadraticCurveTo(-3.4, -2, -1.4, -4.4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(1.8, 3); ctx.quadraticCurveTo(3.2, -1, 2.2, -3.2); ctx.stroke();
-    ctx.fillStyle = '#c9403c';
-    ctx.beginPath(); ctx.arc(-1.4, -4.8, 1.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(2.3, -3.6, 1, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'stardust') {
-    ctx.fillStyle = pal.accent;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 6;
-    for (let i = 0; i < 4; i++) {
-      const a = p.seed + i * 1.7;
-      const r = 1.1 - i * 0.18;
-      ctx.globalAlpha = 0.75 - i * 0.12;
-      ctx.beginPath(); ctx.arc(Math.cos(a) * (2 + i), Math.sin(a) * (1.4 + i * 0.7), r, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-  } else if (k === 'mosspatch') {
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.4); ctx.globalAlpha = 0.55;
-    ctx.beginPath(); ctx.ellipse(0, 0, 6.4, 3.6, p.seed * 0.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1); ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 3; i++) {
-      const a = p.seed + i * 2.2;
-      ctx.beginPath(); ctx.ellipse(Math.cos(a) * 3, Math.sin(a) * 1.8, 2, 1.2, a, 0, Math.PI * 2); ctx.fill();
-    }
-  } else if (k === 'mudsplat') {
-    ctx.fillStyle = Util.shadeColor(pal.floorA, -0.36); ctx.globalAlpha = 0.75;
-    ctx.beginPath(); ctx.ellipse(0, 0, 6.8, 3.2, p.seed * 0.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(5.4, 2.2, 1.8, 1.1, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(-5, -1.8, 1.4, 0.9, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Theme.shadow.sheen; ctx.globalAlpha = 0.18;
-    ctx.beginPath(); ctx.ellipse(-1.6, -0.8, 2.4, 1, -0.4, 0, Math.PI * 2); ctx.fill();
-  } else {
-    ctx.fillStyle = mid;
-    ctx.beginPath(); ctx.ellipse(0, 0, 3, 2, p.seed, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.restore();
-}
+
 
 const Ambient = {
   MAX: 14,
@@ -605,49 +403,6 @@ const SPARKLE_PICKUPS = { coin: 1, goldkey: 1, goldbomb: 1, star: 1, heartContai
 
 const SORT_BY_Y = (a, b) => a.y - b.y;
 
-function paintDoorSlab(ctx, px, py, color){
-
-  ctx.fillStyle = Util.shadeColor(color, -0.4);
-  ctx.fillRect(px, py, TILE, TILE);
-  const f = 3;
-  const i = f + 3;
-  const panelW = TILE - i * 2, panelH = TILE - i * 2;
-  const wash = ctx.createLinearGradient(px, py + i, px, py + i + panelH);
-  wash.addColorStop(0, Util.shadeColor(color, 0.16));
-  wash.addColorStop(1, Util.shadeColor(color, -0.14));
-  ctx.fillStyle = wash;
-  ctx.fillRect(px + i, py + i, panelW, panelH);
-
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = Util.shadeColor(color, 0.3);
-  ctx.beginPath();
-  ctx.moveTo(px + i + 0.5, py + TILE - i - 0.5);
-  ctx.lineTo(px + i + 0.5, py + i + 0.5);
-  ctx.lineTo(px + TILE - i - 0.5, py + i + 0.5);
-  ctx.stroke();
-  ctx.strokeStyle = Util.shadeColor(color, -0.35);
-  ctx.beginPath();
-  ctx.moveTo(px + TILE - i - 0.5, py + i + 0.5);
-  ctx.lineTo(px + TILE - i - 0.5, py + TILE - i - 0.5);
-  ctx.lineTo(px + i + 0.5, py + TILE - i - 0.5);
-  ctx.stroke();
-
-  ctx.fillStyle = Util.shadeColor(color, -0.5);
-  const rr = 1.1;
-  ctx.beginPath(); ctx.arc(px + f + 1, py + f + 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1, py + f + 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + f + 1, py + TILE - f - 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1, py + TILE - f - 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = Util.shadeColor(color, 0.35);
-  ctx.beginPath(); ctx.arc(px + f + 0.7, py + f + 0.7, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1.3, py + f + 0.7, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + f + 0.7, py + TILE - f - 1.3, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1.3, py + TILE - f - 1.3, 0.5, 0, Math.PI * 2); ctx.fill();
-
-  ctx.strokeStyle = Util.shadeColor(color, -0.5);
-  ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
-}
-
 const DOOR_STYLES = {
   normal:        'panel',
   start:         'arch',
@@ -671,378 +426,6 @@ const DOOR_STYLES = {
   mirror:        'mirrorsplit',
   karma:         'yinyang',
   bosschallenge: 'warning',
-};
-
-function doorGlow(ctx, color, blur){
-  ctx.shadowColor = Util.shadeColor(color, 0.55);
-  ctx.shadowBlur = blur;
-}
-
-function doorGlowOff(ctx){
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-}
-
-const DOOR_OVERLAYS = {
-
-  arch(ctx, px, py, color){
-    const cx = px + TILE / 2, base = py + TILE - 7;
-    ctx.strokeStyle = Util.shadeColor(color, 0.42);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, base);
-    ctx.lineTo(cx - 8, py + TILE * 0.44);
-    ctx.arc(cx, py + TILE * 0.44, 8, Math.PI, 0);
-    ctx.lineTo(cx + 8, base);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.2);
-    ctx.fillRect(cx - 1.5, py + TILE * 0.44, 3, base - py - TILE * 0.44);
-  },
-
-  skull(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    ctx.beginPath(); ctx.arc(cx, cy - 2, 6.5, Math.PI, 0); ctx.fill();
-    ctx.fillRect(cx - 6.5, cy - 2, 13, 6);
-    ctx.fillStyle = Util.shadeColor(color, -0.72);
-    ctx.beginPath(); ctx.arc(cx - 3, cy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 3, cy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(cx - 1, cy + 1.5, 2, 2.5);
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(cx - 4.5, cy + 5, 9, 3);
-    ctx.fillStyle = Util.shadeColor(color, -0.6);
-    ctx.fillRect(cx - 2, cy + 5, 1, 3);
-    ctx.fillRect(cx + 1, cy + 5, 1, 3);
-  },
-
-  gem(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2, r = 7;
-    doorGlow(ctx, color, 6);
-    ctx.fillStyle = Util.shadeColor(color, 0.45);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - r);
-    ctx.lineTo(cx + r * 0.8, cy - r * 0.2);
-    ctx.lineTo(cx, cy + r);
-    ctx.lineTo(cx - r * 0.8, cy - r * 0.2);
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.strokeStyle = Util.shadeColor(color, 0.75);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - r * 0.8, cy - r * 0.2); ctx.lineTo(cx + r * 0.8, cy - r * 0.2);
-    ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
-    ctx.stroke();
-  },
-
-  awning(ctx, px, py, color){
-    const top = py + 6;
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = Util.shadeColor(color, i % 2 === 0 ? 0.42 : -0.28);
-      ctx.fillRect(px + 4 + i * 6, top, 6, 7);
-    }
-    ctx.fillStyle = Util.shadeColor(color, -0.5);
-    ctx.fillRect(px + 4, top + 7, 24, 1.5);
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(px + 10, top + 12, 12, 10);
-    ctx.fillStyle = Util.shadeColor(color, -0.45);
-    ctx.fillRect(px + 12, top + 15, 8, 1.5);
-    ctx.fillRect(px + 12, top + 18, 8, 1.5);
-  },
-
-  cracked(ctx, px, py, color){
-    ctx.strokeStyle = Util.shadeColor(color, -0.7);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + 6, py + 3);
-    ctx.lineTo(px + 12, py + 11);
-    ctx.lineTo(px + 9, py + 18);
-    ctx.lineTo(px + 17, py + 27);
-    ctx.moveTo(px + 12, py + 11);
-    ctx.lineTo(px + 22, py + 8);
-    ctx.moveTo(px + 9, py + 18);
-    ctx.lineTo(px + 2, py + 22);
-    ctx.stroke();
-    ctx.strokeStyle = Util.shadeColor(color, 0.3);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(px + 7, py + 4);
-    ctx.lineTo(px + 13, py + 12);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, -0.55);
-    ctx.beginPath(); ctx.arc(px + 24, py + 20, 2.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  paw(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2 + 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.45);
-    ctx.beginPath(); ctx.ellipse(cx, cy + 2, 5.5, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-    const toes = [[-5.5, -5], [-2, -7.5], [2, -7.5], [5.5, -5]];
-    for (const t of toes) {
-      ctx.beginPath(); ctx.ellipse(cx + t[0], cy + t[1], 2.1, 2.6, 0, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = Util.shadeColor(color, -0.4);
-    ctx.beginPath(); ctx.ellipse(cx, cy + 2.5, 2.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-  },
-
-  thorn(ctx, px, py, color){
-    ctx.strokeStyle = Util.shadeColor(color, -0.6);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + 4, py + TILE - 4);
-    ctx.bezierCurveTo(px + 10, py + 20, px + 20, py + 14, px + TILE - 4, py + 4);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    const spikes = [[10, 21], [16, 17], [22, 12]];
-    for (const s of spikes) {
-      ctx.beginPath();
-      ctx.moveTo(px + s[0], py + s[1]);
-      ctx.lineTo(px + s[0] + 4, py + s[1] - 5);
-      ctx.lineTo(px + s[0] + 1.5, py + s[1] + 1.5);
-      ctx.closePath(); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(px + s[0], py + s[1]);
-      ctx.lineTo(px + s[0] - 4, py + s[1] + 5);
-      ctx.lineTo(px + s[0] - 1.5, py + s[1] - 1.5);
-      ctx.closePath(); ctx.fill();
-    }
-  },
-
-  drip(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.38);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, 3);
-    const runs = [[9, 14], [16, 21], [23, 11]];
-    for (const r of runs) {
-      ctx.fillRect(px + r[0], py + 8, 2.5, r[1]);
-      ctx.beginPath(); ctx.arc(px + r[0] + 1.25, py + 8 + r[1], 2.2, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = Util.shadeColor(color, 0.7);
-    for (const r of runs) {
-      ctx.beginPath(); ctx.arc(px + r[0] + 0.6, py + 7.4 + r[1], 0.7, 0, Math.PI * 2); ctx.fill();
-    }
-  },
-
-  vaultslab(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.32);
-    ctx.fillRect(px + 3, py + 8, TILE - 6, 4);
-    ctx.fillRect(px + 3, py + TILE - 12, TILE - 6, 4);
-    ctx.fillStyle = Util.shadeColor(color, -0.55);
-    ctx.fillRect(px + 3, py + 12, TILE - 6, 1.5);
-    ctx.fillRect(px + 3, py + TILE - 8, TILE - 6, 1.5);
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.5);
-    ctx.beginPath(); ctx.arc(cx, cy, 5.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.5);
-    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.7);
-    ctx.lineWidth = 1.4;
-    for (let i = 0; i < 4; i++) {
-      const a = i * Math.PI / 2 + Math.PI / 4;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * 3, cy + Math.sin(a) * 3);
-      ctx.lineTo(cx + Math.cos(a) * 7.5, cy + Math.sin(a) * 7.5);
-      ctx.stroke();
-    }
-  },
-
-  blades(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    for (const dir of [-1, 1]) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(dir * Math.PI / 4);
-      ctx.fillStyle = Util.shadeColor(color, 0.5);
-      ctx.beginPath();
-      ctx.moveTo(0, -11);
-      ctx.lineTo(2, -6);
-      ctx.lineTo(2, 5);
-      ctx.lineTo(-2, 5);
-      ctx.lineTo(-2, -6);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = Util.shadeColor(color, -0.5);
-      ctx.fillRect(-5, 5, 10, 2.2);
-      ctx.fillRect(-1.2, 7, 2.4, 4);
-      ctx.restore();
-    }
-  },
-
-  facet(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    doorGlow(ctx, color, 7);
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 10);
-    ctx.lineTo(cx + 6, cy - 3);
-    ctx.lineTo(cx + 4, cy + 9);
-    ctx.lineTo(cx - 4, cy + 9);
-    ctx.lineTo(cx - 6, cy - 3);
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.strokeStyle = Util.shadeColor(color, 0.8);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - 6, cy - 3); ctx.lineTo(cx, cy + 2); ctx.lineTo(cx + 6, cy - 3);
-    ctx.moveTo(cx, cy + 2); ctx.lineTo(cx, cy + 9);
-    ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 2);
-    ctx.stroke();
-    ctx.fillStyle = Theme.shadow.glint;
-    ctx.beginPath(); ctx.arc(cx - 2, cy - 5, 1.1, 0, Math.PI * 2); ctx.fill();
-  },
-
-  eclipse(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.6);
-    ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.85);
-    ctx.beginPath(); ctx.arc(cx - 2.5, cy - 1.5, 8, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.75);
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.arc(cx, cy, 11.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.globalAlpha = 1;
-  },
-
-  starburst(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    doorGlow(ctx, color, 8);
-    ctx.fillStyle = Util.shadeColor(color, 0.6);
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + i * Math.PI / 5;
-      const r = i % 2 === 0 ? 11 : 4.2;
-      const fx = cx + Math.cos(a) * r, fy = cy + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
-    }
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.fillStyle = Util.shadeColor(color, 0.9);
-    ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  grate(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.fillStyle = Util.shadeColor(color, 0.42);
-    for (let i = 0; i < 4; i++) ctx.fillRect(px + 6 + i * 5.5, py + 5, 2.5, TILE - 10);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, 2);
-    ctx.fillRect(px + 5, py + TILE - 7, TILE - 10, 2);
-    ctx.strokeStyle = Util.shadeColor(color, -0.35);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(px + 4.5, py + 4.5, TILE - 9, TILE - 9);
-  },
-
-  candle(ctx, px, py, color){
-    const cx = px + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.25);
-    ctx.fillRect(cx - 3.5, py + 15, 7, 11);
-    ctx.fillStyle = Util.shadeColor(color, -0.4);
-    ctx.fillRect(cx - 5, py + 25, 10, 2.5);
-    doorGlow(ctx, color, 7);
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath();
-    ctx.moveTo(cx, py + 5);
-    ctx.bezierCurveTo(cx + 4.5, py + 10, cx + 3.5, py + 15, cx, py + 15);
-    ctx.bezierCurveTo(cx - 3.5, py + 15, cx - 4.5, py + 10, cx, py + 5);
-    ctx.fill();
-    doorGlowOff(ctx);
-    ctx.fillStyle = Util.shadeColor(color, -0.3);
-    ctx.beginPath(); ctx.ellipse(cx, py + 12, 1.4, 2.4, 0, 0, Math.PI * 2); ctx.fill();
-  },
-
-  coinslot(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(px + 6, py + 5, TILE - 12, 12);
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.fillRect(px + 8, py + 7, TILE - 16, 8);
-    ctx.fillStyle = Util.shadeColor(color, 0.85);
-    ctx.fillRect(px + 10, py + 9, 3, 4);
-    ctx.fillRect(px + 15, py + 9, 3, 4);
-    ctx.fillRect(px + 20, py + 9, 3, 4);
-    ctx.fillStyle = Util.shadeColor(color, -0.6);
-    ctx.fillRect(px + TILE / 2 - 5, py + 21, 10, 3);
-    ctx.fillStyle = Util.shadeColor(color, 0.5);
-    ctx.beginPath(); ctx.arc(px + TILE / 2, py + 27, 3.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  spiral(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.85);
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    for (let i = 0; i <= 60; i++) {
-      const t = i / 60;
-      const a = t * Math.PI * 4;
-      const r = 1 + t * 10.5;
-      const sx = cx + Math.cos(a) * r, sy = cy + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
-    }
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.95);
-    ctx.beginPath(); ctx.arc(cx, cy, 1.6, 0, Math.PI * 2); ctx.fill();
-  },
-
-  mirrorsplit(ctx, px, py, color){
-    const cx = px + TILE / 2;
-    const g = ctx.createLinearGradient(px + 5, py, px + TILE - 5, py);
-    g.addColorStop(0, Util.shadeColor(color, 0.55));
-    g.addColorStop(0.48, Util.shadeColor(color, 0.05));
-    g.addColorStop(0.52, Util.shadeColor(color, 0.05));
-    g.addColorStop(1, Util.shadeColor(color, 0.55));
-    ctx.fillStyle = g;
-    ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
-    ctx.fillStyle = Util.shadeColor(color, -0.8);
-    ctx.fillRect(cx - 0.75, py + 4, 1.5, TILE - 8);
-    ctx.strokeStyle = Util.shadeColor(color, 0.9);
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(px + 9, py + 22); ctx.lineTo(px + 13, py + 9);
-    ctx.moveTo(px + TILE - 9, py + 22); ctx.lineTo(px + TILE - 13, py + 9);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  },
-
-  yinyang(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2, r = 9;
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
-    ctx.arc(cx, cy + r / 2, r / 2, Math.PI / 2, -Math.PI / 2, true);
-    ctx.arc(cx, cy - r / 2, r / 2, Math.PI / 2, -Math.PI / 2);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath(); ctx.arc(cx, cy + r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.beginPath(); ctx.arc(cx, cy - r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.4);
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, r + 0.5, 0, Math.PI * 2); ctx.stroke();
-  },
-
-  warning(ctx, px, py, color){
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.clip();
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.fillStyle = Util.shadeColor(color, 0.55);
-    for (let i = -2; i < 6; i++) {
-      ctx.beginPath();
-      ctx.moveTo(px + 5 + i * 9, py + 5);
-      ctx.lineTo(px + 5 + i * 9 + 4.5, py + 5);
-      ctx.lineTo(px + 5 + i * 9 + 4.5 + 22, py + TILE - 5);
-      ctx.lineTo(px + 5 + i * 9 + 22, py + TILE - 5);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    ctx.strokeStyle = Util.shadeColor(color, -0.45);
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(px + 5, py + 5, TILE - 10, TILE - 10);
-  },
 };
 
 const ROOM_TORCH_TYPES = new Set(['boss', 'miniboss', 'treasure', 'shop', 'vault', 'crystal', 'sombra', 'curse', 'supersecret', 'star']);
@@ -1070,68 +453,22 @@ function roomTorchTiles(node){
 }
 
 function drawWallTorch(ctx, px, py, pal, x, y){
-  const cx = px + TILE / 2, cy = py + TILE - 6;
-  const lean = (tileRand(x, y, 231) - 0.5) * 5;
-  ctx.fillStyle = Util.shadeColor(pal.wall, -0.42);
-  ctx.fillRect(cx - 1.5, cy - 2, 3, 9);
-  ctx.fillStyle = Util.shadeColor(pal.wall, -0.58);
-  ctx.beginPath(); ctx.ellipse(cx, cy - 3, 4, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.save();
-  ctx.shadowColor = pal.accent; ctx.shadowBlur = 9;
-  ctx.fillStyle = pal.accent;
-  ctx.beginPath();
-  ctx.moveTo(cx + lean, cy - 15);
-  ctx.quadraticCurveTo(cx + 4.5, cy - 8, cx + 2.4, cy - 4);
-  ctx.quadraticCurveTo(cx, cy - 6.5, cx - 2.4, cy - 4);
-  ctx.quadraticCurveTo(cx - 4.5, cy - 8, cx + lean, cy - 15);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = Util.shadeColor(pal.accent, 0.35);
-  ctx.beginPath(); ctx.ellipse(cx + lean * 0.4, cy - 8, 1.6, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
+  const frame = Math.floor(tileRand(x, y, 231) * 3);
+  NightfallArt.fire(ctx, px + TILE / 2, py + TILE - 10, pal.accent,
+    Util.shadeColor(pal.accent, -0.42), frame, 1, true, false);
 }
 
-function paintDoorTile(ctx, px, py, color, style){
-  const s = style || 'panel';
-  if (s === 'portal') { paintPortalTile(ctx, px, py, color); return; }
-  paintDoorSlab(ctx, px, py, color);
-  const fn = DOOR_OVERLAYS[s];
-  if (fn) fn(ctx, px, py, color);
+function paintDoorTile(ctx, px, py, color, style, open){
+  NightfallArt.door(ctx, px, py, TILE, color, style || 'panel', open);
 }
 
 function doorStyleFor(type){
   return DOOR_STYLES[type] || DOOR_STYLES.normal;
 }
 
-function paintPortalTile(ctx, px, py, color){
-  const cx = px + TILE / 2, cy = py + TILE / 2, r = TILE / 2;
-  const g = ctx.createRadialGradient(cx - r * 0.22, cy - r * 0.22, 0, cx, cy, r);
-  g.addColorStop(0, Util.shadeColor(color, 0.55));
-  g.addColorStop(0.4, Util.shadeColor(color, 0.12));
-  g.addColorStop(0.75, color);
-  g.addColorStop(1, Util.shadeColor(color, -0.6));
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.lineWidth = 1.3;
-  ctx.strokeStyle = Util.shadeColor(color, 0.62);
-  ctx.globalAlpha = 0.85;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 2.5, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = Util.shadeColor(color, 0.2);
-  ctx.globalAlpha = 0.5;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 6, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = Util.shadeColor(color, -0.4);
-  ctx.beginPath(); ctx.arc(cx, cy, r - 0.75, 0, Math.PI * 2); ctx.stroke();
-}
-
 function paintStarfieldTile(ctx, px, py, tx, ty, pal, depth){
 
-  const skyWash = ctx.createLinearGradient(px, py, px, py + TILE);
-  skyWash.addColorStop(0, Util.shadeColor(pal.voidC, depth + 0.03));
-  skyWash.addColorStop(1, Util.shadeColor(pal.voidC, depth - 0.03));
-  ctx.fillStyle = skyWash;
-  ctx.fillRect(px, py, TILE, TILE);
+  NightfallArt.tile(ctx, px, py, TILE, tx, ty, pal, 'void', 'void', 'astral:' + depth);
   const n = tileRand(tx, ty, 101) < 0.42 ? 0 : tileRand(tx, ty, 102) < 0.72 ? 1 : tileRand(tx, ty, 103) < 0.92 ? 2 : 3;
   for (let i = 0; i < n; i++) {
     const sx = px + 2 + tileRand(tx, ty, 110 + i) * (TILE - 4);
@@ -1140,10 +477,10 @@ function paintStarfieldTile(ctx, px, py, tx, ty, pal, depth){
     const rr = 0.5 + mag * mag * 1.9;
 
     ctx.fillStyle = mag > 0.9 ? pal.accent : 'rgba(226,232,255,' + (0.25 + mag * 0.6).toFixed(2) + ')';
-    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(Math.round(sx), Math.round(sy), Math.max(1, Math.round(rr)), Math.max(1, Math.round(rr)));
     if (mag > 0.93) {
       ctx.fillStyle = 'rgba(226,232,255,0.10)';
-      ctx.beginPath(); ctx.arc(sx, sy, rr * 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(Math.round(sx - rr), Math.round(sy - rr), Math.round(rr * 3), Math.round(rr * 3));
     }
   }
 }
@@ -1164,6 +501,11 @@ function tileRand(x, y, salt){
 
 Object.assign(Game.prototype, {
 
+  artFloorKey(){
+    return this.waveDefenseMode ? 'defense:' + this.wdPaletteIndex
+      : [this.floorPath, this.floorBranch, this.dungeon.floorNum].join(':');
+  },
+
   currentPalette(){
 
     if (this.waveDefenseMode) return STAGES[(this.wdPaletteIndex || 0) % STAGES.length].palette;
@@ -1176,7 +518,7 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
 
     if (!this._ctxTuned) {
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
       this._ctxTuned = true;
     }
@@ -1190,9 +532,13 @@ Object.assign(Game.prototype, {
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, CAMERA_W, CAMERA_H);
+    const floorPalette = this.currentPalette();
+    NightfallArt.backdrop(ctx, CAMERA_W, CAMERA_H, floorPalette, this.artFloorKey(), paletteFlavor(floorPalette));
     ctx.save();
 
-    ctx.translate(-Math.round(this.camX) + Math.round(FX.shakeX), -Math.round(this.camY) + Math.round(FX.shakeY));
+    const screenX = Math.round((-this.camX + FX.shakeX) * this.dpr) / this.dpr;
+    const screenY = Math.round((-this.camY + FX.shakeY) * this.dpr) / this.dpr;
+    ctx.translate(screenX, screenY);
     this.drawTiles();
     this.drawRoomDecor(this.currentRoom);
     this.drawLockedDoorPulse();
@@ -1222,8 +568,8 @@ Object.assign(Game.prototype, {
     ctx.restore();
 
     this.drawVignette();
-    this.drawPlayerLight();
-    this.drawFireLight();
+    this.drawPlayerLight(screenX, screenY);
+    this.drawFireLight(screenX, screenY);
     if (this.currentRoom.type === 'boss' && !this.currentRoom.cleared) this.drawBossHealthBar();
     if (this.roomFadeTimer > 0) {
       const a = Util.clamp(this.roomFadeTimer / ROOM_FADE_TIME, 0, 1);
@@ -1241,12 +587,12 @@ Object.assign(Game.prototype, {
     }
   },
 
-  drawPlayerLight(){
+  drawPlayerLight(screenX, screenY){
     const p = this.player;
     if (!p) return;
     const ctx = this.ctx;
-    const sx = p.x - Math.round(this.camX) + Math.round(FX.shakeX);
-    const sy = p.y - Math.round(this.camY) + Math.round(FX.shakeY);
+    const sx = p.x + screenX;
+    const sy = p.y + screenY;
     if (sx < -LIGHT_R || sy < -LIGHT_R || sx > CAMERA_W + LIGHT_R || sy > CAMERA_H + LIGHT_R) return;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1254,18 +600,16 @@ Object.assign(Game.prototype, {
     ctx.restore();
   },
 
-  drawFireLight(){
+  drawFireLight(screenX, screenY){
     const node = this.currentRoom;
     if (!node || !node.obstacles) return;
     const ctx = this.ctx;
-    const ox = Math.round(this.camX) - Math.round(FX.shakeX);
-    const oy = Math.round(this.camY) - Math.round(FX.shakeY);
     let opened = false;
     for (const ob of node.obstacles) {
       if (ob.destroyed || !ob.isHazard || ob.kind.indexOf('fire') === -1) continue;
       const col = ob.def && ob.def.color;
       if (!col) continue;
-      const sx = ob.x - ox, sy = ob.y - oy;
+      const sx = ob.x + screenX, sy = ob.y + screenY;
       if (sx < -FIRE_LIGHT_R || sy < -FIRE_LIGHT_R || sx > CAMERA_W + FIRE_LIGHT_R || sy > CAMERA_H + FIRE_LIGHT_R) continue;
       if (!opened) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; opened = true; }
       ctx.drawImage(fireLightSprite(col), sx - FIRE_LIGHT_R, sy - FIRE_LIGHT_R);
@@ -1386,13 +730,11 @@ Object.assign(Game.prototype, {
         }
         if (t === T_DOOR) {
           paintStarfieldTile(ctx, px, py, x, y, pal, 0.10);
-          paintPortalTile(ctx, px, py, node.doorsOpen ? Theme.door.planetarium.open : Theme.door.planetarium.locked);
+          paintDoorTile(ctx, px, py, node.doorsOpen ? Theme.door.planetarium.open : Theme.door.planetarium.locked, 'portal', node.doorsOpen);
           continue;
         }
 
-        const baseFloor = ((x + y) % 2 === 0) ? pal.floorA : pal.floorB;
-        ctx.fillStyle = Util.shadeColor(baseFloor, 0.06 + (tileRand(x, y, 41) - 0.5) * 0.10);
-        ctx.fillRect(px, py, TILE, TILE);
+        NightfallArt.tile(ctx, px, py, TILE, x, y, pal, 'crystal', 'floor', this.artFloorKey());
 
         const openAt = (tx, ty) => {
           if (ty < 0 || ty >= node.tileH || tx < 0 || tx >= node.tileW) return true;
@@ -1423,7 +765,7 @@ Object.assign(Game.prototype, {
       const style = doorStyleFor(destType);
       for (const c of slot.cells) {
         paintStarfieldTile(ctx, c.x * TILE, c.y * TILE, c.x, c.y, pal, 0.10);
-        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style);
+        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style, node.doorsOpen);
       }
     }
   },
@@ -1445,6 +787,7 @@ Object.assign(Game.prototype, {
       this.rebuildPlanetariumTiles(node, pal, ctx);
       node._tileLayerDoorsOpen = node.doorsOpen;
       node._tileLayerPalette = pal;
+      node._tileLayerDpr = this.dpr;
       node.tileLayerDirty = false;
       return;
     }
@@ -1456,6 +799,7 @@ Object.assign(Game.prototype, {
     };
 
     const flavor = roomFlavor(node, pal);
+    const artFloor = this.artFloorKey();
     const torchTiles = roomTorchTiles(node);
 
     const ornateFloor = node.type === 'boss' || node.type === 'treasure' || flavor === 'crystal';
@@ -1466,17 +810,12 @@ Object.assign(Game.prototype, {
         if (t === T_VOID) {
 
           if (this.floorPath === 'D') { paintStarfieldTile(ctx, px, py, x, y, pal, 0); continue; }
-          ctx.fillStyle = pal.voidC; ctx.fillRect(px, py, TILE, TILE); continue;
+          NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'void', artFloor); continue;
         }
         if (t === T_WALL || t === T_SECRET) {
 
-          const shade = (tileRand(x, y, 11) - 0.5) * 0.22;
-          const blockBase = Util.shadeColor(pal.wall, shade);
-          const wallWash = ctx.createLinearGradient(px, py, px, py + TILE);
-          wallWash.addColorStop(0, Util.shadeColor(blockBase, 0.09));
-          wallWash.addColorStop(1, Util.shadeColor(blockBase, -0.12));
-          ctx.fillStyle = wallWash;
-          ctx.fillRect(px, py, TILE, TILE);
+          const blockBase = pal.wall;
+          NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'wall', artFloor);
 
           const openN = !isSolid(x, y - 1), openE = !isSolid(x + 1, y);
           const openS = !isSolid(x, y + 1), openW = !isSolid(x - 1, y);
@@ -1555,24 +894,14 @@ Object.assign(Game.prototype, {
           continue;
         }
         if (t === T_DOOR) {
-          paintDoorTile(ctx, px, py, node.doorsOpen ? pal.doorOpen : pal.doorLocked);
+          paintDoorTile(ctx, px, py, node.doorsOpen ? pal.doorOpen : pal.doorLocked, null, node.doorsOpen);
           if (!node.doorsOpen) lockedCells.set(y * node.tileW + x, { x, y, color: pal.doorLocked });
           continue;
         }
         if (t === T_SECRET_OPEN) { ctx.fillStyle = Theme.world.secretOpen; ctx.fillRect(px, py, TILE, TILE); continue; }
 
         const baseFloor = ((x + y) % 2 === 0) ? pal.floorA : pal.floorB;
-        ctx.fillStyle = Util.shadeColor(baseFloor, (tileRand(x, y, 41) - 0.5) * 0.14);
-        ctx.fillRect(px, py, TILE, TILE);
-
-        ctx.strokeStyle = Util.shadeColor(baseFloor, 0.12);
-        ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.moveTo(px + 1, py + TILE - 1); ctx.lineTo(px + 1, py + 1); ctx.lineTo(px + TILE - 1, py + 1); ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = pal.grout;
-        ctx.globalAlpha = 0.55;
-        ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
-        ctx.globalAlpha = 1;
+        NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'floor', artFloor);
 
         if (ornateFloor && tileRand(x, y, 53) > 0.93) {
           ctx.fillStyle = Util.shadeColor(baseFloor, 0.1);
@@ -1654,7 +983,7 @@ Object.assign(Game.prototype, {
       const col = isSecretSlot ? table.open : (node.doorsOpen ? table.open : table.locked);
       const style = doorStyleFor(destType);
       for (const c of slot.cells) {
-        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style);
+        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style, node.doorsOpen);
         if (!isSecretSlot && !node.doorsOpen) lockedCells.set(c.y * node.tileW + c.x, { x: c.x, y: c.y, color: col });
       }
     }
@@ -1662,6 +991,7 @@ Object.assign(Game.prototype, {
 
     node._tileLayerDoorsOpen = node.doorsOpen;
     node._tileLayerPalette = pal;
+    node._tileLayerDpr = this.dpr;
     node.tileLayerDirty = false;
   },
 
@@ -1669,7 +999,7 @@ Object.assign(Game.prototype, {
     const node = this.currentRoom;
     const pal = this.currentPalette();
     const stale = !node._tileCanvas || node.tileLayerDirty ||
-      node._tileLayerDoorsOpen !== node.doorsOpen || node._tileLayerPalette !== pal;
+      node._tileLayerDoorsOpen !== node.doorsOpen || node._tileLayerPalette !== pal || node._tileLayerDpr !== this.dpr;
 
     const justUnlocked = node._tileLayerDoorsOpen === false && node.doorsOpen === true;
     if (stale) this.rebuildTileLayer(node, pal);
@@ -1699,7 +1029,7 @@ Object.assign(Game.prototype, {
     ctx.save();
     for (const p of props) {
       if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1) continue;
-      drawDecorProp(ctx, p, pal);
+      NightfallArt.prop(ctx, p, pal);
     }
     ctx.restore();
   },
@@ -1795,12 +1125,19 @@ Object.assign(Game.prototype, {
         continue;
       }
       ctx.fillStyle = Theme.shadow.pedestal;
-      ctx.beginPath(); ctx.ellipse(px, py + 12, 17, 5, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = Theme.world.pedestalBase; Util.drawRoundedRect(ctx, px - 16, py + 6, 32, 10, 2); ctx.fill();
-      ctx.fillStyle = Util.bodyShade(ctx, px, py + 3, 14, Theme.world.pedestalTop); Util.drawRoundedRect(ctx, px - 12, py - 2, 24, 10, 2); ctx.fill();
+      ctx.fillRect(px - 16, py + 10, 32, 6);
+      ctx.fillStyle = '#302231';
+      ctx.fillRect(px - 14, py - 2, 28, 15);
+      ctx.fillStyle = '#8b6d78';
+      ctx.fillRect(px - 12, py, 24, 4);
+      ctx.fillStyle = '#594456';
+      ctx.fillRect(px - 10, py + 4, 20, 7);
+      ctx.fillStyle = '#e0aa78';
+      ctx.fillRect(px - 3, py + 5, 6, 2);
       if (!ped.taken) {
         const bob = Math.sin(this.now / 260 + px) * 3;
-        Util.drawItemIcon(ctx, px, py - 16 + bob, ped.item, this.now);
+        if (ped.isStar) NightfallArt.icon(ctx, px, py - 16 + bob, ped.item, 'star', 28);
+        else Util.drawItemIcon(ctx, px, py - 16 + bob, ped.item, this.now);
 
         if (ped.isDeal) {
           const player = this.player;
@@ -1838,23 +1175,17 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     for (const slot of node.shopSlots) {
       const px = slot.x * TILE, py = slot.y * TILE;
-      ctx.fillStyle = Util.bodyShade(ctx, px, py + 11, 14, Theme.world.pedestalBase); Util.drawRoundedRect(ctx, px - 16, py + 6, 32, 10, 2); ctx.fill();
+      ctx.fillStyle = '#201724'; ctx.fillRect(px - 16, py + 8, 32, 8);
+      ctx.fillStyle = Theme.world.pedestalBase; ctx.fillRect(px - 12, py + 5, 24, 8);
+      ctx.fillStyle = '#d0a279'; ctx.fillRect(px - 10, py + 5, 20, 2);
       if (slot.bought) continue;
       const bob = Math.sin(this.now / 260 + px) * 3;
       ctx.save();
       ctx.translate(px, py - 10 + bob);
       if (slot.kind === 'item' || slot.kind === 'trinket' || slot.kind === 'familiar') {
         const thing = slot.item || slot.trinket || slot.familiar;
-        const glow = thing.quality ? Util.qualityGlow(thing.quality) : null;
-        if (glow) { ctx.shadowColor = glow.color; ctx.shadowBlur = glow.blur; }
-        ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 12, thing.color);
-        ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = Theme.ui.onIcon; ctx.fillText(thing.icon, 0, 1);
+        Util.drawItemIcon(ctx, 0, 0, thing, this.now);
       } else {
-        ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 10, Theme.world.shopPickup);
-        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
         Util.drawPickupIcon(ctx, shopPickupIconObj(slot.pickup), 0);
       }
       ctx.restore();
@@ -1872,7 +1203,7 @@ Object.assign(Game.prototype, {
     if (!node.donationMachine) return;
     const ctx = this.ctx;
     const px = node.donationMachine.x * TILE, py = node.donationMachine.y * TILE;
-    Util.drawDonationMachine(ctx, px, py, donationProgressFrac());
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDonationMachine(pixel, px, py, donationProgressFrac()));
 
     const unlocks = ensureUnlockShape(loadUnlocks());
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
@@ -1889,7 +1220,7 @@ Object.assign(Game.prototype, {
       const def = KARMA_MACHINE_DEFS[m.resource];
       if (!def) continue;
       const px = m.x * TILE, py = m.y * TILE;
-      Util.drawDonationMachine(ctx, px, py, karmaMachineProgressFrac(m.resource));
+      NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDonationMachine(pixel, px, py, karmaMachineProgressFrac(m.resource)));
       const donated = unlocks.stats[def.stat] || 0;
       const awarded = unlocks.stats[def.awardedStat] || 0;
       ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
@@ -1905,7 +1236,7 @@ Object.assign(Game.prototype, {
     if (!node.rerollAltar) return;
     const ctx = this.ctx;
     const px = node.rerollAltar.x * TILE, py = node.rerollAltar.y * TILE;
-    Util.drawRerollAltar(ctx, px, py, this.now);
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawRerollAltar(pixel, px, py, this.now));
 
     const live = countRerollableShopSlots(node) > 0;
     const cost = rerollAltarCost(node.rerollAltar);
@@ -1920,7 +1251,7 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     const px = node.upgradeStation.x * TILE, py = node.upgradeStation.y * TILE;
     const station = node.upgradeStation;
-    Util.drawUpgradeStation(ctx, px, py, station.tier, this.now);
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawUpgradeStation(pixel, px, py, station.tier, this.now));
 
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     if (station.tier >= UPGRADE_STATION_MAX_TIER) {
@@ -1938,31 +1269,22 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     const px = node.wdControlButton.x * TILE, py = node.wdControlButton.y * TILE;
     const running = wdControlButtonState(this) === 'running';
-    const pulse = 0.5 + 0.5 * Math.sin(this.now * 3);
-
-    ctx.save();
-    Util.drawRoundedRect(ctx, px - 13, py - 13, 26, 26, 6);
-    ctx.fillStyle = '#2a2f3d';
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = running ? '#e05a5a' : '#5ad07a';
-    ctx.globalAlpha = 0.55 + 0.45 * pulse;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    ctx.fillStyle = running ? '#e05a5a' : '#5ad07a';
+    const color = running ? '#e05a5a' : '#5ad07a';
+    ctx.fillStyle = '#171322';
+    ctx.fillRect(px - 15, py - 12, 30, 24);
+    ctx.fillRect(px - 12, py - 15, 24, 30);
+    ctx.fillStyle = '#373c4a';
+    ctx.fillRect(px - 12, py - 12, 24, 24);
+    ctx.fillStyle = color;
+    ctx.fillRect(px - 9, py - 12, 18, 3);
     if (running) {
-      ctx.fillRect(px - 6, py - 7, 4, 14);
-      ctx.fillRect(px + 2, py - 7, 4, 14);
+      ctx.fillRect(px - 6, py - 6, 3, 12);
+      ctx.fillRect(px + 3, py - 6, 3, 12);
     } else {
-      ctx.beginPath();
-      ctx.moveTo(px - 5, py - 8);
-      ctx.lineTo(px + 8, py);
-      ctx.lineTo(px - 5, py + 8);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillRect(px - 6, py - 6, 3, 15);
+      ctx.fillRect(px - 3, py - 3, 3, 9);
+      ctx.fillRect(px, py, 6, 3);
     }
-    ctx.restore();
 
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = Theme.ui.textDim;
@@ -1980,9 +1302,9 @@ Object.assign(Game.prototype, {
     if (node.machines) {
       for (const m of node.machines) {
         const px = m.x * TILE, py = m.y * TILE;
-        if (m.kind === 'friendship') Util.drawFriendshipMachine(ctx, px, py, m, this.now);
-        else if (m.kind === 'tools') Util.drawToolsMachine(ctx, px, py, m, this.now);
-        else if (m.kind === 'dark') Util.drawDarkMachine(ctx, px, py);
+        if (m.kind === 'friendship') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawFriendshipMachine(pixel, px, py, m, this.now));
+        else if (m.kind === 'tools') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawToolsMachine(pixel, px, py, m, this.now));
+        else if (m.kind === 'dark') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDarkMachine(pixel, px, py));
       }
     }
   },
@@ -1991,29 +1313,35 @@ Object.assign(Game.prototype, {
     const node = this.currentRoom;
     if (!node.playerTurrets) return;
     const ctx = this.ctx;
-    for (const turret of node.playerTurrets) Util.drawPlayerTurret(ctx, turret, this.now);
+    for (const turret of node.playerTurrets) {
+      NightfallArt.rasterProp(ctx, turret.x, turret.y, pixel => Util.drawPlayerTurret(pixel, turret, this.now));
+    }
   },
 
   drawChangelingMinions(){
     const minions = this.player && this.player.changelingMinions;
     if (!minions || !minions.length) return;
     const ctx = this.ctx;
-    for (const m of minions) Util.drawChangelingMinion(ctx, m, this.now);
+    for (const m of minions) {
+      NightfallArt.rasterProp(ctx, m.x, m.y, pixel => Util.drawChangelingMinion(pixel, m, this.now));
+    }
   },
 
   drawStairsPit(ctx, px, py, rx, ry, ringColor){
-    const pulse = 0.5 + Math.sin(this.now / 340) * 0.5;
-    const grad = ctx.createRadialGradient(px, py, 1, px, py, Math.max(rx, ry));
-    grad.addColorStop(0, Theme.world.pitFill);
-    grad.addColorStop(0.7, Theme.world.stairsPit);
-    grad.addColorStop(1, Util.shadeColor(ringColor, -0.5));
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.save();
-    ctx.shadowColor = ringColor; ctx.shadowBlur = 6 + pulse * 6;
-    ctx.strokeStyle = ringColor; ctx.lineWidth = 2 + pulse * 0.6;
-    ctx.stroke();
-    ctx.restore();
+    ctx.fillStyle = Util.shadeColor(ringColor, -0.54);
+    ctx.fillRect(px - rx, py - ry + 4, rx * 2, ry * 2 - 8);
+    ctx.fillRect(px - rx + 4, py - ry, rx * 2 - 8, ry * 2);
+    ctx.fillStyle = '#201521';
+    ctx.fillRect(px - rx + 5, py - ry + 4, rx * 2 - 10, ry * 2 - 8);
+    for (let step = 0; step < 4; step++) {
+      const width = (rx - 7) * 2 - step * 4;
+      const y = py - ry + 7 + step * 6;
+      ctx.fillStyle = Util.shadeColor(ringColor, -0.12 - step * 0.15);
+      ctx.fillRect(px - width / 2, y, width, 3);
+    }
+    ctx.fillStyle = ringColor;
+    ctx.fillRect(px - rx + 5, py - ry + 3, rx * 2 - 10, 2);
+
   },
 
   drawStairs(){
@@ -2089,7 +1417,7 @@ Object.assign(Game.prototype, {
     for (const en of list) {
       switch (en.kind) {
         case 0: Util.drawObstacle(ctx, en.ref, this.now); break;
-        case 1: Util.drawPickupIcon(ctx, en.ref, Math.sin(this.now / 300 + en.ref.bobPhase) * 2); break;
+        case 1: Util.drawPickupIcon(ctx, en.ref, 0); break;
         case 2: Util.drawChestIcon(ctx, en.ref); break;
         case 3: this.drawEnemy(en.ref); break;
         case 4: this.drawFamiliar(en.ref); break;
@@ -2105,12 +1433,8 @@ Object.assign(Game.prototype, {
     ctx.fillStyle = Theme.shadow.ground;
     ctx.beginPath(); ctx.ellipse(f.x, f.y + 9, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
 
-    ctx.fillStyle = Util.bodyShade(ctx, f.x, f.y + bob, 11, (f.dyeId && WISP_DYE_TYPES_BY_ID[f.dyeId].color) || f.def.color);
-    ctx.beginPath(); ctx.arc(f.x, f.y + bob, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Theme.rgba(Theme.rgb.white, .35); ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = Theme.ui.onIcon;
-    ctx.fillText(f.def.icon, f.x, f.y + bob + 1);
+    const dye = f.dyeId && WISP_DYE_TYPES_BY_ID[f.dyeId];
+    NightfallArt.icon(ctx, f.x, f.y + bob, dye ? { ...f.def, color: dye.color } : f.def, 'familiar', 28);
     ctx.restore();
 
     if (f.def.behavior === 'swarmer' && f.miniOrbs && f.miniOrbs.length) {
@@ -2185,8 +1509,29 @@ Object.assign(Game.prototype, {
     }
     e._fxHit = hit;
 
+    if (e.attackAim || e.attackWarningRadius > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.strokeStyle = Theme.fx.fuseHot;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (e.attackAim) {
+        const aim = e.attackAim;
+        let reach = 0;
+        while (reach + 8 <= aim.range && !isTileSolidForEntity(this.currentRoom,
+          Math.floor((e.x + aim.x * (reach + 8)) / TILE), Math.floor((e.y + aim.y * (reach + 8)) / TILE))) reach += 8;
+        ctx.setLineDash([6, 5]);
+        ctx.moveTo(Math.round(e.x), Math.round(e.y));
+        ctx.lineTo(Math.round(e.x + aim.x * reach), Math.round(e.y + aim.y * reach));
+      } else {
+        ctx.arc(e.x, e.y, e.attackWarningRadius, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
     if (e.lobTimer > 0) {
-      const R = (e.type && e.type.burstRadius) || 44;
+      const R = e.lobWarningRadius || (e.type && e.type.burstRadius) || 44;
       const frac = 1 - Util.clamp(e.lobTimer / (e.lobTime || 1), 0, 1);
       ctx.save();
       ctx.globalAlpha = 0.3 + 0.4 * frac;
@@ -2321,27 +1666,31 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     for (const pr of this.projectiles) {
 
-      if (pr.shape === 'needle') {
-
-        const ang = Math.atan2(pr.vy, pr.vx);
-        ctx.save();
-        ctx.translate(pr.x, pr.y); ctx.rotate(ang); ctx.scale(1.9, 0.6);
-        ctx.shadowColor = pr.color; ctx.shadowBlur = Theme.projectile.glowBlur;
+      const x = Math.round(pr.x), y = Math.round(pr.y);
+      const radius = Math.max(2, Math.round(pr.radius));
+      const heavy = pr.explosive || pr.shape === 'heavy';
+      const needle = pr.shape === 'needle';
+      ctx.save();
+      ctx.translate(x, y);
+      if (needle) ctx.rotate(Math.atan2(pr.vy, pr.vx));
+      ctx.fillStyle = '#251923';
+      if (needle) {
+        ctx.fillRect(-radius - 1, -2, radius * 3 + 2, 4);
+        ctx.fillRect(radius - 1, -3, radius + 2, 6);
         ctx.fillStyle = pr.color;
-        ctx.beginPath(); ctx.arc(0, 0, pr.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        ctx.fillRect(-radius, -1, radius * 3, 2);
+        ctx.fillRect(radius, -2, radius, 4);
       } else {
-        ctx.save();
-        ctx.shadowColor = pr.color;
-        ctx.shadowBlur = (pr.explosive || pr.shape === 'heavy') ? Theme.projectile.glowBlurBig : Theme.projectile.glowBlur;
+        ctx.fillRect(-radius - 1, -radius, radius * 2 + 2, radius * 2);
+        ctx.fillRect(-radius, -radius - 1, radius * 2, radius * 2 + 2);
         ctx.fillStyle = pr.color;
-        ctx.beginPath(); ctx.arc(pr.x, pr.y, pr.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-        ctx.fillStyle = Theme.projectile.glint;
-
-        const gl = pr.shape === 'heavy' ? 0.5 : 0.35;
-        ctx.beginPath(); ctx.arc(pr.x - pr.radius * 0.3, pr.y - pr.radius * 0.3, pr.radius * gl, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-radius, -radius + 1, radius * 2, radius * 2 - 2);
+        ctx.fillRect(-radius + 1, -radius, radius * 2 - 2, radius * 2);
       }
+      ctx.fillStyle = heavy ? '#fff0ba' : Theme.projectile.glint;
+      ctx.fillRect(needle ? radius + 1 : -radius + 1, needle ? -1 : -radius + 1,
+        heavy ? 3 : 2, heavy ? 3 : 2);
+      ctx.restore();
 
       if (pr.statusColor) {
         ctx.save();
@@ -2357,33 +1706,33 @@ Object.assign(Game.prototype, {
   drawBombsExplosions(){
     const ctx = this.ctx;
     for (const b of this.bombs) {
-      const pulse = 1 + Math.sin(this.now / 100) * 0.15;
+      const hot = b.timer < 0.5;
+      const x = Math.round(b.x), y = Math.round(b.y);
+      const size = Math.max(18, Math.round(b.radius * 2.8 / 3) * 3);
       ctx.fillStyle = Theme.shadow.groundSoft;
-      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.radius * 0.7, b.radius * 0.8, b.radius * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = Util.bodyShade(ctx, b.x - b.radius * 0.2, b.y - b.radius * 0.2, b.radius * pulse, Theme.fx.bombBody);
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius * pulse, 0, Math.PI * 2); ctx.fill();
-      const fuseCol = b.timer < 0.5 ? Theme.fx.fuseHot : Theme.fx.fuse;
-      ctx.strokeStyle = fuseCol; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(b.x + 3, b.y - 6); ctx.lineTo(b.x + 7, b.y - 12); ctx.stroke();
-      ctx.save();
-      ctx.shadowColor = fuseCol; ctx.shadowBlur = b.timer < 0.5 ? 8 : 4;
-      ctx.fillStyle = fuseCol;
-      ctx.beginPath(); ctx.arc(b.x + 7, b.y - 12, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+      ctx.fillRect(x - 9, y + 6, 18, 3);
+      NightfallArt.icon(ctx, x, y, { id:'lit-room-bomb', shape:'bomb', color:Theme.fx.bombBody }, 'pickup', size);
+      ctx.fillStyle = hot && Math.floor(this.now / 85) % 2 ? '#fff0a0' : hot ? Theme.fx.fuseHot : Theme.fx.fuse;
+      ctx.fillRect(x + 3, y - Math.round(size / 2), 3, 3);
     }
     for (const ex of this.explosions) {
       const t = 1 - ex.life / ex.maxLife;
       const r = ex.radius * Util.clamp(t * 1.4, 0, 1);
       const alpha = ex.life / ex.maxLife;
       if (!isFinite(ex.x) || !isFinite(ex.y) || !isFinite(r) || r <= 0) continue;
-      const grad = ctx.createRadialGradient(ex.x, ex.y, Math.max(0.1, r * 0.1), ex.x, ex.y, r);
-      grad.addColorStop(0, `rgba(${Theme.fx.blastCore},${alpha * 0.9})`);
-      grad.addColorStop(0.45, `rgba(${Theme.fx.blastMidR},${Theme.fx.blastMidG + Math.floor(Theme.fx.blastMidGRamp * (1 - t))},${Theme.fx.blastMidB},${alpha * 0.6})`);
-      grad.addColorStop(1, Theme.fx.blastEdge);
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(ex.x, ex.y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = `rgba(${Theme.fx.blastRing},${alpha * 0.5})`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(ex.x, ex.y, r * 0.96, 0, Math.PI * 2); ctx.stroke();
+      ctx.save();
+      ctx.globalAlpha *= alpha;
+      const unit = 3;
+      for (let dy = -r; dy <= r; dy += unit) {
+        const extent = Math.floor(Math.sqrt(Math.max(0, r * r - dy * dy)) / unit) * unit;
+        ctx.fillStyle = Math.abs(dy) < r * 0.44 ? '#ffc477' : '#e6815c';
+        ctx.fillRect(Math.round(ex.x - extent), Math.round(ex.y + dy), extent * 2, unit);
+        if (extent > r * 0.48) {
+          ctx.fillStyle = '#ffe7a6';
+          ctx.fillRect(Math.round(ex.x - extent * 0.42), Math.round(ex.y + dy), Math.round(extent * 0.84), unit);
+        }
+      }
+      ctx.restore();
     }
   },
 

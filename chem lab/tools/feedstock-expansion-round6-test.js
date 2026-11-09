@@ -29,7 +29,7 @@ check('feedJob.status', 'found', 'Path Finder uses stocked nitromethane in a one
 check(`feedJob.routes.some(route=>route.length===1&&route[0].candidate.transform==='henry'&&retroForwardCheck(route[0].candidate,route[0].candidate.product.smiles))`, true, 'The Henry planner edge is forward verified');
 pathSearch('O=CC1=CC=CC=C1', 'O=C(C(=O)C1=CC=CC=C1)C1=CC=CC=C1', { stockPolicy: 'builtin', maxDepth: 2, budgetMs: 25000, maxBranch: 16, maxRoutes: 12 });
 check('feedJob.status', 'found', 'Path Finder finds a two-step benzaldehyde to benzil route');
-check(`feedJob.routes.some(route=>{const ids=route.map(link=>link.candidate.transform);return ids.includes('benzoin')&&ids.includes('benzoin-oxidation')&&route.every(link=>retroForwardCheck(link.candidate,link.candidate.product.smiles));})`, true, 'Benzoin condensation and oxidation form a verified two-step sequence');
+check(`feedJob.routeRecipes.some(route=>{const ids=route.map(link=>link.candidate.transform);return ids.includes('benzoin')&&ids.includes('benzoin-oxidation')&&route.every(link=>retroForwardCheck(link.candidate,link.candidate.product.smiles));})`, true, 'Benzoin intermediate and oxidation form a verified two-step pathway (oxidant variants share a slot)');
 check(`['henry','benzoin','benzoin-oxidation','staudinger','appel','cyanohydrin','wacker','simmons-smith'].every(id=>RETRO_TRANSFORMS.some(x=>x.id===id))`, true, 'All new reverse methods are registered in the public engine');
 check(`['henry','benzoin-oxidation'].every(id=>RX_RULES.some(x=>x.id===id))`, true, 'Both new forward rules are registered in the public engine');
 console.log('Feedstock and planner expansion: ' + checks + ' checks passed.');

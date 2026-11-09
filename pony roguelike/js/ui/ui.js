@@ -124,7 +124,7 @@ function drawLootMarkers(ctx, entries, cx, cy){
   ctx.restore();
 }
 
-const _hudCache = { hearts: null, coins: null, keys: null, bombs: null, leftPanel: null, familiars: null, turrets: null, minions: null, synergy: null, floor: null, hitFlash: null, statSec: null, proxItem: undefined };
+const _hudCache = { technique: undefined, hearts: null, coins: null, keys: null, bombs: null, leftPanel: null, familiars: null, turrets: null, minions: null, synergy: null, floor: null, hitFlash: null, statSec: null, proxItem: undefined };
 
 function _hudBump(el, cls){
   if (!el) return;
@@ -141,7 +141,7 @@ const SYNERGY_BADGES = [
 
 function hudPanelEntry(label, thing){
   const body = thing
-    ? '<div class="hudPanelName">' + (thing.icon ? thing.icon + ' ' : '') + thing.name + '</div>'
+    ? '<div class="hudPanelName">' + NightfallArt.image(thing, thing.behavior ? 'familiar' : 'item') + thing.name + '</div>'
       + '<div class="hudPanelDesc">' + thing.desc + '</div>'
     : '<div class="hudPanelEmpty">None</div>';
   return '<div class="hudPanelTitle">' + label + '</div>' + body;
@@ -156,7 +156,7 @@ function hudPillReadout(game){
     if (!effect) { unknown++; continue; }
     known++;
     html += '<div class="hudPillRow">'
-      + '<span class="hudPillSwatch" style="background:' + c.color + '"></span>'
+      + NightfallArt.image(c, 'pill')
       + '<span class="hudPillName">' + c.name + '</span>'
       + '<span class="hudPillEffect ' + (effect.good ? 'good' : 'bad') + '" title="' + effect.desc + '">' + effect.name + '</span>'
       + '</div>';
@@ -166,8 +166,30 @@ function hudPillReadout(game){
   return html;
 }
 
+function updateTechniqueHUD(game){
+  const technique = game.player.technique;
+  const el = document.getElementById('resTechnique');
+  if (!el) return;
+  let text = '';
+  if (technique) {
+    const [name, trigger, threshold, , , action, , description, upgrade] = technique.config;
+    const remaining = Math.max(0, technique.readyAt - game.runElapsed);
+    const progress = action === 'syncopate' && game.runElapsed - (technique.lastHitAt || 0) > 1.15 ? 0 : technique.progress;
+    const state = remaining > 0 ? Math.ceil(remaining) + 's'
+      : trigger === 'hurt' || progress >= threshold ? 'Ready'
+      : Math.floor(progress) + '/' + threshold + (trigger === 'move' ? ' px' : '');
+    text = name + ' · ' + state;
+    if (text !== _hudCache.technique) el.title = description + (technique.rank === 2 ? ' ' + upgrade : '');
+  }
+  if (text === _hudCache.technique) return;
+  _hudCache.technique = text;
+  el.classList.toggle('hidden', !technique);
+  el.querySelector('b').textContent = text;
+}
+
 function updateHUD(game){
   const player = game.player;
+  updateTechniqueHUD(game);
 
   let canvas = document.getElementById('heartsCanvas');
   let freshCanvas = false;
@@ -270,8 +292,20 @@ function updateHUD(game){
     }
   }
 
-  const touchTurretBtn = document.getElementById('touchTurretBtn');
-  if (touchTurretBtn) touchTurretBtn.classList.toggle('hidden', !hasTurretAbility);
+  const room = game.currentRoom;
+  const touchActions = {
+    touchTurretBtn:hasTurretAbility,
+    touchDestroyTurretBtn:hasTurretAbility && !!room.playerTurrets?.length,
+    touchPocketBtn:!!player.pocketActive,
+    touchDropTrinketBtn:!!player.trinketId,
+    touchDonateBtn:!!(room.donationMachine || room.karmaMachines?.length ||
+      room.itemPedestals?.some(ped => ped.treasureChoice && !ped.taken)),
+    touchRerollBtn:!!(room.rerollAltar || room.upgradeStation),
+    touchArcadeBtn:!!(room.machines?.length || room.fillies?.length || room.wdControlButton),
+  };
+  for (const id in touchActions) document.getElementById(id)?.classList.toggle('hidden', !touchActions[id]);
+  document.getElementById('touchPocketBtn')?.classList.toggle('ready-glow',
+    !!player.pocketActive && player.pocketCharge >= player.pocketActive.maxCharge);
 
   const sideBuildBtn = document.getElementById('sideActionBuildTurret');
   if (sideBuildBtn) sideBuildBtn.classList.toggle('hidden', !hasTurretAbility);
@@ -285,7 +319,10 @@ function updateHUD(game){
   if (sideDonateBtn) {
     const node = game.currentRoom;
     const hasDonateOrArcade = !!(node.donationMachine || (node.karmaMachines && node.karmaMachines.length) || (node.fillies && node.fillies.length) || (node.machines && node.machines.length));
-    sideDonateBtn.classList.toggle('hidden', !hasDonateOrArcade);
+    const choosing = (node.itemPedestals || []).some(ped => ped.treasureChoice && !ped.taken);
+    sideDonateBtn.classList.toggle('hidden', !hasDonateOrArcade && !choosing);
+    const title = choosing ? 'Choose nearby treasure' : 'Donate / Arcade';
+    if (sideDonateBtn.title !== title) sideDonateBtn.title = title;
   }
 
   const minionsEl = document.getElementById('resMinions');
@@ -323,7 +360,7 @@ function updateHUD(game){
   const iconEl = document.getElementById('activeItemIcon');
   const pipsEl = document.getElementById('activeItemPips');
   if (player.activeItem) {
-    iconEl.textContent = player.activeItem.icon;
+    NightfallArt.mount(iconEl, player.activeItem);
     iconEl.title = player.activeItem.name + ': ' + player.activeItem.desc;
     pipsEl.innerHTML = '';
     for (let i = 0; i < player.activeItem.maxCharge; i++) {
@@ -347,7 +384,7 @@ function updateHUD(game){
     if (player.pocketActive) {
       const pIconEl = document.getElementById('pocketItemIcon');
       const pPipsEl = document.getElementById('pocketItemPips');
-      pIconEl.textContent = player.pocketActive.icon;
+      NightfallArt.mount(pIconEl, player.pocketActive);
       pIconEl.title = player.pocketActive.name + ': ' + player.pocketActive.desc;
       pPipsEl.innerHTML = '';
       for (let i = 0; i < player.pocketActive.maxCharge; i++) {
@@ -364,7 +401,7 @@ function updateHUD(game){
   const trinketEl = document.getElementById('trinketIcon');
   if (trinketEl) {
     const trinket = player.trinketId ? TRINKETS[player.trinketId] : null;
-    trinketEl.textContent = trinket ? trinket.icon : '—';
+    NightfallArt.mount(trinketEl, trinket);
     trinketEl.title = trinket ? (trinket.name + ': ' + trinket.desc) : 'No trinket equipped';
     trinketEl.classList.toggle('empty', !trinket);
   }
@@ -373,7 +410,7 @@ function updateHUD(game){
   if (pillEl) {
     const colorId = player.pillPocket;
     const color = colorId ? PILL_COLORS_BY_ID[colorId] : null;
-    pillEl.textContent = color ? '💊' : '—';
+    NightfallArt.mount(pillEl, color, 'pill');
     pillEl.style.color = color ? color.color : '';
     if (color) {
       const known = game.pillIdentified && game.pillIdentified[colorId];
@@ -391,7 +428,7 @@ function updateHUD(game){
   if (starEl) {
     const starId = player.starPocket;
     const star = starId ? STAR_TYPES[starId] : null;
-    starEl.textContent = star ? star.icon : '—';
+    NightfallArt.mount(starEl, star, 'star');
     starEl.style.color = star ? star.color : '';
     starEl.title = star ? (star.name + ': ' + star.desc + ' (R to use)') : 'No star held';
     starEl.classList.toggle('empty', !star);
@@ -419,7 +456,7 @@ function updateHUD(game){
     const count = shownPassives[id];
     const chip = document.createElement('div');
     chip.className = 'passive-chip';
-    chip.textContent = item.icon;
+    chip.innerHTML = NightfallArt.image(item, item.behavior ? 'familiar' : 'item');
     chip.title = item.name + (count > 1 ? ' x' + count : '') + ' — ' + item.desc;
     passivesBar.appendChild(chip);
   }
@@ -440,7 +477,7 @@ function updateHUD(game){
       for (const def of order) {
         const chip = document.createElement('div');
         chip.className = 'familiar-chip';
-        chip.textContent = def.icon;
+        chip.innerHTML = NightfallArt.image(def, def.behavior ? 'familiar' : 'item');
         chip.title = def.name + (counts[def.id] > 1 ? ' x' + counts[def.id] : '') + ' — ' + def.desc;
         if (counts[def.id] > 1) {
           const badge = document.createElement('span');
@@ -579,7 +616,7 @@ function updateItemProxTooltip(game){
 
   if (!best) { panel.classList.add('hud-panel-hidden'); body.innerHTML = ''; return; }
   panel.classList.remove('hud-panel-hidden');
-  body.innerHTML = '<div class="hudPanelName">' + (best.icon ? best.icon + ' ' : '') + best.name + '</div>'
+  body.innerHTML = '<div class="hudPanelName">' + NightfallArt.image(best, best.behavior ? 'familiar' : 'item') + best.name + '</div>'
     + (best.desc ? '<div class="hudPanelDesc">' + best.desc + '</div>' : '');
 }
 
@@ -766,9 +803,12 @@ function minimapHandlePointerDown(e){
 function minimapHandlePointerMove(e){
   if (!_mmDragging) return false;
   const dx = e.clientX - _mmDragLastX, dy = e.clientY - _mmDragLastY;
+  const canvas = document.getElementById('minimap');
+  const rect = canvas.getBoundingClientRect();
   if (Math.abs(dx) > 2 || Math.abs(dy) > 2) _mmDragMoved = true;
   if (_mmDragMoved) {
-    _mmPanX += dx; _mmPanY += dy;
+    _mmPanX += dx * canvas.width / (rect.width || canvas.width);
+    _mmPanY += dy * canvas.height / (rect.height || canvas.height);
     _mmUserAdjusted = true;
     _mmDragLastX = e.clientX; _mmDragLastY = e.clientY;
   }
@@ -858,7 +898,7 @@ function showItemExamine(ped, player){
   const thing = ped.item;
   const kindLabel = ped.isTrinket ? 'Trinket' : ped.isFamiliar ? 'Familiar' : ped.isStar ? 'Star' : (thing.type === 'active' ? 'Active Item' : 'Passive Item');
   const iconEl = document.getElementById('itemExamineIcon');
-  iconEl.textContent = thing.icon;
+  NightfallArt.mount(iconEl, thing, ped.isFamiliar ? 'familiar' : ped.isStar ? 'star' : 'item');
 
   if (ped !== _lastExaminePed) {
     _lastExaminePed = ped;
@@ -885,7 +925,11 @@ function showItemExamine(ped, player){
 
   const costEl = document.getElementById('itemExamineCost');
   if (costEl) {
-    if (ped.isDeal && player) {
+    if (ped.treasureChoice) {
+      const key = typeof keyCodeLabel === 'function' ? keyCodeLabel(keybinds.donate) : 'F';
+      costEl.textContent = key + ' / Donate button · Choose one';
+      costEl.classList.remove('hidden');
+    } else if (ped.isDeal && player) {
       let label;
       if (player.def.id === 'kirin') {
         label = player.dealFreebieUsed ? null : 'FREE';
