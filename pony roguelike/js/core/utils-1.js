@@ -277,6 +277,10 @@ const Util = {
     const HIT = Theme.obstacle.flash, HIT_SOFT = Theme.obstacle.flashSoft;
 
     const vtx = ob.tx | 0, vty = ob.ty | 0;
+    if (/^(rock|hardrock|tallrock|tallhardrock|tintedrock)$/.test(ob.kind)) {
+      NightfallArt.rock(ctx, ob, Math.floor(tileRand(vtx, vty, 211) * 5), flash);
+      return;
+    }
     if (ob.kind === 'pit') {
       const x0 = ob.x - TILE / 2, y0 = ob.y - TILE / 2;
       const m = ob._pitMask;
@@ -351,57 +355,10 @@ const Util = {
         ctx.beginPath(); ctx.arc(ob.x - 2, ob.y + ribTop + 1, 1, 0, Math.PI * 2); ctx.fill();
       }
 
-    } else if (ob.kind === 'yellowfire' || ob.kind === 'redfire' || ob.kind === 'bluefire' || ob.kind === 'purplefire'
-        || ob.kind === 'greenfire' || ob.kind === 'whitefire' || ob.kind === 'blackfire') {
-      const frac = ob.def.maxHp ? Util.clamp(ob.hp / ob.def.maxHp, 0.25, 1) : 1;
-      const flick = Math.sin((now || 0) / 70 + ob.x) * 3;
-
-      const fireV = Math.floor(tileRand(vtx, vty, 202) * 5);
-
-      const LOG = '#6d4c2f', LOG_DK = '#3d2a19';
-      const logAngles = fireV === 1 ? [-0.5, 0.05, 0.55] : fireV === 2 ? [-0.16, 0.62]
-        : fireV === 3 ? [0.7] : fireV === 4 ? [-0.6, -0.15, 0.15, 0.6] : [-0.35, 0.35];
-      for (const la of logAngles) {
-        ctx.save();
-        ctx.translate(ob.x, ob.y + 8);
-        ctx.rotate(la);
-        ctx.fillStyle = flash ? HIT : LOG;
-        ctx.fillRect(-10, -2.4, 20, 4.8);
-        if (!flash) {
-          ctx.fillStyle = LOG_DK;
-          ctx.beginPath(); ctx.ellipse(-10, 0, 1.4, 2.4, 0, 0, Math.PI * 2); ctx.fill();
-          ctx.beginPath(); ctx.ellipse(10, 0, 1.4, 2.4, 0, 0, Math.PI * 2); ctx.fill();
-        }
-        ctx.restore();
-      }
-
-      const lean = fireV === 1 ? -2 : fireV === 2 ? 2 : fireV === 3 ? 4 : 0;
-      ctx.fillStyle = Theme.shadow.groundSoft;
-      ctx.beginPath(); ctx.ellipse(ob.x, ob.y + 9, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 0.55 + frac * 0.45;
-      ctx.fillStyle = flash ? HIT : ob.def.dark;
-
-      if (!flash) { ctx.shadowColor = ob.def.color; ctx.shadowBlur = 7 * frac; }
-      ctx.beginPath();
-      ctx.moveTo(ob.x, ob.y + 10);
-      ctx.quadraticCurveTo(ob.x - 10, ob.y - 2, ob.x - 3 + lean, ob.y - 16 - flick * frac);
-      ctx.quadraticCurveTo(ob.x + lean, ob.y - 8, ob.x + 3 + lean, ob.y - 16 - flick * frac);
-      ctx.quadraticCurveTo(ob.x + 10, ob.y - 2, ob.x, ob.y + 10);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = flash ? HIT : ob.def.color;
-      ctx.beginPath();
-      ctx.moveTo(ob.x, ob.y + 8);
-      ctx.quadraticCurveTo(ob.x - 6, ob.y - 2, ob.x - 2 + lean * 0.6, ob.y - 12 - flick * frac * 0.6);
-      ctx.quadraticCurveTo(ob.x + lean * 0.6, ob.y - 6, ob.x + 2 + lean * 0.6, ob.y - 12 - flick * frac * 0.6);
-      ctx.quadraticCurveTo(ob.x + 6, ob.y - 2, ob.x, ob.y + 8);
-      ctx.fill();
-
-      if (!flash) {
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(ob.x + lean * 0.6, ob.y - 12 - flick * frac * 0.6, 1, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
+    } else if (/^(yellow|red|blue|purple|green|white|black)fire$/.test(ob.kind)) {
+      const health = ob.def.maxHp ? Util.clamp(ob.hp / ob.def.maxHp, 0.25, 1) : 1;
+      const frame = (Math.floor((now || 0) / 115) + Math.floor(tileRand(vtx, vty, 202) * 3)) % 3;
+      NightfallArt.fire(ctx, ob.x, ob.y, ob.def.color, ob.def.dark, frame, health, false, flash);
     } else if (ob.kind === 'spike' || ob.kind === 'spiketrap' || ob.kind === 'movingspike') {
 
       ctx.fillStyle = Theme.shadow.groundSoft;
@@ -747,37 +704,6 @@ const Util = {
         ctx.beginPath(); ctx.arc(9, -3, 1, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
-    } else if (ob.kind === 'tintedrock') {
-
-      const veinColor = Util.shadeColor(ob.def.color, 0.55);
-      ctx.fillStyle = ob.def.dark;
-      ctx.beginPath(); ctx.arc(ob.x, ob.y + 3, ob.radius * 0.9, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = flash ? HIT : Util.bodyShade(ctx, ob.x, ob.y, ob.radius, ob.def.color);
-      ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.radius, 0, Math.PI * 2); ctx.fill();
-      if (!flash) {
-        const tintV = Math.floor(tileRand(vtx, vty, 302) * 5);
-        ctx.strokeStyle = veinColor; ctx.lineWidth = 1.6;
-        ctx.shadowColor = veinColor; ctx.shadowBlur = 4;
-        if (tintV === 0) {
-          ctx.beginPath(); ctx.moveTo(ob.x - 8, ob.y - 9); ctx.lineTo(ob.x - 1, ob.y + 1); ctx.lineTo(ob.x + 7, ob.y + 8); ctx.stroke();
-        } else if (tintV === 1) {
-          ctx.beginPath(); ctx.moveTo(ob.x, ob.y - 9); ctx.lineTo(ob.x, ob.y); ctx.lineTo(ob.x - 6, ob.y + 8); ctx.moveTo(ob.x, ob.y); ctx.lineTo(ob.x + 6, ob.y + 7); ctx.stroke();
-        } else if (tintV === 2) {
-          ctx.beginPath(); ctx.moveTo(ob.x - 7, ob.y - 7); ctx.lineTo(ob.x + 7, ob.y + 7); ctx.moveTo(ob.x - 7, ob.y + 7); ctx.lineTo(ob.x + 7, ob.y - 7); ctx.stroke();
-        } else if (tintV === 3) {
-          ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.radius * 0.55, 0.4, Math.PI * 1.3); ctx.stroke();
-        } else {
-          for (const [dx, dy] of [[-5, -4], [4, -2], [-1, 6]]) {
-            ctx.beginPath();
-            ctx.moveTo(ob.x + dx, ob.y + dy - 2); ctx.lineTo(ob.x + dx + 1.6, ob.y + dy); ctx.lineTo(ob.x + dx, ob.y + dy + 2); ctx.lineTo(ob.x + dx - 1.6, ob.y + dy); ctx.closePath();
-            ctx.fill();
-          }
-        }
-        ctx.shadowBlur = 0;
-
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(ob.x - ob.radius * 0.4, ob.y - ob.radius * 0.5, 1, 0, Math.PI * 2); ctx.fill();
-      }
     } else if (ob.kind === 'dustvent') {
 
       ctx.fillStyle = Theme.shadow.groundSoft;
@@ -1108,20 +1034,14 @@ const Util = {
 
       const tall = ob.tall;
       const plain = ob.kind !== 'phantomwall';
-      const isRockFamily = ob.kind === 'rock' || ob.kind === 'hardrock' || ob.kind === 'tallrock' || ob.kind === 'tallhardrock';
 
       const rkV = plain ? Math.floor(tileRand(vtx, vty, 211) * 5) : 0;
       const cy = ob.y - (tall ? 6 : 0);
       ctx.fillStyle = ob.def.dark;
       ctx.beginPath(); ctx.arc(ob.x, ob.y + 3, ob.radius * 0.9, 0, Math.PI * 2); ctx.fill();
       if (tall) { ctx.beginPath(); ctx.ellipse(ob.x, ob.y - 6, ob.radius * 0.85, ob.radius * 1.05, 0, 0, Math.PI * 2); ctx.fill(); }
-      ctx.fillStyle = flash ? HIT : Util.bodyShade(ctx, ob.x, cy, ob.radius * (isRockFamily ? 1.35 : 1), ob.def.color);
-      if (isRockFamily) {
-        fillRockPolygon(ctx, rockShapePoints(ob.x, cy, ob.radius, rkV, ob._rockMask));
-      } else {
-        ctx.beginPath(); ctx.arc(ob.x, cy, ob.radius, 0, Math.PI * 2); ctx.fill();
-      }
-      if (ob.kind === 'hardrock' || ob.kind === 'tallhardrock') { ctx.strokeStyle = Theme.obstacle.hardOutline; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.fillStyle = flash ? HIT : Util.bodyShade(ctx, ob.x, cy, ob.radius, ob.def.color);
+      ctx.beginPath(); ctx.arc(ob.x, cy, ob.radius, 0, Math.PI * 2); ctx.fill();
 
       if (!flash) {
 

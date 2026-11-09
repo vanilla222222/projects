@@ -278,209 +278,7 @@ function paintFlavorFloorMark(ctx, px, py, x, y, pal, baseFloor, flavor){
   ctx.restore();
 }
 
-function drawDecorProp(ctx, p, pal){
-  const dark = Util.shadeColor(pal.floorA, -0.4);
-  const mid = Util.shadeColor(pal.floorA, -0.2);
-  const light = Util.shadeColor(pal.floorA, 0.3);
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.scale(p.scale * p.flip, p.scale);
-  ctx.globalAlpha = 0.85;
-  const k = p.kind;
-  if (k === 'pebble') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0.5, 2.2, 4, 1.6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = mid;
-    ctx.beginPath(); ctx.ellipse(0, 0, 3.4, 2.4, p.seed, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = light; ctx.globalAlpha = 0.4;
-    ctx.beginPath(); ctx.ellipse(-1, -0.9, 1.2, 0.7, p.seed, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'rubble') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3, 6.5, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = mid;
-    for (let i = 0; i < 3; i++) {
-      const a = p.seed + i * 2.1;
-      const cx = Math.cos(a) * 3.4, cy = Math.sin(a) * 2;
-      ctx.beginPath();
-      ctx.moveTo(cx - 2.4, cy + 1.6); ctx.lineTo(cx - 0.6, cy - 2); ctx.lineTo(cx + 2.4, cy + 1.2);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.strokeStyle = dark; ctx.lineWidth = 0.7; ctx.globalAlpha = 0.5;
-    ctx.beginPath(); ctx.moveTo(-3, 1.8); ctx.lineTo(3.2, 1.2); ctx.stroke();
-  } else if (k === 'bonechip') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.4, 5, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#d8d2c2'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-4, 1); ctx.lineTo(4, -1.4); ctx.stroke();
-    ctx.fillStyle = '#e6e1d2';
-    ctx.beginPath(); ctx.arc(-4.2, 0.6, 1.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(4.2, -1.8, 1.5, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'skull') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 5.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ddd7c6';
-    ctx.beginPath(); ctx.ellipse(0, 0, 4.4, 3.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(0.4, 3.2, 2.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#2a2622';
-    ctx.beginPath(); ctx.ellipse(-1.7, -0.4, 1.2, 1.4, 0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(1.7, -0.4, 1.2, 1.4, -0.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(-0.5, 1.6, 1, 1.6);
-  } else if (k === 'leaftuft') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.6, 6, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    for (let i = 0; i < 4; i++) {
-      const a = p.seed + i * 1.6;
-      ctx.fillStyle = Util.shadeColor(pal.accent, -0.15 + i * 0.08);
-      ctx.globalAlpha = 0.75;
-      ctx.beginPath();
-      ctx.ellipse(Math.cos(a) * 3.2, Math.sin(a) * 2.2, 3, 1.3, a, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else if (k === 'twig') {
-    ctx.strokeStyle = Util.shadeColor('#6b5136', -0.05); ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-6, 2); ctx.lineTo(-1, -1); ctx.lineTo(5.5, 0.6);
-    ctx.stroke();
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(-1, -1); ctx.lineTo(0.5, -4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(2.5, -0.2); ctx.lineTo(4.5, -3); ctx.stroke();
-  } else if (k === 'mushroom') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.2, 4, 1.4, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#cfc2ab';
-    ctx.fillRect(-0.9, -1, 1.8, 4);
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1);
-    ctx.beginPath(); ctx.ellipse(0, -1.4, 3.6, 2.4, 0, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = light; ctx.globalAlpha = 0.5;
-    ctx.beginPath(); ctx.arc(-1.2, -2.2, 0.7, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'sandripple') {
-    ctx.strokeStyle = light; ctx.globalAlpha = 0.4; ctx.lineWidth = 1.2;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(0, 4 + i * 2.6, 5 + i * 1.6, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-    }
-  } else if (k === 'ashpile') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.6, 7, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#3a3230'; ctx.globalAlpha = 0.9;
-    ctx.beginPath();
-    ctx.moveTo(-6, 2.4);
-    ctx.quadraticCurveTo(-2.4, -3.2, 0.4, -1.2);
-    ctx.quadraticCurveTo(3, -3.6, 6, 2.4);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#6d625c'; ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.ellipse(-1.6, 0.8, 2, 0.9, 0.2, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'ember') {
-    ctx.fillStyle = '#2b1a14';
-    ctx.beginPath(); ctx.ellipse(0, 1, 4.4, 2.4, p.seed * 0.3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = pal.accent;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 7;
-    ctx.beginPath(); ctx.arc(-1.2, 0.4, 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(1.6, 1.4, 0.8, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-  } else if (k === 'iceshard') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.6, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#bfe4f5'; ctx.globalAlpha = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(-2.6, 3.2); ctx.lineTo(-0.8, -4.6); ctx.lineTo(1.2, 3.2);
-    ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(1, 3.2); ctx.lineTo(2.8, -1.6); ctx.lineTo(4, 3.2);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = Theme.shadow.sheen; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.7;
-    ctx.beginPath(); ctx.moveTo(-0.8, -4.2); ctx.lineTo(-0.4, 2.4); ctx.stroke();
-  } else if (k === 'crystalshard') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.4, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = pal.accent; ctx.globalAlpha = 0.68;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 6;
-    ctx.beginPath();
-    ctx.moveTo(0, -5.2); ctx.lineTo(2.4, -1); ctx.lineTo(1.4, 3.2); ctx.lineTo(-1.6, 3.2); ctx.lineTo(-2.4, -1);
-    ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = Theme.shadow.glint; ctx.globalAlpha = 0.8;
-    ctx.beginPath(); ctx.arc(-0.8, -2.4, 0.8, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'rustflake') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.4, 5.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.35);
-    ctx.beginPath();
-    ctx.moveTo(-4.6, 1.8); ctx.lineTo(-2.2, -2.2); ctx.lineTo(2.6, -1.4); ctx.lineTo(4.4, 2);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(pal.accent, 0.1); ctx.lineWidth = 0.8; ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.moveTo(-2.6, 0.4); ctx.lineTo(3, -0.2); ctx.stroke();
-  } else if (k === 'shell') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 2.8, 4.6, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#e8dcc6';
-    ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 3.4, p.seed * 0.2, Math.PI, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#b9a88c'; ctx.lineWidth = 0.7;
-    for (let i = -2; i <= 2; i++) {
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(i * 1.8, -3.2); ctx.stroke();
-    }
-  } else if (k === 'kelp') {
-    ctx.strokeStyle = Util.shadeColor(pal.accent, -0.3); ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, 4);
-    ctx.quadraticCurveTo(-3, 0, -0.6, -5.5);
-    ctx.stroke();
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.moveTo(0.6, 4); ctx.quadraticCurveTo(3.4, -0.4, 2.2, -4);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1); ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.ellipse(-1.4, -2.6, 1.8, 0.9, 0.6, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'siltmound') {
-    ctx.fillStyle = Util.shadeColor(pal.floorB, -0.24); ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(-6.5, 2.6);
-    ctx.quadraticCurveTo(-2, -2.6, 1, -0.6);
-    ctx.quadraticCurveTo(4, -2.4, 6.5, 2.6);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = dark; ctx.globalAlpha = 0.35;
-    ctx.beginPath(); ctx.ellipse(1.8, 1.6, 2.4, 0.9, 0, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'tubeworm') {
-    ctx.fillStyle = Theme.shadow.ground;
-    ctx.beginPath(); ctx.ellipse(0, 3.4, 4.4, 1.5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#cdbfae'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-2.4, 3); ctx.quadraticCurveTo(-3.4, -2, -1.4, -4.4); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(1.8, 3); ctx.quadraticCurveTo(3.2, -1, 2.2, -3.2); ctx.stroke();
-    ctx.fillStyle = '#c9403c';
-    ctx.beginPath(); ctx.arc(-1.4, -4.8, 1.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(2.3, -3.6, 1, 0, Math.PI * 2); ctx.fill();
-  } else if (k === 'stardust') {
-    ctx.fillStyle = pal.accent;
-    ctx.shadowColor = pal.accent; ctx.shadowBlur = 6;
-    for (let i = 0; i < 4; i++) {
-      const a = p.seed + i * 1.7;
-      const r = 1.1 - i * 0.18;
-      ctx.globalAlpha = 0.75 - i * 0.12;
-      ctx.beginPath(); ctx.arc(Math.cos(a) * (2 + i), Math.sin(a) * (1.4 + i * 0.7), r, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-  } else if (k === 'mosspatch') {
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.4); ctx.globalAlpha = 0.55;
-    ctx.beginPath(); ctx.ellipse(0, 0, 6.4, 3.6, p.seed * 0.4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(pal.accent, -0.1); ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 3; i++) {
-      const a = p.seed + i * 2.2;
-      ctx.beginPath(); ctx.ellipse(Math.cos(a) * 3, Math.sin(a) * 1.8, 2, 1.2, a, 0, Math.PI * 2); ctx.fill();
-    }
-  } else if (k === 'mudsplat') {
-    ctx.fillStyle = Util.shadeColor(pal.floorA, -0.36); ctx.globalAlpha = 0.75;
-    ctx.beginPath(); ctx.ellipse(0, 0, 6.8, 3.2, p.seed * 0.5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(5.4, 2.2, 1.8, 1.1, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(-5, -1.8, 1.4, 0.9, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Theme.shadow.sheen; ctx.globalAlpha = 0.18;
-    ctx.beginPath(); ctx.ellipse(-1.6, -0.8, 2.4, 1, -0.4, 0, Math.PI * 2); ctx.fill();
-  } else {
-    ctx.fillStyle = mid;
-    ctx.beginPath(); ctx.ellipse(0, 0, 3, 2, p.seed, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.restore();
-}
+
 
 const Ambient = {
   MAX: 14,
@@ -605,49 +403,6 @@ const SPARKLE_PICKUPS = { coin: 1, goldkey: 1, goldbomb: 1, star: 1, heartContai
 
 const SORT_BY_Y = (a, b) => a.y - b.y;
 
-function paintDoorSlab(ctx, px, py, color){
-
-  ctx.fillStyle = Util.shadeColor(color, -0.4);
-  ctx.fillRect(px, py, TILE, TILE);
-  const f = 3;
-  const i = f + 3;
-  const panelW = TILE - i * 2, panelH = TILE - i * 2;
-  const wash = ctx.createLinearGradient(px, py + i, px, py + i + panelH);
-  wash.addColorStop(0, Util.shadeColor(color, 0.16));
-  wash.addColorStop(1, Util.shadeColor(color, -0.14));
-  ctx.fillStyle = wash;
-  ctx.fillRect(px + i, py + i, panelW, panelH);
-
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = Util.shadeColor(color, 0.3);
-  ctx.beginPath();
-  ctx.moveTo(px + i + 0.5, py + TILE - i - 0.5);
-  ctx.lineTo(px + i + 0.5, py + i + 0.5);
-  ctx.lineTo(px + TILE - i - 0.5, py + i + 0.5);
-  ctx.stroke();
-  ctx.strokeStyle = Util.shadeColor(color, -0.35);
-  ctx.beginPath();
-  ctx.moveTo(px + TILE - i - 0.5, py + i + 0.5);
-  ctx.lineTo(px + TILE - i - 0.5, py + TILE - i - 0.5);
-  ctx.lineTo(px + i + 0.5, py + TILE - i - 0.5);
-  ctx.stroke();
-
-  ctx.fillStyle = Util.shadeColor(color, -0.5);
-  const rr = 1.1;
-  ctx.beginPath(); ctx.arc(px + f + 1, py + f + 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1, py + f + 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + f + 1, py + TILE - f - 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1, py + TILE - f - 1, rr, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = Util.shadeColor(color, 0.35);
-  ctx.beginPath(); ctx.arc(px + f + 0.7, py + f + 0.7, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1.3, py + f + 0.7, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + f + 0.7, py + TILE - f - 1.3, 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(px + TILE - f - 1.3, py + TILE - f - 1.3, 0.5, 0, Math.PI * 2); ctx.fill();
-
-  ctx.strokeStyle = Util.shadeColor(color, -0.5);
-  ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
-}
-
 const DOOR_STYLES = {
   normal:        'panel',
   start:         'arch',
@@ -671,378 +426,6 @@ const DOOR_STYLES = {
   mirror:        'mirrorsplit',
   karma:         'yinyang',
   bosschallenge: 'warning',
-};
-
-function doorGlow(ctx, color, blur){
-  ctx.shadowColor = Util.shadeColor(color, 0.55);
-  ctx.shadowBlur = blur;
-}
-
-function doorGlowOff(ctx){
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-}
-
-const DOOR_OVERLAYS = {
-
-  arch(ctx, px, py, color){
-    const cx = px + TILE / 2, base = py + TILE - 7;
-    ctx.strokeStyle = Util.shadeColor(color, 0.42);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx - 8, base);
-    ctx.lineTo(cx - 8, py + TILE * 0.44);
-    ctx.arc(cx, py + TILE * 0.44, 8, Math.PI, 0);
-    ctx.lineTo(cx + 8, base);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.2);
-    ctx.fillRect(cx - 1.5, py + TILE * 0.44, 3, base - py - TILE * 0.44);
-  },
-
-  skull(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    ctx.beginPath(); ctx.arc(cx, cy - 2, 6.5, Math.PI, 0); ctx.fill();
-    ctx.fillRect(cx - 6.5, cy - 2, 13, 6);
-    ctx.fillStyle = Util.shadeColor(color, -0.72);
-    ctx.beginPath(); ctx.arc(cx - 3, cy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 3, cy - 2, 2.2, 0, Math.PI * 2); ctx.fill();
-    ctx.fillRect(cx - 1, cy + 1.5, 2, 2.5);
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(cx - 4.5, cy + 5, 9, 3);
-    ctx.fillStyle = Util.shadeColor(color, -0.6);
-    ctx.fillRect(cx - 2, cy + 5, 1, 3);
-    ctx.fillRect(cx + 1, cy + 5, 1, 3);
-  },
-
-  gem(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2, r = 7;
-    doorGlow(ctx, color, 6);
-    ctx.fillStyle = Util.shadeColor(color, 0.45);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - r);
-    ctx.lineTo(cx + r * 0.8, cy - r * 0.2);
-    ctx.lineTo(cx, cy + r);
-    ctx.lineTo(cx - r * 0.8, cy - r * 0.2);
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.strokeStyle = Util.shadeColor(color, 0.75);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - r * 0.8, cy - r * 0.2); ctx.lineTo(cx + r * 0.8, cy - r * 0.2);
-    ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r);
-    ctx.stroke();
-  },
-
-  awning(ctx, px, py, color){
-    const top = py + 6;
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = Util.shadeColor(color, i % 2 === 0 ? 0.42 : -0.28);
-      ctx.fillRect(px + 4 + i * 6, top, 6, 7);
-    }
-    ctx.fillStyle = Util.shadeColor(color, -0.5);
-    ctx.fillRect(px + 4, top + 7, 24, 1.5);
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(px + 10, top + 12, 12, 10);
-    ctx.fillStyle = Util.shadeColor(color, -0.45);
-    ctx.fillRect(px + 12, top + 15, 8, 1.5);
-    ctx.fillRect(px + 12, top + 18, 8, 1.5);
-  },
-
-  cracked(ctx, px, py, color){
-    ctx.strokeStyle = Util.shadeColor(color, -0.7);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + 6, py + 3);
-    ctx.lineTo(px + 12, py + 11);
-    ctx.lineTo(px + 9, py + 18);
-    ctx.lineTo(px + 17, py + 27);
-    ctx.moveTo(px + 12, py + 11);
-    ctx.lineTo(px + 22, py + 8);
-    ctx.moveTo(px + 9, py + 18);
-    ctx.lineTo(px + 2, py + 22);
-    ctx.stroke();
-    ctx.strokeStyle = Util.shadeColor(color, 0.3);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(px + 7, py + 4);
-    ctx.lineTo(px + 13, py + 12);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, -0.55);
-    ctx.beginPath(); ctx.arc(px + 24, py + 20, 2.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  paw(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2 + 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.45);
-    ctx.beginPath(); ctx.ellipse(cx, cy + 2, 5.5, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-    const toes = [[-5.5, -5], [-2, -7.5], [2, -7.5], [5.5, -5]];
-    for (const t of toes) {
-      ctx.beginPath(); ctx.ellipse(cx + t[0], cy + t[1], 2.1, 2.6, 0, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = Util.shadeColor(color, -0.4);
-    ctx.beginPath(); ctx.ellipse(cx, cy + 2.5, 2.4, 1.8, 0, 0, Math.PI * 2); ctx.fill();
-  },
-
-  thorn(ctx, px, py, color){
-    ctx.strokeStyle = Util.shadeColor(color, -0.6);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + 4, py + TILE - 4);
-    ctx.bezierCurveTo(px + 10, py + 20, px + 20, py + 14, px + TILE - 4, py + 4);
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    const spikes = [[10, 21], [16, 17], [22, 12]];
-    for (const s of spikes) {
-      ctx.beginPath();
-      ctx.moveTo(px + s[0], py + s[1]);
-      ctx.lineTo(px + s[0] + 4, py + s[1] - 5);
-      ctx.lineTo(px + s[0] + 1.5, py + s[1] + 1.5);
-      ctx.closePath(); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(px + s[0], py + s[1]);
-      ctx.lineTo(px + s[0] - 4, py + s[1] + 5);
-      ctx.lineTo(px + s[0] - 1.5, py + s[1] - 1.5);
-      ctx.closePath(); ctx.fill();
-    }
-  },
-
-  drip(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.38);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, 3);
-    const runs = [[9, 14], [16, 21], [23, 11]];
-    for (const r of runs) {
-      ctx.fillRect(px + r[0], py + 8, 2.5, r[1]);
-      ctx.beginPath(); ctx.arc(px + r[0] + 1.25, py + 8 + r[1], 2.2, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.fillStyle = Util.shadeColor(color, 0.7);
-    for (const r of runs) {
-      ctx.beginPath(); ctx.arc(px + r[0] + 0.6, py + 7.4 + r[1], 0.7, 0, Math.PI * 2); ctx.fill();
-    }
-  },
-
-  vaultslab(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.32);
-    ctx.fillRect(px + 3, py + 8, TILE - 6, 4);
-    ctx.fillRect(px + 3, py + TILE - 12, TILE - 6, 4);
-    ctx.fillStyle = Util.shadeColor(color, -0.55);
-    ctx.fillRect(px + 3, py + 12, TILE - 6, 1.5);
-    ctx.fillRect(px + 3, py + TILE - 8, TILE - 6, 1.5);
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.5);
-    ctx.beginPath(); ctx.arc(cx, cy, 5.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.5);
-    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.7);
-    ctx.lineWidth = 1.4;
-    for (let i = 0; i < 4; i++) {
-      const a = i * Math.PI / 2 + Math.PI / 4;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * 3, cy + Math.sin(a) * 3);
-      ctx.lineTo(cx + Math.cos(a) * 7.5, cy + Math.sin(a) * 7.5);
-      ctx.stroke();
-    }
-  },
-
-  blades(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    for (const dir of [-1, 1]) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(dir * Math.PI / 4);
-      ctx.fillStyle = Util.shadeColor(color, 0.5);
-      ctx.beginPath();
-      ctx.moveTo(0, -11);
-      ctx.lineTo(2, -6);
-      ctx.lineTo(2, 5);
-      ctx.lineTo(-2, 5);
-      ctx.lineTo(-2, -6);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = Util.shadeColor(color, -0.5);
-      ctx.fillRect(-5, 5, 10, 2.2);
-      ctx.fillRect(-1.2, 7, 2.4, 4);
-      ctx.restore();
-    }
-  },
-
-  facet(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    doorGlow(ctx, color, 7);
-    ctx.fillStyle = Util.shadeColor(color, 0.4);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 10);
-    ctx.lineTo(cx + 6, cy - 3);
-    ctx.lineTo(cx + 4, cy + 9);
-    ctx.lineTo(cx - 4, cy + 9);
-    ctx.lineTo(cx - 6, cy - 3);
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.strokeStyle = Util.shadeColor(color, 0.8);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - 6, cy - 3); ctx.lineTo(cx, cy + 2); ctx.lineTo(cx + 6, cy - 3);
-    ctx.moveTo(cx, cy + 2); ctx.lineTo(cx, cy + 9);
-    ctx.moveTo(cx, cy - 10); ctx.lineTo(cx, cy + 2);
-    ctx.stroke();
-    ctx.fillStyle = Theme.shadow.glint;
-    ctx.beginPath(); ctx.arc(cx - 2, cy - 5, 1.1, 0, Math.PI * 2); ctx.fill();
-  },
-
-  eclipse(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.6);
-    ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.85);
-    ctx.beginPath(); ctx.arc(cx - 2.5, cy - 1.5, 8, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.75);
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.6;
-    ctx.beginPath(); ctx.arc(cx, cy, 11.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.globalAlpha = 1;
-  },
-
-  starburst(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    doorGlow(ctx, color, 8);
-    ctx.fillStyle = Util.shadeColor(color, 0.6);
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + i * Math.PI / 5;
-      const r = i % 2 === 0 ? 11 : 4.2;
-      const fx = cx + Math.cos(a) * r, fy = cy + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(fx, fy); else ctx.lineTo(fx, fy);
-    }
-    ctx.closePath(); ctx.fill();
-    doorGlowOff(ctx);
-    ctx.fillStyle = Util.shadeColor(color, 0.9);
-    ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  grate(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.fillStyle = Util.shadeColor(color, 0.42);
-    for (let i = 0; i < 4; i++) ctx.fillRect(px + 6 + i * 5.5, py + 5, 2.5, TILE - 10);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, 2);
-    ctx.fillRect(px + 5, py + TILE - 7, TILE - 10, 2);
-    ctx.strokeStyle = Util.shadeColor(color, -0.35);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(px + 4.5, py + 4.5, TILE - 9, TILE - 9);
-  },
-
-  candle(ctx, px, py, color){
-    const cx = px + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, 0.25);
-    ctx.fillRect(cx - 3.5, py + 15, 7, 11);
-    ctx.fillStyle = Util.shadeColor(color, -0.4);
-    ctx.fillRect(cx - 5, py + 25, 10, 2.5);
-    doorGlow(ctx, color, 7);
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath();
-    ctx.moveTo(cx, py + 5);
-    ctx.bezierCurveTo(cx + 4.5, py + 10, cx + 3.5, py + 15, cx, py + 15);
-    ctx.bezierCurveTo(cx - 3.5, py + 15, cx - 4.5, py + 10, cx, py + 5);
-    ctx.fill();
-    doorGlowOff(ctx);
-    ctx.fillStyle = Util.shadeColor(color, -0.3);
-    ctx.beginPath(); ctx.ellipse(cx, py + 12, 1.4, 2.4, 0, 0, Math.PI * 2); ctx.fill();
-  },
-
-  coinslot(ctx, px, py, color){
-    ctx.fillStyle = Util.shadeColor(color, 0.3);
-    ctx.fillRect(px + 6, py + 5, TILE - 12, 12);
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.fillRect(px + 8, py + 7, TILE - 16, 8);
-    ctx.fillStyle = Util.shadeColor(color, 0.85);
-    ctx.fillRect(px + 10, py + 9, 3, 4);
-    ctx.fillRect(px + 15, py + 9, 3, 4);
-    ctx.fillRect(px + 20, py + 9, 3, 4);
-    ctx.fillStyle = Util.shadeColor(color, -0.6);
-    ctx.fillRect(px + TILE / 2 - 5, py + 21, 10, 3);
-    ctx.fillStyle = Util.shadeColor(color, 0.5);
-    ctx.beginPath(); ctx.arc(px + TILE / 2, py + 27, 3.2, 0, Math.PI * 2); ctx.fill();
-  },
-
-  spiral(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2;
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.85);
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    for (let i = 0; i <= 60; i++) {
-      const t = i / 60;
-      const a = t * Math.PI * 4;
-      const r = 1 + t * 10.5;
-      const sx = cx + Math.cos(a) * r, sy = cy + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
-    }
-    ctx.stroke();
-    ctx.fillStyle = Util.shadeColor(color, 0.95);
-    ctx.beginPath(); ctx.arc(cx, cy, 1.6, 0, Math.PI * 2); ctx.fill();
-  },
-
-  mirrorsplit(ctx, px, py, color){
-    const cx = px + TILE / 2;
-    const g = ctx.createLinearGradient(px + 5, py, px + TILE - 5, py);
-    g.addColorStop(0, Util.shadeColor(color, 0.55));
-    g.addColorStop(0.48, Util.shadeColor(color, 0.05));
-    g.addColorStop(0.52, Util.shadeColor(color, 0.05));
-    g.addColorStop(1, Util.shadeColor(color, 0.55));
-    ctx.fillStyle = g;
-    ctx.fillRect(px + 6, py + 6, TILE - 12, TILE - 12);
-    ctx.fillStyle = Util.shadeColor(color, -0.8);
-    ctx.fillRect(cx - 0.75, py + 4, 1.5, TILE - 8);
-    ctx.strokeStyle = Util.shadeColor(color, 0.9);
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(px + 9, py + 22); ctx.lineTo(px + 13, py + 9);
-    ctx.moveTo(px + TILE - 9, py + 22); ctx.lineTo(px + TILE - 13, py + 9);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  },
-
-  yinyang(ctx, px, py, color){
-    const cx = px + TILE / 2, cy = py + TILE / 2, r = 9;
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2);
-    ctx.arc(cx, cy + r / 2, r / 2, Math.PI / 2, -Math.PI / 2, true);
-    ctx.arc(cx, cy - r / 2, r / 2, Math.PI / 2, -Math.PI / 2);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, 0.65);
-    ctx.beginPath(); ctx.arc(cx, cy + r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = Util.shadeColor(color, -0.75);
-    ctx.beginPath(); ctx.arc(cx, cy - r / 2, r / 6, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Util.shadeColor(color, 0.4);
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, r + 0.5, 0, Math.PI * 2); ctx.stroke();
-  },
-
-  warning(ctx, px, py, color){
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.clip();
-    ctx.fillStyle = Util.shadeColor(color, -0.7);
-    ctx.fillRect(px + 5, py + 5, TILE - 10, TILE - 10);
-    ctx.fillStyle = Util.shadeColor(color, 0.55);
-    for (let i = -2; i < 6; i++) {
-      ctx.beginPath();
-      ctx.moveTo(px + 5 + i * 9, py + 5);
-      ctx.lineTo(px + 5 + i * 9 + 4.5, py + 5);
-      ctx.lineTo(px + 5 + i * 9 + 4.5 + 22, py + TILE - 5);
-      ctx.lineTo(px + 5 + i * 9 + 22, py + TILE - 5);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    ctx.strokeStyle = Util.shadeColor(color, -0.45);
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(px + 5, py + 5, TILE - 10, TILE - 10);
-  },
 };
 
 const ROOM_TORCH_TYPES = new Set(['boss', 'miniboss', 'treasure', 'shop', 'vault', 'crystal', 'sombra', 'curse', 'supersecret', 'star']);
@@ -1070,59 +453,17 @@ function roomTorchTiles(node){
 }
 
 function drawWallTorch(ctx, px, py, pal, x, y){
-  const cx = px + TILE / 2, cy = py + TILE - 6;
-  const lean = (tileRand(x, y, 231) - 0.5) * 5;
-  ctx.fillStyle = Util.shadeColor(pal.wall, -0.42);
-  ctx.fillRect(cx - 1.5, cy - 2, 3, 9);
-  ctx.fillStyle = Util.shadeColor(pal.wall, -0.58);
-  ctx.beginPath(); ctx.ellipse(cx, cy - 3, 4, 2.2, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.save();
-  ctx.shadowColor = pal.accent; ctx.shadowBlur = 9;
-  ctx.fillStyle = pal.accent;
-  ctx.beginPath();
-  ctx.moveTo(cx + lean, cy - 15);
-  ctx.quadraticCurveTo(cx + 4.5, cy - 8, cx + 2.4, cy - 4);
-  ctx.quadraticCurveTo(cx, cy - 6.5, cx - 2.4, cy - 4);
-  ctx.quadraticCurveTo(cx - 4.5, cy - 8, cx + lean, cy - 15);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = Util.shadeColor(pal.accent, 0.35);
-  ctx.beginPath(); ctx.ellipse(cx + lean * 0.4, cy - 8, 1.6, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
+  const frame = Math.floor(tileRand(x, y, 231) * 3);
+  NightfallArt.fire(ctx, px + TILE / 2, py + TILE - 10, pal.accent,
+    Util.shadeColor(pal.accent, -0.42), frame, 1, true, false);
 }
 
-function paintDoorTile(ctx, px, py, color, style){
-  const s = style || 'panel';
-  if (s === 'portal') { paintPortalTile(ctx, px, py, color); return; }
-  paintDoorSlab(ctx, px, py, color);
-  const fn = DOOR_OVERLAYS[s];
-  if (fn) fn(ctx, px, py, color);
+function paintDoorTile(ctx, px, py, color, style, open){
+  NightfallArt.door(ctx, px, py, TILE, color, style || 'panel', open);
 }
 
 function doorStyleFor(type){
   return DOOR_STYLES[type] || DOOR_STYLES.normal;
-}
-
-function paintPortalTile(ctx, px, py, color){
-  const cx = px + TILE / 2, cy = py + TILE / 2, r = TILE / 2;
-  const g = ctx.createRadialGradient(cx - r * 0.22, cy - r * 0.22, 0, cx, cy, r);
-  g.addColorStop(0, Util.shadeColor(color, 0.55));
-  g.addColorStop(0.4, Util.shadeColor(color, 0.12));
-  g.addColorStop(0.75, color);
-  g.addColorStop(1, Util.shadeColor(color, -0.6));
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2); ctx.fill();
-  ctx.lineWidth = 1.3;
-  ctx.strokeStyle = Util.shadeColor(color, 0.62);
-  ctx.globalAlpha = 0.85;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 2.5, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = Util.shadeColor(color, 0.2);
-  ctx.globalAlpha = 0.5;
-  ctx.beginPath(); ctx.arc(cx, cy, r - 6, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = Util.shadeColor(color, -0.4);
-  ctx.beginPath(); ctx.arc(cx, cy, r - 0.75, 0, Math.PI * 2); ctx.stroke();
 }
 
 function paintStarfieldTile(ctx, px, py, tx, ty, pal, depth){
@@ -1389,7 +730,7 @@ Object.assign(Game.prototype, {
         }
         if (t === T_DOOR) {
           paintStarfieldTile(ctx, px, py, x, y, pal, 0.10);
-          paintPortalTile(ctx, px, py, node.doorsOpen ? Theme.door.planetarium.open : Theme.door.planetarium.locked);
+          paintDoorTile(ctx, px, py, node.doorsOpen ? Theme.door.planetarium.open : Theme.door.planetarium.locked, 'portal', node.doorsOpen);
           continue;
         }
 
@@ -1424,7 +765,7 @@ Object.assign(Game.prototype, {
       const style = doorStyleFor(destType);
       for (const c of slot.cells) {
         paintStarfieldTile(ctx, c.x * TILE, c.y * TILE, c.x, c.y, pal, 0.10);
-        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style);
+        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style, node.doorsOpen);
       }
     }
   },
@@ -1553,7 +894,7 @@ Object.assign(Game.prototype, {
           continue;
         }
         if (t === T_DOOR) {
-          paintDoorTile(ctx, px, py, node.doorsOpen ? pal.doorOpen : pal.doorLocked);
+          paintDoorTile(ctx, px, py, node.doorsOpen ? pal.doorOpen : pal.doorLocked, null, node.doorsOpen);
           if (!node.doorsOpen) lockedCells.set(y * node.tileW + x, { x, y, color: pal.doorLocked });
           continue;
         }
@@ -1642,7 +983,7 @@ Object.assign(Game.prototype, {
       const col = isSecretSlot ? table.open : (node.doorsOpen ? table.open : table.locked);
       const style = doorStyleFor(destType);
       for (const c of slot.cells) {
-        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style);
+        paintDoorTile(ctx, c.x * TILE, c.y * TILE, col, style, node.doorsOpen);
         if (!isSecretSlot && !node.doorsOpen) lockedCells.set(c.y * node.tileW + c.x, { x: c.x, y: c.y, color: col });
       }
     }
@@ -1688,7 +1029,7 @@ Object.assign(Game.prototype, {
     ctx.save();
     for (const p of props) {
       if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1) continue;
-      drawDecorProp(ctx, p, pal);
+      NightfallArt.prop(ctx, p, pal);
     }
     ctx.restore();
   },
