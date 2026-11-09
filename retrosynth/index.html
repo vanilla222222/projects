@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retrosynth</title>
+<style>
+:root{
+  --bg:#17181a; --panel:#1f2124; --sunk:#141517; --line:#2e3135; --ink:#e8e6e1; --dim:#9a968d;
+  --accent:#4fc3b3; --accent-soft:#1d3330; --warn:#d2944f; --bad:#d97070;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+body[data-theme="light"]{
+  --bg:#f6f4ef; --panel:#fffdf8; --sunk:#efece4; --line:#e2dccf; --ink:#2b2922; --dim:#6f6a5d;
+  --accent:#3fa89b; --accent-soft:#e3f2f0; --warn:#b4703a; --bad:#b35050;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 64px}
+a{color:var(--accent)}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em}
+h2{font-size:17px;margin:34px 0 10px}
+h3{font-size:13px;margin:0 0 9px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.lede{color:var(--dim);margin:0;max-width:64ch}
+.back{color:var(--dim);text-decoration:none;font-size:13px}
+.back:hover{color:var(--accent)}
+button.theme{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:9px;padding:7px 12px;cursor:pointer;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:24px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 14px}
+.stat b{display:block;font-size:23px;letter-spacing:-.02em;color:var(--accent)}
+.stat span{color:var(--dim);font-size:12px}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
+  border-radius:0 10px 10px 0;padding:12px 14px;color:var(--dim);font-size:14px;margin:14px 0}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+td code{font-family:var(--mono);font-size:12.5px}
+.yes{color:var(--accent)} .no{color:var(--dim)}
+
+.set-error{background:var(--panel);border:1px solid var(--bad);color:var(--bad);
+  border-radius:9px;padding:10px 13px;margin-bottom:12px;font-size:14px}
+.set-channel{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:13px 14px;margin-bottom:10px}
+.set-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.set-inline>*{flex:0 0 auto}
+.set-inline .set-mirror{flex:1 1 220px;min-width:0}
+.set-mirror{width:100%;background:var(--sunk);border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:9px 11px;font-family:var(--mono);font-size:13px}
+.set-json{resize:vertical;line-height:1.5}
+.set-btn{background:var(--accent);color:#09211d;border:0;border-radius:8px;padding:9px 14px;
+  font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.set-btn.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:500}
+.set-btn.ghost:hover{color:var(--accent);border-color:var(--accent)}
+.set-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-bottom:10px}
+.set-group{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 14px}
+.set-row{margin-bottom:13px}
+.set-row:last-child{margin-bottom:0}
+.set-label{display:block;font-size:13px;margin-bottom:4px}
+.set-input{width:100%;background:var(--sunk);border:1px solid var(--line);color:var(--ink);
+  border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit}
+input.set-input[type=checkbox]{width:auto;accent-color:var(--accent)}
+.set-help{color:var(--dim);font-size:12px;margin:4px 0 0;line-height:1.45}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+
+<header>
+  <div>
+    <a class="back" href="../index.html">&larr; Project Index</a>
+    <h1>Retrosynth</h1>
+    <p class="lede">A retrosynthesis engine built the way Chemical Graph Constructor is built —
+      plain scripts, no build step, a molecular graph the code can reason about — without the
+      ceilings that stop its planner at three steps.</p>
+  </div>
+  <button class="theme" id="theme" type="button">Light</button>
+</header>
+
+<div class="stats">
+  <div class="stat"><b id="s-elements">—</b><span>elements understood</span></div>
+  <div class="stat"><b id="s-settings">—</b><span>settings</span></div>
+  <div class="stat"><b>5</b><span>ways to set them</span></div>
+  <div class="stat"><b id="s-checks">421</b><span>checks passing</span></div>
+</div>
+
+<div class="note">
+  <strong>Under construction, and these numbers say exactly how far.</strong> The element table
+  and the settings layer are built and tested. The molecule model, SMILES reader and writer,
+  substructure matching, the transform library and the search are not written yet, so nothing
+  below plans a route — what works today is the configuration the planner will run under.
+</div>
+
+<h2>Why rebuild rather than extend</h2>
+<p class="lede" style="max-width:none">Chemical Graph Constructor's planner is good at what it is
+  for. Its limits are structural rather than incidental, and each one is the sort of thing that is
+  easier to design out at the start than to retrofit.</p>
+
+<table>
+  <tr><th>Chemical Graph Constructor</th><th>Here</th><th>Why it matters</th></tr>
+  <tr>
+    <td>9 elements: C N O S P F Cl Br I</td>
+    <td class="yes">31, with valence <em>lists</em></td>
+    <td>No boron means no Suzuki coupling; no silicon means TBS and TMS are labels rather than
+      chemistry. One valence per element makes every sulfone a permanent error.</td>
+  </tr>
+  <tr>
+    <td><code>maxDepth: 3</code>, 1.5&nbsp;s budget</td>
+    <td class="yes">depth to 20, budget to 10&nbsp;min</td>
+    <td>Real routes run eight to fifteen steps. Three is a hint, not a route.</td>
+  </tr>
+  <tr>
+    <td>27 settings, one hand-written validator</td>
+    <td class="yes">31 settings, declared once</td>
+    <td>There, adding a setting means editing the defaults, the validator, the bounds, the UI and
+      the tests. Here the row generates all of them.</td>
+  </tr>
+  <tr>
+    <td>One <code>priority</code> choice</td>
+    <td class="yes">Five independent weights</td>
+    <td>Cost and precedent can be traded off against each other instead of one winning outright.</td>
+  </tr>
+  <tr>
+    <td>Stops at a depth limit</td>
+    <td class="yes">Stops at a buyable catalogue</td>
+    <td>A route should end where you can place an order, not where the counter ran out.</td>
+  </tr>
+</table>
+
+<h2>Settings, five ways</h2>
+<p class="lede" style="max-width:none">Every control below is generated from the schema, so the
+  typed line, the link, the JSON and the saved profile cannot drift apart from it. They compose in
+  order — defaults, then a saved profile, then the URL, then what you type, then anything a single
+  search overrides — so a shared link can carry a policy and one word can adjust it without
+  disturbing the rest.</p>
+
+<div id="settings"></div>
+
+<footer>
+  Built the way <a href="../chem%20lab/index.html">Chemical Graph Constructor</a> is built: open
+  the file, no build step. Nothing here is chemistry advice.
+</footer>
+
+</div>
+
+<script src="js/registry.js"></script>
+<script src="js/elements.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/settings-ui.js"></script>
+<script>
+document.getElementById('s-elements').textContent =
+  Object.keys(RETRO.elements.VALENCES).length;
+document.getElementById('s-settings').textContent = RETRO.settings.SCHEMA.length;
+
+RETRO.settingsUI.settingsUI(document.getElementById('settings'), RETRO.settings, () => {});
+
+const theme = document.getElementById('theme');
+try {
+  const saved = localStorage.getItem('project-index-theme');
+  if (saved) document.body.dataset.theme = saved;
+} catch (err) { void err; }
+theme.textContent = document.body.dataset.theme === 'dark' ? 'Light' : 'Dark';
+theme.addEventListener('click', () => {
+  const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = next;
+  theme.textContent = next === 'dark' ? 'Light' : 'Dark';
+  try { localStorage.setItem('project-index-theme', next); } catch (err) { void err; }
+});
+</script>
+</body>
+</html>

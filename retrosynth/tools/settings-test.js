@@ -157,6 +157,32 @@ throws(() => S.normalize({ families: ['coupling'], banFamilies: ['coupling'] }),
 throws(() => S.normalize({ families: ['nonsense'] }), 'an unknown reaction family was accepted');
 throws(() => S.normalize({ banHazards: ['spicy'] }), 'an unknown hazard class was accepted');
 
+// --- element names are checked, and checked the same way everywhere ------
+// This block exists because the check used to reach for a browser global.
+// In Node that global is absent, so element names were validated on the page
+// and waved through here: the suite was green while the page threw on
+// "noelement:Cr,Os". A test that only runs where the check is skipped is not
+// a test, so these assert the behaviour rather than the plumbing.
+{
+  const E = require('../js/elements.js');
+  ok(typeof E.isElementSymbol === 'function', 'elements.js exposes no symbol check');
+  ok(S.parse('noelement:Os').banElements[0] === 'Os',
+    'osmium was refused; the ban list must accept any real element, not only bondable ones');
+  ok(S.parse('noelement:hg,TL,pb').banElements.join(',') === 'Hg,Tl,Pb',
+    'element symbols should be accepted in any case and normalised');
+  throws(() => S.parse('noelement:Xx'), 'a non-element was accepted in the ban list');
+  throws(() => S.parse('noelement:carbon'), 'an element name rather than a symbol was accepted');
+  // The same string, through every channel, must agree.
+  const viaObject = S.normalize({ banElements: ['Cr', 'Os'] }).banElements.join(',');
+  const viaTyped = S.parse('noelement:Cr,Os').banElements.join(',');
+  const viaUrl = S.fromQuery('noelement=Cr,Os').banElements.join(',');
+  ok(viaObject === viaTyped && viaTyped === viaUrl,
+    'element lists disagree between channels: ' + [viaObject, viaTyped, viaUrl].join(' | '));
+  // And resolve, which is what the page actually calls.
+  ok(S.resolve([S.defaults(), 'depth:14 noelement:Cr,Os']).maxDepth === 14,
+    'resolve() failed on a command containing an element ban');
+}
+
 // --- booleans, written every way -----------------------------------------
 for (const [text, expected] of [['cryo:off', false], ['cryo:false', false], ['cryo:no', false],
   ['cryo:0', false], ['!cryo', false], ['-cryo', false],

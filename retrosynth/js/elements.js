@@ -44,6 +44,21 @@ const MASSES = {
   Fe: 55.93494, Al: 26.98154, Ti: 47.94794, Cr: 51.94051, Mn: 54.93805,
 };
 
+// Every real element symbol. Separate from VALENCES on purpose: that table is
+// "what the engine can put in a molecule", this is "what is a real element".
+// The two get confused the moment someone bans osmium or mercury from their
+// reagents - entirely reasonable, and neither is something you would bond into
+// a structure here.
+const SYMBOLS = new Set(('H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe '
+  + 'Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba '
+  + 'La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn '
+  + 'Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv '
+  + 'Ts Og').split(' '));
+
+function isElementSymbol(text) {
+  return SYMBOLS.has(text);
+}
+
 function valencesFor(element) {
   return VALENCES[element] || null;
 }
@@ -92,8 +107,8 @@ function implicitHydrogens(element, charge, bondOrderSum, aromatic) {
 }
 
 const EXPORTS_elements = {
-  VALENCES, MASSES, valencesFor, isKnown, isMetal, canBeAromatic,
-  inOrganicSubset, massOf, implicitHydrogens,
+  VALENCES, MASSES, SYMBOLS, isElementSymbol, valencesFor, isKnown, isMetal,
+  canBeAromatic, inOrganicSubset, massOf, implicitHydrogens,
 };
 
 if (typeof module !== 'undefined' && module.exports) {

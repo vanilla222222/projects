@@ -5,6 +5,7 @@ const PROJECTS = [
     { folder: "polyomino-tetris", name: "Polyfall", tag: "Game", description: "Falling blocks that grow with your score. Start with dominoes and evolve into larger polyominoes.", icon: "cells", accent: "#75b88d" },
     { folder: "fathom", name: "Fathom", tag: "Game", description: "Dig into an endless world. Seeded terrain, biomes, ore and caves, lit by torchlight as you go down.", icon: "pick", accent: "#c08a4a" },
     { folder: "molecule profiler", name: "Molecule Profiler", tag: "Tool", description: "Paste a SMILES string and get physicochemistry, drug-likeness filters and absorption plots.", icon: "radar", accent: "#3fa89b" },
+    { folder: "retrosynth", name: "Retrosynth", tag: "Tool", description: "Plan a synthesis backwards from the molecule you want. In progress; the settings layer is live.", icon: "retro", accent: "#4f8fb8" },
     { folder: "cellular automata", name: "Automaton", tag: "Simulation", description: "Configurable cellular life. Tweak the rules and watch patterns emerge.", icon: "cells", accent: "#4f9a8a" },
     { folder: "chem lab", name: "Chemical Graph Constructor", tag: "Tool", description: "Build molecules atom by atom and explore their structure.", icon: "molecule", accent: "#8a6fb8" },
     { folder: "Evolution Sim", name: "Evolution Sim", tag: "Simulation", description: "Procedural world maps with biomes from altitude, temperature and humidity.", icon: "globe", accent: "#6f9a4f" },

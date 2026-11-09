@@ -17,6 +17,14 @@
 // so a shared link can carry a policy, the box can tweak one thing without
 // disturbing it, and a single search can override anything without saving.
 
+// Resolved the same way in both environments. Reaching for a global that only
+// exists in the browser meant element names were validated on the page and
+// waved through in Node, so the tests passed while the page threw - the exact
+// shape of bug that makes a green suite worthless.
+const ELEMENTS = (typeof require === 'function' && typeof module !== 'undefined')
+  ? require('./elements.js')
+  : (typeof RETRO !== 'undefined' ? RETRO.elements : null);
+
 const GROUPS = ['Search', 'Ranking', 'Chemistry', 'Conditions', 'Stock', 'Safety'];
 
 // type: int | number | bool | enum | list | text
@@ -216,10 +224,11 @@ function coerce(entry, raw) {
     if (entry.of === 'element') {
       return cleaned.map((item) => {
         const symbol = item.charAt(0).toUpperCase() + item.slice(1).toLowerCase();
-        const table = (typeof RETRO !== 'undefined' && RETRO.elements)
-          || (typeof require === 'function' ? null : null);
-        if (table && !table.isKnown(symbol)) {
-          fail('Unknown element "' + item + '".');
+        // Any real element, not only the ones the engine can bond. Banning
+        // osmium or mercury from your reagents is exactly the point of this
+        // setting, and neither is something you would draw into a structure.
+        if (ELEMENTS && !ELEMENTS.isElementSymbol(symbol)) {
+          fail('"' + item + '" is not an element symbol.');
         }
         return symbol;
       });
