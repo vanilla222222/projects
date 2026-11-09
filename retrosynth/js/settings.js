@@ -147,16 +147,16 @@ const SCHEMA = [
     help: 'Reject steps recorded above this.' },
   { key: 'allowCryogenic', group: 'Conditions', type: 'bool', def: true,
     alias: ['cryo'], label: 'Allow cryogenic steps',
-    help: 'Steps needing −78 °C or colder.' },
+    help: 'Turn off to exclude rules with a recorded temperature of −78 °C or colder.' },
   { key: 'allowPressure', group: 'Conditions', type: 'bool', def: true,
-    label: 'Allow pressurised steps', help: 'Steps above one atmosphere.' },
+    label: 'Allow pressurised steps', help: 'Turn off to exclude rules explicitly marked as pressurised or recorded above one atmosphere. Unrecorded pressure is unknown.' },
   { key: 'allowPhotochemistry', group: 'Conditions', type: 'bool', def: true,
-    alias: ['photo'], label: 'Allow photochemistry', help: '' },
+    alias: ['photo'], label: 'Allow photochemistry', help: 'Turn off to exclude rules explicitly marked as photochemical. Missing tags are treated as unknown.' },
   { key: 'allowElectrochemistry', group: 'Conditions', type: 'bool', def: true,
-    alias: ['electro'], label: 'Allow electrochemistry', help: '' },
+    alias: ['electro'], label: 'Allow electrochemistry', help: 'Turn off to exclude rules explicitly marked as electrochemical. Missing tags are treated as unknown.' },
   { key: 'allowAirSensitive', group: 'Conditions', type: 'bool', def: true,
     alias: ['airfree'], label: 'Allow air-sensitive steps',
-    help: 'Steps needing a glovebox or Schlenk line.' },
+    help: 'Turn off to exclude rules explicitly marked as air-sensitive. Unrecorded atmosphere requirements are unknown.' },
   { key: 'banSolvents', group: 'Conditions', type: 'list', of: 'text', def: [],
     alias: ['nosolvent'], label: 'Banned solvents',
     help: 'e.g. benzene,dioxane,hmpa' },
@@ -189,8 +189,7 @@ const SCHEMA = [
 
 // Preserve older profiles and shared links, but do not claim the engine enforces these.
 const UNAPPLIED = new Set([
-  'strategy', 'banElements', 'stereo', 'protection', 'allowCryogenic', 'allowPressure',
-  'allowPhotochemistry', 'allowElectrochemistry', 'allowAirSensitive', 'maxPricePerGram',
+  'strategy', 'banElements', 'stereo', 'protection', 'maxPricePerGram',
   'scale', 'banHazards', 'maxChromatography',
 ]);
 

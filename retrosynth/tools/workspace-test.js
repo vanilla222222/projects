@@ -8,6 +8,7 @@ const settings = require('../js/settings.js');
 const smiles = require('../js/smiles.js');
 const search = require('../js/search.js');
 const analogues = require('../js/analogues.js');
+const { conditionsAllowed } = require('../js/transforms.js');
 
 const canonical = smiles.canonical;
 const target = canonical('CCCCCC'), intermediate = canonical('CCCCC');
@@ -53,6 +54,20 @@ vm.runInContext(js('worker.js'), worker, { filename:'worker.js' });
 worker.self.onmessage({ data:settings.normalize({ target:'O=C(NCc1ccccc1)c1ccc(-c2ccncc2)cc1' }) });
 assert.equal(messages.at(-1).type, 'result');
 assert.ok(messages.at(-1).result.routes.length);
+const restricted = {
+  allowCryogenic:false, allowPressure:false, allowPhotochemistry:false,
+  allowElectrochemistry:false, allowAirSensitive:false,
+};
+for (const conditions of [{ temperature:-78 }, { pressureAtm:2 }, { photochemical:true },
+  { electrochemical:true }, { airSensitive:true }]) {
+  assert.equal(conditionsAllowed(conditions, restricted), false);
+  assert.equal(conditionsAllowed(conditions, {}), true);
+}
+assert.equal(conditionsAllowed({ temperature:-77, pressureAtm:1 }, restricted), true);
+worker.self.onmessage({ data:settings.normalize({ target:'O=C(NCc1ccccc1)c1ccc(-c2ccncc2)cc1', ...restricted }) });
+assert.equal(messages.at(-1).type, 'result');
+assert.ok(messages.at(-1).result.routes.length);
+assert.match(messages.at(-1).result.conditionNotice, /unknown/);
 worker.self.onmessage({ data:settings.normalize({ target:'CCO', banHazards:['pyrophoric'] }) });
 assert.equal(messages.at(-1).type, 'error');
 assert.match(messages.at(-1).message, /not supported/);
