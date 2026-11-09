@@ -1,8 +1,0 @@
-{
- "catalogue": "buyables.json.gz",
- "rows": 280469,
- "unparseable": 85,
- "duplicates_collapsed": 47437,
- "stock_size": 204210,
- "note": "Supplier catalogue (eMolecules via ASKCOS). Prices are per gram."
-}
