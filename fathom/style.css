@@ -660,3 +660,22 @@ html, body {
 .town-body p { margin: 8px 0; color: var(--dim); }
 .town-search { padding: 8px; margin: 10px 0 0; color: var(--ink); background: #0b101d; border: 1px solid var(--edge); }
 .town-action { display: block; width: 100%; text-align: left; margin: 4px 0; min-height: 34px; }
+
+.touch-slot-tools{ display:none; }
+@media (pointer: coarse){
+  .touch-slot-tools{ display:flex; flex-wrap:wrap; gap:4px; }
+  .touch-slot-tools button{ min-height:40px; }
+  .touch-slot-tools button[aria-pressed="true"]{ border-color:#a9d5ff; background:#38577a; }
+  .touch-menu{
+    right:max(6px, env(safe-area-inset-right)); overflow-x:auto;
+    scrollbar-width:none; overscroll-behavior-x:contain;
+  }
+  #touch-controls .touch-menu button{ flex:none; touch-action:pan-x; }
+  .town-panel{ width:min(460px, 94vw); max-height:72dvh; }
+  .town-action, .town-header button{ min-height:44px; }
+  .town-search{ font-size:16px; }
+}
+@media (pointer: coarse) and (max-width:350px){
+  #touch-controls .touch-act button{ font-size:11px; padding-inline:4px; }
+  #touch-controls .touch-move button{ min-width:40px; }
+}

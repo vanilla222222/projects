@@ -192,7 +192,7 @@ function startDrag() {
 }
 
 function onPointerMove(e) {
-    if (!press) return;
+    if (!press || press.id !== e.pointerId) return;
     if (!press.ghost) {
         if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < 6) return;
         clearTimeout(press.timer);
@@ -211,15 +211,19 @@ function onPointerMove(e) {
     else if (e.clientY > innerHeight - 50) scrollBy(0, 12);
 }
 
-function onPointerUp() {
-    if (!press) return;
+function onPointerUp(e) {
+    if (!press || press.id !== e.pointerId) return;
     clearTimeout(press.timer);
-    const { node, ghost, zone } = press;
+    const { node, ghost, zone, touch } = press;
     press = null;
-    if (!ghost) return;
+    if (!ghost) {
+        if (touch && e.type === 'pointerup') showMenu(node.dataset.id, e.clientX, e.clientY);
+        return;
+    }
     ghost.remove();
     zone?.classList.remove("over");
     document.body.classList.remove("dragging");
+    if (e.type === 'pointercancel') { render(); return; }
     const id = node.dataset.id;
     if (zone?.dataset.zone === "trash") return removeItem(id);
     // Read the new order back from the DOM.
@@ -233,7 +237,7 @@ document.addEventListener("pointerdown", (e) => {
     if (!menuEl.contains(e.target)) menuEl.hidden = true;
     const node = e.target.closest(".item");
     if (!node || e.button !== 0 || press) return;
-    press = { node, x: e.clientX, y: e.clientY };
+    press = { id:e.pointerId, node, x:e.clientX, y:e.clientY, touch:e.pointerType === "touch" };
     // Long-press on touch opens the item menu.
     if (e.pointerType === "touch") press.timer = setTimeout(() => {
         showMenu(node.dataset.id, press.x, press.y);
@@ -248,10 +252,16 @@ window.addEventListener("pointercancel", onPointerUp);
 
 function showMenu(id, x, y) {
     menuEl.dataset.id = id;
+    const select = $("move-tier");
+    const options = state.tiers.map((tier, i) => new Option(tier.label, String(i)));
+    options.push(new Option("Unranked", "pool"));
+    select.replaceChildren(...options);
+    const current = state.tiers.findIndex(tier => tier.items.includes(id));
+    select.value = current < 0 ? "pool" : String(current);
     menuEl.hidden = false;
     const { width, height } = menuEl.getBoundingClientRect();
-    menuEl.style.left = `${Math.min(x, innerWidth - width - 8)}px`;
-    menuEl.style.top = `${Math.min(y, innerHeight - height - 8)}px`;
+    menuEl.style.left = `${Math.max(8, Math.min(x, innerWidth - width - 8))}px`;
+    menuEl.style.top = `${Math.max(8, Math.min(y, innerHeight - height - 8))}px`;
 }
 
 document.addEventListener("contextmenu", (e) => {
@@ -262,7 +272,22 @@ document.addEventListener("contextmenu", (e) => {
 });
 
 menuEl.addEventListener("click", (e) => {
-    if (e.target.dataset.action === "remove") removeItem(menuEl.dataset.id);
+    const action = e.target.dataset.action;
+    if (!action) return;
+    const id = menuEl.dataset.id;
+    if (action === "remove") removeItem(id);
+    if (action === "move" && state.items[id]) {
+        const value = $("move-tier").value;
+        const target = value === "pool" ? state.pool : state.tiers[Number(value)]?.items;
+        if (target && !target.includes(id)) {
+            for (const list of [state.pool, ...state.tiers.map(tier => tier.items)]) {
+                const index = list.indexOf(id);
+                if (index >= 0) list.splice(index, 1);
+            }
+            target.push(id);
+            commit();
+        }
+    }
     menuEl.hidden = true;
 });
 

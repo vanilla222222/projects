@@ -492,3 +492,43 @@ h3 .sw { width: 24px; height: 24px; font-size: 9px; }
 .txs .tab{padding:2px 6px}
 .rfind { width: 100%; box-sizing: border-box; margin-bottom: 3px; padding: 4px 6px; background: #0d0e10; color: #e8e0d0; border: 1px solid #3a3d44; border-radius: 4px; font: inherit; font-size: 12px; }
 .rfind:focus { outline: none; border-color: #ffb43a; }
+
+
+#factoryTouch[hidden]{ display:none; }
+.factory-touch body{
+  height:100dvh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.factory-touch #cv, .factory-touch #wmap, .factory-dpad button{ touch-action:none; }
+.factory-touch #top, .factory-touch #hotbar{ justify-content:flex-start; gap:6px; }
+.factory-touch #top > *{ flex:none; }
+.factory-touch #top .sp, .factory-touch kbd, .factory-touch #tip{ display:none !important; }
+.factory-touch #top button, .factory-touch #top .back{ min-height:42px; }
+.factory-touch #top .back{ min-width:34px; text-align:center; }
+.factory-touch #hotbar .hand{ width:auto; max-width:160px; }
+.factory-touch #hud{ top:5px; right:5px; width:84px; }
+.factory-touch #mini{ width:84px; height:84px; }
+.factory-touch #hstat{ max-height:26dvh; }
+.factory-touch #panel{ inset:5px 94px auto 5px; width:auto; max-height:calc(100% - 10px); }
+.factory-touch .mwin{ max-height:94dvh; }
+.factory-touch .mhead .tabs{ min-width:0; overflow-x:auto; flex-wrap:nowrap; }
+.factory-touch .mhead button{ min-height:42px; flex:none; }
+.factory-touch .mbody :is(input, select, textarea){ font-size:16px; }
+#factoryTouch{ flex:none; display:flex; align-items:center; gap:8px; padding:4px 6px; background:var(--bg2); }
+.factory-dpad{ display:grid; grid-template-columns:repeat(3, 44px); gap:3px; flex:none; }
+.factory-dpad button{ width:44px; height:44px; padding:0; }
+.factory-dpad button:first-child{ grid-column:2; }
+.factory-dpad button:nth-child(2){ grid-column:1; }
+.factory-dpad button.held{ border-color:var(--acc); background:#594228; }
+.factory-touch-actions{
+  display:grid; grid-auto-flow:column; grid-template-rows:repeat(2, 44px);
+  grid-auto-columns:max-content; gap:3px; min-width:0; overflow-x:auto;
+  scrollbar-width:thin; overscroll-behavior-x:contain;
+}
+.factory-touch-actions button{ min-width:44px; }
+.factory-touch-actions select{ width:118px; font-size:16px; }
+@media (orientation:landscape) and (max-height:500px){
+  .factory-dpad{ grid-template-columns:repeat(4, 44px); }
+  .factory-dpad button:first-child, .factory-dpad button:nth-child(2){ grid-column:auto; }
+  .factory-touch-actions{ grid-template-rows:44px; }
+}

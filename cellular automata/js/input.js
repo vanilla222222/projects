@@ -321,7 +321,7 @@
       const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
       const midX = (t0.clientX + t1.clientX) / 2;
       const midY = (t0.clientY + t1.clientY) / 2;
-      state.boardView.zoom = clamp(touchZoomState.startZoom * (dist / touchZoomState.startDist), 0.25, 8);
+      state.boardView.zoom = clamp(touchZoomState.startZoom * (dist / Math.max(1, touchZoomState.startDist)), 0.25, 8);
       state.boardView.panX = touchZoomState.startPanX + (midX - touchZoomState.startMidX);
       state.boardView.panY = touchZoomState.startPanY + (midY - touchZoomState.startMidY);
       applyBoardTransform();
@@ -332,6 +332,14 @@
     painting = false;
     if (e.touches.length < 2) touchZoomState = null;
   });
+  function cancelBoardTouch() {
+    painting = false;
+    touchZoomState = null;
+    boardPanning = false;
+    canvasFrameEl.classList.remove("is-panning");
+  }
+  canvasFrameEl.addEventListener("touchcancel", cancelBoardTouch);
+  window.addEventListener("blur", cancelBoardTouch);
 
   canvasFrameEl.addEventListener("keydown", (e) => {
     if (e.code === "Space") { e.preventDefault(); togglePlay(); }

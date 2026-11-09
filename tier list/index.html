@@ -37,10 +37,14 @@
     </section>
   </main>
 
-  <div id="trash" class="trash zone" data-zone="trash">Drop here to remove</div>
+  <div id="trash" class="trash zone" data-zone="trash">Drop here to remove · Tap an item for options</div>
 
   <div id="menu" class="menu" hidden>
+    <label for="move-tier">Move item to</label>
+    <select id="move-tier"></select>
+    <button type="button" data-action="move">Move item</button>
     <button type="button" data-action="remove">Remove item</button>
+    <button type="button" data-action="close">Close</button>
   </div>
 
   <dialog id="tier-dialog" class="dialog">
