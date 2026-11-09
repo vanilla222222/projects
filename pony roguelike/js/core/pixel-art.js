@@ -343,6 +343,185 @@ const NightfallArt = (() => {
     return '<img class="nightfall-pixel-icon" alt="" src="' + enemyAsset(def, false, boss).toDataURL() + '">';
   }
 
+  // These stamps are used at 2x in world space, independent of the text canvas.
+  const doorGlyphs = {
+    panel: ['11111','10001','10101','10001','11111'],
+    arch: ['01110','11011','10001','10001','10001'],
+    skull: ['01110','11111','10101','11111','01010'],
+    gem: ['00100','01110','11011','01110','00100'],
+    awning: ['11111','10101','11111','10001','10001'],
+    cracked: ['00100','01100','00110','00100','00010'],
+    paw: ['10101','10101','00000','01110','11111'],
+    thorn: ['00100','01101','10111','01100','00100'],
+    drip: ['00100','00100','01110','11111','01110'],
+    vaultslab: ['01110','10101','11111','10101','01110'],
+    blades: ['10001','01010','00100','01010','11011'],
+    facet: ['00100','01110','11111','01110','01110'],
+    eclipse: ['00110','01100','01100','01100','00110'],
+    starburst: ['00100','10101','01110','10101','00100'],
+    grate: ['11111','10101','10101','10101','11111'],
+    candle: ['00100','01110','00100','01110','11111'],
+    coinslot: ['01110','11011','11011','11011','01110'],
+    spiral: ['11111','10001','10101','10111','10000'],
+    mirrorsplit: ['11001','11011','10001','11011','10011'],
+    yinyang: ['01110','11001','11101','10111','01110'],
+    warning: ['10101','01010','10101','01010','10101']
+  };
+
+  function roomAsset(key, size, paint) {
+    if (!assets.has(key)) {
+      const canvas = surface(size, size);
+      paint(canvas.getContext('2d'));
+      assets.set(key, { canvas });
+    }
+    return assets.get(key).canvas;
+  }
+
+  function door(ctx, x, y, size, color, style, open) {
+    const key = ['door', style, color, open].join(':');
+    const art = roomAsset(key, 16, c => {
+      const shadow = Util.shadeColor(color, -0.57);
+      const edge = Util.shadeColor(color, 0.24);
+      const shine = Util.shadeColor(color, 0.56);
+      const portal = style === 'portal';
+      rect(c, '#181323', 0, 0, 16, 16);
+      if (portal) {
+        for (const [i, [start, width]] of [[4,8],[2,12],[1,14],[1,14],[0,16],[0,16],[0,16],[0,16],
+          [0,16],[0,16],[0,16],[0,16],[1,14],[1,14],[2,12],[4,8]].entries()) {
+          rect(c, i > 10 ? shadow : edge, start, i, width, 1);
+          if (width > 4) rect(c, i > 7 ? shadow : color, start + 2, i, width - 4, 1);
+        }
+        for (let n = 0; n < 8; n++) {
+          rect(c, n % 3 === 0 ? shine : color, 4 + (n * 5) % 8, 4 + (n * 7) % 8, n % 2 + 1, 1);
+        }
+        rect(c, open ? '#fff0bc' : shadow, 7, 6, 2, 4);
+        return;
+      }
+      rect(c, shadow, 1, 1, 14, 14);
+      rect(c, color, 2, 2, 12, 12);
+      rect(c, edge, 3, 2, 10, 2);
+      rect(c, edge, 2, 4, 2, 10);
+      rect(c, shadow, 12, 4, 2, 10);
+      rect(c, open ? '#1c1725' : Util.shadeColor(color, -0.25), 4, 4, 8, 10);
+      if (!open) {
+        rect(c, shadow, 4, 12, 8, 2);
+        rect(c, shine, 7, 12, 2, 1);
+      } else {
+        rect(c, shadow, 5, 11, 6, 2);
+        rect(c, edge, 6, 12, 4, 1);
+      }
+      for (const px of [3, 12]) for (const py of [3, 13]) rect(c, shine, px, py, 1, 1);
+      const glyph = doorGlyphs[style] || doorGlyphs.panel;
+      glyph.forEach((row, py) => [...row].forEach((bit, px) => {
+        if (bit === '1') rect(c, shine, 6 + px, 5 + py, 1, 1);
+      }));
+    });
+    blit(ctx, art, x, y, size, size);
+  }
+
+  const flameFrames = [
+    ['....#.....','....##....','..#.###...','..#####...','.#######..','.#######..','#########.','#########.','.#######..','..#####...'],
+    ['......#...','...#.##...','...####...','..######..','..######..','.########.','.########.','##########','.########.','..######..'],
+    ['...#......','...##.....','..###..#..','..######..','.#######..','.########.','#########.','#########.','.########.','..#####...']
+  ];
+
+  function fire(ctx, x, y, color, dark, frame, health, wall, flash) {
+    const key = ['fire', color, dark, frame, wall, flash].join(':');
+    const art = roomAsset(key, 16, c => {
+      rect(c, '#211624', wall ? 5 : 2, 12, wall ? 6 : 12, 3);
+      rect(c, wall ? '#5b4b59' : '#6f4536', wall ? 6 : 3, 13, wall ? 4 : 10, 2);
+      rect(c, wall ? '#8e7a86' : '#a56c43', wall ? 7 : 4, 13, wall ? 2 : 7, 1);
+      flameFrames[frame].forEach((row, py) => [...row].forEach((bit, px) => {
+        if (bit !== '#') return;
+        const rim = row[px - 1] !== '#' || row[px + 1] !== '#';
+        rect(c, flash ? '#fff6d3' : rim ? dark : color, px + 3, py + 2, 1, 1);
+        if (!flash && py >= 6 && px >= 4 && px <= 6 && !rim) {
+          rect(c, Util.shadeColor(color, 0.68), px + 3, py + 2, 1, 1);
+        }
+      }));
+    });
+    const size = wall ? 20 : 32;
+    const height = size * (0.66 + 0.34 * health);
+    blit(ctx, art, x - size / 2, y + size * 0.43 - height, size, height);
+  }
+
+  function rock(ctx, ob, variant, flash) {
+    const cy = ob.tall ? -6 : 0;
+    const size = 24;
+    const color = ob.def.color;
+    const art = roomAsset(['rock', ob.kind, ob.radius, ob._rockMask, variant, color, flash].join(':'), size, c => {
+      const outline = /hardrock/.test(ob.kind) ? '#302337' : ob.def.dark;
+      const mid = flash ? '#f2d9cb' : color;
+      const light = Util.shadeColor(mid, 0.26);
+      const shade = Util.shadeColor(mid, -0.24);
+      const points = rockShapePoints(24, 24 + cy, ob.radius, variant, ob._rockMask);
+      const inside = (x, y) => {
+        let hit = false;
+        for (let i = 0, j = points.length - 2; i < points.length; j = i, i += 2) {
+          const xi = points[i], yi = points[i + 1], xj = points[j], yj = points[j + 1];
+          if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) hit = !hit;
+        }
+        return hit;
+      };
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const sx = x * 2 + 1, sy = y * 2 + 1;
+        if (!inside(sx, sy)) continue;
+        const edge = !inside(sx - 2, sy) || !inside(sx + 2, sy) || !inside(sx, sy + 2);
+        const top = !inside(sx, sy - 2) || x + y < 20 + variant;
+        const vein = (x * 2 + y + variant * 3) % 17 === 0 && x > 7 && y > 6;
+        rect(c, edge ? outline : top ? light : y > 13 || vein ? shade : mid, x, y, 1, 1);
+      }
+      if (ob.kind === 'tintedrock' && !flash) {
+        rect(c, '#c9a9ed', 10, 9, 3, 1);
+        rect(c, '#d8b9ef', 12, 8, 1, 3);
+      }
+    });
+    blit(ctx, art, ob.x - 24, ob.y - 24, 48, 48);
+  }
+
+  const propStamps = {
+    pebble: ['..##.','.####','#####','.###.'],
+    rubble: ['.#...','###.#','.####','##.##'],
+    bonechip: ['#...#','#####','#...#'],
+    skull: ['.###.','#####','#.#.#','#####','.###.'],
+    leaftuft: ['.#.#.','#####','.###.','..#..'],
+    twig: ['...#.','..#.#','####.','..#..'],
+    mushroom: ['.###.','#####','..#..','..#..'],
+    sandripple: ['.####','###..','..###'],
+    ashpile: ['..#..','.###.','#####'],
+    ember: ['..#..','.###.','#####','.###.'],
+    iceshard: ['..#..','..##.','.###.','#####'],
+    crystalshard: ['..#..','.###.','#####','.###.','..#..'],
+    rustflake: ['.##..','####.','.###.','..##.'],
+    shell: ['.###.','##.##','#####','..#..'],
+    kelp: ['.#.#.','.#.#.','..##.','.#.#.'],
+    siltmound: ['..#..','.###.','#####','#####'],
+    tubeworm: ['.#.#.','.###.','.#.#.','#####'],
+    stardust: ['..#..','.#.#.','#.#.#','.#.#.','..#..'],
+    mosspatch: ['.###.','#####','#####','.##.#']
+  };
+
+  function prop(ctx, p, pal) {
+    const rows = propStamps[p.kind];
+    if (!rows) return;
+    const accents = { bonechip: '#d4c6a9', skull: '#ccb99f', ember: '#d98e56',
+      iceshard: '#98c6d3', crystalshard: pal.accent, stardust: '#c1b1df',
+      mushroom: '#b58376', leaftuft: '#879b73', kelp: '#5e9481', mosspatch: '#71875c' };
+    const color = accents[p.kind] || Util.shadeColor(pal.floorA, 0.33);
+    const dark = Util.shadeColor(color, -0.45);
+    const light = Util.shadeColor(color, 0.24);
+    const size = (p.scale || 1) * 1.65;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.scale(p.flip < 0 ? -1 : 1, 1);
+    rect(ctx, '#17132075', -3 * size, size * 1.5, size * 6, size * 1.4);
+    rows.forEach((row, py) => [...row].forEach((bit, px) => {
+      if (bit === '#') rect(ctx, py === 0 ? light : py === rows.length - 1 ? dark : color,
+        (px - 2.5) * size, (py - rows.length / 2) * size, size, size);
+    }));
+    ctx.restore();
+  }
+
   const materials = {
     bone: 'brick', leaf: 'moss', sand: 'dune', fire: 'fault', ice: 'facet',
     rust: 'plate', shell: 'shell', tide: 'wave', silt: 'silt', abyss: 'ripple',
@@ -476,5 +655,5 @@ const NightfallArt = (() => {
     blit(ctx, panorama, 0, 0, width, height);
   }
 
-  return { icon, image, mount, pony, dnb, enemyImage, tile, backdrop };
+  return { icon, image, mount, pony, dnb, enemyImage, door, fire, rock, prop, tile, backdrop };
 })();
