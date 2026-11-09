@@ -292,8 +292,20 @@ function updateHUD(game){
     }
   }
 
-  const touchTurretBtn = document.getElementById('touchTurretBtn');
-  if (touchTurretBtn) touchTurretBtn.classList.toggle('hidden', !hasTurretAbility);
+  const room = game.currentRoom;
+  const touchActions = {
+    touchTurretBtn:hasTurretAbility,
+    touchDestroyTurretBtn:hasTurretAbility && !!room.playerTurrets?.length,
+    touchPocketBtn:!!player.pocketActive,
+    touchDropTrinketBtn:!!player.trinketId,
+    touchDonateBtn:!!(room.donationMachine || room.karmaMachines?.length ||
+      room.itemPedestals?.some(ped => ped.treasureChoice && !ped.taken)),
+    touchRerollBtn:!!(room.rerollAltar || room.upgradeStation),
+    touchArcadeBtn:!!(room.machines?.length || room.fillies?.length || room.wdControlButton),
+  };
+  for (const id in touchActions) document.getElementById(id)?.classList.toggle('hidden', !touchActions[id]);
+  document.getElementById('touchPocketBtn')?.classList.toggle('ready-glow',
+    !!player.pocketActive && player.pocketCharge >= player.pocketActive.maxCharge);
 
   const sideBuildBtn = document.getElementById('sideActionBuildTurret');
   if (sideBuildBtn) sideBuildBtn.classList.toggle('hidden', !hasTurretAbility);
@@ -791,9 +803,12 @@ function minimapHandlePointerDown(e){
 function minimapHandlePointerMove(e){
   if (!_mmDragging) return false;
   const dx = e.clientX - _mmDragLastX, dy = e.clientY - _mmDragLastY;
+  const canvas = document.getElementById('minimap');
+  const rect = canvas.getBoundingClientRect();
   if (Math.abs(dx) > 2 || Math.abs(dy) > 2) _mmDragMoved = true;
   if (_mmDragMoved) {
-    _mmPanX += dx; _mmPanY += dy;
+    _mmPanX += dx * canvas.width / (rect.width || canvas.width);
+    _mmPanY += dy * canvas.height / (rect.height || canvas.height);
     _mmUserAdjusted = true;
     _mmDragLastX = e.clientX; _mmDragLastY = e.clientY;
   }

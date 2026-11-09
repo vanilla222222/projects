@@ -88,7 +88,29 @@ function refreshKeybindHints(){
 
 let game = null;
 
-const input = { left:false, right:false, up:false, down:false, attack:false, build:false, mouseX:0, mouseY:0, mouseActive:false };
+const input = {
+  left:false, right:false, up:false, down:false, attack:false, build:false,
+  mouseX:0, mouseY:0, mouseActive:false, moveX:0, moveY:0, aimX:0, aimY:0,
+};
+let keyAttack = false, mouseAttack = false, touchAttack = false;
+let keyBuild = false;
+const holdBuild = new Set();
+const inputResets = [];
+function resetGameInput(){
+  for (const reset of inputResets) reset();
+  keyAttack = mouseAttack = touchAttack = keyBuild = false;
+  holdBuild.clear();
+  input.left = input.right = input.up = input.down = input.mouseActive = false;
+  input.attack = input.build = false;
+}
+
+function enableTouchLayout(){
+  document.documentElement.classList.add('nightfall-touch');
+}
+if (window.matchMedia('(pointer: coarse)').matches) enableTouchLayout();
+window.addEventListener('pointerdown', event => {
+  if (event.pointerType === 'touch') enableTouchLayout();
+}, { capture:true });
 
 const canvas = document.getElementById('game');
 
@@ -100,6 +122,7 @@ function toggleMuteUI(){
 
 window.addEventListener('keydown', (e) => {
   Sound.unlock();
+  if (e.code !== 'Escape' && e.target?.closest?.('input, textarea, select, [contenteditable]')) return;
 
   if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && !document.getElementById('bestiaryScreen').classList.contains('hidden')) {
     const active = document.activeElement;
@@ -121,9 +144,9 @@ window.addEventListener('keydown', (e) => {
     case keybinds.moveDown: case keybinds.moveDownAlt: input.down = true; break;
     case keybinds.moveLeft: case keybinds.moveLeftAlt: input.left = true; break;
     case keybinds.moveRight: case keybinds.moveRightAlt: input.right = true; break;
-    case keybinds.attack: input.attack = true; e.preventDefault(); break;
+    case keybinds.attack: keyAttack = true; e.preventDefault(); break;
 
-    case keybinds.buildTurret: input.build = true; break;
+    case keybinds.buildTurret: keyBuild = true; break;
     case keybinds.bomb: if (game) game.tryPlaceBomb(); break;
     case keybinds.activeItem: if (game) game.tryUseActive(); break;
     case keybinds.pill: if (game) game.tryUsePill(); break;
@@ -157,129 +180,83 @@ window.addEventListener('keyup', (e) => {
     case keybinds.moveDown: case keybinds.moveDownAlt: input.down = false; break;
     case keybinds.moveLeft: case keybinds.moveLeftAlt: input.left = false; break;
     case keybinds.moveRight: case keybinds.moveRightAlt: input.right = false; break;
-    case keybinds.attack: input.attack = false; break;
-    case keybinds.buildTurret: input.build = false; break;
+    case keybinds.attack: keyAttack = false; break;
+    case keybinds.buildTurret: keyBuild = false; break;
   }
 });
 
-canvas.addEventListener('pointermove', (e) => {
+function updateMouseAim(event){
+  if (event.pointerType === 'touch') return;
   const rect = canvas.getBoundingClientRect();
-
-  input.mouseX = (e.clientX - rect.left) * (CAMERA_W / rect.width);
-  input.mouseY = (e.clientY - rect.top) * (CAMERA_H / rect.height);
+  input.mouseX = (event.clientX - rect.left) * CAMERA_W / rect.width;
+  input.mouseY = (event.clientY - rect.top) * CAMERA_H / rect.height;
   input.mouseActive = true;
-});
-canvas.addEventListener('pointerleave', () => { input.mouseActive = false; });
-canvas.addEventListener('pointerdown', (e) => {
+}
+canvas.addEventListener('pointermove', updateMouseAim);
+canvas.addEventListener('pointerleave', event => { if (event.pointerType !== 'touch') input.mouseActive = false; });
+canvas.addEventListener('pointerdown', event => {
+  if (event.pointerType === 'touch') return;
   Sound.unlock();
-  if (e.button === 0) input.attack = true;
-  if (e.button === 2 && game) game.tryPlaceBomb();
+  updateMouseAim(event);
+  if (event.button === 0) mouseAttack = true;
+  if (event.button === 2 && game) game.tryPlaceBomb();
 });
-window.addEventListener('pointerup', (e) => { if (e.button === 0) input.attack = false; });
-canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+function endMouseAttack(event){
+  if (event.pointerType !== 'touch' && (event.type === 'pointercancel' || event.button === 0)) mouseAttack = false;
+}
+window.addEventListener('pointerup', endMouseAttack);
+window.addEventListener('pointercancel', endMouseAttack);
+canvas.addEventListener('contextmenu', event => event.preventDefault());
 
-(function bindTouchControls(){
-  const joy = document.getElementById('touchJoystick');
-  const knob = document.getElementById('touchJoystickKnob');
-  if (joy && knob) {
-    const RADIUS = 38;
-
-    const DEADZONE = 10;
-    let joyPointerId = null;
-    function setDir(dx, dy){
-      input.left = dx < -DEADZONE;
-      input.right = dx > DEADZONE;
-      input.up = dy < -DEADZONE;
-      input.down = dy > DEADZONE;
-    }
-    function resetDir(){
-      input.left = input.right = input.up = input.down = false;
-      knob.style.transform = 'translate(-50%,-50%)';
-    }
-    joy.addEventListener('pointerdown', (e) => {
-      Sound.unlock();
-      joyPointerId = e.pointerId;
-      joy.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    joy.addEventListener('pointermove', (e) => {
-      if (e.pointerId !== joyPointerId) return;
-      const rect = joy.getBoundingClientRect();
-      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-      let dx = e.clientX - cx, dy = e.clientY - cy;
-      const dist = Math.hypot(dx, dy);
-      if (dist > RADIUS) { dx = dx / dist * RADIUS; dy = dy / dist * RADIUS; }
-      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-      setDir(dx, dy);
-      e.preventDefault();
-    });
-    function endJoy(e){
-      if (e.pointerId !== joyPointerId) return;
-      joyPointerId = null;
-      resetDir();
-    }
-    joy.addEventListener('pointerup', endJoy);
-    joy.addEventListener('pointercancel', endJoy);
-    joy.addEventListener('lostpointercapture', () => { if (joyPointerId != null) { joyPointerId = null; resetDir(); } });
-  }
-
-  function bindTap(id, fn){
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('pointerdown', (e) => {
-      Sound.unlock();
-      e.preventDefault();
-      fn();
-    });
-  }
-  bindTap('touchBombBtn', () => game && game.tryPlaceBomb());
-  bindTap('touchActiveBtn', () => game && game.tryUseActive());
-  bindTap('touchPillBtn', () => game && game.tryUsePill());
-  bindTap('touchStarBtn', () => game && game.tryUseStar());
-  bindTap('touchDonateBtn', () => game && game.tryDonate());
-  bindTap('touchRerollBtn', () => game && game.tryReroll());
-  bindTap('touchArcadeBtn', () => game && game.tryArcadeInteract());
-  bindTap('touchPauseBtn', () => togglePause());
-
-  const turretBtn = document.getElementById('touchTurretBtn');
-  if (turretBtn) {
-    const startBuild = (e) => { Sound.unlock(); e.preventDefault(); input.build = true; };
-    const stopBuild = () => { input.build = false; };
-    turretBtn.addEventListener('pointerdown', startBuild);
-    turretBtn.addEventListener('pointerup', stopBuild);
-    turretBtn.addEventListener('pointercancel', stopBuild);
-    turretBtn.addEventListener('pointerleave', stopBuild);
-  }
-})();
-
-(function bindSideActionBar(){
-  function bindTap(id, fn){
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener('pointerdown', (e) => { Sound.unlock(); e.preventDefault(); fn(); });
-  }
-  bindTap('sideActionPill', () => game && game.tryUsePill());
-  bindTap('sideActionStar', () => game && game.tryUseStar());
-  bindTap('sideActionDropTrinket', () => game && game.tryDropTrinket());
-  bindTap('sideActionActive', () => game && game.tryUseActive());
-  bindTap('sideActionPocket', () => game && game.tryUsePocket());
-  bindTap('sideActionBomb', () => game && game.tryPlaceBomb());
-  bindTap('sideActionDestroyTurret', () => game && game.tryDestroyTurret());
-  bindTap('sideActionDonateArcade', () => game && game.tryDonateOrArcade());
-
-  const buildBtn = document.getElementById('sideActionBuildTurret');
-  if (buildBtn) {
-    const startBuild = (e) => { Sound.unlock(); e.preventDefault(); input.build = true; };
-    const stopBuild = () => { input.build = false; };
-    buildBtn.addEventListener('pointerdown', startBuild);
-    buildBtn.addEventListener('pointerup', stopBuild);
-    buildBtn.addEventListener('pointercancel', stopBuild);
-    buildBtn.addEventListener('pointerleave', stopBuild);
-  }
-})();
+const unlockInputSound = () => Sound.unlock();
+function bindInputAction(id, action){
+  const button = document.getElementById(id);
+  if (!button) return;
+  button.addEventListener('click', () => {
+    unlockInputSound();
+    action();
+  });
+}
+function bindGameAction(id, method){
+  bindInputAction(id, () => { if (game) game[method](); });
+}
+for (const [id, method] of Object.entries({
+  touchBombBtn:'tryPlaceBomb', touchActiveBtn:'tryUseActive', touchPillBtn:'tryUsePill',
+  touchStarBtn:'tryUseStar', touchDonateBtn:'tryDonate', touchRerollBtn:'tryReroll',
+  touchArcadeBtn:'tryArcadeInteract', touchPocketBtn:'tryUsePocket',
+  touchDropTrinketBtn:'tryDropTrinket', touchDestroyTurretBtn:'tryDestroyTurret',
+  sideActionPill:'tryUsePill', sideActionStar:'tryUseStar', sideActionDropTrinket:'tryDropTrinket',
+  sideActionActive:'tryUseActive', sideActionPocket:'tryUsePocket', sideActionBomb:'tryPlaceBomb',
+  sideActionDestroyTurret:'tryDestroyTurret', sideActionDonateArcade:'tryDonateOrArcade',
+})) bindGameAction(id, method);
+bindInputAction('touchPauseBtn', togglePause);
+bindInputAction('touchMapBtn', () => {
+  const expanded = document.getElementById('minimapWrap').classList.toggle('touch-map-open');
+  document.getElementById('touchMapBtn').setAttribute('aria-expanded', String(expanded));
+});
+for (const id of ['touchTurretBtn', 'sideActionBuildTurret']) {
+  inputResets.push(bindNightfallHold(document.getElementById(id), pressed => {
+    if (pressed) holdBuild.add(id);
+    else holdBuild.delete(id);
+  }, unlockInputSound));
+}
+inputResets.push(bindNightfallStick(document.getElementById('touchJoystick'), document.getElementById('touchJoystickKnob'),
+  (x, y, active) => {
+    input.moveX = x;
+    input.moveY = y;
+    if (active) input.mouseActive = false;
+  }, unlockInputSound));
+inputResets.push(bindNightfallStick(document.getElementById('touchAim'), document.getElementById('touchAimKnob'),
+  (x, y, active) => {
+    input.aimX = x;
+    input.aimY = y;
+    touchAttack = active;
+    if (active) input.mouseActive = false;
+  }, unlockInputSound));
 
 function togglePause(){
   if (!game || (game.state !== 'playing')) return;
+  resetGameInput();
   game.paused = !game.paused;
   document.getElementById('pauseScreen').classList.toggle('hidden', !game.paused);
 
@@ -497,7 +474,7 @@ const minimapZoomResetBtn = document.getElementById('minimapZoomResetBtn');
 if (minimapZoomResetBtn) minimapZoomResetBtn.addEventListener('click', () => { Sound.play('uiClick'); resetMinimapCamera(); });
 
 const minimapCanvas = document.getElementById('minimap');
-let minimapLongPressTimer = null;
+let minimapLongPressTimer = null, minimapPointer = null;
 if (minimapCanvas) {
   minimapCanvas.addEventListener('wheel', (e) => {
     if (!game) return;
@@ -505,7 +482,9 @@ if (minimapCanvas) {
   }, { passive: false });
 
   minimapCanvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if (minimapPointer !== null || e.button !== 0 || !game) return;
+    minimapPointer = e.pointerId;
+    minimapCanvas.setPointerCapture(minimapPointer);
     minimapHandlePointerDown(e);
 
     if (e.pointerType !== 'mouse' && game) {
@@ -520,6 +499,7 @@ if (minimapCanvas) {
     }
   });
   window.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== minimapPointer) return;
     const dragged = minimapHandlePointerMove(e);
     if (dragged && minimapLongPressTimer) { clearTimeout(minimapLongPressTimer); minimapLongPressTimer = null; }
   });
@@ -529,13 +509,18 @@ if (minimapCanvas) {
     updateMinimapTooltip(game, minimapCanvas, node, e.clientX, e.clientY);
   });
   minimapCanvas.addEventListener('pointerleave', () => { hideMinimapTooltip(); });
-  window.addEventListener('pointerup', () => {
+  function endMinimapDrag(e){
+    if (e.pointerId !== minimapPointer) return;
+    minimapPointer = null;
     minimapHandlePointerUp();
     if (minimapLongPressTimer) { clearTimeout(minimapLongPressTimer); minimapLongPressTimer = null; }
-  });
+  }
+  window.addEventListener('pointerup', endMinimapDrag);
+  window.addEventListener('pointercancel', endMinimapDrag);
+  minimapCanvas.addEventListener('lostpointercapture', endMinimapDrag);
   minimapCanvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (!game) return;
+    if (!game || e.pointerType === 'touch') return;
     const node = minimapUnprojectNode(game, minimapCanvas, e.clientX, e.clientY);
     if (node && (node.discovered || node.seen || node.revealed || game.player.revealMap)) {
       Sound.play('uiClick');
@@ -622,6 +607,8 @@ function releaseWakeLock(){
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    resetGameInput();
+    if (game && game.state === 'playing' && !game.paused) togglePause();
     stopLoop();
     Sound.suspend();
     releaseWakeLock();
@@ -632,7 +619,9 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+window.addEventListener('orientationchange', resetGameInput);
 window.addEventListener('blur', () => {
+  resetGameInput();
   if (game && game.state === 'playing' && !game.paused) togglePause();
 });
 
@@ -688,6 +677,9 @@ function startWaveDefenseWithClass(classId){
 }
 
 function returnToMenu(){
+  resetGameInput();
+  document.getElementById('minimapWrap').classList.remove('touch-map-open');
+  document.getElementById('touchMapBtn').setAttribute('aria-expanded', 'false');
   releaseWakeLock();
   Sound.stopMusic();
   game = null;
@@ -836,8 +828,10 @@ function loop(now){
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
   if (game) {
+    input.attack = keyAttack || mouseAttack || touchAttack;
+    input.build = keyBuild || holdBuild.size > 0;
     game.update(input, dt);
-    if (game.mode === 'wavedefense') updateWaveDefense(game, dt);
+    if (game.mode === 'wavedefense' && !game.paused) updateWaveDefense(game, dt);
     game.render();
     if (game.state !== lastState) {
       lastState = game.state;

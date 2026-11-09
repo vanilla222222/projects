@@ -549,6 +549,23 @@ function showSkillNodeDetail(node){
   const maxRank = skillNodeMaxRank(node);
   const rank = skillNodeRank(unlocks, node.id);
   const spentGate = skillNodeSpentGate(unlocks, node);
+  const action = document.getElementById('skillTreeDetailAction');
+  if (action) {
+    const buyable = canBuySkillNode(unlocks, node.id);
+    const sellable = !buyable && canSellSkillNode(unlocks, node.id);
+    action.classList.toggle('hidden', !buyable && !sellable);
+    action.textContent = buyable ? 'Buy · ' + skillNodeNextRankCost(unlocks, node) + ' pt'
+      : 'Refund · ' + skillNodeRankCost(node, rank) + ' pt';
+    action.onclick = () => {
+      if (!(buyable ? buySkillNode(node.id) : sellable && sellSkillNode(node.id))) return;
+      Sound.play(buyable ? 'shopBuy' : 'coin');
+      skillTreeLastBoughtId = buyable ? node.id : null;
+      buildSkillTreePanel();
+      showSkillNodeDetail(node);
+    };
+  }
+  const close = document.getElementById('skillTreeDetailClose');
+  if (close) close.onclick = () => showSkillNodeDetail(null);
   if (nameEl) nameEl.textContent = (node.icon ? node.icon + ' ' : '') + node.name + (maxRank > 1 ? ' (' + rank + '/' + maxRank + ')' : '') + (node.cursed ? ' ☠' : '') + (tradeoff ? ' ⚖' : '') + (/_capstone$/.test(node.id) ? ' ♛' : '') + (/_ascension$/.test(node.id) ? ' ⚡' : '');
   if (costEl) {
     const nextCost = skillNodeRankCost(node, Math.min(rank + 1, maxRank));
@@ -893,7 +910,9 @@ function buildSkillTreePanel(){
     label.className = 'skilltree-node-label';
     label.textContent = node.name;
     el.appendChild(label);
-    if (affordable) {
+    if (document.documentElement?.classList.contains('nightfall-touch')) {
+      el.addEventListener('click', () => showSkillNodeDetail(node));
+    } else if (affordable) {
       el.addEventListener('click', () => {
         if (buySkillNode(node.id)) {
           Sound.play(isAscension ? 'ascensionChime' : isCapstone ? 'achievement' : 'shopBuy');
@@ -914,7 +933,9 @@ function buildSkillTreePanel(){
       el.disabled = !owned;
     }
 
-    el.addEventListener('mouseenter', () => showSkillNodeDetail(node));
+    el.addEventListener('mouseenter', () => {
+      if (!document.documentElement?.classList.contains('nightfall-touch')) showSkillNodeDetail(node);
+    });
     el.dataset.nodeId = node.id;
     canvas.appendChild(el);
     minimapPoints.push({
@@ -1311,30 +1332,36 @@ function buildSkillTreePanel(){
     applyTransform();
   }, { passive: false });
 
-  let dragging = false;
+  let dragPointer = null;
   let dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
-  scroller.addEventListener('mousedown', (e) => {
-    if (e.target.closest && e.target.closest('.skilltree-node')) return;
-    dragging = true;
+  scroller.addEventListener('pointerdown', e => {
+    if (dragPointer !== null || e.button !== 0 || e.target.closest?.('.skilltree-node')) return;
+    dragPointer = e.pointerId;
     dragStartX = e.clientX;
     dragStartY = e.clientY;
     panStartX = skillTreePanX;
     panStartY = skillTreePanY;
+    scroller.setPointerCapture(dragPointer);
     scroller.classList.add('skilltree-dragging');
   });
-  scroller.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    skillTreePanX = panStartX + (e.clientX - dragStartX);
-    skillTreePanY = panStartY + (e.clientY - dragStartY);
+  scroller.addEventListener('pointermove', e => {
+    if (e.pointerId !== dragPointer) return;
+    skillTreePanX = panStartX + e.clientX - dragStartX;
+    skillTreePanY = panStartY + e.clientY - dragStartY;
     applyTransform();
   });
-  function endDrag(){
-    if (!dragging) return;
-    dragging = false;
-    scroller.classList.remove('skilltree-dragging');
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    scroller.addEventListener(event, e => {
+      if (e.pointerId !== dragPointer) return;
+      dragPointer = null;
+      scroller.classList.remove('skilltree-dragging');
+    });
   }
-  scroller.addEventListener('mouseup', endDrag);
-  scroller.addEventListener('mouseleave', endDrag);
-
-  scroller.addEventListener('mouseleave', () => showSkillNodeDetail(null));
+  scroller.addEventListener('pointerleave', e => {
+    if (e.pointerType === 'mouse' && !document.documentElement?.classList.contains('nightfall-touch')) showSkillNodeDetail(null);
+  });
+  const zoomOut = document.getElementById('skillTreeTouchZoomOut');
+  const zoomIn = document.getElementById('skillTreeTouchZoomIn');
+  if (zoomOut) zoomOut.onclick = () => skillTreeStepZoomAtCenter(-1);
+  if (zoomIn) zoomIn.onclick = () => skillTreeStepZoomAtCenter(1);
 }

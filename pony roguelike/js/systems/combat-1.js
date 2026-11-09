@@ -157,21 +157,19 @@ function updatePlayer(game, input, dt){
   tickOrbitBlades(game, dt);
   tickDelayedActions(player, dt);
 
-  let mx = 0, my = 0;
-  if (input.left) mx -= 1;
-  if (input.right) mx += 1;
-  if (input.up) my -= 1;
-  if (input.down) my += 1;
-  if (mx !== 0 || my !== 0) {
-    const len = Math.hypot(mx, my);
-    mx /= len; my /= len;
-    if (!input.mouseActive) player.facing = { x: mx, y: my };
-  }
-  if (input.mouseActive) {
-
+  let mx = (input.moveX || 0) + Number(!!input.right) - Number(!!input.left);
+  let my = (input.moveY || 0) + Number(!!input.down) - Number(!!input.up);
+  const movement = Math.hypot(mx, my);
+  if (movement > 1) { mx /= movement; my /= movement; }
+  const aim = Math.hypot(input.aimX || 0, input.aimY || 0);
+  if (aim > 0) {
+    player.facing = { x:input.aimX / aim, y:input.aimY / aim };
+  } else if (input.mouseActive) {
     const worldMouseX = input.mouseX + game.camX, worldMouseY = input.mouseY + game.camY;
     const ang = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
     player.facing = { x: Math.cos(ang), y: Math.sin(ang) };
+  } else if (movement > 0) {
+    player.facing = { x:mx / Math.hypot(mx, my), y:my / Math.hypot(mx, my) };
   }
 
   if (player.greenFireAttack) updateGreenFireAttack(game, input, dt);

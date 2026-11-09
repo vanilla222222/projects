@@ -1964,7 +1964,7 @@ Object.assign(Util, {
     const fillH = meterH * Util.clamp(frac, 0, 1);
 
     ctx.save();
-    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 5;
+    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 0;
     ctx.fillStyle = Theme.machine.meterFill;
     ctx.fillRect(meterX, meterTop + meterH - fillH, meterW, fillH);
     ctx.restore();
@@ -1992,7 +1992,7 @@ Object.assign(Util, {
     ctx.save();
     ctx.translate(x, y - h / 2 - 7);
     ctx.rotate(((now || 0) / 700) % (Math.PI * 2));
-    ctx.shadowColor = Theme.machine.altarGlow; ctx.shadowBlur = 6;
+    ctx.shadowColor = Theme.machine.altarGlow; ctx.shadowBlur = 0;
     ctx.strokeStyle = Theme.machine.altarGlow; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, 7, 0.5, Math.PI * 1.75); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(7, -2.5); ctx.lineTo(4, 2); ctx.lineTo(10, 2); ctx.closePath();
@@ -2017,7 +2017,7 @@ Object.assign(Util, {
     const pulse = 0.5 + 0.5 * Math.sin((now || 0) / 260);
     ctx.save();
     ctx.translate(x, y - h / 2 - 7);
-    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 4 + pulse * 4;
+    ctx.shadowColor = Theme.machine.meterFill; ctx.shadowBlur = 0;
     ctx.fillStyle = Theme.machine.meterFill;
     ctx.beginPath(); ctx.arc(0, 0, 4 + pulse * 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
@@ -2144,7 +2144,7 @@ Object.assign(Util, {
 
     ctx.save();
     ctx.shadowColor = GLOW;
-    ctx.shadowBlur = 6 + pulse * 6;
+    ctx.shadowBlur = 0;
 
     const shards = [
       { dx:0, dy:-14, dx2:0, dy2:6, w:6 },
