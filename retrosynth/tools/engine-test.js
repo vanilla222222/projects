@@ -290,9 +290,10 @@ for (const [smiles, id, what] of MUST_NOT) {
   const strictRun = E.makeEngine(strict).route('CC(=O)Oc1ccccc1C(=O)O');
   const looseRun = E.makeEngine(loose).route('CC(=O)Oc1ccccc1C(=O)O');
   ok(looseRun.ok, 'aspirin should solve when nothing is checked');
-  ok(!strictRun.ok,
-    'strict checking should refuse aspirin from salicylic acid, which really would '
-    + 'self-esterify; that is why the real preparation uses the anhydride');
+  ok(!strictRun.routes.some(route => route.depth === 1 && route.steps[0].transform === 'esterification'),
+    'strict checking must reject the ambiguous direct esterification');
+  ok(strictRun.routes.every(route => route.steps.every(step => step.verdict.checked && step.verdict.selective)),
+    'strict checking must not accept unchecked or ambiguous steps in longer alternatives');
 }
 
 console.log('\n' + T.TRANSFORMS.length + ' transforms over '

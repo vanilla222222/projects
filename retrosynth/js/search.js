@@ -157,6 +157,7 @@ function makeEngine(settings, options) {
   // makes a naive best-first search slow enough to look like a depth limit.
   function heap() {
     const items = [];
+    const precedes = (a, b) => a.order < b.order || (a.order === b.order && a.priority < b.priority);
     return {
       get size() { return items.length; },
       push(item) {
@@ -164,7 +165,7 @@ function makeEngine(settings, options) {
         let i = items.length - 1;
         while (i > 0) {
           const parent = (i - 1) >> 1;
-          if (items[parent].priority <= items[i].priority) break;
+          if (!precedes(items[i], items[parent])) break;
           [items[parent], items[i]] = [items[i], items[parent]];
           i = parent;
         }
@@ -179,8 +180,8 @@ function makeEngine(settings, options) {
             const left = i * 2 + 1;
             const right = left + 1;
             let small = i;
-            if (left < items.length && items[left].priority < items[small].priority) small = left;
-            if (right < items.length && items[right].priority < items[small].priority) small = right;
+            if (left < items.length && precedes(items[left], items[small])) small = left;
+            if (right < items.length && precedes(items[right], items[small])) small = right;
             if (small === i) break;
             [items[small], items[i]] = [items[i], items[small]];
             i = small;
@@ -202,8 +203,10 @@ function makeEngine(settings, options) {
     const labels = new Map();
     const routes = [];
     const completed = new Set();
+    const routeLimit = settings.maxRoutes;
     const maxLabels = Math.min(6, settings.maxRoutes);
-    const maxStates = 40000;
+    const depthLimit = config?.depthLimit ?? settings.maxDepth;
+    const maxStates = config?.stateLimit ?? 40000;
     let popped = 0, queued = 0, depthLimited = false, stateLimited = false, lastUpdate = started;
 
     function remember(node) {
@@ -222,7 +225,7 @@ function makeEngine(settings, options) {
       return true;
     }
 
-    const first = { priority:0, pending:[target], steps:[], cost:0, key:stateKey([target]),
+    const first = { priority:0, order:0, pending:[target], steps:[], cost:0, key:stateKey([target]),
       signature:'[]', parent:null };
     remember(first);
     frontier.push(first);
@@ -251,10 +254,10 @@ function makeEngine(settings, options) {
               ? 'named start' : stock.source?.(smiles) || 'stock' })),
           });
         }
-        if (routes.length >= settings.maxRoutes) break;
+        if (routes.length >= routeLimit) break;
         continue;
       }
-      if (node.steps.length >= settings.maxDepth) { depthLimited = true; continue; }
+      if (node.steps.length >= depthLimit) { depthLimited = true; continue; }
 
       // In path mode an orderable intermediate can still need to be made from
       // the named input. Never expand that input once it is reached.
@@ -283,7 +286,9 @@ function makeEngine(settings, options) {
           const steps = node.steps.concat(step);
           const cost = node.cost + stepCost(step);
           const remaining = pending.filter(m => !terminal(m)).length;
-          const next = { priority:cost + remaining + (guide ? guide(pending) : 0),
+          const order = settings.strategy === 'depth' ? -steps.length
+            : settings.strategy === 'breadth' ? steps.length : 0;
+          const next = { order, priority:cost + remaining + (guide ? guide(pending) : 0),
             pending, cost, steps, key, signature:routeKey(steps), parent:node };
           if (!remember(next)) { stats.reused += 1; continue; }
           frontier.push(next);
@@ -292,15 +297,41 @@ function makeEngine(settings, options) {
       }
     }
 
-    routes.sort((a, b) => a.cost - b.cost || a.depth - b.depth);
+    if (settings.strategy === 'breadth') routes.sort((a, b) => a.depth - b.depth || a.cost - b.cost);
+    else if (settings.strategy !== 'depth') routes.sort((a, b) => a.cost - b.cost || a.depth - b.depth);
     return {
       routes,
       explored:popped,
+      queued,
       seconds:Number(((Date.now() - started) / 1000).toFixed(2)),
-      stop:routes.length >= settings.maxRoutes ? 'route-limit'
+      stop:routes.length >= routeLimit ? 'route-limit'
         : stateLimited ? 'state-limit' : Date.now() >= deadline ? 'time-limit' : depthLimited ? 'depth-limit' : 'exhausted',
       stats:{ ...stats },
     };
+  }
+
+  function search(target, terminal, goalTest, guide, config, expandStock) {
+    if (settings.strategy !== 'iterative') return run(target, terminal, goalTest, guide, config, expandStock);
+    const started = Date.now();
+    const deadline = Math.min(started + settings.budgetMs, config?.deadline ?? Infinity);
+    let explored = 0, queued = 0, found;
+    const routes = new Map();
+    for (let depthLimit = 1; depthLimit <= settings.maxDepth; depthLimit += 1) {
+      found = run(target, terminal, goalTest, guide, {
+        ...config, deadline, depthLimit, stateLimit:40000 - queued,
+        onProgress: config?.onProgress && (progress => config.onProgress({
+          ...progress, depthLimit, explored:explored + progress.explored,
+          found:Math.max(routes.size, progress.found), elapsedMs:Date.now() - started,
+        })),
+      }, expandStock);
+      explored += found.explored;
+      queued += found.queued;
+      for (const route of found.routes) routes.set(routeKey(route.steps), route);
+      if (routes.size >= settings.maxRoutes || found.stop !== 'depth-limit') break;
+    }
+    const ordered = [...routes.values()].sort((a, b) => a.depth - b.depth || a.cost - b.cost);
+    return { ...found, explored, queued, routes:ordered.slice(0, settings.maxRoutes),
+      seconds:Number(((Date.now() - started) / 1000).toFixed(2)) };
   }
 
   function failureReason(found, word) {
@@ -322,7 +353,7 @@ function makeEngine(settings, options) {
         return { ok:true, target:start, stop:'already-in-stock', source:stock.source?.(start),
           reason:'Target matches the selected stock policy', routes:[] };
       }
-      const found = run(start, buyable, node => node.pending.every(buyable), null, config);
+      const found = search(start, buyable, node => node.pending.every(buyable), null, config);
       return { ok: found.routes.length > 0, mode: 'route', target: start, ...found,
         reason: found.routes.length ? 'solved' : failureReason(found, 'route') };
     },
@@ -348,7 +379,7 @@ function makeEngine(settings, options) {
         return score;
       };
       const terminal = m => m === want || buyable(m);
-      const found = run(start, terminal,
+      const found = search(start, terminal,
         node => node.steps.length > 0 && node.pending.includes(want) && node.pending.every(terminal),
         // Pull the search towards the starting material rather than merely
         // filtering at the end; without it the search finds the cheapest

@@ -17,6 +17,20 @@ include the stock policy, search limits, model verification, and settings
 import or sharing. Download JSON to preserve the results and the settings that
 produced them.
 
+## Search methods
+
+| Method | How it explores |
+|---|---|
+| Best-first | Follows the route score and unfinished work |
+| Breadth | Explores shallower states before deeper ones |
+| Depth | Continues down deeper branches first |
+| Iterative | Raises the step limit one pass at a time under one time and size budget |
+
+The rule library includes reduction and oxidation alternatives, alcohol
+dehydration, imine and acetal formation, and a limited Diels–Alder disconnection
+for unbridged cyclohexenes. Acetal formation and Diels–Alder remain unchecked
+by the forward model.
+
 ## Reading results
 
 Route steps appear in forward order. Starting materials are labelled as entered

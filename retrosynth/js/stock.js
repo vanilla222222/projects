@@ -35,6 +35,7 @@ const STOCK_SMILES = (
   // carbonyls and building blocks
   + 'CC(C)=O CCC(C)=O O=C1CCCCC1 O=C1CCCC1 CC(=O)CC(C)=O O=CC=O '
   + 'C=CC(O)=O C=CC#N C=CC=O CC(=C)C(O)=O '
+  + 'C=C C=CC=C C=C(C)C=C CC=O CCC=O CCC(N)=O '
   // protecting-group reagents
   + 'CC(C)(C)OC(=O)OC(=O)OC(C)(C)C O=C(Cl)OCc1ccccc1 C[Si](C)(C)Cl CC(C)(C)[Si](C)(C)Cl '
   // rings and chains

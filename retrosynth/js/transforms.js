@@ -20,14 +20,18 @@ const TX = (typeof require === 'function' && typeof module !== 'undefined')
 
 // Pull a bond out and hand back the pieces as separate molecules, optionally
 // editing each end first. `edit` runs on the copy before it is split.
-function cut(mol, a, b, edit) {
+function cut(mol, a, b, change) {
+  return cutBonds(mol, [[a, b]], change && (copy => change(copy, a, b)));
+}
+
+function cutBonds(mol, pairs, change) {
   const copy = mol.clone();
-  const bond = copy.bondBetween(a, b);
-  if (!bond) return null;
-  copy.bonds = copy.bonds.filter((x) => x !== bond);
-  copy.bonds.forEach((x, i) => { x.index = i; });
+  const removed = new Set(pairs.map(([a, b]) => copy.bondBetween(a, b)));
+  if (removed.has(null) || removed.has(undefined)) return null;
+  copy.bonds = copy.bonds.filter(bond => !removed.has(bond));
+  copy.bonds.forEach((bond, index) => { bond.index = index; });
   copy._dirty();
-  if (edit && edit(copy, a, b) === false) return null;
+  if (change && change(copy) === false) return null;
   return copy.components();
 }
 
@@ -672,6 +676,103 @@ const TRANSFORMS = [
       }),
     })),
   },
+  {
+    id:'acid-reduction', name:'Carboxylic acid reduction', family:'reduction',
+    note:'A primary alcohol from its corresponding carboxylic acid.',
+    find:(mol, groups) => groups.alcohols.filter(a => a.degree === 1 && mol.hydrogens(a.c) === 2
+      && mol.degree(a.c) === 2).map(a => ({ pieces:edit(mol, copy => {
+      setOrder(copy, a.c, a.o, 2);
+      attach(copy, a.c, 'O');
+    }) })),
+  },
+  {
+    id:'aldehyde-oxidation', name:'Aldehyde oxidation', family:'oxidation',
+    note:'A carboxylic acid from an aldehyde.',
+    find:(mol, groups) => groups.acids.filter(a => a.r !== null).map(a => ({ pieces:[drop(mol, a.oh)] })),
+  },
+  {
+    id:'nitrile-reduction', name:'Nitrile reduction', family:'reduction',
+    note:'A primary aminomethyl group from a nitrile.',
+    find:(mol, groups) => groups.amines.filter(a => a.degree === 1 && a.hs === 2 && !a.aryl)
+      .filter(a => mol.hydrogens(a.carbons[0]) === 2 && mol.degree(a.carbons[0]) === 2)
+      .map(a => ({ pieces:edit(mol, copy => {
+        copy.atoms[a.n].hs = -1;
+        setOrder(copy, a.n, a.carbons[0], 3);
+      }) })),
+  },
+  {
+    id:'amide-reduction', name:'Amide reduction to an amine', family:'reduction',
+    note:'Replace an amine-adjacent methylene with the corresponding amide carbonyl.',
+    find:(mol, groups) => groups.amines.flatMap(a => a.carbons
+      .filter(c => !mol.atoms[c].arom && mol.degree(c) === 2 && mol.hydrogens(c) === 2
+        && mol.adjacency[c].some(link => link.other !== a.n && mol.atoms[link.other].el === 'C'))
+      .map(c => ({ pieces:edit(mol, copy => { attach(copy, c, 'O', 2); }) }))),
+  },
+  {
+    id:'alcohol-dehydration', name:'Alcohol dehydration', family:'elimination',
+    note:'An alkene from an alcohol at either end of its double bond. Competing alkene positions may occur.',
+    find:(mol, groups) => groups.alkenes.filter(a => ![a.a, a.b].some(c => mol.adjacency[c].some(l => l.bond.dir)))
+      .flatMap(a => [a.a, a.b].map(c => ({ pieces:edit(mol, copy => {
+        setOrder(copy, a.a, a.b, 1);
+        attach(copy, c, 'O');
+      }) }))),
+  },
+  {
+    id:'imine-condensation', name:'Imine condensation', family:'addition',
+    note:'Disconnect a neutral imine to a carbonyl and primary amine.',
+    find:(mol, groups) => groups.imines.filter(i => mol.atoms[i.n].charge === 0
+      && mol.degree(i.n) === 2 && !mol.bondInRing(mol.bondBetween(i.c, i.n))
+      && ![i.c, i.n].some(c => mol.adjacency[c].some(l => l.bond.dir))
+      && mol.adjacency[i.c].filter(l => l.other !== i.n).every(l => mol.atoms[l.other].el === 'C'))
+      .map(i => ({ pieces:cut(mol, i.c, i.n, copy => {
+        copy.atoms[i.n].hs = -1;
+        attach(copy, i.c, 'O', 2);
+      }) })),
+  },
+  {
+    id:'acetal-formation', name:'Acetal formation', family:'protection',
+    note:'Split an acyclic acetal into a carbonyl and its alcohol components.',
+    find:(mol, groups) => {
+      const sites = new Map();
+      for (const ether of groups.ethers) {
+        for (const c of [ether.a, ether.b]) {
+          const bond = mol.bondBetween(c, ether.o);
+          if (mol.atoms[c].arom || mol.atoms[c].chiral || mol.bondInRing(bond)) continue;
+          if (!sites.has(c)) sites.set(c, []);
+          sites.get(c).push(ether.o);
+        }
+      }
+      return [...sites].filter(([c, oxygens]) => oxygens.length === 2
+        && mol.adjacency[c].every(l => l.bond.order === 1 &&
+          (oxygens.includes(l.other) || mol.atoms[l.other].el === 'C')))
+        .map(([c, oxygens]) => ({ pieces:cutBonds(mol, oxygens.map(o => [c, o]),
+          copy => { attach(copy, c, 'O', 2); }) }));
+    },
+  },
+  {
+    id:'diels-alder', name:'Diels–Alder cycloaddition', family:'cyclization',
+    note:'Open an unbridged cyclohexene to a conjugated diene and an alkene. Stereochemical outcomes are unchecked.',
+    find:(mol) => {
+      const out = [];
+      const rings = mol.rings();
+      for (const ring of rings) {
+        if (ring.length !== 6 || ring.some(c => mol.atoms[c].el !== 'C' || mol.atoms[c].arom
+          || mol.atoms[c].chiral || rings.some(other => other !== ring && other.includes(c)))) continue;
+        const bonds = ring.map((c, i) => mol.bondBetween(c, ring[(i + 1) % 6]));
+        const double = bonds.findIndex(bond => bond?.order === 2);
+        if (double < 0 || bonds.some((bond, i) => !bond || bond.dir || bond.order !== (i === double ? 2 : 1))) continue;
+        const [a, b, c, d, e, f] = Array.from({ length:6 }, (_, i) => ring[(i + double + 5) % 6]);
+        out.push({ pieces:cutBonds(mol, [[d, e], [f, a]], copy => {
+          setOrder(copy, b, c, 1);
+          setOrder(copy, a, b, 2);
+          setOrder(copy, c, d, 2);
+          setOrder(copy, e, f, 2);
+        }) });
+      }
+      return out;
+    },
+  },
+
 ];
 
 // Transforms that produced nothing usable are dropped here rather than in
