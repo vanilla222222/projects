@@ -44,6 +44,41 @@ const expired = analogues.analogues('c1ccccc1', settings.normalize({ mode:'analo
   { route(){ throw new Error('search must stop before starting a route'); } }, { deadline:Date.now() - 1 });
 assert.equal(expired.stop, 'time-limit');
 
+const transforms = require('../js/transforms.js');
+const forward = require('../js/forward.js');
+for (const [id, product, precursors, checked] of [
+  ['acid-reduction','CCCO',['CCC(=O)O'],true],
+  ['aldehyde-oxidation','CCC(=O)O',['CCC=O'],true],
+  ['nitrile-reduction','CCCN',['CCC#N'],true],
+  ['amide-reduction','CCCN',['CCC(N)=O'],true],
+  ['alcohol-dehydration','CC=C',['CCCO'],true],
+  ['imine-condensation','CC=NC',['CC=O','CN'],true],
+  ['acetal-formation','COC(C)OC',['CC=O','CO','CO'],false],
+  ['diels-alder','C1=CCCCC1',['C=CC=C','C=C'],false],
+]) {
+  const expected = precursors.map(canonical).sort();
+  const options = transforms.disconnect(smiles.parse(product));
+  const candidate = options.find(option => option.transform === id
+    && JSON.stringify(option.precursors) === JSON.stringify(expected));
+  assert.ok(candidate, id + ' proposes expected precursors');
+  const verification = forward.verify(candidate);
+  assert.equal(verification.checked, checked, id);
+  if (checked) assert.equal(verification.ok, true, id + ' reproduces the modelled target');
+}
+const strategyGraph = new Map([
+  [target, [{ ...step(target, [leaf], 'short'), family:'protection' }, step(target, [intermediate], 'long')]],
+  [intermediate, [step(intermediate, [named], 'middle')]],
+  [named, [step(named, [leaf], 'last')]],
+]);
+for (const [strategy, depth] of [['best-first',3], ['breadth',1], ['depth',3], ['iterative',1]]) {
+  const strategyEngine = search.makeEngine(settings.normalize({ strategy, verify:'off', maxRoutes:1,
+    weightSteps:0, weightCost:0, weightPrecedent:0, weightConvergence:0, weightProtection:1 }), {
+    stock:{ has:m => m === leaf },
+    disconnect:mol => strategyGraph.get(smiles.canonicalWrite(mol)) || [],
+  });
+  assert.equal(strategyEngine.route(target).routes[0].depth, depth, strategy);
+}
+
 const js = name => fs.readFileSync(path.resolve(__dirname, '../js', name), 'utf8');
 const messages = [];
 const worker = vm.createContext({ self:{ postMessage:message => messages.push(message) } });
@@ -71,4 +106,4 @@ assert.match(messages.at(-1).result.conditionNotice, /unknown/);
 worker.self.onmessage({ data:settings.normalize({ target:'CCO', banHazards:['pyrophoric'] }) });
 assert.equal(messages.at(-1).type, 'error');
 assert.match(messages.at(-1).message, /not supported/);
-console.log('Stocked-target paths, route diversity, exact inventory, deadlines, and worker messages passed.');
+console.log('Stocked-target paths, route diversity, exact inventory, deadlines, eight reactions, four search methods, and worker messages passed.');

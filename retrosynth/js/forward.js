@@ -272,6 +272,48 @@ const FORWARD = {
     }
     return out;
   },
+  'acid-reduction': (mol, g) => g.acids.map(acid => {
+    const copy = mol.clone();
+    copy.bondBetween(acid.c, acid.o).order = 1;
+    copy._dirty();
+    return without(copy, [acid.oh]);
+  }),
+  'aldehyde-oxidation': (mol, g) => g.aldehydes.map(aldehyde => {
+    const copy = mol.clone();
+    const oxygen = copy.addAtom('O', {});
+    copy.addBond(aldehyde.c, oxygen.index, 1);
+    return copy;
+  }),
+  'nitrile-reduction': (mol, g) => g.nitriles.map(nitrile => {
+    const copy = mol.clone();
+    copy.bondBetween(nitrile.c, nitrile.n).order = 1;
+    copy.atoms[nitrile.n].hs = -1;
+    copy._dirty();
+    return copy;
+  }),
+  'amide-reduction': (mol, g) => g.amides.filter(a => a.acyl !== null).map(a => without(mol, [a.o])),
+  'alcohol-dehydration': (mol, g) => g.alcohols.flatMap(alcohol =>
+    mol.adjacency[alcohol.c].filter(link => link.bond.order === 1 && mol.atoms[link.other].el === 'C'
+      && !mol.atoms[link.other].arom && mol.hydrogens(link.other) > 0).map(link => {
+      const copy = mol.clone();
+      copy.bondBetween(alcohol.c, link.other).order = 2;
+      copy._dirty();
+      return without(copy, [alcohol.o]);
+    })),
+  'imine-condensation': (mol, g) => {
+    const out = [];
+    for (const carbonyl of [...g.aldehydes, ...g.ketones]) {
+      for (const amine of g.amines) {
+        if (amine.degree !== 1 || amine.hs !== 2) continue;
+        const copy = mol.clone();
+        copy.atoms[amine.n].hs = -1;
+        copy.addBond(carbonyl.c, amine.n, 2);
+        out.push(without(copy, [carbonyl.o]));
+      }
+    }
+    return out;
+  },
+
 };
 
 // Which transforms can be checked at all. Said out loud, because a route made

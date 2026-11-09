@@ -87,7 +87,7 @@ const SCHEMA = [
   { key: 'strategy', group: 'Search', type: 'enum', def: 'best-first',
     values: ['best-first', 'breadth', 'depth', 'iterative'],
     alias: ['search'], label: 'Search strategy',
-    help: 'best-first follows the cost model; iterative deepens a step at a time and returns something early.' },
+    help: 'Best-first balances cost and remaining work. Breadth tries shorter routes first, depth follows branches, and iterative raises the step limit one pass at a time.' },
 
   // --- Ranking ------------------------------------------------------------
   // Weights rather than one "priority" enum, so two concerns can be traded off
@@ -189,7 +189,7 @@ const SCHEMA = [
 
 // Preserve older profiles and shared links, but do not claim the engine enforces these.
 const UNAPPLIED = new Set([
-  'strategy', 'banElements', 'stereo', 'protection', 'maxPricePerGram',
+  'banElements', 'stereo', 'protection', 'maxPricePerGram',
   'scale', 'banHazards', 'maxChromatography',
 ]);
 
