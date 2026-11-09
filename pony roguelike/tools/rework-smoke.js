@@ -149,5 +149,47 @@ for (const [id, handler] of bossCases) {
   assert.ok(Number.isFinite(boss.x) && Number.isFinite(boss.y), id);
 }
 console.log('Simulated revised attacks for eight enemy archetypes and six bosses.');
+const treasure = { type:'treasure', shape:{mask:[[1]]}, doorSlots:[], itemPedestals:[] };
+ensureRoomBuilt(treasure);
+addTreasureChoice(treasure);
+assert.equal(treasure.itemPedestals.length, 2);
+assert.ok(treasure.itemPedestals.every(ped => ped.treasureChoice));
+assert.notEqual(treasure.itemPedestals[0].item.id, treasure.itemPedestals[1].item.id);
+for (let i = 0; i < 20; i++) {
+  assert.ok(rerollOnePedestal(treasure));
+  assert.notEqual(treasure.itemPedestals[0].item.id, treasure.itemPedestals[1].item.id);
+}
+const chooser = Object.create(Game.prototype);
+chooser.currentRoom = treasure;
+chooser.player = new Player('earth');
+chooser.player.passives = {};
+chooser.runLog = [];
+chooser.floatTexts = [];
+chooser.toast = () => {};
+chooser.player.x = treasure.itemPedestals[0].x * TILE;
+chooser.player.y = treasure.itemPedestals[0].y * TILE;
+chooser.updateItemPedestal();
+assert.ok(treasure.itemPedestals.every(ped => !ped.taken));
+const takeItem = applyItemToPlayer;
+let granted = 0;
+applyItemToPlayer = () => { granted++; };
+try {
+  assert.ok(chooser.tryTreasureChoice());
+  assert.equal(chooser.tryTreasureChoice(), false);
+  assert.equal(granted, 1);
+  assert.ok(treasure.itemPedestals.every(ped => ped.taken));
+} finally {
+  applyItemToPlayer = takeItem;
+}
+const charm = sandbox(new Player('filly'));
+ensureRoomBuilt(charm.currentRoom);
+const ally = new Enemy(ENEMY_TYPES.gravegrub, 4, 4, 0);
+const hostile = new Enemy(ENEMY_TYPES.gravegrub, 7, 4, 0);
+ally.charmTimer = 1;
+charm.currentRoom.enemies.push(ally, hostile);
+const before = ally.x;
+aiCharmed(charm, ally, 0.1);
+assert.ok(ally.x > before);
+console.log('Treasure confirmation, duplicate-free rerolls, and charm targeting passed.');
 console.log('Locked enemy aim, endgame HP curve and reward pools passed.');
 `, context);

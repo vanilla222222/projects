@@ -884,7 +884,7 @@ function populateRoomProcedural(node, dungeon, opts){
     spots = spots.filter(spot => !lane(spot));
     const scatterMax = scatterCountRange(node);
     let scatterBudget = Util.randi(Math.ceil(scatterMax * 0.45), scatterMax);
-    if (node.encounterLayout === 'cover' && Util.chance(0.55)) scatterBudget = Math.max(0, scatterBudget - applyRoomSetPiece());
+    if (node.encounterLayout === 'cover') scatterBudget = Math.max(0, scatterBudget - applyRoomSetPiece());
     enforcePathability(scatterObstacles(scatterBudget));
     spots.push(...reserved);
     Util.shuffle(spots);
@@ -955,9 +955,7 @@ function populateRoomProcedural(node, dungeon, opts){
       }
     }
   } else if (node.type === 'treasure') {
-    const tcx = Math.floor(node.tileW / 2), tcy = Math.floor(node.tileH / 2);
-    addItemOrTrinketPedestal(node, 'treasure', tcx, tcy, 0.55);
-    frameReward(node, tcx, tcy, 'crystal', { radius: 2 });
+    addTreasureChoice(node);
   } else if (node.type === 'shop') {
 
     const nSlots = Math.min(SHOP_MAX_SLOTS, Util.randi(3, 4) + shopBonusSlots(floorNum));
@@ -1258,16 +1256,22 @@ function populateCombatEncounter(node, dungeon, branch, spots){
   let candidates = spots.filter(safe);
   if (!candidates.length) candidates = roomFloorTiles(node, { avoidDoors:2 }).filter(safe);
   const composition = { pressure:0, ranged:0, support:0 };
+  const solidCover = node.obstacles.filter(ob => !ob.isHazard && !ob.isPit && !ob.isWalkable);
+  const roles = new Map(pool.map(type => [type, encounterEnemyRole(type)]));
+  const priority = node.encounterLayout === 'cover' ? ['ranged', 'pressure']
+    : node.encounterLayout === 'pockets' ? ['support', 'pressure'] : ['pressure', 'ranged'];
   let remaining = budget;
   while (remaining > 0 && candidates.length && node.enemies.length < maximum) {
     const options = pool.filter(type => {
-      const role = encounterEnemyRole(type);
-      return role === 'pressure' || composition[role] < (role === 'ranged' && floor >= 4 ? 2 : 1);
+      const role = roles.get(type);
+      const cost = role === 'pressure' && (type.xpTier || 1) < 3 ? 1 : 2;
+      return cost <= remaining && (role === 'pressure' || composition[role] < (role === 'ranged' && floor >= 4 ? 2 : 1));
     });
     if (!options.length) break;
-    const pressure = options.filter(type => encounterEnemyRole(type) === 'pressure');
+    const preferredRole = priority.find(role => composition[role] === 0 && options.some(type => roles.get(type) === role));
+    const preferred = options.filter(type => roles.get(type) === preferredRole);
     const swarm = node.forceSwarm && node.enemies.length === 0;
-    const type = swarm ? ENEMY_TYPES.swarmerdnb : pickBiasedEnemy(node.enemies.length === 0 && pressure.length ? pressure : options);
+    const type = swarm ? ENEMY_TYPES.swarmerdnb : pickBiasedEnemy(preferred.length ? preferred : options);
     const role = encounterEnemyRole(type);
     const cost = role === 'pressure' && (type.xpTier || 1) < 3 ? 1 : 2;
     if (remaining < cost && node.enemies.length) break;
@@ -1282,7 +1286,11 @@ function populateCombatEncounter(node, dungeon, branch, spots){
         const spot = candidates[j];
         const spacing = node.enemies.reduce((min, enemy) =>
           Math.min(min, Util.dist(spot.x, spot.y, enemy.x / TILE - 0.5, enemy.y / TILE - 0.5)), 5);
-        const score = spacing + (role === 'ranged' ? Util.dist(spot.x, spot.y, origin.x, origin.y) * 0.35 : 0);
+        const backline = role !== 'pressure';
+        const depth = Util.dist(spot.x, spot.y, origin.x, origin.y);
+        const cover = backline && node.encounterLayout === 'cover' && solidCover.some(ob =>
+          Util.dist2(spot.x, spot.y, ob.tx, ob.ty) <= 5);
+        const score = spacing + (backline ? depth * 0.4 : 0) + (cover ? 3 : 0);
         if (score > bestScore) { best = j; bestScore = score; }
       }
       const [spot] = candidates.splice(best, 1);
@@ -1388,8 +1396,8 @@ function pickRunLoot(candidates, run, category){
   return picked;
 }
 
-function pickItemFromPool(poolName, passiveChance){
-  const available = i => !i.locked || isItemUnlocked(i.id);
+function pickItemFromPool(poolName, passiveChance, excludedIds){
+  const available = i => (!excludedIds || !excludedIds.has(i.id)) && (!i.locked || isItemUnlocked(i.id));
 
   let basePassiveChance = passiveChance !== undefined ? passiveChance : 0.68;
 
@@ -1484,7 +1492,7 @@ function addStarPedestal(node, starId, tx, ty){
   node.itemPedestals.push({ item: STAR_TYPES[starId], taken: false, x: tx, y: ty, isStar: true, starId });
 }
 
-function pickTrinketFromPool(){
+function pickTrinketFromPool(excludedIds){
 
   const run = typeof activeGame === 'function' ? activeGame() : null;
   const p = run && run.player;
@@ -1493,8 +1501,9 @@ function pickTrinketFromPool(){
     const g = STATUS_GRANTING_ITEMS[p.primedStatus];
     if (g) cappedIds = new Set(g.trinkets);
   }
-  let candidates = TRINKET_LIST.filter(t => (!t.locked || isTrinketUnlocked(t.id)) && (!cappedIds || !cappedIds.has(t.id)));
-  if (!candidates.length) candidates = TRINKET_LIST.filter(t => !t.locked || isTrinketUnlocked(t.id));
+  const available = t => (!excludedIds || !excludedIds.has(t.id)) && (!t.locked || isTrinketUnlocked(t.id));
+  let candidates = TRINKET_LIST.filter(t => available(t) && (!cappedIds || !cappedIds.has(t.id)));
+  if (!candidates.length) candidates = TRINKET_LIST.filter(available);
   return pickRunLoot(candidates, run, 'trinket');
 }
 
@@ -1503,9 +1512,9 @@ function addFamiliarPedestal(node, familiar, tx, ty){
   node.itemPedestals.push({ item: familiar, taken: false, x: tx, y: ty, isFamiliar: true });
 }
 
-function pickFamiliarFromPool(){
+function pickFamiliarFromPool(excludedIds){
 
-  const candidates = FAMILIAR_LIST.filter(f => (!f.locked || isFamiliarUnlocked(f.id)) && !f.trashBagOnly);
+  const candidates = FAMILIAR_LIST.filter(f => (!excludedIds || !excludedIds.has(f.id)) && (!f.locked || isFamiliarUnlocked(f.id)) && !f.trashBagOnly);
   return candidates.length ? Util.choice(candidates) : null;
 }
 
@@ -1533,11 +1542,13 @@ function rerollOnePedestal(node){
   const list = (node.itemPedestals || []).filter(p => !p.taken);
   if (!list.length) return null;
   const ped = Util.choice(list);
+  const excluded = ped.treasureChoice
+    ? new Set(list.filter(offer => offer.treasureChoice).map(offer => offer.item.id)) : undefined;
   let next = null;
-  if (ped.isFamiliar) next = pickFamiliarFromPool();
-  else if (ped.isTrinket) next = pickTrinketFromPool();
+  if (ped.isFamiliar) next = pickFamiliarFromPool(excluded);
+  else if (ped.isTrinket) next = pickTrinketFromPool(excluded);
   else if (ped.isDeal) next = pickItemFromPool(ped.dealType || 'sombra');
-  else next = pickItemFromPool(itemPoolForRoomType(node.type));
+  else next = pickItemFromPool(itemPoolForRoomType(node.type), undefined, excluded);
   if (!next) return null;
   ped.item = next;
   return next;
@@ -1588,6 +1599,35 @@ function championizeRoomEnemies(node){
     count++;
   }
   return count;
+}
+
+function addTreasureChoice(node){
+  const center = findNearestFloor(node, Math.floor(node.tileW / 2), Math.floor(node.tileH / 2));
+  const offers = roomFloorTiles(node, { avoidDoors:2.5 }).sort((a, b) =>
+    Util.dist2(center.x, center.y, a.x, a.y) - Util.dist2(center.x, center.y, b.x, b.y));
+  // Separate both offers from the entry and from each other so neither is collected by accident.
+  const left = offers.find(spot => spot.x <= center.x - 2) || offers[0] || center;
+  const right = offers.find(spot => Util.dist2(left.x, left.y, spot.x, spot.y) >= 16);
+  const primary = pickItemFromPool('treasure', 1);
+  if (!primary) return;
+  addItemPedestal(node, primary, left.x, left.y);
+  if (!right) return;
+  const excluded = new Set([primary.id]);
+  const familiar = Util.chance(0.25) ? pickFamiliarFromPool(excluded) : null;
+  const trinket = !familiar && Util.chance(0.35) ? pickTrinketFromPool(excluded) : null;
+  const second = familiar || trinket || pickItemFromPool('treasure', 0.42, excluded);
+  if (!second) return;
+  if (familiar) addFamiliarPedestal(node, familiar, right.x, right.y);
+  else if (trinket) addTrinketPedestal(node, trinket, right.x, right.y);
+  else addItemPedestal(node, second, right.x, right.y);
+  for (const ped of node.itemPedestals) ped.treasureChoice = true;
+}
+
+function claimTreasureChoice(node, selected){
+  if (!selected.treasureChoice) return;
+  for (const ped of node.itemPedestals) {
+    if (ped !== selected && ped.treasureChoice) ped.taken = true;
+  }
 }
 
 function addItemOrTrinketPedestal(node, poolName, tx, ty, passiveChance){

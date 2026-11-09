@@ -307,7 +307,10 @@ function updateHUD(game){
   if (sideDonateBtn) {
     const node = game.currentRoom;
     const hasDonateOrArcade = !!(node.donationMachine || (node.karmaMachines && node.karmaMachines.length) || (node.fillies && node.fillies.length) || (node.machines && node.machines.length));
-    sideDonateBtn.classList.toggle('hidden', !hasDonateOrArcade);
+    const choosing = (node.itemPedestals || []).some(ped => ped.treasureChoice && !ped.taken);
+    sideDonateBtn.classList.toggle('hidden', !hasDonateOrArcade && !choosing);
+    const title = choosing ? 'Choose nearby treasure' : 'Donate / Arcade';
+    if (sideDonateBtn.title !== title) sideDonateBtn.title = title;
   }
 
   const minionsEl = document.getElementById('resMinions');
@@ -907,7 +910,11 @@ function showItemExamine(ped, player){
 
   const costEl = document.getElementById('itemExamineCost');
   if (costEl) {
-    if (ped.isDeal && player) {
+    if (ped.treasureChoice) {
+      const key = typeof keyCodeLabel === 'function' ? keyCodeLabel(keybinds.donate) : 'F';
+      costEl.textContent = key + ' / Donate button · Choose one';
+      costEl.classList.remove('hidden');
+    } else if (ped.isDeal && player) {
       let label;
       if (player.def.id === 'kirin') {
         label = player.dealFreebieUsed ? null : 'FREE';
