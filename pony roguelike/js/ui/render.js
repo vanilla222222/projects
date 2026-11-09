@@ -1175,7 +1175,9 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     for (const slot of node.shopSlots) {
       const px = slot.x * TILE, py = slot.y * TILE;
-      ctx.fillStyle = Util.bodyShade(ctx, px, py + 11, 14, Theme.world.pedestalBase); Util.drawRoundedRect(ctx, px - 16, py + 6, 32, 10, 2); ctx.fill();
+      ctx.fillStyle = '#201724'; ctx.fillRect(px - 16, py + 8, 32, 8);
+      ctx.fillStyle = Theme.world.pedestalBase; ctx.fillRect(px - 12, py + 5, 24, 8);
+      ctx.fillStyle = '#d0a279'; ctx.fillRect(px - 10, py + 5, 20, 2);
       if (slot.bought) continue;
       const bob = Math.sin(this.now / 260 + px) * 3;
       ctx.save();
@@ -1184,8 +1186,6 @@ Object.assign(Game.prototype, {
         const thing = slot.item || slot.trinket || slot.familiar;
         Util.drawItemIcon(ctx, 0, 0, thing, this.now);
       } else {
-        ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 10, Theme.world.shopPickup);
-        ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
         Util.drawPickupIcon(ctx, shopPickupIconObj(slot.pickup), 0);
       }
       ctx.restore();
@@ -1203,7 +1203,7 @@ Object.assign(Game.prototype, {
     if (!node.donationMachine) return;
     const ctx = this.ctx;
     const px = node.donationMachine.x * TILE, py = node.donationMachine.y * TILE;
-    Util.drawDonationMachine(ctx, px, py, donationProgressFrac());
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDonationMachine(pixel, px, py, donationProgressFrac()));
 
     const unlocks = ensureUnlockShape(loadUnlocks());
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
@@ -1220,7 +1220,7 @@ Object.assign(Game.prototype, {
       const def = KARMA_MACHINE_DEFS[m.resource];
       if (!def) continue;
       const px = m.x * TILE, py = m.y * TILE;
-      Util.drawDonationMachine(ctx, px, py, karmaMachineProgressFrac(m.resource));
+      NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDonationMachine(pixel, px, py, karmaMachineProgressFrac(m.resource)));
       const donated = unlocks.stats[def.stat] || 0;
       const awarded = unlocks.stats[def.awardedStat] || 0;
       ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
@@ -1236,7 +1236,7 @@ Object.assign(Game.prototype, {
     if (!node.rerollAltar) return;
     const ctx = this.ctx;
     const px = node.rerollAltar.x * TILE, py = node.rerollAltar.y * TILE;
-    Util.drawRerollAltar(ctx, px, py, this.now);
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawRerollAltar(pixel, px, py, this.now));
 
     const live = countRerollableShopSlots(node) > 0;
     const cost = rerollAltarCost(node.rerollAltar);
@@ -1251,7 +1251,7 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     const px = node.upgradeStation.x * TILE, py = node.upgradeStation.y * TILE;
     const station = node.upgradeStation;
-    Util.drawUpgradeStation(ctx, px, py, station.tier, this.now);
+    NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawUpgradeStation(pixel, px, py, station.tier, this.now));
 
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     if (station.tier >= UPGRADE_STATION_MAX_TIER) {
@@ -1269,31 +1269,22 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
     const px = node.wdControlButton.x * TILE, py = node.wdControlButton.y * TILE;
     const running = wdControlButtonState(this) === 'running';
-    const pulse = 0.5 + 0.5 * Math.sin(this.now * 3);
-
-    ctx.save();
-    Util.drawRoundedRect(ctx, px - 13, py - 13, 26, 26, 6);
-    ctx.fillStyle = '#2a2f3d';
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = running ? '#e05a5a' : '#5ad07a';
-    ctx.globalAlpha = 0.55 + 0.45 * pulse;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    ctx.fillStyle = running ? '#e05a5a' : '#5ad07a';
+    const color = running ? '#e05a5a' : '#5ad07a';
+    ctx.fillStyle = '#171322';
+    ctx.fillRect(px - 15, py - 12, 30, 24);
+    ctx.fillRect(px - 12, py - 15, 24, 30);
+    ctx.fillStyle = '#373c4a';
+    ctx.fillRect(px - 12, py - 12, 24, 24);
+    ctx.fillStyle = color;
+    ctx.fillRect(px - 9, py - 12, 18, 3);
     if (running) {
-      ctx.fillRect(px - 6, py - 7, 4, 14);
-      ctx.fillRect(px + 2, py - 7, 4, 14);
+      ctx.fillRect(px - 6, py - 6, 3, 12);
+      ctx.fillRect(px + 3, py - 6, 3, 12);
     } else {
-      ctx.beginPath();
-      ctx.moveTo(px - 5, py - 8);
-      ctx.lineTo(px + 8, py);
-      ctx.lineTo(px - 5, py + 8);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillRect(px - 6, py - 6, 3, 15);
+      ctx.fillRect(px - 3, py - 3, 3, 9);
+      ctx.fillRect(px, py, 6, 3);
     }
-    ctx.restore();
 
     ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = Theme.ui.textDim;
@@ -1311,9 +1302,9 @@ Object.assign(Game.prototype, {
     if (node.machines) {
       for (const m of node.machines) {
         const px = m.x * TILE, py = m.y * TILE;
-        if (m.kind === 'friendship') Util.drawFriendshipMachine(ctx, px, py, m, this.now);
-        else if (m.kind === 'tools') Util.drawToolsMachine(ctx, px, py, m, this.now);
-        else if (m.kind === 'dark') Util.drawDarkMachine(ctx, px, py);
+        if (m.kind === 'friendship') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawFriendshipMachine(pixel, px, py, m, this.now));
+        else if (m.kind === 'tools') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawToolsMachine(pixel, px, py, m, this.now));
+        else if (m.kind === 'dark') NightfallArt.rasterProp(ctx, px, py, pixel => Util.drawDarkMachine(pixel, px, py));
       }
     }
   },
@@ -1322,14 +1313,18 @@ Object.assign(Game.prototype, {
     const node = this.currentRoom;
     if (!node.playerTurrets) return;
     const ctx = this.ctx;
-    for (const turret of node.playerTurrets) Util.drawPlayerTurret(ctx, turret, this.now);
+    for (const turret of node.playerTurrets) {
+      NightfallArt.rasterProp(ctx, turret.x, turret.y, pixel => Util.drawPlayerTurret(pixel, turret, this.now));
+    }
   },
 
   drawChangelingMinions(){
     const minions = this.player && this.player.changelingMinions;
     if (!minions || !minions.length) return;
     const ctx = this.ctx;
-    for (const m of minions) Util.drawChangelingMinion(ctx, m, this.now);
+    for (const m of minions) {
+      NightfallArt.rasterProp(ctx, m.x, m.y, pixel => Util.drawChangelingMinion(pixel, m, this.now));
+    }
   },
 
   drawStairsPit(ctx, px, py, rx, ry, ringColor){
@@ -1711,19 +1706,14 @@ Object.assign(Game.prototype, {
   drawBombsExplosions(){
     const ctx = this.ctx;
     for (const b of this.bombs) {
-      const pulse = 1 + Math.sin(this.now / 100) * 0.15;
+      const hot = b.timer < 0.5;
+      const x = Math.round(b.x), y = Math.round(b.y);
+      const size = Math.max(18, Math.round(b.radius * 2.8 / 3) * 3);
       ctx.fillStyle = Theme.shadow.groundSoft;
-      ctx.beginPath(); ctx.ellipse(b.x, b.y + b.radius * 0.7, b.radius * 0.8, b.radius * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = Util.bodyShade(ctx, b.x - b.radius * 0.2, b.y - b.radius * 0.2, b.radius * pulse, Theme.fx.bombBody);
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.radius * pulse, 0, Math.PI * 2); ctx.fill();
-      const fuseCol = b.timer < 0.5 ? Theme.fx.fuseHot : Theme.fx.fuse;
-      ctx.strokeStyle = fuseCol; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(b.x + 3, b.y - 6); ctx.lineTo(b.x + 7, b.y - 12); ctx.stroke();
-      ctx.save();
-      ctx.shadowColor = fuseCol; ctx.shadowBlur = b.timer < 0.5 ? 8 : 4;
-      ctx.fillStyle = fuseCol;
-      ctx.beginPath(); ctx.arc(b.x + 7, b.y - 12, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+      ctx.fillRect(x - 9, y + 6, 18, 3);
+      NightfallArt.icon(ctx, x, y, { id:'lit-room-bomb', shape:'bomb', color:Theme.fx.bombBody }, 'pickup', size);
+      ctx.fillStyle = hot && Math.floor(this.now / 85) % 2 ? '#fff0a0' : hot ? Theme.fx.fuseHot : Theme.fx.fuse;
+      ctx.fillRect(x + 3, y - Math.round(size / 2), 3, 3);
     }
     for (const ex of this.explosions) {
       const t = 1 - ex.life / ex.maxLife;

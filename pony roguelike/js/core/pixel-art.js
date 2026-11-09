@@ -33,6 +33,27 @@ const NightfallArt = (() => {
     ctx.imageSmoothingEnabled = smoothing;
   }
 
+  // Legacy prop painters keep their state cues, but render onto a small sprite
+  // before compositing. Labels stay on the main canvas at display resolution.
+  const propSize = 96;
+  const propSurfaces = new Map();
+  function rasterProp(ctx, x, y, paint, unit = 3) {
+    const cells = propSize / unit;
+    if (!propSurfaces.has(unit)) propSurfaces.set(unit, surface(cells, cells));
+    const canvas = propSurfaces.get(unit);
+    const pixel = canvas.getContext('2d');
+    const half = cells / 2;
+    pixel.clearRect(0, 0, cells, cells);
+    pixel.save();
+    pixel.setTransform(1 / unit, 0, 0, 1 / unit, half - x / unit, half - y / unit);
+    try {
+      paint(pixel);
+    } finally {
+      pixel.restore();
+    }
+    blit(ctx, canvas, Math.round(x) - propSize / 2, Math.round(y) - propSize / 2, propSize, propSize);
+  }
+
   // Each family has a recognizable silhouette. Each catalog entry gets its own
   // engraving, trim, placement and highlights, including entries with the same icon.
   const shapes = {
@@ -445,6 +466,82 @@ const NightfallArt = (() => {
     blit(ctx, art, x - size / 2, y + size * 0.43 - height, size, height);
   }
 
+  function current(ctx, ob, now, flash) {
+    const { color, dark, pushX, pushY } = ob.def;
+    const dx = Math.sign(pushX), dy = Math.sign(pushY);
+    const frame = Math.floor(now / 135) % 3;
+    const variant = hash(ob.kind) % 3;
+    const light = flash ? paper : Util.shadeColor(color, 0.48);
+    const x = Math.round(ob.x), y = Math.round(ob.y);
+    rect(ctx, dark, x - 12, y - 9, 24, 18);
+    rect(ctx, dark, x - 9, y - 12, 18, 24);
+    rect(ctx, Util.shadeColor(color, -0.36), x - 9, y - 9, 18, 18);
+    const cell = (along, across, tint) =>
+      rect(ctx, tint, x + (along * dx - across * dy) * 3 - 1, y + (along * dy + across * dx) * 3 - 1, 3, 3);
+    for (const offset of [-2, 1]) {
+      const head = ((offset + frame + 3) % 6) - 2;
+      for (let wing = -2; wing <= 2; wing++) cell(head - Math.abs(wing), wing, light);
+    }
+    cell(-3, variant - 1, color);
+  }
+
+  function hazard(ctx, ob, variant, flash) {
+    const { kind, def } = ob;
+    const x = Math.round(ob.x), y = Math.round(ob.y);
+    const dark = def.dark, mid = flash ? '#e9b8ae' : def.color;
+    const light = flash ? paper : Util.shadeColor(mid, 0.42);
+    const cell = (dx, dy, w, h, color) => rect(ctx, color, x + dx * 3, y + dy * 3, w * 3, h * 3);
+    cell(-4, 2, 8, 2, dark);
+    cell(-3, 4, 6, 1, dark);
+    if (kind === 'cactus') {
+      cell(-1, -5, 3, 9, dark);
+      cell(-1, -4, 2, 7, mid);
+      cell(-3, -2, 2, 4, dark);
+      cell(-3, -2, 1, 3, mid);
+      cell(2, -3, 2, 4, dark);
+      cell(2, -3, 1, 3, mid);
+      cell(-2, 0, 5, 1, mid);
+      cell(0, -4, 1, 5, light);
+      cell(-3, -3, 1, 1, light);
+    } else if (kind === 'floorswitch') {
+      cell(-4, -3, 8, 6, dark);
+      cell(-3, -2, 6, 4, mid);
+      cell(-2, -1, 4, 2, light);
+    } else if (def.freeze) {
+      cell(-3, 0, 6, 3, mid);
+      cell(-2, -1, 4, 1, mid);
+      cell(-4, 1, 2, 1, mid);
+      cell(2, 1, 2, 1, mid);
+      for (let i = 0; i < 3; i++) cell(-2 + i * 2, (i + variant) % 3, 1 + (i % 2), 1, light);
+    } else if (/gear|cog|bell/.test(kind)) {
+      cell(-3, -3, 6, 7, mid);
+      cell(-4, -1, 8, 3, mid);
+      cell(-1, -4, 2, 8, mid);
+      cell(-1, -1, 2, 2, dark);
+      cell(-3, -3, 4, 1, light);
+    } else if (/column|veil|exit|horizon/.test(kind)) {
+      cell(-3, -4, 6, 8, dark);
+      cell(-2, -5, 4, 1, light);
+      cell(-3, -4, 1, 7, mid);
+      cell(2, -4, 1, 7, mid);
+      cell(-1, -2, 2, 4, mid);
+      cell(variant - 2, -1, 1, 1, light);
+    } else if (/rot|ooze|silt|ash|mark|glow/.test(kind)) {
+      cell(-3, -1, 6, 4, mid);
+      cell(-2, -2, 4, 1, mid);
+      cell(-4, 1, 1, 2, mid);
+      cell(3, 0, 1, 2, mid);
+      for (let i = 0; i < 3; i++) cell(-2 + i * 2, (variant + i) % 4 - 1, 1, 1, light);
+    } else {
+      for (let i = 0; i < 3; i++) {
+        const dx = -4 + i * 3, height = 2 + (variant + i * 2) % 4;
+        cell(dx, 3 - height, 2, height, mid);
+        cell(dx + 1, 2 - height, 1, 2, light);
+        cell(dx, 2, 2, 1, dark);
+      }
+    }
+  }
+
   function rock(ctx, ob, variant, flash) {
     const cy = ob.tall ? -6 : 0;
     const size = 24;
@@ -655,5 +752,5 @@ const NightfallArt = (() => {
     blit(ctx, panorama, 0, 0, width, height);
   }
 
-  return { icon, image, mount, pony, dnb, enemyImage, door, fire, rock, prop, tile, backdrop };
+  return { icon, image, mount, pony, dnb, enemyImage, door, fire, rock, prop, current, hazard, rasterProp, tile, backdrop };
 })();
