@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Fathom</title>
-<link rel="stylesheet" href="style.css?v=pixel-art-1">
+<link rel="stylesheet" href="style.css?v=mobile-2">
 </head>
 <body>
 <canvas id="stage"></canvas>
@@ -20,7 +20,7 @@
   </div>
   <div class="touch-act">
     <button data-touch-action="mode" aria-pressed="false">Dig / attack</button>
-    <button data-touch-action="hook" aria-label="Grapple at target">Hook</button>
+    <button data-touch-action="hook" aria-label="Aim next tap with grapple" aria-pressed="false">Hook</button>
     <button data-touch-hold="jump" aria-label="Jump or climb">Jump</button>
   </div>
   <div class="touch-menu">
@@ -30,6 +30,7 @@
     <button data-touch-action="zoomIn" aria-label="Zoom in">+</button>
     <button data-touch-action="pause">Pause</button>
     <button data-touch-action="house">House</button>
+    <button data-touch-action="journal">Journal</button>
   </div>
 </div>
 
@@ -62,11 +63,11 @@
 <script src="js/sprite.js?v=underworld-1"></script>
 <script src="js/webgl.js?v=boss-armories-1"></script>
 <script src="js/render.js?v=molten-exchange-1"></script>
-<script src="js/ui.js?v=underworld-fishing-1"></script>
+<script src="js/ui.js?v=mobile-2"></script>
 <script src="js/menu.js?v=pixel-art-1"></script>
-<script src="js/touch.js"></script>
+<script src="js/touch.js?v=2"></script>
 <script src="js/wiring.js?v=boss-armories-1"></script>
-<script src="js/game.js?v=molten-exchange-1"></script>
+<script src="js/game.js?v=mobile-2"></script>
 <script>
 (function boot() {
   const game = makeGame(document.getElementById('stage'), FATHOM);

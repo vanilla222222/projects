@@ -5050,7 +5050,7 @@ function makeGame(canvas, deps) {
     addEventListener('resize', resize);
     bind();
     if (deps.touch) touchControls = deps.touch.bindTouchControls(canvas, document.getElementById('touch-controls'), {
-      modal: () => !!(ui?.isOpen || minimap?.isLarge),
+      modal: () => !!(ui?.isOpen || minimap?.isLarge || state?.paused),
       hold: (key, value) => { input[key] = value; if (value && audio) audio.unlock(); },
       aim: worldFromScreen,
       run(action) {
@@ -5064,6 +5064,8 @@ function makeGame(canvas, deps) {
           if (minimap) minimap.setLarge(!minimap.isLarge);
         } else if (action === 'place' && !state.paused) place();
         else if (action === 'hook' && !state.paused) fireHook();
+        else if (action === 'hookHint') say('Tap the world to grapple there.', 2);
+        else if (action === 'journal') openFieldJournal();
         else if (action === 'pause') state.paused = !state.paused;
         else if (action === 'house') checkHousing();
         else if (action === 'zoomIn' || action === 'zoomOut') {

@@ -270,3 +270,8 @@ body.dragging .trash { visibility: visible; transform: translate(-50%, 0); }
     .item { font-size: 11px; }
     .actions button { flex: 1 1 auto; padding: 8px 10px; }
 }
+
+.menu label{ display:block; margin:4px 8px; }
+.menu select{ width:100%; min-height:38px; font:inherit; font-size:16px; }
+.menu button{ min-height:42px; }
+.menu button:not([data-action="remove"]){ color:var(--text); }

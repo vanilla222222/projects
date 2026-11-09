@@ -21,6 +21,7 @@ function makeUI(root, deps) {
   const els = {};
   let open = false;
   let townOpen = false;
+  let touchSlotMode = 'move';
 
   function el(tag, cls, parent) {
     const node = document.createElement(tag);
@@ -533,6 +534,21 @@ function makeUI(root, deps) {
     return spec ? spec.name : item.key;
   }
 
+  function bindSlotPress(node, activate) {
+    let touch = null;
+    node.addEventListener('pointerdown', ev => {
+      if (ev.pointerType === 'touch') touch = { id:ev.pointerId, x:ev.clientX, y:ev.clientY };
+      else activate(ev);
+    });
+    node.addEventListener('pointerup', ev => {
+      if (touch?.id !== ev.pointerId) return;
+      const tap = Math.hypot(ev.clientX - touch.x, ev.clientY - touch.y) < 9;
+      touch = null;
+      if (tap) activate(ev);
+    });
+    node.addEventListener('pointercancel', ev => { if (touch?.id === ev.pointerId) touch = null; });
+  }
+
   function buildSlot(index, parent, extraClass) {
     const node = el('button', 'slot' + (extraClass ? ' ' + extraClass : ''), parent);
     node.dataset.index = String(index);
@@ -542,13 +558,13 @@ function makeUI(root, deps) {
       ev.preventDefault();
       ev.stopPropagation();
       if (!open && parent === els.bar && onSelectHotbar) { onSelectHotbar(index); return; }
-      if (ev.button === 2) inventory.splitSlot(index);
-      else if (ev.shiftKey) inventory.quickMove(index);
+      const mode = ev.pointerType === 'touch' ? touchSlotMode : 'move';
+      if (ev.button === 2 || mode === 'split') inventory.splitSlot(index);
+      else if (ev.shiftKey || mode === 'quick') inventory.quickMove(index);
       else inventory.clickSlot(index);
       sync();
     };
-    node.addEventListener('mousedown', activate);
-    node.addEventListener('pointerdown', ev => { if (ev.pointerType === 'touch') activate(ev); });
+    bindSlotPress(node, activate);
     node.addEventListener('contextmenu', (ev) => ev.preventDefault());
     watchSlot(node, () => inventory.slots[index]);
     return node;
@@ -630,12 +646,26 @@ function makeUI(root, deps) {
     const actions = el('div', 'actions', left);
     const sortBtn = el('button', 'action', actions);
     sortBtn.textContent = 'Sort';
-    sortBtn.addEventListener('mousedown', (ev) => {
+    sortBtn.addEventListener('click', (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       inventory.sort('main');
       sync();
     });
+    const touchTools = el('div', 'touch-slot-tools', actions);
+    const touchModes = [['move', 'Move'], ['split', 'Split stack'], ['quick', 'Quick move']];
+    for (const [mode, label] of touchModes) {
+      const button = el('button', 'action', touchTools);
+      button.textContent = label;
+      button.dataset.slotMode = mode;
+      button.setAttribute('aria-pressed', String(mode === touchSlotMode));
+      button.addEventListener('click', () => {
+        touchSlotMode = mode;
+        for (const entry of touchTools.children) {
+          entry.setAttribute('aria-pressed', String(entry.dataset.slotMode === mode));
+        }
+      });
+    }
     const trashWrap = el('div', 'trash-wrap', actions);
     el('span', 'trash-label', trashWrap).textContent = 'Trash';
     els.trashSlot = buildSlot(inventory.section('trash').from, trashWrap, 'trash');
@@ -663,15 +693,16 @@ function makeUI(root, deps) {
     for (let i = 0; i < CHEST_SLOTS; i += 1) {
       const node = el('div', 'slot', els.chestGrid);
       node.dataset.chest = String(i);
-      node.addEventListener('mousedown', (ev) => {
+      const activate = ev => {
         ev.preventDefault();
         ev.stopPropagation();
-        if (onChestMove) onChestMove(i, ev.shiftKey);
-      });
+        if (onChestMove) onChestMove(i, ev.shiftKey || (ev.pointerType === 'touch' && touchSlotMode === 'quick'));
+      };
+      bindSlotPress(node, activate);
       watchSlot(node, () => (chest && chest[i]) || null);
       els.chestSlots.push(node);
     }
-    el('p', 'hint', els.chestPanel).textContent = 'Click to take \u2014 shift-click to stow';
+    el('p', 'hint', els.chestPanel).textContent = 'Tap to transfer. Use Quick move to stow, or Shift-click with a mouse.';
 
     // The shop, shown while talking to a villager.
     els.shopPanel = el('div', 'panel shop-panel', els.screen);

@@ -456,7 +456,9 @@
       clampView();
       render();
     }, { passive: false });
-    canvasEl.addEventListener("touchend", () => { view.panning = false; });
+    function stopTouchPan() { view.panning = false; }
+    canvasEl.addEventListener("touchend", stopTouchPan);
+    canvasEl.addEventListener("touchcancel", stopTouchPan);
 
     if (typeof ResizeObserver !== "undefined") {
       new ResizeObserver(() => render()).observe(chartFrameEl);

@@ -9,17 +9,17 @@ function element(dataset = {}) {
   };
 }
 const stage = element(), host = element(), left = element({ touchHold: 'left' }),
-  jump = element({ touchHold: 'jump' }), mode = element({ touchAction: 'mode' }), bag = element({ touchAction: 'bag' });
+  jump = element({ touchHold: 'jump' }), mode = element({ touchAction: 'mode' }), bag = element({ touchAction: 'bag' }), hook = element({ touchAction: 'hook' });
 host.matchMedia = () => ({ matches: true });
 const controls = element();
-controls.querySelectorAll = key => key === '[data-touch-hold]' ? [left, jump] : [mode, bag];
+controls.querySelectorAll = key => key === '[data-touch-hold]' ? [left, jump] : [mode, bag, hook];
 const input = {};
-let target = null, modal = false, places = 0;
+let target = null, modal = false, places = 0, hooks = 0;
 const binder = bindTouchControls(stage, controls, {
   modal: () => modal,
   hold: (key, value) => { input[key] = value; },
   aim: ev => { target = ev.clientX; },
-  run: action => { if (action === 'place') places++; if (action === 'bag') modal = !modal; }
+  run: action => { if (action === 'place') places++; if (action === 'hook') hooks++; if (action === 'bag') modal = !modal; }
 }, host);
 assert.equal(controls.hidden, true);
 binder.setPlaying(true);
@@ -41,6 +41,17 @@ assert.equal(input.dig, false);
 bag.emit('click'); mode.emit('click');
 stage.emit('pointerdown', { pointerType: 'touch', pointerId: 5 });
 assert.equal(places, 1);
+stage.emit('pointerup', { pointerId: 5 });
+left.emit('pointerdown', { pointerId: 7 });
+hook.emit('click');
+assert.equal(input.left, true);
+stage.emit('pointerdown', { pointerType: 'touch', pointerId: 8, clientX: 120 });
+assert.equal(hooks, 1);
+assert.equal(places, 1);
+assert.equal(target, 120);
+modal = true;
+binder.sync();
+assert.equal(input.left, false);
 host.emit('blur');
 binder.setPlaying(false);
 assert.equal(controls.hidden, true);

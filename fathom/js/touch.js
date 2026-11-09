@@ -3,12 +3,16 @@
 function bindTouchControls(stage, controls, actions, host = window) {
   if (!controls) return { setPlaying() {}, sync() {}, get active() { return false; } };
   let active = !!host.matchMedia?.('(pointer: coarse)').matches;
-  let playing = false, mode = 'dig', aim = null;
+  let playing = false, mode = 'dig', aim = null, hook = false, wasModal = false;
+  const hookButton = controls.querySelector?.('[data-touch-action=hook]');
   const held = new Map();
 
   function sync() {
     controls.hidden = !active || !playing;
-    controls.classList.toggle('modal', actions.modal());
+    const modal = actions.modal();
+    controls.classList.toggle('modal', modal);
+    if (modal && !wasModal) reset();
+    wasModal = modal;
   }
   function release(id) {
     const key = held.get(id);
@@ -21,10 +25,17 @@ function bindTouchControls(stage, controls, actions, host = window) {
     aim = null;
     actions.hold('dig', false);
   }
+  function clearAim() {
+    const pointer = aim;
+    aim = null;
+    if (pointer !== null && stage.hasPointerCapture?.(pointer)) stage.releasePointerCapture(pointer);
+    hook = false;
+    hookButton?.setAttribute('aria-pressed', 'false');
+    actions.hold('dig', false);
+  }
   function reset() {
     for (const id of [...held.keys()]) release(id);
-    aim = null;
-    actions.hold('dig', false);
+    clearAim();
   }
   stage.addEventListener('pointerdown', ev => {
     if (ev.pointerType !== 'touch' || !playing || actions.modal() || aim !== null) return;
@@ -33,7 +44,11 @@ function bindTouchControls(stage, controls, actions, host = window) {
     aim = ev.pointerId;
     stage.setPointerCapture?.(aim);
     actions.aim(ev);
-    if (mode === 'dig') actions.hold('dig', true);
+    if (hook) {
+      hook = false;
+      hookButton?.setAttribute('aria-pressed', 'false');
+      actions.run('hook');
+    } else if (mode === 'dig') actions.hold('dig', true);
     else actions.run('place');
   });
   stage.addEventListener('pointermove', ev => {
@@ -59,7 +74,12 @@ function bindTouchControls(stage, controls, actions, host = window) {
       mode = mode === 'dig' ? 'place' : 'dig';
       button.textContent = mode === 'dig' ? 'Dig / attack' : 'Place / use';
       button.setAttribute('aria-pressed', String(mode === 'place'));
-      reset();
+      clearAim();
+    } else if (action === 'hook' && !actions.modal()) {
+      clearAim();
+      hook = true;
+      hookButton?.setAttribute('aria-pressed', 'true');
+      actions.run('hookHint');
     } else {
       actions.run(action);
       if (actions.modal()) reset();
@@ -67,6 +87,8 @@ function bindTouchControls(stage, controls, actions, host = window) {
     sync();
   });
   host.addEventListener('blur', reset);
+  host.addEventListener('orientationchange', reset);
+  host.document?.addEventListener('visibilitychange', () => { if (host.document.hidden) reset(); });
   sync();
   return {
     setPlaying(on) { playing = on; if (!on) reset(); sync(); },
