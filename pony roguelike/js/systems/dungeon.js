@@ -377,7 +377,7 @@ function generateDungeon(floorNum){
   }
   const groupAType = weightedGroupPick(['curse', 'sacrifice', 'challenge', 'miniboss', 'bosschallenge']);
   const groupBType = weightedGroupPick(['shrine', 'petshop', 'vault', 'arcade', 'karma']);
-  const starRolled = Util.chance(Math.min(1, DUNGEON_CONFIG.specialChances.star + getStarRoomChanceBonus()));
+  const starRolled = Util.chance(DUNGEON_CONFIG.specialChances.star);
 
   const decidedSpecialCount = 5 + 2;
   const targetNormal = Math.min(maxNormal, Math.max(minNormal, totalRoomTarget - decidedSpecialCount));

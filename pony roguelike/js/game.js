@@ -56,6 +56,7 @@ class Game {
     this.runSeed = { int: seedInt, display: seedDisplay };
     this.player = new Player(classId);
 
+    initializeSkillTreeLoadout(this.player);
     const startDef = CLASSES[classId];
     if (startDef.startingFamiliars) {
       for (const grant of startDef.startingFamiliars) {
@@ -65,7 +66,6 @@ class Game {
       }
     }
 
-    applySkillTreeStartingPickups(this.player);
     recalcPlayerStats(this.player);
 
     if (this.player.wispCountBonus > 0) {
