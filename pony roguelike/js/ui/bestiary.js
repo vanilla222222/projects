@@ -100,7 +100,9 @@ function bestiaryCard(opts){
   head.className = 'best-card-head';
   const icon = document.createElement('div');
   icon.className = 'best-card-icon';
-  if (opts.seen && opts.dotColor) {
+  if (opts.seen && opts.art) {
+    icon.innerHTML = NightfallArt.image(opts.art, opts.artKind);
+  } else if (opts.seen && opts.dotColor) {
     icon.classList.add('best-dot');
     icon.style.background = opts.dotColor;
   } else {
@@ -363,7 +365,7 @@ function renderBestiaryItems(wrap){
       if (pc) chips.push(pc);
       if (item.locked) chips.push({ text:'🔒 Locked', title:'Unlocked by an achievement — see the Achievements panel.' });
       grid.appendChild(bestiaryCard({
-        seen, icon: item.icon, name: item.name,
+        seen, art: item, icon: item.icon, name: item.name,
         lines: [item.desc], chips,
         extra: item.quality ? ('★'.repeat(item.quality) + '☆'.repeat(4 - item.quality)) : null,
         tier: bestiaryTierFor('item', counts[item.id] || 0), category: 'item', count: counts[item.id] || 0,
@@ -383,7 +385,7 @@ function renderBestiarySimple(wrap, list, seenSection, extraFn, chipsFn){
   for (const entry of list) {
     const seen = !!seenMap[entry.id];
     grid.appendChild(bestiaryCard({
-      seen, icon: entry.icon, name: entry.name,
+      seen, art: entry, icon: entry.icon, name: entry.name,
       lines: [entry.desc],
       chips: chipsFn ? chipsFn(entry) : null,
       extra: extraFn ? extraFn(entry) : null,
@@ -423,7 +425,7 @@ function renderBestiaryFamiliars(wrap){
       if (f.trashBagOnly) chips.push({ text:'🗑 Trash Bag Only', title:'Only ever obtained from the Trash Bag sack.' });
       if (f.locked) chips.push({ text:'🔒 Locked', title:'Unlocked by an achievement — see the Achievements panel.' });
       chips.push(...extraFieldChips(f));
-      grid.appendChild(bestiaryCard({ seen, icon: f.icon, name: f.name, lines: [f.desc], chips, tier: bestiaryTierFor('familiar', counts[f.id] || 0), category:'familiar', count: counts[f.id] || 0 }));
+      grid.appendChild(bestiaryCard({ seen, art: f, artKind: 'familiar', icon: f.icon, name: f.name, lines: [f.desc], chips, tier: bestiaryTierFor('familiar', counts[f.id] || 0), category:'familiar', count: counts[f.id] || 0 }));
     }
     wrap.appendChild(grid);
   }
@@ -438,7 +440,7 @@ function renderBestiaryFamiliars(wrap){
       if (f.radius) chips.push('R' + f.radius);
       if (f.locked) chips.push({ text:'🔒 Locked', title:'Unlocked by an achievement — see the Achievements panel.' });
       chips.push(...extraFieldChips(f));
-      grid.appendChild(bestiaryCard({ seen, icon: f.icon, name: f.name, lines: [f.desc], chips, tier: bestiaryTierFor('familiar', counts[f.id] || 0), category:'familiar', count: counts[f.id] || 0 }));
+      grid.appendChild(bestiaryCard({ seen, art: f, artKind: 'familiar', icon: f.icon, name: f.name, lines: [f.desc], chips, tier: bestiaryTierFor('familiar', counts[f.id] || 0), category:'familiar', count: counts[f.id] || 0 }));
     }
     wrap.appendChild(grid);
   }
@@ -460,7 +462,7 @@ function renderBestiaryPills(wrap){
     const seen = !!seenMap[c.id];
     const n = pillCounts[c.id] || 0;
     grid.appendChild(bestiaryCard({
-      seen, dotColor: c.color, icon:'💊', name: c.name,
+      seen, art: c, artKind: 'pill', icon:'💊', name: c.name,
       lines: [],
       extra: n ? ('Taken ' + Util.formatNum(n) + ' time' + (n === 1 ? '' : 's') + '.') : 'Taken at least once.',
       tier: bestiaryTierFor('pill', n), category: 'pill', count: n,
