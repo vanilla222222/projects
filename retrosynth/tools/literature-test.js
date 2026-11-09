@@ -66,3 +66,20 @@ const warning = makeEngine(normalize({ ...riskOptions, verify:'warn' })).route(c
 assert.ok(warning.routes.some(route => route.steps[0].verdict.stereo));
 assert.equal(makeEngine(normalize({ ...riskOptions, verify:'strict' })).route(chiralRisk).routes.length, 0);
 console.log(recovered + '/' + cases.length + ' published paths recovered, strict stereo regression passed. Stops ' + JSON.stringify(stops));
+
+const { verify } = require('../js/forward.js');
+const { disconnect } = require('../js/transforms.js');
+const { parse } = require('../js/smiles.js');
+for (const [transform, correct, wrong, precursors, selective] of [
+  ['sn2-amine', 'C[C@@H](NC)CC', 'C[C@H](NC)CC', ['CN', 'C[C@H](Br)CC'], true],
+  ['epoxide-opening', 'C[C@@H](NC)CO', 'C[C@H](NC)CO', ['CN', 'C[C@H]1CO1'], false],
+]) {
+  const inputs = precursors.map(canonical);
+  const verdict = verify({ transform, product:canonical(correct), precursors:inputs });
+  assert.equal(verdict.inversion, true, transform);
+  assert.equal(verdict.selective, selective, transform);
+  assert.equal(verify({ transform, product:canonical(wrong), precursors:inputs }).ok, false, transform);
+  assert.ok(disconnect(parse(correct)).some(step => step.transform === transform
+    && step.precursors.slice().sort().join() === inputs.slice().sort().join()), transform);
+}
+console.log('SN2 and epoxide-opening inversion, competing regioisomers and wrong-isomer checks passed.');

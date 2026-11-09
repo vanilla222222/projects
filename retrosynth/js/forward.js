@@ -32,7 +32,9 @@ function combine(mols) {
   for (const mol of mols) {
     offsets.push(out.atoms.length);
     const base = out.atoms.length;
-    for (const atom of mol.atoms) out.addAtom(atom.el, atom);
+    for (const atom of mol.atoms) out.addAtom(atom.el, {
+      ...atom, chiralNbrs:atom.chiralNbrs?.map(index => index < 0 ? index : base + index),
+    });
     for (const bond of mol.bonds) out.addBond(base + bond.a, base + bond.b, bond.order, bond);
   }
   return { mol: out, offsets };
@@ -260,7 +262,33 @@ const FORWARD = {
     for (const amine of g.amines) {
       if (amine.hs < 1) continue;
       for (const halide of g.halides) {
-        out.push(join(mol, amine.n, halide.c, [halide.x]));
+        if (halide.halogen === 'F' || mol.hydrogens(halide.c) < 1
+          || mol.adjacency[halide.c].some(l => l.bond.order !== 1)) continue;
+        const copy = mol.clone();
+        copy.addBond(halide.c, amine.n, 1);
+        const inverted = copy.invertSubstitution(halide.c, halide.x, amine.n);
+        const product = without(copy, [halide.x]);
+        product.inversion = inverted;
+        out.push(inverted ? product : flagStereo(product, [halide.c - Number(halide.x < halide.c)]));
+      }
+    }
+    return out;
+  },
+  'epoxide-opening': (mol, g) => {
+    const out = [];
+    for (const epoxide of g.epoxides) {
+      for (const carbon of [epoxide.a, epoxide.b]) {
+        if (mol.hydrogens(carbon) < 1) continue;
+        for (const amine of g.amines) {
+          if (amine.hs < 1) continue;
+          const copy = mol.clone();
+          const opening = copy.bondBetween(carbon, epoxide.o);
+          copy.bonds = copy.bonds.filter(bond => bond !== opening);
+          copy.bonds.forEach((bond, index) => { bond.index = index; });
+          copy.addBond(carbon, amine.n, 1);
+          copy.inversion = copy.invertSubstitution(carbon, epoxide.o, amine.n);
+          out.push(copy.inversion ? copy : flagStereo(copy, [carbon]));
+        }
       }
     }
     return out;
@@ -411,12 +439,14 @@ function verify(step) {
 
   const made = new Set();
   const unresolved = new Set();
+  const inversions = new Set();
   for (const product of products) {
     for (const piece of product.components()) {
       try {
         const text = FW.smiles.canonicalWrite(piece);
         if (text) {
           made.add(text);
+          if (product.inversion) inversions.add(text);
           if (product.unresolvedStereo) unresolved.add(text);
         }
       } catch (err) { void err; }
@@ -443,6 +473,7 @@ function verify(step) {
     ok,
     selective: ok && warnings.length === 0,
     stereo,
+    inversion:inversions.has(step.product),
     interference,
     alternatives: others.slice(0, 4),
     note: ok ? warnings.join(' · ') || 'No alternative product found by the model'

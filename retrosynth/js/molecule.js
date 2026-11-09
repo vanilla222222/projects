@@ -20,6 +20,14 @@ class Molecule {
   }
 
   // --- building ----------------------------------------------------------
+  invertSubstitution(center, leaving, incoming) {
+    const atom = this.atoms[center];
+    if (!atom.chiral || !atom.chiralNbrs?.includes(leaving)) return false;
+    atom.chiralNbrs = atom.chiralNbrs.map(neighbor => neighbor === leaving ? incoming : neighbor);
+    atom.chiral = atom.chiral === '@' ? '@@' : '@';
+    return true;
+  }
+
   addAtom(element, options) {
     const o = options || {};
     const atom = {

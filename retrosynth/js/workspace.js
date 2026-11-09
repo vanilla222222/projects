@@ -68,6 +68,7 @@
         : verdict.note;
     const check = element('div', 'rcheck ' + (!verdict?.checked ? 'unchecked' : verdict.selective ? 'good' : 'mixed'), label);
     if (verdict?.alternatives?.length) check.append(document.createTextNode(' · ' + verdict.alternatives.join(', ')));
+    if (verdict?.inversion) check.append(document.createTextNode(' · Inversion at the attacked carbon'));
     body.append(check);
     row.append(element('span', 'rnum', String(index + 1)), body);
     return row;
@@ -128,9 +129,15 @@
     }
     setStatus(answer.routes.length + (answer.routes.length === 1 ? ' route' : ' routes')
       + ' · ' + answer.explored + ' states explored' + timing + '.' + stop);
+    const cleaner = answer.routes.findIndex(route => route.ranking?.uncertain === 0);
     answer.routes.forEach((route, i) => {
-      results.append(renderRoute(route, 'Route ' + (i + 1) + ' · ' + route.depth
-        + (route.depth === 1 ? ' step' : ' steps') + ' · score ' + route.cost, i === 0));
+      const card = renderRoute(route, 'Route ' + (i + 1) + ' · ' + route.depth
+        + (route.depth === 1 ? ' step' : ' steps') + ' · score ' + route.cost, i === 0);
+      if (route.ranking?.uncertain && cleaner >= 0) {
+        card.append(element('p', 'rwhy', 'Route ' + (cleaner + 1)
+          + ' has no unresolved or unchecked steps in the forward model.'));
+      }
+      results.append(card);
     });
   }
 
