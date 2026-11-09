@@ -378,7 +378,8 @@ class Game {
     else if (this.currentFloorTrackId) Sound.startMusic(this.currentFloorTrackId);
     else Sound.stopMusic();
     const label = roomLabel(node);
-    if (label) showRoomBanner(label, node.type);
+    if (label) showRoomBanner(node.type === 'treasure' && node.itemPedestals.some(p => p.treasureChoice && !p.taken)
+      ? 'Treasure Room · Choose One' : label, node.type);
   }
 
   loadTestRoom(template, roomType){
@@ -489,6 +490,7 @@ class Game {
 
   tryDonate(){
     if (this.state !== 'playing' || this.paused || this.freezeTimer > 0) return;
+    if (this.tryTreasureChoice()) return;
     if (this.currentRoom && this.currentRoom.type === 'karma') tryDonateKarmaMachine(this);
     else tryDonateMachine(this);
   }
@@ -531,6 +533,7 @@ class Game {
 
   tryDonateOrArcade(){
     if (this.state !== 'playing' || this.paused || this.freezeTimer > 0) return;
+    if (this.tryTreasureChoice()) return;
     if (this.currentRoom && this.currentRoom.type === 'karma' && this.currentRoom.karmaMachines && this.currentRoom.karmaMachines.length) tryDonateKarmaMachine(this);
     else if (this.currentRoom && this.currentRoom.donationMachine) tryDonateMachine(this);
     else tryArcadeInteract(this);
@@ -698,11 +701,26 @@ class Game {
     }
   }
 
-  updateItemPedestal(){
+  tryTreasureChoice(){
+    const offers = (this.currentRoom.itemPedestals || []).filter(ped => ped.treasureChoice && !ped.taken);
+    if (!offers.length) return false;
+    let nearest = null;
+    let distance = 46;
+    for (const ped of offers) {
+      const d = Util.dist(this.player.x, this.player.y, ped.x * TILE, ped.y * TILE);
+      if (d < distance) { nearest = ped; distance = d; }
+    }
+    if (nearest) this.updateItemPedestal(nearest);
+    else this.toast('Move closer to the treasure you want.');
+    return true;
+  }
+
+  updateItemPedestal(selection){
+
     const node = this.currentRoom;
     if (!node.itemPedestals) return;
     for (const ped of node.itemPedestals) {
-      if (ped.taken) continue;
+      if (ped.taken || (selection ? ped !== selection : ped.treasureChoice)) continue;
       const px = ped.x * TILE, py = ped.y * TILE;
       const distToPed = Util.dist(this.player.x, this.player.y, px, py);
 
@@ -710,7 +728,7 @@ class Game {
         if (distToPed >= 22) ped.justDropped = false;
         else continue;
       }
-      if (distToPed < 22) {
+      if (distToPed < (selection ? 46 : 22)) {
 
         if (ped.isDeal) {
           const player = this.player;
@@ -755,6 +773,7 @@ class Game {
           player.coins -= ped.coinCost;
         }
         ped.taken = true;
+        claimTreasureChoice(node, ped);
         if (ped.isTrinket) equipTrinket(this, ped.item, ped);
         else if (ped.isFamiliar) addFamiliar(this, ped.item);
 

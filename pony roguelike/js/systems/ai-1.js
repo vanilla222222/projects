@@ -17,7 +17,14 @@ function aiFeared(game, e, dt){
 }
 
 function aiCharmed(game, e, dt){
-  aiWander(game, e, dt);
+  let target = null, nearest = Infinity;
+  for (const enemy of game.currentRoom.enemies) {
+    if (enemy === e || enemy.isDead || enemy.charmTimer > 0 || enemy.submerged) continue;
+    const distance = Util.dist2(e.x, e.y, enemy.x, enemy.y);
+    if (distance < nearest) { target = enemy; nearest = distance; }
+  }
+  if (target) chaseSeek(game, e, target.x, target.y, 0.9, dt);
+  else aiWander(game, e, dt);
 }
 
 function seekVector(e, tx, ty){
@@ -81,7 +88,7 @@ function chaseSeek(game, e, tx, ty, speedMul, dt){
   const player = game.player;
   const auraMult = (player.passives.calmingincense && Util.dist(e.x, e.y, player.x, player.y) < 150) ? 0.85 : 1;
   let x = v.x, y = v.y;
-  if (!target && !e.isBoss && !e.isMiniboss && !e.isChallengeBoss) {
+  if (!target && !e.isBoss && !e.isMiniboss && !e.isChallengeBoss && !(e.charmTimer > 0)) {
     for (const neighbor of node.enemies) {
       if (neighbor === e || neighbor.isDead || neighbor.submerged) continue;
       const dx = e.x - neighbor.x, dy = e.y - neighbor.y;
