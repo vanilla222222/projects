@@ -95,6 +95,7 @@
   function render(answer, settings){
     lastRun = { settings, result:answer };
     download.hidden = false;
+    if (answer.conditionNotice) results.append(element('p', 'set-help', answer.conditionNotice));
     const timing = answer.seconds === undefined ? '' : ' · ' + answer.seconds + ' s';
     const stop = stopLabels[answer.stop] ? ' ' + stopLabels[answer.stop] : '';
     if (settings.mode === 'analogues') {

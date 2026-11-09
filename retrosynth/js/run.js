@@ -14,7 +14,16 @@ RETRO.run = function runSearch(settings, onProgress) {
   const engine = RETRO.search.makeEngine(settings);
   if (engine.stock.rejected.length) throw new Error('Could not read stock entries. ' + engine.stock.rejected.join(', '));
   const options = { deadline:started + settings.budgetMs, onProgress };
-  if (settings.mode === 'analogues') return RETRO.analogues.analogues(settings.target, settings, engine, options);
-  if (settings.mode === 'path') return engine.path(settings.target, settings.start, options);
-  return engine.route(settings.target, options);
+  const restrictions = ['allowCryogenic', 'allowPressure', 'allowPhotochemistry',
+    'allowElectrochemistry', 'allowAirSensitive'];
+  const hasRestrictions = restrictions.some(key => settings[key] === false);
+  const result = settings.mode === 'analogues'
+    ? RETRO.analogues.analogues(settings.target, settings, engine, options)
+    : settings.mode === 'path'
+      ? engine.path(settings.target, settings.start, options)
+      : engine.route(settings.target, options);
+  if (hasRestrictions) {
+    result.conditionNotice = 'Condition exclusions apply to recorded rule metadata. Missing condition information is unknown.';
+  }
+  return result;
 };

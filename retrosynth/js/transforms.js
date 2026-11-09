@@ -676,6 +676,15 @@ const TRANSFORMS = [
 
 // Transforms that produced nothing usable are dropped here rather than in
 // every caller.
+function conditionsAllowed(conditions, settings) {
+  const c = conditions || {};
+  return !(settings.allowCryogenic === false && (c.cryogenic === true || c.temperature <= -78)
+    || settings.allowPressure === false && (c.pressurised === true || c.pressureAtm > 1)
+    || settings.allowPhotochemistry === false && c.photochemical === true
+    || settings.allowElectrochemistry === false && c.electrochemical === true
+    || settings.allowAirSensitive === false && c.airSensitive === true);
+}
+
 function disconnect(mol, settings) {
   const groups = TX.groups.groupsOf(mol);
   // What these disconnections are *of*. Set here rather than left for the
@@ -685,6 +694,7 @@ function disconnect(mol, settings) {
   try { product = TX.smiles.canonicalWrite(mol); } catch (err) { void err; return []; }
   const allowed = (t) => {
     if (!settings) return true;
+    if (!conditionsAllowed(t.conditions, settings)) return false;
     if (settings.banTransforms && settings.banTransforms.includes(t.id)) return false;
     if (settings.banFamilies && settings.banFamilies.includes(t.family)) return false;
     if (settings.families && settings.families.length
@@ -732,7 +742,7 @@ function disconnect(mol, settings) {
   return out;
 }
 
-const EXPORTS_transforms = { TRANSFORMS, disconnect };
+const EXPORTS_transforms = { TRANSFORMS, disconnect, conditionsAllowed };
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = EXPORTS_transforms;
