@@ -1153,15 +1153,20 @@ const Util = {
   },
 
   drawKeyIcon(ctx, x, y, color){
-    ctx.strokeStyle = color; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x - 4, y, 4, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 8, y);
-    ctx.moveTo(x + 5, y); ctx.lineTo(x + 5, y + 4);
-    ctx.moveTo(x + 8, y); ctx.lineTo(x + 8, y + 4);
-    ctx.stroke();
-
-    ctx.fillStyle = Theme.shadow.glint;
-    ctx.beginPath(); ctx.arc(x - 5.5, y - 1.5, 1.1, 0, Math.PI * 2); ctx.fill();
+    const rows = ['.#####......','##...##.....','##...##.....','##...#######',
+      '##...#######','.#####..#.#.','........#.#.'];
+    for (const [row, line] of rows.entries()) {
+      ctx.fillStyle = '#221c2a';
+      for (let col = 0; col < line.length; col++) {
+        if (line[col] === '#') ctx.fillRect(x + col * 1.65 - 10 - 0.8, y + row * 1.65 - 6 - 0.8, 3.25, 3.25);
+      }
+    }
+    for (const [row, line] of rows.entries()) {
+      ctx.fillStyle = row === 0 ? Util.shadeColor(color, 0.3) : color;
+      for (let col = 0; col < line.length; col++) {
+        if (line[col] === '#') ctx.fillRect(x + col * 1.65 - 10, y + row * 1.65 - 6, 1.65, 1.65);
+      }
+    }
   },
 
   drawBombIcon(ctx, x, y, bodyColor, fuseColor){
@@ -1297,19 +1302,27 @@ const Util = {
       return NightfallArt.icon(ctx, x, y, { id: coin.id || coin.value || coin.radius || 'coin',
         shape: 'coin', color: coin.color || '#f3ce75' }, 'pickup', Math.max(16, (coin.radius || 6) * 2.8));
     }
+    if (p.kind === 'key' || p.kind === 'goldkey') {
+      return Util.drawKeyIcon(ctx, x, y, p.kind === 'goldkey' ? '#f5c466' : '#c7e4e7');
+    }
+    if (p.kind === 'doublekey') {
+      Util.drawKeyIcon(ctx, x - 3, y - 4, '#8199a3');
+      return Util.drawKeyIcon(ctx, x + 3, y + 4, '#c7e4e7');
+    }
+    if (p.kind === 'battery' || p.kind === 'minibattery') {
+      return Util.drawBatteryIcon(ctx, x, y, p.kind === 'battery' ? 1 : 0.7);
+    }
     const lookup = {
-      key: ['key', '#d5e4e1'], doublekey: ['key', '#d5e4e1'], goldkey: ['key', '#efc468'],
       bomb: ['bomb', '#8a8eb0'], doublebomb: ['bomb', '#8a8eb0'], goldbomb: ['bomb', '#e5b355'],
       heartRed: ['heart', '#ec6576'], heartBlue: ['heart', '#7cc6ed'],
       halfheartRed: ['heart', '#ec6576'], halfheartBlue: ['heart', '#7cc6ed'],
       doubleheart: ['heart', '#ec6576'], heartContainer: ['heart', '#b95c7d'], eternalheart: ['heart', '#f4e6d0'],
       sack: ['charm', '#b68b68'], trashbag: ['charm', '#6e747c'], driftnet: ['ring', '#81bbb7'],
-      pearl: ['gem', '#e2d9d5'], tideflask: ['bottle', '#82cfb9'],
-      battery: ['book', '#e4c278'], minibattery: ['book', '#e4c278']
+      pearl: ['gem', '#e2d9d5'], tideflask: ['bottle', '#82cfb9']
     };
     const [shape, color] = lookup[p.kind] || ['gem', '#c9aad8'];
     const art = { id: p.kind, shape, color, half: p.kind.startsWith('half') };
-    const size = p.kind === 'minibattery' ? 18 : 24;
+    const size = 24;
     if (p.kind.startsWith('double')) {
       NightfallArt.icon(ctx, x - 5, y + 2, art, 'pickup', size);
       NightfallArt.icon(ctx, x + 5, y - 2, art, 'pickup', size);
@@ -1385,8 +1398,8 @@ const Util = {
 
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sp.cv,
-      Math.round((e.x - sp.ox) * scale) / scale,
-      Math.round((e.y - sp.oy) * scale) / scale,
+      e.x - sp.ox,
+      e.y - sp.oy,
       sp.w, sp.h);
   },
 };
