@@ -1127,11 +1127,7 @@ function paintPortalTile(ctx, px, py, color){
 
 function paintStarfieldTile(ctx, px, py, tx, ty, pal, depth){
 
-  const skyWash = ctx.createLinearGradient(px, py, px, py + TILE);
-  skyWash.addColorStop(0, Util.shadeColor(pal.voidC, depth + 0.03));
-  skyWash.addColorStop(1, Util.shadeColor(pal.voidC, depth - 0.03));
-  ctx.fillStyle = skyWash;
-  ctx.fillRect(px, py, TILE, TILE);
+  NightfallArt.tile(ctx, px, py, TILE, tx, ty, pal, 'void', 'void', 'astral:' + depth);
   const n = tileRand(tx, ty, 101) < 0.42 ? 0 : tileRand(tx, ty, 102) < 0.72 ? 1 : tileRand(tx, ty, 103) < 0.92 ? 2 : 3;
   for (let i = 0; i < n; i++) {
     const sx = px + 2 + tileRand(tx, ty, 110 + i) * (TILE - 4);
@@ -1140,10 +1136,10 @@ function paintStarfieldTile(ctx, px, py, tx, ty, pal, depth){
     const rr = 0.5 + mag * mag * 1.9;
 
     ctx.fillStyle = mag > 0.9 ? pal.accent : 'rgba(226,232,255,' + (0.25 + mag * 0.6).toFixed(2) + ')';
-    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(Math.round(sx), Math.round(sy), Math.max(1, Math.round(rr)), Math.max(1, Math.round(rr)));
     if (mag > 0.93) {
       ctx.fillStyle = 'rgba(226,232,255,0.10)';
-      ctx.beginPath(); ctx.arc(sx, sy, rr * 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(Math.round(sx - rr), Math.round(sy - rr), Math.round(rr * 3), Math.round(rr * 3));
     }
   }
 }
@@ -1164,6 +1160,11 @@ function tileRand(x, y, salt){
 
 Object.assign(Game.prototype, {
 
+  artFloorKey(){
+    return this.waveDefenseMode ? 'defense:' + this.wdPaletteIndex
+      : [this.floorPath, this.floorBranch, this.dungeon.floorNum].join(':');
+  },
+
   currentPalette(){
 
     if (this.waveDefenseMode) return STAGES[(this.wdPaletteIndex || 0) % STAGES.length].palette;
@@ -1176,7 +1177,7 @@ Object.assign(Game.prototype, {
     const ctx = this.ctx;
 
     if (!this._ctxTuned) {
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
       this._ctxTuned = true;
     }
@@ -1190,6 +1191,8 @@ Object.assign(Game.prototype, {
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.clearRect(0, 0, CAMERA_W, CAMERA_H);
+    const floorPalette = this.currentPalette();
+    NightfallArt.backdrop(ctx, CAMERA_W, CAMERA_H, floorPalette, this.artFloorKey(), paletteFlavor(floorPalette));
     ctx.save();
 
     ctx.translate(-Math.round(this.camX) + Math.round(FX.shakeX), -Math.round(this.camY) + Math.round(FX.shakeY));
@@ -1390,9 +1393,7 @@ Object.assign(Game.prototype, {
           continue;
         }
 
-        const baseFloor = ((x + y) % 2 === 0) ? pal.floorA : pal.floorB;
-        ctx.fillStyle = Util.shadeColor(baseFloor, 0.06 + (tileRand(x, y, 41) - 0.5) * 0.10);
-        ctx.fillRect(px, py, TILE, TILE);
+        NightfallArt.tile(ctx, px, py, TILE, x, y, pal, 'crystal', 'floor', this.artFloorKey());
 
         const openAt = (tx, ty) => {
           if (ty < 0 || ty >= node.tileH || tx < 0 || tx >= node.tileW) return true;
@@ -1456,6 +1457,7 @@ Object.assign(Game.prototype, {
     };
 
     const flavor = roomFlavor(node, pal);
+    const artFloor = this.artFloorKey();
     const torchTiles = roomTorchTiles(node);
 
     const ornateFloor = node.type === 'boss' || node.type === 'treasure' || flavor === 'crystal';
@@ -1466,17 +1468,12 @@ Object.assign(Game.prototype, {
         if (t === T_VOID) {
 
           if (this.floorPath === 'D') { paintStarfieldTile(ctx, px, py, x, y, pal, 0); continue; }
-          ctx.fillStyle = pal.voidC; ctx.fillRect(px, py, TILE, TILE); continue;
+          NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'void', artFloor); continue;
         }
         if (t === T_WALL || t === T_SECRET) {
 
-          const shade = (tileRand(x, y, 11) - 0.5) * 0.22;
-          const blockBase = Util.shadeColor(pal.wall, shade);
-          const wallWash = ctx.createLinearGradient(px, py, px, py + TILE);
-          wallWash.addColorStop(0, Util.shadeColor(blockBase, 0.09));
-          wallWash.addColorStop(1, Util.shadeColor(blockBase, -0.12));
-          ctx.fillStyle = wallWash;
-          ctx.fillRect(px, py, TILE, TILE);
+          const blockBase = pal.wall;
+          NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'wall', artFloor);
 
           const openN = !isSolid(x, y - 1), openE = !isSolid(x + 1, y);
           const openS = !isSolid(x, y + 1), openW = !isSolid(x - 1, y);
@@ -1562,17 +1559,7 @@ Object.assign(Game.prototype, {
         if (t === T_SECRET_OPEN) { ctx.fillStyle = Theme.world.secretOpen; ctx.fillRect(px, py, TILE, TILE); continue; }
 
         const baseFloor = ((x + y) % 2 === 0) ? pal.floorA : pal.floorB;
-        ctx.fillStyle = Util.shadeColor(baseFloor, (tileRand(x, y, 41) - 0.5) * 0.14);
-        ctx.fillRect(px, py, TILE, TILE);
-
-        ctx.strokeStyle = Util.shadeColor(baseFloor, 0.12);
-        ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.moveTo(px + 1, py + TILE - 1); ctx.lineTo(px + 1, py + 1); ctx.lineTo(px + TILE - 1, py + 1); ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = pal.grout;
-        ctx.globalAlpha = 0.55;
-        ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
-        ctx.globalAlpha = 1;
+        NightfallArt.tile(ctx, px, py, TILE, x, y, pal, flavor, 'floor', artFloor);
 
         if (ornateFloor && tileRand(x, y, 53) > 0.93) {
           ctx.fillStyle = Util.shadeColor(baseFloor, 0.1);
@@ -1800,7 +1787,8 @@ Object.assign(Game.prototype, {
       ctx.fillStyle = Util.bodyShade(ctx, px, py + 3, 14, Theme.world.pedestalTop); Util.drawRoundedRect(ctx, px - 12, py - 2, 24, 10, 2); ctx.fill();
       if (!ped.taken) {
         const bob = Math.sin(this.now / 260 + px) * 3;
-        Util.drawItemIcon(ctx, px, py - 16 + bob, ped.item, this.now);
+        if (ped.isStar) NightfallArt.icon(ctx, px, py - 16 + bob, ped.item, 'star', 28);
+        else Util.drawItemIcon(ctx, px, py - 16 + bob, ped.item, this.now);
 
         if (ped.isDeal) {
           const player = this.player;
@@ -1845,13 +1833,7 @@ Object.assign(Game.prototype, {
       ctx.translate(px, py - 10 + bob);
       if (slot.kind === 'item' || slot.kind === 'trinket' || slot.kind === 'familiar') {
         const thing = slot.item || slot.trinket || slot.familiar;
-        const glow = thing.quality ? Util.qualityGlow(thing.quality) : null;
-        if (glow) { ctx.shadowColor = glow.color; ctx.shadowBlur = glow.blur; }
-        ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 12, thing.color);
-        ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = Theme.ui.onIcon; ctx.fillText(thing.icon, 0, 1);
+        Util.drawItemIcon(ctx, 0, 0, thing, this.now);
       } else {
         ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 10, Theme.world.shopPickup);
         ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
@@ -2105,12 +2087,8 @@ Object.assign(Game.prototype, {
     ctx.fillStyle = Theme.shadow.ground;
     ctx.beginPath(); ctx.ellipse(f.x, f.y + 9, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
 
-    ctx.fillStyle = Util.bodyShade(ctx, f.x, f.y + bob, 11, (f.dyeId && WISP_DYE_TYPES_BY_ID[f.dyeId].color) || f.def.color);
-    ctx.beginPath(); ctx.arc(f.x, f.y + bob, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = Theme.rgba(Theme.rgb.white, .35); ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = Theme.ui.onIcon;
-    ctx.fillText(f.def.icon, f.x, f.y + bob + 1);
+    const dye = f.dyeId && WISP_DYE_TYPES_BY_ID[f.dyeId];
+    NightfallArt.icon(ctx, f.x, f.y + bob, dye ? { ...f.def, color: dye.color } : f.def, 'familiar', 28);
     ctx.restore();
 
     if (f.def.behavior === 'swarmer' && f.miniOrbs && f.miniOrbs.length) {

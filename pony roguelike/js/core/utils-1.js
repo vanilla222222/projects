@@ -1274,17 +1274,8 @@ const Util = {
     ctx.fillRect(x - 3, y - h / 2 - 4, 6, 4);
   },
 
-  drawPillIcon(ctx, x, y, color){
-    ctx.save();
-    ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = Theme.icon.pillHalf; ctx.fillRect(x - 9, y - 9, 9, 18);
-    ctx.fillStyle = color; ctx.fillRect(x, y - 9, 9, 18);
-
-    ctx.fillStyle = 'rgba(255,255,255,.4)';
-    ctx.beginPath(); ctx.ellipse(x - 3, y - 4, 4, 1.6, -0.5, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    ctx.strokeStyle = Theme.shadow.outline; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.stroke();
+  drawPillIcon(ctx, x, y, pill){
+    NightfallArt.icon(ctx, x, y, pill, 'pill', 26);
   },
 
   drawStarIcon(ctx, x, y, color){
@@ -1305,100 +1296,40 @@ const Util = {
   },
 
   drawPickupIcon(ctx, p, bob){
-    const x = p.x !== undefined ? p.x : 0, y = (p.y !== undefined ? p.y : 0) + (bob || 0);
-    switch (p.kind) {
-      case 'coin':
-        ctx.fillStyle = Util.bodyShade(ctx, x, y, p.coin.radius, p.coin.color);
-        ctx.beginPath(); ctx.arc(x, y, p.coin.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = Theme.shadow.groundHard; ctx.stroke();
-
-        ctx.fillStyle = Theme.shadow.glint;
-        ctx.beginPath(); ctx.arc(x - p.coin.radius * 0.32, y - p.coin.radius * 0.32, p.coin.radius * 0.22, 0, Math.PI * 2); ctx.fill();
-        break;
-      case 'key': Util.drawKeyIcon(ctx, x, y, Theme.icon.key); break;
-      case 'doublekey':
-        Util.drawKeyIcon(ctx, x - 3, y - 2, Theme.icon.key);
-        Util.drawKeyIcon(ctx, x + 3, y + 2, Theme.icon.key);
-        break;
-      case 'goldkey':
-        ctx.save(); ctx.shadowColor = Theme.icon.keyGold; ctx.shadowBlur = Theme.icon.goldGlowBlur;
-        Util.drawKeyIcon(ctx, x, y, Theme.icon.keyGold);
-        ctx.restore();
-        break;
-      case 'bomb': Util.drawBombIcon(ctx, x, y, Theme.icon.bombBody, Theme.icon.bombFuse); break;
-      case 'doublebomb':
-        Util.drawBombIcon(ctx, x - 5, y + 2, Theme.icon.bombBody, Theme.icon.bombFuse);
-        Util.drawBombIcon(ctx, x + 5, y - 2, Theme.icon.bombBody, Theme.icon.bombFuse);
-        break;
-      case 'goldbomb':
-        ctx.save(); ctx.shadowColor = Theme.icon.keyGold; ctx.shadowBlur = Theme.icon.goldGlowBlur;
-        Util.drawBombIcon(ctx, x, y, Theme.icon.bombBodyGold, Theme.icon.bombFuseGold);
-        ctx.restore();
-        break;
-      case 'heartRed': Util.drawHeart(ctx, x - 9, y - 9, 18, 1, Theme.icon.heartRed, Theme.icon.heartRedLine); break;
-      case 'heartBlue': Util.drawHeart(ctx, x - 9, y - 9, 18, 1, Theme.icon.heartBlue, Theme.icon.heartBlueLine); break;
-      case 'halfheartRed': Util.drawHeart(ctx, x - 9, y - 9, 18, 0.5, Theme.icon.heartRed, Theme.icon.heartRedLine); break;
-      case 'halfheartBlue': Util.drawHeart(ctx, x - 9, y - 9, 18, 0.5, Theme.icon.heartBlue, Theme.icon.heartBlueLine); break;
-      case 'doubleheart':
-        Util.drawHeart(ctx, x - 12, y - 7, 18, 1, Theme.icon.heartRed, Theme.icon.heartRedLine);
-        Util.drawHeart(ctx, x - 6, y - 11, 18, 1, Theme.icon.heartRed, Theme.icon.heartRedLine);
-        break;
-      case 'heartContainer': Util.drawHeart(ctx, x - 11, y - 11, 22, 1, Theme.icon.heartContainer, Theme.icon.heartRedLine); break;
-
-      case 'eternalheart': Util.drawHeart(ctx, x - 9, y - 9, 18, 1, Theme.icon.pillHalf, Theme.icon.heartRedLine); break;
-      case 'sack': Util.drawSackIcon(ctx, x, y); break;
-      case 'trashbag': Util.drawSackIcon(ctx, x, y, Theme.icon.trashBag, Theme.icon.trashBagSeam); break;
-      case 'driftnet': Util.drawSackIcon(ctx, x, y, Theme.icon.driftnet, Theme.icon.driftnetSeam); break;
-      case 'pearl': Util.drawPearlIcon(ctx, x, y); break;
-      case 'tideflask': Util.drawFlaskIcon(ctx, x, y); break;
-      case 'battery': Util.drawBatteryIcon(ctx, x, y, 1); break;
-      case 'minibattery': Util.drawBatteryIcon(ctx, x, y, 0.7); break;
-      case 'pill': Util.drawPillIcon(ctx, x, y, PILL_COLORS_BY_ID[p.pillColor].color); break;
-      case 'star': Util.drawStarIcon(ctx, x, y, STAR_TYPES[p.starId].color); break;
-
-      case 'wispdye': Util.drawWispDyeIcon(ctx, x, y, WISP_DYE_TYPES_BY_ID[p.wispDyeId].color); break;
-      case 'wispaugment': Util.drawWispAugmentIcon(ctx, x, y, WISP_AUGMENT_TYPES_BY_ID[p.wispAugmentId].color); break;
+    const x = p.x || 0, y = (p.y || 0) + (bob || 0);
+    if (p.kind === 'pill') return Util.drawPillIcon(ctx, x, y, PILL_COLORS_BY_ID[p.pillColor]);
+    if (p.kind === 'star') return NightfallArt.icon(ctx, x, y, STAR_TYPES[p.starId], 'star', 25);
+    if (p.kind === 'wispdye') return NightfallArt.icon(ctx, x, y, WISP_DYE_TYPES_BY_ID[p.wispDyeId], 'dye', 24);
+    if (p.kind === 'wispaugment') return NightfallArt.icon(ctx, x, y, WISP_AUGMENT_TYPES_BY_ID[p.wispAugmentId], 'augment', 24);
+    if (p.kind === 'coin') {
+      const coin = p.coin || {};
+      return NightfallArt.icon(ctx, x, y, { id: coin.id || coin.value || coin.radius || 'coin',
+        shape: 'coin', color: coin.color || '#f3ce75' }, 'pickup', Math.max(16, (coin.radius || 6) * 2.8));
     }
+    const lookup = {
+      key: ['key', '#d5e4e1'], doublekey: ['key', '#d5e4e1'], goldkey: ['key', '#efc468'],
+      bomb: ['bomb', '#8a8eb0'], doublebomb: ['bomb', '#8a8eb0'], goldbomb: ['bomb', '#e5b355'],
+      heartRed: ['heart', '#ec6576'], heartBlue: ['heart', '#7cc6ed'],
+      halfheartRed: ['heart', '#ec6576'], halfheartBlue: ['heart', '#7cc6ed'],
+      doubleheart: ['heart', '#ec6576'], heartContainer: ['heart', '#b95c7d'], eternalheart: ['heart', '#f4e6d0'],
+      sack: ['charm', '#b68b68'], trashbag: ['charm', '#6e747c'], driftnet: ['ring', '#81bbb7'],
+      pearl: ['gem', '#e2d9d5'], tideflask: ['bottle', '#82cfb9'],
+      battery: ['book', '#e4c278'], minibattery: ['book', '#e4c278']
+    };
+    const [shape, color] = lookup[p.kind] || ['gem', '#c9aad8'];
+    const art = { id: p.kind, shape, color, half: p.kind.startsWith('half') };
+    const size = p.kind === 'minibattery' ? 18 : 24;
+    if (p.kind.startsWith('double')) {
+      NightfallArt.icon(ctx, x - 5, y + 2, art, 'pickup', size);
+      NightfallArt.icon(ctx, x + 5, y - 2, art, 'pickup', size);
+    } else NightfallArt.icon(ctx, x, y, art, 'pickup', size);
   },
 
-  drawChestIcon(ctx, c){
-    const def = c.def;
-    const baseColor = c.opened ? def.dark : def.color;
-    const grad = ctx.createLinearGradient(c.x, c.y - 9, c.x, c.y + 9);
-    grad.addColorStop(0, Util.shadeColor(baseColor, 0.3));
-    grad.addColorStop(1, Util.shadeColor(baseColor, -0.2));
-    ctx.fillStyle = grad;
-    ctx.fillRect(c.x - 13, c.y - 9, 26, 18);
-    ctx.fillStyle = def.lidColor;
-    ctx.fillRect(c.x - 13, c.y - 9, 26, 5);
-    if (!c.opened) {
-
-      ctx.strokeStyle = Theme.shadow.sheen; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(c.x - 12, c.y - 3.5); ctx.lineTo(c.x + 12, c.y - 3.5); ctx.stroke();
-    }
-    if (c.opened) return;
-    ctx.strokeStyle = Theme.shadow.outline; ctx.lineWidth = 1;
-    ctx.strokeRect(c.x - 13 + 0.5, c.y - 9 + 0.5, 25, 17);
-    if (def.requires === 'bomb') {
-      ctx.fillStyle = Theme.chest.lockBomb;
-      ctx.beginPath(); ctx.arc(c.x, c.y + 2, 3.5, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = 'rgba(0,0,0,.4)';
-      ctx.beginPath(); ctx.arc(c.x, c.y + 1.2, 1, 0, Math.PI * 2); ctx.fill();
-      ctx.fillRect(c.x - 0.6, c.y + 1.5, 1.2, 2);
-    } else if (def.requires === 'key') {
-      ctx.fillStyle = Theme.chest.lockKey;
-      ctx.beginPath(); ctx.arc(c.x, c.y + 2, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(0,0,0,.4)';
-      ctx.beginPath(); ctx.arc(c.x, c.y + 1.2, 0.9, 0, Math.PI * 2); ctx.fill();
-      ctx.fillRect(c.x - 0.5, c.y + 1.4, 1, 1.8);
-    } else if (def.requires === 'hearts') {
-      ctx.fillStyle = Theme.chest.lockHeart; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('♥', c.x, c.y + 3);
-    } else {
-      ctx.fillStyle = Theme.chest.lockPlain;
-      ctx.beginPath(); ctx.arc(c.x, c.y + 2, 3, 0, Math.PI * 2); ctx.fill();
-    }
+  drawChestIcon(ctx, chest){
+    const def = chest.def;
+    const art = { ...def, id: (def.id || def.name) + (chest.opened ? ':open' : ':closed'),
+      color: chest.opened ? def.dark : def.color, opened: chest.opened };
+    NightfallArt.icon(ctx, chest.x, chest.y, art, 'chest', 35);
   },
 
   drawItemIcon(ctx, x, y, item, now){
@@ -1422,27 +1353,7 @@ const Util = {
       }
       ctx.shadowColor = glow.color; ctx.shadowBlur = glow.blur;
     }
-    ctx.fillStyle = Util.bodyShadeLocal(ctx, 0, 0, 13, item.color);
-    ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = Theme.shadow.rim;
-    ctx.beginPath(); ctx.arc(0, 0, 11.6, Math.PI * 0.85, Math.PI * 1.75); ctx.stroke();
-    ctx.strokeStyle = Theme.shadow.outlineSoft;
-    ctx.beginPath(); ctx.arc(0, 0, 11.6, Math.PI * -0.15, Math.PI * 0.75); ctx.stroke();
-    ctx.fillStyle = Theme.shadow.sheen;
-    ctx.beginPath(); ctx.ellipse(-4.5, -5.5, 3.6, 2.2, -0.6, 0, Math.PI * 2); ctx.fill();
-
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = glow ? glow.color : Theme.icon.itemRing;
-    ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke();
-    ctx.font = '14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = Theme.ui.onIcon;
-
-    ctx.shadowColor = Theme.shadow.groundHard; ctx.shadowBlur = 2;
-    ctx.fillText(item.icon, 0, 1);
-    ctx.shadowBlur = 0;
+    NightfallArt.icon(ctx, 0, 0, item, item.behavior ? 'familiar' : 'item', 30);
     ctx.restore();
   },
 
@@ -1481,6 +1392,7 @@ const Util = {
 
   _blitSprite(ctx, sp, e, scale){
 
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sp.cv,
       Math.round((e.x - sp.ox) * scale) / scale,
       Math.round((e.y - sp.oy) * scale) / scale,

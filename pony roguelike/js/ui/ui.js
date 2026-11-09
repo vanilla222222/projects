@@ -141,7 +141,7 @@ const SYNERGY_BADGES = [
 
 function hudPanelEntry(label, thing){
   const body = thing
-    ? '<div class="hudPanelName">' + (thing.icon ? thing.icon + ' ' : '') + thing.name + '</div>'
+    ? '<div class="hudPanelName">' + NightfallArt.image(thing, thing.behavior ? 'familiar' : 'item') + thing.name + '</div>'
       + '<div class="hudPanelDesc">' + thing.desc + '</div>'
     : '<div class="hudPanelEmpty">None</div>';
   return '<div class="hudPanelTitle">' + label + '</div>' + body;
@@ -156,7 +156,7 @@ function hudPillReadout(game){
     if (!effect) { unknown++; continue; }
     known++;
     html += '<div class="hudPillRow">'
-      + '<span class="hudPillSwatch" style="background:' + c.color + '"></span>'
+      + NightfallArt.image(c, 'pill')
       + '<span class="hudPillName">' + c.name + '</span>'
       + '<span class="hudPillEffect ' + (effect.good ? 'good' : 'bad') + '" title="' + effect.desc + '">' + effect.name + '</span>'
       + '</div>';
@@ -323,7 +323,7 @@ function updateHUD(game){
   const iconEl = document.getElementById('activeItemIcon');
   const pipsEl = document.getElementById('activeItemPips');
   if (player.activeItem) {
-    iconEl.textContent = player.activeItem.icon;
+    NightfallArt.mount(iconEl, player.activeItem);
     iconEl.title = player.activeItem.name + ': ' + player.activeItem.desc;
     pipsEl.innerHTML = '';
     for (let i = 0; i < player.activeItem.maxCharge; i++) {
@@ -347,7 +347,7 @@ function updateHUD(game){
     if (player.pocketActive) {
       const pIconEl = document.getElementById('pocketItemIcon');
       const pPipsEl = document.getElementById('pocketItemPips');
-      pIconEl.textContent = player.pocketActive.icon;
+      NightfallArt.mount(pIconEl, player.pocketActive);
       pIconEl.title = player.pocketActive.name + ': ' + player.pocketActive.desc;
       pPipsEl.innerHTML = '';
       for (let i = 0; i < player.pocketActive.maxCharge; i++) {
@@ -364,7 +364,7 @@ function updateHUD(game){
   const trinketEl = document.getElementById('trinketIcon');
   if (trinketEl) {
     const trinket = player.trinketId ? TRINKETS[player.trinketId] : null;
-    trinketEl.textContent = trinket ? trinket.icon : '—';
+    NightfallArt.mount(trinketEl, trinket);
     trinketEl.title = trinket ? (trinket.name + ': ' + trinket.desc) : 'No trinket equipped';
     trinketEl.classList.toggle('empty', !trinket);
   }
@@ -373,7 +373,7 @@ function updateHUD(game){
   if (pillEl) {
     const colorId = player.pillPocket;
     const color = colorId ? PILL_COLORS_BY_ID[colorId] : null;
-    pillEl.textContent = color ? '💊' : '—';
+    NightfallArt.mount(pillEl, color, 'pill');
     pillEl.style.color = color ? color.color : '';
     if (color) {
       const known = game.pillIdentified && game.pillIdentified[colorId];
@@ -391,7 +391,7 @@ function updateHUD(game){
   if (starEl) {
     const starId = player.starPocket;
     const star = starId ? STAR_TYPES[starId] : null;
-    starEl.textContent = star ? star.icon : '—';
+    NightfallArt.mount(starEl, star, 'star');
     starEl.style.color = star ? star.color : '';
     starEl.title = star ? (star.name + ': ' + star.desc + ' (R to use)') : 'No star held';
     starEl.classList.toggle('empty', !star);
@@ -419,7 +419,7 @@ function updateHUD(game){
     const count = shownPassives[id];
     const chip = document.createElement('div');
     chip.className = 'passive-chip';
-    chip.textContent = item.icon;
+    chip.innerHTML = NightfallArt.image(item, item.behavior ? 'familiar' : 'item');
     chip.title = item.name + (count > 1 ? ' x' + count : '') + ' — ' + item.desc;
     passivesBar.appendChild(chip);
   }
@@ -440,7 +440,7 @@ function updateHUD(game){
       for (const def of order) {
         const chip = document.createElement('div');
         chip.className = 'familiar-chip';
-        chip.textContent = def.icon;
+        chip.innerHTML = NightfallArt.image(def, def.behavior ? 'familiar' : 'item');
         chip.title = def.name + (counts[def.id] > 1 ? ' x' + counts[def.id] : '') + ' — ' + def.desc;
         if (counts[def.id] > 1) {
           const badge = document.createElement('span');
@@ -579,7 +579,7 @@ function updateItemProxTooltip(game){
 
   if (!best) { panel.classList.add('hud-panel-hidden'); body.innerHTML = ''; return; }
   panel.classList.remove('hud-panel-hidden');
-  body.innerHTML = '<div class="hudPanelName">' + (best.icon ? best.icon + ' ' : '') + best.name + '</div>'
+  body.innerHTML = '<div class="hudPanelName">' + NightfallArt.image(best, best.behavior ? 'familiar' : 'item') + best.name + '</div>'
     + (best.desc ? '<div class="hudPanelDesc">' + best.desc + '</div>' : '');
 }
 
@@ -858,7 +858,7 @@ function showItemExamine(ped, player){
   const thing = ped.item;
   const kindLabel = ped.isTrinket ? 'Trinket' : ped.isFamiliar ? 'Familiar' : ped.isStar ? 'Star' : (thing.type === 'active' ? 'Active Item' : 'Passive Item');
   const iconEl = document.getElementById('itemExamineIcon');
-  iconEl.textContent = thing.icon;
+  NightfallArt.mount(iconEl, thing, ped.isFamiliar ? 'familiar' : ped.isStar ? 'star' : 'item');
 
   if (ped !== _lastExaminePed) {
     _lastExaminePed = ped;

@@ -149,7 +149,7 @@ function renderMenuBackdrop(dt){
   const reduced = menuBackdropReducedMotion();
   const ctx = menuBackdropCtx;
   const w = menuBackdropCanvas.width, h = menuBackdropCanvas.height;
-  ctx.clearRect(0, 0, w, h);
+  NightfallArt.backdrop(ctx, w, h, { voidC: '#171327', accent: '#a592dc' }, 'nightfall:title');
 
   if (reduced) {
 
