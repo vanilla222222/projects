@@ -12,7 +12,7 @@ assert.equal(run('route.steps.length'), 2);
 assert.equal(run('routeWorkspaceValidate(route).status'), 'verified');
 assert.equal(run('routeWorkspaceValidate(route).issues.length'), 0);
 assert.equal(run('route.steps[0].ruleId'), run('job.route[0].candidate.outcomeId'));
-assert.equal(run('routeWorkspaceValidate(routeWorkspaceImport(JSON.stringify(route))[0]).status'), 'verified');
+assert.equal(run(`routeWorkspaceValidate(routeWorkspaceImport(JSON.stringify(route))[0]).status`), 'verified');
 assert.equal(run(`routeWorkspaceImport(JSON.stringify({format:'chem-lab-route-workspace',version:1,routes:[route]})).length`), 1);
 assert.equal(run(`routeWorkspaceValidate({...route,steps:route.steps.slice().reverse()}).status`), 'invalid');
 assert.equal(run(`routeWorkspaceValidate({...route,steps:route.steps.slice(1)}).status`), 'invalid');
